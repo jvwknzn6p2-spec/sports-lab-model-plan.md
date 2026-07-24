@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "run-2026-07-24-mlb-01",
+  "league": "MLB",
+  "sport": "BASEBALL",
+  "slate_date": "2026-07-24",
+  "timezone": "America/New_York",
+  "generated_at": "2026-07-24T14:00:00Z",
+  "prediction_deadline": "2026-07-24T22:00:00Z",
+  "settlement_scope": "MLB_FINAL_INCL_EXTRA",
+  "data_quality_status": "OK",
+  "control_tower_status": "PASS",
+  "source_freshness": {
+    "odds_fetched_at": "2026-07-24T13:50:00Z",
+    "lineup_fetched_at": "2026-07-24T13:45:00Z",
+    "schedule_fetched_at": "2026-07-24T13:30:00Z"
+  },
+  "validation_summary": {
+    "checks_passed": 12,
+    "checks_failed": 0,
+    "notes": []
+  },
+  "games": [
+    {
+      "match_id": "MLB-2026-07-24-NYY-BOS",
+      "official_game_id": "746321",
+      "listed_team": "NYY",
+      "opponent": "BOS",
+      "home": "NYY",
+      "away": "BOS",
+      "favorite": "NYY",
+      "receiver": "BOS",
+      "home_away_status": "HOME",
+      "validation_status": "VALIDATED",
+      "scheduled_start": "2026-07-24T23:05:00Z",
+      "probable_or_confirmed_starters": [
+        {"team": "NYY", "name": "Gerrit Cole", "confirmed": true},
+        {"team": "BOS", "name": "Brayan Bello", "confirmed": true}
+      ],
+      "starter_status": "CONFIRMED",
+      "odds_summary": {"moneyline_home": -160, "moneyline_away": 140},
+      "market_summary": {"implied_home_win_probability": 0.60},
+      "weather_summary": {"temp_f": 78, "wind_mph": 6},
+      "lineup_summary": {"home_confirmed": true, "away_confirmed": true},
+      "bullpen_summary": {"home_rest_days": 2, "away_rest_days": 1},
+      "feature_summary": {
+        "feature_snapshot_id": "fs-nyy-bos-0724",
+        "completeness": 0.95,
+        "missing_features": []
+      },
+      "risk_summary": {"critical_flags": []},
+      "evidence": [
+        {"ref_id": "ev-odds-1", "kind": "ODDS", "uri": "s3://evidence/odds/1", "quality": "OK"},
+        {"ref_id": "ev-lineup-1", "kind": "LINEUP", "uri": "s3://evidence/lineup/1", "quality": "OK"}
+      ],
+      "handicap_raw": "1半",
+      "handicap_display": "1半",
+      "handicap_type": "JP_HALF",
+      "handicap_value": null,
+      "handicap_sub_number": null,
+      "handicap_settlement_rule": "HDP_JP_HALF_V1"
+    },
+    {
+      "match_id": "MLB-2026-07-24-LAD-SF",
+      "official_game_id": "746322",
+      "listed_team": "LAD",
+      "opponent": "SF",
+      "home": "LAD",
+      "away": "SF",
+      "favorite": "LAD",
+      "receiver": "SF",
+      "home_away_status": "HOME",
+      "validation_status": "VALIDATED",
+      "scheduled_start": "2026-07-25T02:10:00Z",
+      "probable_or_confirmed_starters": [
+        {"team": "LAD", "name": "Yoshinobu Yamamoto", "confirmed": true},
+        {"team": "SF", "name": "Logan Webb", "confirmed": true}
+      ],
+      "starter_status": "CONFIRMED",
+      "odds_summary": {"moneyline_home": -175, "moneyline_away": 150},
+      "market_summary": {"implied_home_win_probability": 0.62},
+      "weather_summary": {"temp_f": 72, "wind_mph": 8},
+      "lineup_summary": {"home_confirmed": true, "away_confirmed": true},
+      "bullpen_summary": {"home_rest_days": 3, "away_rest_days": 2},
+      "feature_summary": {
+        "feature_snapshot_id": "fs-lad-sf-0724",
+        "completeness": 0.9,
+        "missing_features": []
+      },
+      "risk_summary": {"critical_flags": []},
+      "evidence": [
+        {"ref_id": "ev-odds-2", "kind": "ODDS", "quality": "OK"}
+      ],
+      "handicap_raw": "1.5",
+      "handicap_display": "1.5",
+      "handicap_type": "DECIMAL",
+      "handicap_value": 1.5,
+      "handicap_sub_number": null,
+      "handicap_settlement_rule": "HDP_DECIMAL_V1"
+    }
+  ]
+}

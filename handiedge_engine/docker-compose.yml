@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: handiedge
+      POSTGRES_PASSWORD: handiedge
+      POSTGRES_DB: handiedge
+    ports:
+      - "5432:5432"
+    volumes:
+      - handiedge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U handiedge -d handiedge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HANDIEDGE_DATABASE_URL: postgresql+psycopg://handiedge:handiedge@db:5432/handiedge
+      HANDIEDGE_ENVIRONMENT: docker
+      HANDIEDGE_LOG_JSON: "true"
+    ports:
+      - "8000:8000"
+    # Apply migrations, then launch the API.
+    command: >-
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  handiedge_pgdata:

@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "run-2026-07-24-mlb-01",
+  "league": "MLB",
+  "slate_date": "2026-07-24",
+  "generated_at": "2026-07-24T14:00:00Z",
+  "control_tower_status": "PASS",
+  "prediction_status": "COMPLETED",
+  "model_context": {
+    "model_id": "deterministic-fallback",
+    "model_version": "0.0.0-nonprod",
+    "fallback_used": true
+  },
+  "calibration_context": {
+    "method": "IDENTITY",
+    "status": "UNCALIBRATED",
+    "artifact_id": null,
+    "version": "calibration-identity-1.0.0",
+    "warning": "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution."
+  },
+  "games": [
+    {
+      "match_id": "MLB-2026-07-24-NYY-BOS",
+      "home": "NYY",
+      "away": "BOS",
+      "selected_team": "NYY",
+      "predicted_loser": "BOS",
+      "normal_win_probability": 0.6381,
+      "normal_loss_probability": 0.3619,
+      "handicap_pick": "BOS",
+      "handicap_cover_probability": 0.3678,
+      "confidence_tier": "A+",
+      "risk_level": "LOW",
+      "expected_score": {
+        "home": 4.85,
+        "away": 3.75
+      },
+      "decision_status": "PREDICT",
+      "pass_reason": null,
+      "supporting_factors": [
+        "evidence_completeness=0.95",
+        "data_fresh_minutes=30",
+        "starter_confirmed",
+        "schedule_validated"
+      ],
+      "risk_factors": [],
+      "calibration_notes": [
+        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution.",
+        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution."
+      ],
+      "data_quality_status": "OK",
+      "handicap_rule_status": "RESOLVED",
+      "audit": {
+        "prediction_id": "a1aee6efd3b8f602121e4d6ad07fe8ea",
+        "input_hash": "9259c55fbc8b0df5b4c7962afdb4477e44b1792af65763c444a3b6d154432fd6",
+        "feature_snapshot_id": "fs-nyy-bos-0724",
+        "created_at": "2026-07-24T21:19:51.243894Z"
+      }
+    },
+    {
+      "match_id": "MLB-2026-07-24-LAD-SF",
+      "home": "LAD",
+      "away": "SF",
+      "selected_team": "LAD",
+      "predicted_loser": "SF",
+      "normal_win_probability": 0.6128,
+      "normal_loss_probability": 0.3872,
+      "handicap_pick": "SF",
+      "handicap_cover_probability": 0.5517,
+      "confidence_tier": "A",
+      "risk_level": "LOW",
+      "expected_score": {
+        "home": 4.75,
+        "away": 3.85
+      },
+      "decision_status": "PREDICT",
+      "pass_reason": null,
+      "supporting_factors": [
+        "evidence_completeness=0.9",
+        "data_fresh_minutes=30",
+        "starter_confirmed",
+        "schedule_validated"
+      ],
+      "risk_factors": [],
+      "calibration_notes": [
+        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution.",
+        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution."
+      ],
+      "data_quality_status": "OK",
+      "handicap_rule_status": "RESOLVED",
+      "audit": {
+        "prediction_id": "f1bb32a4e0a6669277017bdec7dcae2d",
+        "input_hash": "662c42bfc2f364efb189eb8d39be1e6493e223dd1495c05cebbc0a15c2b497d1",
+        "feature_snapshot_id": "fs-lad-sf-0724",
+        "created_at": "2026-07-24T21:19:51.251332Z"
+      }
+    }
+  ],
+  "summary": {
+    "total_games": 2,
+    "predictions": 2,
+    "passes": 0,
+    "blocked": 0,
+    "fallback_predictions": 2
+  }
+}
