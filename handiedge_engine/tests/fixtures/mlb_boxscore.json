@@ -1,0 +1,84 @@
+{
+  "teams": {
+    "home": {
+      "team": {"id": 147, "name": "New York Yankees"},
+      "pitchers": [543037, 605280],
+      "teamStats": {
+        "batting": {
+          "atBats": 34,
+          "hits": 10,
+          "doubles": 2,
+          "triples": 0,
+          "homeRuns": 2,
+          "baseOnBalls": 4,
+          "intentionalWalks": 1,
+          "hitByPitch": 1,
+          "sacFlies": 1
+        }
+      },
+      "players": {
+        "ID543037": {
+          "person": {"id": 543037, "fullName": "Gerrit Cole"},
+          "stats": {
+            "pitching": {
+              "inningsPitched": "6.2",
+              "earnedRuns": 2,
+              "hits": 5,
+              "baseOnBalls": 1,
+              "gamesStarted": 1
+            }
+          }
+        },
+        "ID605280": {
+          "person": {"id": 605280, "fullName": "Relief Arm"},
+          "stats": {
+            "pitching": {
+              "inningsPitched": "2.1",
+              "earnedRuns": 1,
+              "hits": 2,
+              "baseOnBalls": 0,
+              "gamesStarted": 0
+            }
+          }
+        },
+        "ID592450": {
+          "person": {"id": 592450, "fullName": "Position Player"},
+          "stats": {
+            "batting": {"atBats": 4, "hits": 2}
+          }
+        }
+      }
+    },
+    "away": {
+      "team": {"id": 111, "name": "Boston Red Sox"},
+      "pitchers": [657277],
+      "teamStats": {
+        "batting": {
+          "atBats": 33,
+          "hits": 7,
+          "doubles": 1,
+          "triples": 1,
+          "homeRuns": 1,
+          "baseOnBalls": 2,
+          "intentionalWalks": 0,
+          "hitByPitch": 0,
+          "sacFlies": 0
+        }
+      },
+      "players": {
+        "ID657277": {
+          "person": {"id": 657277, "fullName": "Brayan Bello"},
+          "stats": {
+            "pitching": {
+              "inningsPitched": "8.0",
+              "earnedRuns": 5,
+              "hits": 10,
+              "baseOnBalls": 2,
+              "gamesStarted": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

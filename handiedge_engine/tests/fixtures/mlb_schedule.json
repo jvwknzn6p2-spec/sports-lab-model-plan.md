@@ -1,0 +1,124 @@
+{
+  "dates": [
+    {
+      "date": "2024-07-04",
+      "games": [
+        {
+          "gamePk": 745001,
+          "officialDate": "2024-07-04",
+          "gameDate": "2024-07-04T17:05:00Z",
+          "status": {"detailedState": "Final", "codedGameState": "F"},
+          "venue": {"id": 3313, "name": "Yankee Stadium"},
+          "teams": {
+            "home": {
+              "score": 5,
+              "team": {"id": 147, "name": "New York Yankees"},
+              "probablePitcher": {"id": 543037, "fullName": "Gerrit Cole"}
+            },
+            "away": {
+              "score": 3,
+              "team": {"id": 111, "name": "Boston Red Sox"},
+              "probablePitcher": {"id": 657277, "fullName": "Brayan Bello"}
+            }
+          },
+          "linescore": {
+            "currentInning": 9,
+            "innings": [
+              {"num": 1, "home": {"runs": 2}, "away": {"runs": 0}},
+              {"num": 2, "home": {"runs": 0}, "away": {"runs": 1}},
+              {"num": 3, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 4, "home": {"runs": 0}, "away": {"runs": 0}},
+              {"num": 5, "home": {"runs": 0}, "away": {"runs": 2}},
+              {"num": 6, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 7, "home": {"runs": 0}, "away": {"runs": 0}},
+              {"num": 8, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 9, "home": {"runs": 0}, "away": {"runs": 0}}
+            ]
+          }
+        },
+        {
+          "gamePk": 745002,
+          "officialDate": "2024-07-04",
+          "gameDate": "2024-07-04T20:10:00Z",
+          "status": {"detailedState": "Final"},
+          "venue": {"id": 22, "name": "Dodger Stadium"},
+          "teams": {
+            "home": {
+              "score": 7,
+              "team": {"id": 119, "name": "Los Angeles Dodgers"},
+              "probablePitcher": {"id": 808967, "fullName": "Yoshinobu Yamamoto"}
+            },
+            "away": {
+              "score": 6,
+              "team": {"id": 137, "name": "San Francisco Giants"},
+              "probablePitcher": {"id": 657277, "fullName": "Logan Webb"}
+            }
+          },
+          "linescore": {
+            "currentInning": 11,
+            "innings": [
+              {"num": 1, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 2, "home": {"runs": 0}, "away": {"runs": 2}},
+              {"num": 3, "home": {"runs": 2}, "away": {"runs": 0}},
+              {"num": 4, "home": {"runs": 0}, "away": {"runs": 1}},
+              {"num": 5, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 6, "home": {"runs": 0}, "away": {"runs": 1}},
+              {"num": 7, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 8, "home": {"runs": 0}, "away": {"runs": 1}},
+              {"num": 9, "home": {"runs": 0}, "away": {"runs": 0}},
+              {"num": 10, "home": {"runs": 1}, "away": {"runs": 1}},
+              {"num": 11, "home": {"runs": 1}, "away": {"runs": 0}}
+            ]
+          }
+        },
+        {
+          "gamePk": 745003,
+          "officialDate": "2024-07-04",
+          "status": {"detailedState": "Postponed"},
+          "venue": {"id": 15, "name": "Rain City Park"},
+          "teams": {
+            "home": {"team": {"id": 120, "name": "Washington Nationals"}},
+            "away": {"team": {"id": 143, "name": "Philadelphia Phillies"}}
+          }
+        }
+      ]
+    },
+    {
+      "date": "2024-07-05",
+      "games": [
+        {
+          "gamePk": 745010,
+          "officialDate": "2024-07-05",
+          "status": {"detailedState": "Final"},
+          "venue": {"id": 3313, "name": "Yankee Stadium"},
+          "teams": {
+            "home": {
+              "score": 2,
+              "team": {"id": 147, "name": "New York Yankees"},
+              "probablePitcher": {"id": 543037, "fullName": "Gerrit Cole"}
+            },
+            "away": {
+              "score": 4,
+              "team": {"id": 111, "name": "Boston Red Sox"},
+              "probablePitcher": {"id": 657277, "fullName": "Brayan Bello"}
+            }
+          },
+          "linescore": {
+            "currentInning": 9,
+            "innings": [
+              {"num": 1, "home": {"runs": 0}, "away": {"runs": 2}},
+              {"num": 2, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 3, "home": {"runs": 0}, "away": {"runs": 0}},
+              {"num": 4, "home": {"runs": 0}, "away": {"runs": 1}},
+              {"num": 5, "home": {"runs": 1}, "away": {"runs": 0}},
+              {"num": 6, "home": {"runs": 0}, "away": {"runs": 0}},
+              {"num": 7, "home": {"runs": 0}, "away": {"runs": 1}},
+              {"num": 8, "home": {"runs": 0}, "away": {"runs": 0}},
+              {"num": 9, "home": {"runs": 0}, "away": {"runs": 0}}
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,7 @@ import xgboost as xgb
 # Ensure the project root is importable when run as a plain script.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.domain.prediction.dataset import UNSOURCED_FEATURES  # noqa: E402
 from app.domain.prediction.features import FEATURE_NAMES, FEATURE_VERSION  # noqa: E402
 from app.domain.prediction.poisson import (  # noqa: E402
     margin_distribution,
@@ -116,26 +118,99 @@ def _fit_platt(logits: np.ndarray, y: np.ndarray, iters: int = 500, lr: float = 
     return a, b
 
 
+def _load_dataset(path: str):
+    """Load a JSONL dataset produced by scripts/build_dataset.py.
+
+    Rows are kept in file order, which build_dataset guarantees is chronological —
+    so the downstream prefix split is a genuine time-based split. Rows with no
+    derived features at all (cold start) are dropped.
+    """
+
+    rows = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+
+    usable = [r for r in rows if any(v is not None for v in r["features"])]
+    if not usable:
+        raise SystemExit(f"dataset {path} has no rows with derived features")
+
+    x = np.array(
+        [[np.nan if v is None else float(v) for v in r["features"]] for r in usable],
+        dtype="float32",
+    )
+    home = np.array([float(r["home_runs"]) for r in usable], dtype="float32")
+    away = np.array([float(r["away_runs"]) for r in usable], dtype="float32")
+    print(
+        f"[train] loaded {len(usable)} usable rows from {path} "
+        f"(dropped {len(rows) - len(usable)} cold-start rows)"
+    )
+    return x, home, away
+
+
+def _impute(x: np.ndarray, medians: np.ndarray) -> np.ndarray:
+    """Replace NaNs with the supplied per-column medians (train-split derived)."""
+
+    filled = x.copy()
+    idx = np.where(np.isnan(filled))
+    if len(idx[0]):
+        filled[idx] = np.take(medians, idx[1])
+    return filled
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default="artifacts/xgboost_mlb")
-    parser.add_argument("--rows", type=int, default=4000)
+    parser.add_argument(
+        "--source",
+        choices=("synthetic", "dataset"),
+        default="synthetic",
+        help="'dataset' trains on real history exported by scripts/build_dataset.py",
+    )
+    parser.add_argument("--dataset", help="JSONL path when --source dataset")
+    parser.add_argument("--rows", type=int, default=4000, help="synthetic rows")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--model-id", default="xgboost-runs-mlb")
     parser.add_argument("--model-version", default="1.0.0")
     args = parser.parse_args()
 
-    rng = np.random.default_rng(args.seed)
-    x, home_runs, away_runs = _synthetic_dataset(args.rows, rng)
+    if args.source == "dataset":
+        if not args.dataset:
+            raise SystemExit("--source dataset requires --dataset PATH")
+        x, home_runs, away_runs = _load_dataset(args.dataset)
+    else:
+        rng = np.random.default_rng(args.seed)
+        x, home_runs, away_runs = _synthetic_dataset(args.rows, rng)
 
+    # Time-based split: the dataset is chronological, so a prefix split trains on
+    # the past and validates on the future — never the reverse.
     split = int(len(x) * 0.8)
+    if split < 1 or split >= len(x):
+        raise SystemExit(f"not enough rows to split (got {len(x)})")
+
+    # Medians come from the TRAINING split only; deriving them from the full set
+    # would leak validation-period information into the imputation.
+    # A fully-unsourced column is all-NaN by design; nanmedian warns, so silence
+    # that expected case and fall back to 0.0 for those columns.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        median_vec = np.nanmedian(x[:split], axis=0)
+    unsourced_cols = [
+        FEATURE_NAMES[j] for j in range(x.shape[1]) if np.isnan(median_vec[j])
+    ]
+    median_vec = np.nan_to_num(median_vec, nan=0.0)
+    if unsourced_cols:
+        print(f"[train] inert (no data in training split): {unsourced_cols}")
+    x = _impute(x, median_vec)
     x_tr, x_val = x[:split], x[split:]
 
     home_model = _train_booster(x_tr, home_runs[:split], args.seed)
     away_model = _train_booster(x_tr, away_runs[:split], args.seed)
 
     # Feature medians (fallback for missing features at inference).
-    medians = {name: float(np.median(x[:, j])) for j, name in enumerate(FEATURE_NAMES)}
+    medians = {name: float(median_vec[j]) for j, name in enumerate(FEATURE_NAMES)}
 
     # Fit Platt calibration on the validation split.
     dmat_val = xgb.DMatrix(x_val)
@@ -164,8 +239,16 @@ def main() -> None:
                 "feature_names": list(FEATURE_NAMES),
                 "medians": medians,
                 "max_runs": 20,
-                "trained_rows": args.rows,
+                "trained_rows": int(len(x)),
                 "seed": args.seed,
+                # Provenance: 'synthetic' models have NO real predictive power.
+                "data_source": args.source,
+                "dataset_path": args.dataset if args.source == "dataset" else None,
+                "split": "time_based_prefix_80_20",
+                # Inputs that carried no signal during training (offline-unsourced).
+                "unsourced_features": (
+                    list(UNSOURCED_FEATURES) if args.source == "dataset" else []
+                ),
             },
             indent=2,
         ),

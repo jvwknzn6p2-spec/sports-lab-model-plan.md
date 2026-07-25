@@ -16,3 +16,6 @@ handiedge*.db
 venv/
 # Trained model artifacts are reproducible via scripts/train_xgboost.py (seeded).
 artifacts/
+# Fetched API responses and exported training datasets (rebuildable).
+.mlb_cache/
+datasets/

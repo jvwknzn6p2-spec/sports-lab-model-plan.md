@@ -306,14 +306,64 @@ a warning** and substituted with the artifact's training median (a documented,
 degraded mode) rather than silently imputed. The Decision Engine's
 evidence-completeness gate then decides whether to `PASS`.
 
-**To integrate a genuine model** (real data instead of the synthetic generator):
-1. Replace `_synthetic_dataset` in `scripts/train_xgboost.py` with a historical
-   loader that emits the same `FEATURE_NAMES` columns plus `home_runs`/`away_runs`.
-2. Retrain (`make train-xgboost`) — bump `model_version` / `feature_version`.
-3. Keep outputs deterministic for identical inputs (the boosters and the Poisson
-   math already are; seed any randomness you add).
-4. Register a custom adapter directly with `register_adapter("default", MyAdapter())`
-   if you need something other than the XGBoost/Poisson design.
+**Register a custom adapter** with `register_adapter("default", MyAdapter())` if you
+need something other than the XGBoost/Poisson design.
+
+## 12b. Training on real MLB history (leakage-safe)
+
+Training on real data is a **two-step** flow: one networked build, then fully
+offline, reproducible training.
+
+```bash
+# 1) Fetch real history once (cached to .mlb_cache/, exported as JSONL)
+python scripts/build_dataset.py --start 2023-04-01 --end 2023-09-30 \
+    --out datasets/mlb_2023.jsonl
+
+# 2) Train from the export — no network needed, repeatable
+python scripts/train_xgboost.py --source dataset --dataset datasets/mlb_2023.jsonl \
+    --out artifacts/xgboost_mlb --model-version 2.0.0
+```
+
+**Source**: the public MLB Stats API (`statsapi.mlb.com`, no auth) — schedule with
+linescore + probable pitchers, plus per-game boxscores. Only games in a final
+state are ingested; postponed/in-progress games are skipped. The linescore also
+yields a **regulation-nine score distinct from the extra-innings final**, which is
+what makes `NPB_REG9_ONLY` settlement expressible rather than approximated.
+
+**Leakage safety** (`app/domain/prediction/dataset.py`) — the property that
+matters most, and it is enforced structurally, not by convention:
+
+- games are processed in strict chronological order, grouped by date;
+- features for a game on date *D* are computed from state containing only games
+  with `game_date < D`;
+- that date's results are folded into the state **only after** all its rows are
+  emitted — so same-date games can never inform one another (exactly the
+  `same_day_contamination` condition the Self-Learning gate checks);
+- the train/validation split is a **chronological prefix** (past → future), and
+  imputation medians are computed from the **training split only**.
+
+These are asserted by tests that mutate future games and require earlier rows to
+be bit-identical (`tests/unit/test_dataset_builder.py`).
+
+**Derived vs. unsourced features.** Eleven of the fourteen contract features are
+genuinely derived as-of from history (starter ERA/WHIP, team wOBA from boxscore
+batting lines, bullpen ERA, rest days, rolling park factor). Three —
+`temp_f`, `wind_mph`, `implied_home_win_probability` — have no historical source
+offline. They are **not invented**: they stay `None`, and the trained artifact
+records them under `unsourced_features` so nobody mistakes an inert input for a
+learned signal. Supply them at inference from Control Tower, or extend
+`build_dataset.py` with weather/odds history to make them live.
+
+The artifact metadata carries provenance so a model's pedigree is auditable:
+
+```json
+{ "data_source": "dataset", "dataset_path": "datasets/mlb_2023.jsonl",
+  "split": "time_based_prefix_80_20",
+  "unsourced_features": ["temp_f", "wind_mph", "implied_home_win_probability"] }
+```
+
+A model trained with `"data_source": "synthetic"` has **no real predictive
+power** — it exercises the machinery only.
 
 The bundled `DeterministicFallbackAdapter` remains available
 (`HANDIEDGE_MODEL_ADAPTER=fallback`, the default) for tests and local runs, and is
@@ -343,8 +393,18 @@ transaction rollback, immutable locked records, deterministic serialization.
 ## 15. Known limitations
 
 - The **default** adapter is a NON-PRODUCTION deterministic fallback. A real
-  `XGBoostModelAdapter` is included (section 12) but its bundled training data is
-  **synthetic** — retrain on real historical data before production use.
+  `XGBoostModelAdapter` is included (section 12); train it on real history via
+  `make build-dataset && make train-real` (section 12b) before production use —
+  a `synthetic`-provenance artifact has no predictive power.
+- The MLB Stats API loader's parsers and the leakage-safe builder are unit-tested
+  against recorded fixtures, but **the live network fetch has not been executed
+  in this environment** (egress to `statsapi.mlb.com` is blocked here). Run
+  `make build-dataset` once from a network-enabled environment to validate the
+  live path end to end.
+- `temp_f`, `wind_mph`, and `implied_home_win_probability` are unsourced when
+  training offline (recorded in artifact metadata as `unsourced_features`).
+- Real-data training covers **MLB only**; NPB has no equivalent public feed, so
+  an NPB model needs its own data source.
 - Calibration defaults to identity (reported `UNCALIBRATED`) until a fitted
   artifact is supplied; the XGBoost path ships a fitted Platt calibrator.
 - `1半n` weighting is a documented conservative interpretation, not a specific

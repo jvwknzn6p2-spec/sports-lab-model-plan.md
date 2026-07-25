@@ -31,6 +31,19 @@ install-xgboost:
 train-xgboost:
 	$(PY) scripts/train_xgboost.py --out artifacts/xgboost_mlb --rows 4000 --seed 7
 
+# Real MLB history: one networked build, then reproducible offline training.
+# Override the window with e.g. `make build-dataset START=2022-04-01 END=2022-10-01`
+START ?= 2023-04-01
+END ?= 2023-09-30
+DATASET ?= datasets/mlb_2023.jsonl
+
+build-dataset:
+	$(PY) scripts/build_dataset.py --start $(START) --end $(END) --out $(DATASET)
+
+train-real:
+	$(PY) scripts/train_xgboost.py --source dataset --dataset $(DATASET) \
+		--out artifacts/xgboost_mlb --model-version 2.0.0
+
 predict-xgboost:
 	HANDIEDGE_DATABASE_URL=sqlite+pysqlite:///./handiedge.db \
 	HANDIEDGE_MODEL_ADAPTER=xgboost \
