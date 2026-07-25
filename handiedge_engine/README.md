@@ -68,7 +68,21 @@ Key boundary rules:
   registry** (no giant conditionals).
 - All Decision-Engine thresholds come from typed configuration (`core/config.py`).
 
-## 3. Setup (local, SQLite)
+## 3. Setup
+
+### Claude Code on the web (automatic)
+
+A `SessionStart` hook at the repository root (`.claude/hooks/session-start.sh`)
+installs everything on session start, so tests and linters are runnable
+immediately: the pnpm workspace plus the engine with its `dev` and `xgboost`
+extras. It is idempotent, web-only (`CLAUDE_CODE_REMOTE`), and verifies the
+toolchain imports before finishing. Run it manually with:
+
+```bash
+CLAUDE_CODE_REMOTE=true ./.claude/hooks/session-start.sh
+```
+
+### Local (SQLite)
 
 ```bash
 cd handiedge_engine
@@ -345,14 +359,46 @@ matters most, and it is enforced structurally, not by convention:
 These are asserted by tests that mutate future games and require earlier rows to
 be bit-identical (`tests/unit/test_dataset_builder.py`).
 
-**Derived vs. unsourced features.** Eleven of the fourteen contract features are
-genuinely derived as-of from history (starter ERA/WHIP, team wOBA from boxscore
-batting lines, bullpen ERA, rest days, rolling park factor). Three —
-`temp_f`, `wind_mph`, `implied_home_win_probability` — have no historical source
-offline. They are **not invented**: they stay `None`, and the trained artifact
-records them under `unsourced_features` so nobody mistakes an inert input for a
-learned signal. Supply them at inference from Control Tower, or extend
-`build_dataset.py` with weather/odds history to make them live.
+**Feature sourcing.** Eleven of the fourteen contract features are derived as-of
+from schedule/boxscore history (starter ERA/WHIP, team wOBA from boxscore batting
+lines, bullpen ERA, rest days, rolling park factor). The remaining three come
+from external feeds — enable them with the flags below to reach **14/14 coverage**:
+
+```bash
+python scripts/build_dataset.py --start 2023-04-01 --end 2023-09-30 \
+    --out datasets/mlb_2023.jsonl \
+    --weather \                          # temp_f + wind_mph  (free, no key)
+    --odds-csv datasets/closing_odds.csv # implied_home_win_probability
+```
+
+| Feature | Source | Notes |
+|---|---|---|
+| `temp_f`, `wind_mph` | Open-Meteo **archive** API (free, no auth) | venue coordinates from MLB `/venues`; hourly reading nearest first pitch (`--first-pitch-hour`) |
+| `implied_home_win_probability` | your closing-odds export (`--odds-csv`) or The Odds API (`--odds-api`, needs `ODDS_API_KEY`) | always **vig-free** |
+
+Without a flag the feature stays `None` — **never invented** — and the trained
+artifact records it under `unsourced_features`, which is **measured from the
+training split** rather than assumed, so a feature you genuinely supplied is never
+mislabelled inert.
+
+*Odds CSV format* (`odds_style` is `american` by default, or `decimal`; you may
+instead supply a ready `implied_home_win_probability` column):
+
+```csv
+game_date,home_team,away_team,home_odds,away_odds
+2024-07-04,New York Yankees,Boston Red Sox,-160,140
+```
+
+De-vigging matters: raw book probabilities sum to more than 1, so feeding the raw
+number would bake the bookmaker's margin into the feature. Both sources normalize
+home+away to 1.
+
+⚠️ **Observed-vs-forecast assumption.** The weather source returns the *observed*
+conditions at game time, whereas live inference only has a *forecast*. That is a
+mild optimistic assumption — common in baseball modelling, but real. It is
+recorded in the dataset manifest as `weather_mode: observed`. To remove it, source
+archived forecasts instead. Odds use the **closing (pre-game)** line, so they are
+inputs rather than look-ahead.
 
 The artifact metadata carries provenance so a model's pedigree is auditable:
 
@@ -401,8 +447,12 @@ transaction rollback, immutable locked records, deterministic serialization.
   in this environment** (egress to `statsapi.mlb.com` is blocked here). Run
   `make build-dataset` once from a network-enabled environment to validate the
   live path end to end.
-- `temp_f`, `wind_mph`, and `implied_home_win_probability` are unsourced when
-  training offline (recorded in artifact metadata as `unsourced_features`).
+- `temp_f` and `wind_mph` come from **observed** archive weather, a mild
+  optimistic assumption versus the forecast available at prediction time
+  (`weather_mode: observed` in the manifest).
+- Historical odds have no free public feed: supply your own licensed closing-line
+  export (`--odds-csv`) or a paid `ODDS_API_KEY` (`--odds-api`). Without either,
+  `implied_home_win_probability` stays inert.
 - Real-data training covers **MLB only**; NPB has no equivalent public feed, so
   an NPB model needs its own data source.
 - Calibration defaults to identity (reported `UNCALIBRATED`) until a fitted

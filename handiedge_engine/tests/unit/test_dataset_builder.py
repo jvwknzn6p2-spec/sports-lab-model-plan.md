@@ -176,13 +176,79 @@ def test_earlier_games_do_influence_later_features():
 # --------------------------------------------------------------------------- #
 
 
-def test_unsourced_features_are_always_none():
-    """Weather/market inputs have no historical source and are never fabricated."""
+def test_unsourced_features_are_none_without_external_feeds():
+    """Weather/market inputs are never fabricated when no source is supplied."""
 
     rows = _build(_season())
     for row in rows:
         for name in UNSOURCED_FEATURES:
             assert row.features[_IDX[name]] is None, name
+
+
+def _build_with_feeds(games, weather=True, odds=True):
+    lookup = {g.game_pk: _boxscore(g) for g in games}
+    builder = AsOfDatasetBuilder(
+        boxscore_lookup=lambda pk: lookup.get(pk),
+        weather_lookup=(lambda d, v: (75.0, 8.0)) if weather else None,
+        odds_lookup=(lambda d, h, a: 0.57) if odds else None,
+    )
+    return builder.build(games)
+
+
+def test_weather_and_odds_feeds_populate_the_remaining_features():
+    rows = _build_with_feeds(_season())
+    for row in rows:
+        assert row.features[_IDX["temp_f"]] == 75.0
+        assert row.features[_IDX["wind_mph"]] == 8.0
+        assert row.features[_IDX["implied_home_win_probability"]] == 0.57
+
+
+def test_every_contract_feature_is_populated_with_all_feeds():
+    """With history + weather + odds, no feature in the contract stays inert."""
+
+    final = _build_with_feeds(_season())[-1]
+    assert all(value is not None for value in final.features)
+
+
+def test_weather_only_leaves_odds_unsourced():
+    final = _build_with_feeds(_season(), weather=True, odds=False)[-1]
+    assert final.features[_IDX["temp_f"]] is not None
+    assert final.features[_IDX["implied_home_win_probability"]] is None
+
+
+def test_external_feeds_do_not_break_leakage_safety():
+    """Adding weather/odds must not make a row depend on later games."""
+
+    games = _season()
+    baseline = _build_with_feeds(games)
+    mutated = [
+        replace(g, home_runs=99, away_runs=0) if g.game_date >= date(2024, 7, 10) else g
+        for g in games
+    ]
+    after = _build_with_feeds(mutated)
+
+    early_baseline = [r.features for r in baseline if r.game_date < "2024-07-10"]
+    early_after = [r.features for r in after if r.game_date < "2024-07-10"]
+    assert early_baseline == early_after
+
+
+def test_odds_lookup_receives_the_matchup():
+    """The odds source must be keyed by date and both teams, not just date."""
+
+    seen: list[tuple] = []
+
+    def odds_lookup(game_date, home, away):
+        seen.append((game_date, home, away))
+        return 0.5
+
+    games = _season(2)
+    lookup = {g.game_pk: _boxscore(g) for g in games}
+    AsOfDatasetBuilder(
+        boxscore_lookup=lambda pk: lookup.get(pk), odds_lookup=odds_lookup
+    ).build(games)
+
+    assert len(seen) == len(games)
+    assert all(isinstance(d, date) and h and a for d, h, a in seen)
 
 
 def test_derived_features_populate_once_history_accumulates():

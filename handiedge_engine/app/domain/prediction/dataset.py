@@ -34,7 +34,7 @@ from app.infrastructure.data_sources.mlb_stats_api import (
     TeamBattingLine,
 )
 
-# Which features the offline historical builder can legitimately derive.
+# Features derivable from schedule/boxscore history alone.
 DERIVED_FEATURES: frozenset[str] = frozenset(
     {
         "home_starter_era",
@@ -51,10 +51,27 @@ DERIVED_FEATURES: frozenset[str] = frozenset(
     }
 )
 
-# Not obtainable from schedule/boxscore history. Declared, never fabricated.
+# Features that need an external feed. They are only populated when the matching
+# source is supplied to the builder; otherwise they stay None (never fabricated).
+WEATHER_FEATURES: frozenset[str] = frozenset({"temp_f", "wind_mph"})
+ODDS_FEATURES: frozenset[str] = frozenset({"implied_home_win_probability"})
+EXTERNAL_FEATURES: frozenset[str] = WEATHER_FEATURES | ODDS_FEATURES
+
+# Features with no source at all when only schedule/boxscore history is used.
 UNSOURCED_FEATURES: tuple[str, ...] = tuple(
     name for name in FEATURE_NAMES if name not in DERIVED_FEATURES
 )
+
+
+def unsourced_features(*, weather: bool, odds: bool) -> tuple[str, ...]:
+    """Features that will carry no signal given the supplied external sources."""
+
+    sourced = set(DERIVED_FEATURES)
+    if weather:
+        sourced |= WEATHER_FEATURES
+    if odds:
+        sourced |= ODDS_FEATURES
+    return tuple(name for name in FEATURE_NAMES if name not in sourced)
 
 # Minimum sample sizes before a rolling statistic is considered meaningful.
 MIN_PITCHER_INNINGS = 5.0
@@ -75,6 +92,22 @@ _WOBA_WEIGHTS = {
 
 class BoxscoreLookup(Protocol):
     def __call__(self, game_pk: str) -> GameBoxscore | None: ...
+
+
+class WeatherLookup(Protocol):
+    """Returns ``(temp_f, wind_mph)`` for a venue on a date; None when unknown."""
+
+    def __call__(
+        self, game_date: date, venue_id: str | None
+    ) -> tuple[float | None, float | None]: ...
+
+
+class OddsLookup(Protocol):
+    """Returns the vig-free pre-game implied home win probability, or None."""
+
+    def __call__(
+        self, game_date: date, home_team: str, away_team: str
+    ) -> float | None: ...
 
 
 @dataclass
@@ -167,8 +200,15 @@ class DatasetRow:
 class AsOfDatasetBuilder:
     """Builds leakage-safe training rows from chronologically ordered games."""
 
-    def __init__(self, boxscore_lookup: BoxscoreLookup | None = None) -> None:
+    def __init__(
+        self,
+        boxscore_lookup: BoxscoreLookup | None = None,
+        weather_lookup: WeatherLookup | None = None,
+        odds_lookup: OddsLookup | None = None,
+    ) -> None:
         self._boxscore = boxscore_lookup
+        self._weather = weather_lookup
+        self._odds = odds_lookup
         self._pitchers: dict[str, _PitcherState] = defaultdict(_PitcherState)
         self._teams: dict[str, _TeamState] = defaultdict(_TeamState)
         self._venue_runs: dict[str, int] = defaultdict(int)
@@ -219,9 +259,20 @@ class AsOfDatasetBuilder:
             "away_bullpen_rest_days": _rest_days(away.last_game_date, game.game_date),
             "park_factor": self._park_factor(game.venue_id),
         }
-        # Features with no historical source stay None (never invented).
-        for name in UNSOURCED_FEATURES:
-            values[name] = None
+        # External feeds. Both describe conditions/prices known BEFORE first pitch,
+        # so they are inputs rather than leakage. Absent a source they stay None —
+        # never invented. (See weather.py on observed-vs-forecast provenance.)
+        temp_f = wind_mph = None
+        if self._weather is not None:
+            temp_f, wind_mph = self._weather(game.game_date, game.venue_id)
+        values["temp_f"] = temp_f
+        values["wind_mph"] = wind_mph
+
+        values["implied_home_win_probability"] = (
+            self._odds(game.game_date, game.home_team, game.away_team)
+            if self._odds is not None
+            else None
+        )
 
         return DatasetRow(
             game_pk=game.game_pk,

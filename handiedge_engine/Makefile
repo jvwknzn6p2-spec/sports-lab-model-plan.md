@@ -38,7 +38,15 @@ END ?= 2023-09-30
 DATASET ?= datasets/mlb_2023.jsonl
 
 build-dataset:
-	$(PY) scripts/build_dataset.py --start $(START) --end $(END) --out $(DATASET)
+	$(PY) scripts/build_dataset.py --start $(START) --end $(END) --out $(DATASET) --weather
+
+# Full 14/14 feature coverage also needs a closing-odds export:
+#   make build-dataset-full ODDS_CSV=datasets/closing_odds.csv
+ODDS_CSV ?= datasets/closing_odds.csv
+
+build-dataset-full:
+	$(PY) scripts/build_dataset.py --start $(START) --end $(END) --out $(DATASET) \
+		--weather --odds-csv $(ODDS_CSV)
 
 train-real:
 	$(PY) scripts/train_xgboost.py --source dataset --dataset $(DATASET) \

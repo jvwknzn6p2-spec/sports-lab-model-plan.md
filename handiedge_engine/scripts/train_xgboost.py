@@ -27,7 +27,6 @@ import xgboost as xgb
 # Ensure the project root is importable when run as a plain script.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.domain.prediction.dataset import UNSOURCED_FEATURES  # noqa: E402
 from app.domain.prediction.features import FEATURE_NAMES, FEATURE_VERSION  # noqa: E402
 from app.domain.prediction.poisson import (  # noqa: E402
     margin_distribution,
@@ -245,10 +244,10 @@ def main() -> None:
                 "data_source": args.source,
                 "dataset_path": args.dataset if args.source == "dataset" else None,
                 "split": "time_based_prefix_80_20",
-                # Inputs that carried no signal during training (offline-unsourced).
-                "unsourced_features": (
-                    list(UNSOURCED_FEATURES) if args.source == "dataset" else []
-                ),
+                # Inputs that carried NO signal during training, measured from the
+                # actual training split rather than assumed — so a feature that was
+                # genuinely supplied (e.g. weather/odds) is never mislabelled inert.
+                "unsourced_features": unsourced_cols,
             },
             indent=2,
         ),
