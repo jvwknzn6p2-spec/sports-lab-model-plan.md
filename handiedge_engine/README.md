@@ -30,7 +30,8 @@ The vertical slice is:
 
 ```mermaid
 flowchart LR
-  CT[Control Tower payload] --> PE[Prediction Engine]
+  FE[Feature Engineering] --> CT[Control Tower payload]
+  CT --> PE[Prediction Engine]
   PE --> CAL[Calibration]
   CAL --> DE[Decision Engine]
   DE --> AI[AI Multi-Agent Review]
@@ -50,6 +51,28 @@ reasoning pass automatically when `ANTHROPIC_API_KEY` is set — degrading back 
 deterministic-only, never blocking a pick, if the model errors or refuses. Every
 verdict, flag, and tier movement is persisted in the locked prediction and the
 audit trail.
+
+### Daily predictions (the personal-tool entry point)
+
+`handiedge daily` is the one-command path from a real MLB date to predictions.
+It runs the **Feature Engineering** front stage — fetch the day's slate and
+probable starters from the public MLB Stats API, pull each starter's season
+ERA/WHIP and each team's season wOBA (`app/domain/feature_engineering`), engineer
+the model feature vector, and assemble a validated Control Tower payload — then
+runs the full pipeline and prints a scannable daily report.
+
+```bash
+handiedge daily --date 2026-07-25            # today's card (human-readable)
+handiedge daily --date 2026-07-25 --json     # raw prediction JSON
+handiedge daily --cache-dir ./mlb-cache      # cache API responses on disk
+```
+
+Missing feeds are never faked: bullpen, park, weather, and market odds are
+optional *enhancers* — their absence is recorded in `missing_features` and
+surfaced by the AI Data Auditor, while starters + team offense drive the
+core-signal completeness that gates a prediction. Wire an odds/weather lookup
+into `DailySlateService` (or a trained XGBoost artifact via `model_artifact_dir`)
+to raise confidence beyond the bundled non-production fallback.
 
 ## 2. Architecture & domain boundaries
 

@@ -9,9 +9,10 @@ product blueprint.
 ## Where things live
 
 - **`handiedge_engine/`** — the production system (Python 3.11, FastAPI, XGBoost,
-  SQLAlchemy + Alembic). This is the executable pipeline: data ingestion →
-  prediction → calibration → decision → **AI multi-agent review** → lock →
-  settlement → error analysis → self-learning. Start here.
+  SQLAlchemy + Alembic). This is the executable pipeline: **feature engineering** →
+  prediction → calibration → **AI multi-agent review** → prediction lock →
+  settlement → error analysis → self-learning. Start here. Generate real daily
+  MLB predictions with one command: `python -m app.cli.main daily --date YYYY-MM-DD`.
 - **`sports-lab/model-plan.md`** — the v1.0 technical plan (source of truth for
   scope and terminology).
 - **`lib/`** — the shared pnpm/TypeScript workspace scaffold (API spec, generated
@@ -27,6 +28,8 @@ All commands run from `handiedge_engine/`:
 - `python -m pytest` — full test suite (unit + integration + contract)
 - `bash scripts/run_e2e.sh` — end-to-end lifecycle demo on SQLite (migrate →
   validate → predict → **AI review** → lock → settle → analyze → learn)
+- `python -m app.cli.main daily --date YYYY-MM-DD` — **generate real daily MLB
+  predictions** from the live MLB Stats API (feature engineering → full pipeline)
 - `python -m app.cli.main --help` — CLI (same services as the API, no duplicated logic)
 - `uvicorn app.main:create_app --factory` — run the API
 - Required env: `HANDIEDGE_DATABASE_URL` (Postgres in prod; SQLite for local/tests)

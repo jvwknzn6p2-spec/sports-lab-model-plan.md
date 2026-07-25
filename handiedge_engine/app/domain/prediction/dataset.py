@@ -26,6 +26,7 @@ from datetime import date
 from itertools import groupby
 from typing import Protocol
 
+from app.domain.feature_engineering import sabermetrics
 from app.domain.prediction.features import FEATURE_NAMES
 from app.infrastructure.data_sources.mlb_stats_api import (
     GameBoxscore,
@@ -79,17 +80,6 @@ MIN_TEAM_GAMES = 5
 MIN_BULLPEN_INNINGS = 10.0
 MIN_VENUE_GAMES = 5
 
-# Standard wOBA linear weights (FanGraphs-style, modern-era approximation).
-_WOBA_WEIGHTS = {
-    "bb": 0.69,
-    "hbp": 0.72,
-    "1b": 0.89,
-    "2b": 1.27,
-    "3b": 1.62,
-    "hr": 2.10,
-}
-
-
 class BoxscoreLookup(Protocol):
     def __call__(self, game_pk: str) -> GameBoxscore | None: ...
 
@@ -120,12 +110,12 @@ class _PitcherState:
     def era(self) -> float | None:
         if self.innings < MIN_PITCHER_INNINGS:
             return None
-        return 9.0 * self.earned_runs / self.innings
+        return sabermetrics.earned_run_average(self.earned_runs, self.innings)
 
     def whip(self) -> float | None:
         if self.innings < MIN_PITCHER_INNINGS:
             return None
-        return (self.walks + self.hits) / self.innings
+        return sabermetrics.whip(self.walks, self.hits, self.innings)
 
 
 @dataclass
@@ -140,25 +130,24 @@ class _TeamState:
         if self.games < MIN_TEAM_GAMES:
             return None
         b = self.batting
-        denominator = (
-            b["at_bats"] + b["walks"] - b["intentional_walks"] + b["sac_flies"] + b["hbp"]
+        return sabermetrics.woba(
+            at_bats=b["at_bats"],
+            walks=b["walks"],
+            intentional_walks=b["intentional_walks"],
+            hit_by_pitch=b["hbp"],
+            singles=b["singles"],
+            doubles=b["doubles"],
+            triples=b["triples"],
+            home_runs=b["home_runs"],
+            sac_flies=b["sac_flies"],
         )
-        if denominator <= 0:
-            return None
-        numerator = (
-            _WOBA_WEIGHTS["bb"] * (b["walks"] - b["intentional_walks"])
-            + _WOBA_WEIGHTS["hbp"] * b["hbp"]
-            + _WOBA_WEIGHTS["1b"] * b["singles"]
-            + _WOBA_WEIGHTS["2b"] * b["doubles"]
-            + _WOBA_WEIGHTS["3b"] * b["triples"]
-            + _WOBA_WEIGHTS["hr"] * b["home_runs"]
-        )
-        return numerator / denominator
 
     def bullpen_era(self) -> float | None:
         if self.bullpen_innings < MIN_BULLPEN_INNINGS:
             return None
-        return 9.0 * self.bullpen_earned_runs / self.bullpen_innings
+        return sabermetrics.earned_run_average(
+            self.bullpen_earned_runs, self.bullpen_innings
+        )
 
 
 @dataclass

@@ -102,6 +102,50 @@ def ai_review(prediction_id: str) -> None:
     )
 
 
+@app.command("daily")
+def daily(
+    target_date: str = typer.Option(
+        None, "--date", help="Slate date YYYY-MM-DD (default: today, UTC)."
+    ),
+    league: str = typer.Option("MLB", help="League: MLB or NPB."),
+    season: int = typer.Option(None, help="Season for season stats (default: date's year)."),
+    cache_dir: str = typer.Option(None, help="Optional on-disk cache dir for API responses."),
+    as_json: bool = typer.Option(False, "--json", help="Emit raw prediction JSON, not the report."),
+) -> None:
+    """Generate real daily MLB predictions from the live MLB Stats API.
+
+    Runs the full pipeline: Feature Engineering (schedule + season stats) ->
+    Prediction -> Calibration -> AI review -> decision, and prints a daily report.
+    """
+
+    from datetime import date as _date
+
+    from app.core.clock import utc_now
+    from app.core.enums import League
+    from app.domain.report.daily import render_daily_report
+    from app.infrastructure.data_sources.mlb_live import MlbLiveFeed
+    from app.services.daily_slate_service import DailySlateService
+
+    slate_date = _date.fromisoformat(target_date) if target_date else utc_now().date()
+    settings = get_settings()
+    feed = MlbLiveFeed(cache_dir=cache_dir)
+    builder = DailySlateService(feed, schema_version=settings.schema_version)
+    result = builder.build_payload(slate_date, league=League(league), season=season)
+
+    with session_scope() as session:
+        service = OrchestrationService(session, settings, get_adapter("default"))
+        response = service.run_pipeline(
+            result.payload.model_dump(mode="json"), correlation_id="daily-cli"
+        )
+
+    if as_json:
+        _emit(response.model_dump(mode="json"))
+    else:
+        typer.echo(render_daily_report(response))
+        if result.games_included == 0:
+            typer.echo("\n(no games on this slate)")
+
+
 @app.command("lock")
 def lock(prediction_id: str, supersede: bool = typer.Option(False)) -> None:
     """Lock a prediction, making it immutable."""

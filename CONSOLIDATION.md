@@ -38,10 +38,22 @@ so the deliverable remains one executable system.
 | `learner-features-bug-fix-e7c5wy` | TS schedule + core stats | Superseded — ingestion lives in the engine |
 
 The five superseded TypeScript pipeline branches were intentionally **not
-merged**: doing so would reintroduce a second, parallel implementation of the
-same pipeline — exactly the duplication this consolidation removes. The shared
-TS workspace scaffold in `lib/` (API spec, generated clients, DB schema) is
-retained from the repo baseline and is unaffected.
+merged as parallel code**: doing so would reintroduce a second, parallel
+implementation of the same pipeline — exactly the duplication this consolidation
+removes. Instead, their **best ideas were merged into the Python engine**:
+
+- The **daily data-collection + sabermetrics** approach from `data-collection-step-1`
+  and `step2-pitcher-batting-analysis` (which MLB Stats API endpoints/fields to
+  pull for the day's slate, probable starters, season ERA/WHIP, and team wOBA) is
+  now the Python **Feature Engineering** front stage: `app/domain/feature_engineering`
+  (shared sabermetrics — one wOBA/ERA/WHIP implementation for both training and
+  daily scoring), `app/infrastructure/data_sources/mlb_live.py`, and
+  `app/services/daily_slate_service.py`, driven by the `handiedge daily` command.
+- The **AI multi-agent review** from `step-9` (ported earlier) at `app/domain/ai_review`.
+
+The shared TS workspace scaffold in `lib/` (API spec, generated clients, DB
+schema) is retained from the repo baseline and is unaffected. There is now **one
+prediction pipeline** (Python); no TypeScript prediction code is maintained.
 
 ## What the AI-review port preserves
 
@@ -66,10 +78,14 @@ TypeScript `lib/ai-review` package, keeping its core invariant and structure:
 ## Verification
 
 The consolidated system builds and passes end to end across every required
-stage:
+stage — Feature Engineering → Prediction → Calibration → AI Multi-Agent Review →
+Prediction Lock → Settlement → Error Analysis → Self Learning:
 
-- `python -m pytest` — **206 passed** (132 baseline + 74 new AI-review tests).
+- `python -m pytest` — **213 passed** (132 baseline + 74 AI-review + 7 daily-path tests).
 - `bash scripts/run_e2e.sh` — full lifecycle green: migrate → validate → predict
   (incl. calibration + AI review) → AI review → lock → settle → error analysis →
   learning workflow.
+- `handiedge daily --date YYYY-MM-DD` — feature-engineers a real MLB slate and runs
+  the whole pipeline to a daily report (verified offline with recorded fixtures;
+  live runs need outbound access to `statsapi.mlb.com`).
 - `ruff check` — clean on all new/changed files.
