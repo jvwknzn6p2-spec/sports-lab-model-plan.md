@@ -22,7 +22,11 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `sports-lab/model-plan.md` — the v1.0 technical plan (source of truth for **what** we build and the step order).
+- `lib/sports-lab/` — the MLB prediction domain package (`@workspace/sports-lab`). Currently implements **Step 1** (daily schedule fetch + store) under `src/schedule/`. See its `README.md`.
+- `lib/db/` — Drizzle schema + client (source of truth for DB schema).
+- `lib/api-spec/` — OpenAPI spec; `lib/api-zod` and `lib/api-client-react` are generated from it.
+- `artifacts/api-server/` — Express API. `artifacts/mockup-sandbox/` — React UI sandbox.
 
 ## Architecture decisions
 

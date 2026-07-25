@@ -1,0 +1,98 @@
+{
+  "copyright": "Copyright 2024 MLB Advanced Media, L.P.",
+  "totalItems": 2,
+  "totalGames": 2,
+  "dates": [
+    {
+      "date": "2024-07-25",
+      "totalGames": 2,
+      "games": [
+        {
+          "gamePk": 745804,
+          "gameGuid": "a1b2c3d4-0000-0000-0000-000000000001",
+          "link": "/api/v1.1/game/745804/feed/live",
+          "gameType": "R",
+          "season": "2024",
+          "gameDate": "2024-07-25T23:10:00Z",
+          "officialDate": "2024-07-25",
+          "status": {
+            "abstractGameState": "Preview",
+            "codedGameState": "S",
+            "detailedState": "Scheduled",
+            "statusCode": "S",
+            "startTimeTBD": false
+          },
+          "teams": {
+            "away": {
+              "leagueRecord": { "wins": 55, "losses": 48, "pct": ".534" },
+              "team": { "id": 108, "name": "Los Angeles Angels", "link": "/api/v1/teams/108" },
+              "probablePitcher": {
+                "id": 656302,
+                "fullName": "Tyler Anderson",
+                "link": "/api/v1/people/656302"
+              },
+              "splitSquad": false,
+              "seriesNumber": 34
+            },
+            "home": {
+              "leagueRecord": { "wins": 60, "losses": 44, "pct": ".577" },
+              "team": { "id": 117, "name": "Houston Astros", "link": "/api/v1/teams/117" },
+              "probablePitcher": {
+                "id": 664299,
+                "fullName": "Framber Valdez",
+                "link": "/api/v1/people/664299"
+              },
+              "splitSquad": false,
+              "seriesNumber": 34
+            }
+          },
+          "venue": { "id": 2392, "name": "Minute Maid Park", "link": "/api/v1/venues/2392" },
+          "doubleHeader": "N",
+          "gameNumber": 1,
+          "dayNight": "night",
+          "scheduledInnings": 9
+        },
+        {
+          "gamePk": 745812,
+          "gameGuid": "a1b2c3d4-0000-0000-0000-000000000002",
+          "link": "/api/v1.1/game/745812/feed/live",
+          "gameType": "R",
+          "season": "2024",
+          "gameDate": "2024-07-25T23:40:00Z",
+          "officialDate": "2024-07-25",
+          "status": {
+            "abstractGameState": "Preview",
+            "codedGameState": "S",
+            "detailedState": "Scheduled",
+            "statusCode": "S",
+            "startTimeTBD": false
+          },
+          "teams": {
+            "away": {
+              "leagueRecord": { "wins": 49, "losses": 54, "pct": ".476" },
+              "team": { "id": 158, "name": "Milwaukee Brewers", "link": "/api/v1/teams/158" },
+              "splitSquad": false,
+              "seriesNumber": 33
+            },
+            "home": {
+              "leagueRecord": { "wins": 52, "losses": 51, "pct": ".505" },
+              "team": { "id": 112, "name": "Chicago Cubs", "link": "/api/v1/teams/112" },
+              "probablePitcher": {
+                "id": 594798,
+                "fullName": "Jameson Taillon",
+                "link": "/api/v1/people/594798"
+              },
+              "splitSquad": false,
+              "seriesNumber": 33
+            }
+          },
+          "venue": { "id": 17, "name": "Wrigley Field", "link": "/api/v1/venues/17" },
+          "doubleHeader": "N",
+          "gameNumber": 1,
+          "dayNight": "day",
+          "scheduledInnings": 9
+        }
+      ]
+    }
+  ]
+}
