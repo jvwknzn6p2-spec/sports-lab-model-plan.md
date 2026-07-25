@@ -63,3 +63,37 @@ export const BULLPEN_FATIGUE_CAP = 0.06;
  * deliberately conservative.
  */
 export const HOME_FIELD_ADVANTAGE = 1.02;
+
+/* -------------------------------------------------------------------------- */
+/* Step 5 — Monte Carlo simulation                                            */
+/* -------------------------------------------------------------------------- */
+
+/** Simulations per game. The plan's figure; enough for ~0.5% resolution. */
+export const DEFAULT_ITERATIONS = 10_000;
+
+/**
+ * Default PRNG seed. Fixed rather than time-based so a re-run of the same
+ * game with the same inputs reproduces the same probabilities exactly.
+ */
+export const DEFAULT_SEED = 20_260_101;
+
+/**
+ * Negative-binomial dispersion `k` for team runs. Real MLB team run totals
+ * have a variance near 9.5 against a mean near 4.4 — far more spread than a
+ * Poisson (whose variance equals its mean). Since variance = mean + mean²/k,
+ * k ≈ 4 reproduces that spread. Getting this right matters more for totals
+ * and run lines than for the moneyline.
+ */
+export const RUNS_DISPERSION = 4.0;
+
+/** MLB's standard run line. */
+export const DEFAULT_RUN_LINE = 1.5;
+
+/**
+ * Extra innings start with a runner on second, which roughly doubles the
+ * scoring rate of a normal inning.
+ */
+export const EXTRA_INNING_RUN_MULTIPLIER = 2.0;
+
+/** Safety bound on extra-inning loops so a simulation can never hang. */
+export const MAX_EXTRA_INNINGS = 20;

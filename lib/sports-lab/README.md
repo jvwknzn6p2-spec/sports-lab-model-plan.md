@@ -1,10 +1,11 @@
-# @workspace/sports-lab — Steps 3–4: context, validation, baseline model
+# @workspace/sports-lab — Steps 3–5: context, validation, model, simulation
 
-Implements **Step 3** and **Step 4** of the
-[model plan](../../sports-lab/model-plan.md): the context-data layer (recent
-form, injuries, weather, ballpark factors), the **validation / flagging layer**
-that decides how far each game's data can be trusted, and the **baseline
-statistical model** that turns those inputs into expected runs per team.
+Implements **Steps 3–5** of the [model plan](../../sports-lab/model-plan.md):
+the context-data layer (recent form, injuries, weather, ballpark factors), the
+**validation / flagging layer** that decides how far each game's data can be
+trusted, the **baseline statistical model** that turns those inputs into
+expected runs per team, and the **Monte Carlo simulation** that converts
+expected runs into win / run-line / total probabilities.
 
 It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
 input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
@@ -23,8 +24,10 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `context/ballpark.ts` | static park-factor table with neutral fallback |
 | `context/assemble.ts` | package normalized parts into a `GameContext` |
 | `validate.ts` | the flagging layer → `ValidationResult` (flags + confidence cap) |
-| `model/constants.ts` | every tunable number the baseline model uses, in one place |
+| `model/constants.ts` | every tunable number the model uses, in one place |
 | `model/baseline.ts` | Step 4 — expected runs per team as an explainable step chain |
+| `model/random.ts` | seeded PRNG + Poisson / gamma / negative-binomial sampling |
+| `model/simulate.ts` | Step 5 — Monte Carlo → moneyline, run line, total probabilities |
 
 ## Weather is observed-vs-forecast aware
 
@@ -90,6 +93,42 @@ Design choices worth knowing:
 All constants live in `model/constants.ts` as a single calibration surface for
 Step 8 (backtesting). They are reasonable starting points, not fitted values.
 
+## Step 5 — the Monte Carlo simulation
+
+`simulateGame` plays the game 10,000 times and counts outcomes:
+
+```
+Moneyline:   Astros 67%  |  Angels 33%
+Run line:    Astros -1.5 covers 55%  |  Angels -1.5 covers 23%
+Total:       Predicted 10.3  (Line 9.5)  → OVER 51% / UNDER 49%
+```
+
+Two decisions carry most of the weight here:
+
+**Runs are negative binomial, not Poisson.** A Poisson's variance equals its
+mean, but a team averaging 4.4 runs really has a variance near 9.5 — some
+nights they score 0, some nights 12. Modelling runs as Poisson would make
+totals look far more predictable than they are and would systematically
+misprice over/under bets. `RUNS_DISPERSION` (k ≈ 4) reproduces the real
+spread, via a Gamma–Poisson mixture.
+
+**Every run is reproducible.** The simulation never touches `Math.random()`;
+it uses a seeded mulberry32 PRNG, and the result records its `seed` and
+`iterations`. The same game with the same inputs always yields the same
+probabilities — which is what makes a logged prediction auditable and lets
+Step 8 backtest fairly.
+
+Ties are resolved by simulating extra innings (with the automatic runner's
+scoring boost) rather than being dropped, so the two moneyline sides always
+sum to 1. As a sanity check, the simulated extra-innings rate lands near
+8–9%, matching real MLB.
+
+Complementary probabilities are derived from their already-rounded
+counterpart, so pairs sum to exactly 1 — Step 6's EV maths depends on that.
+
+Runs for the two teams are sampled independently; real games have mild
+dependence (a blowout changes bullpen usage) that v1.0 deliberately ignores.
+
 ## Usage
 
 ```ts
@@ -111,15 +150,19 @@ const result = validateGame(coreGame, context, { asOf: runTimestamp });
 // Step 4 — only model games whose required inputs are present.
 if (!result.hasErrors) {
   const baseline = computeBaseline(coreGame, context);
-  // baseline.home/away.expectedRuns, .expectedTotal, .expectedMargin
   console.log(explainEstimate(baseline.home).join("\n"));
+
+  // Step 5 — convert expected runs into probabilities.
+  const sim = simulateGame(baseline, { totalLine: 9.5 });
+  // sim.moneyline.home, sim.runLine.homeCoversMinus, sim.total.over ...
+  console.log(explainSimulation(sim, { home: "Astros", away: "Angels" }).join("\n"));
 }
 ```
 
-Step 5 (Monte Carlo) consumes `expectedRuns` per side to simulate the game;
-Step 7 (confidence ranking) consumes `confidenceCap` as an upper bound; the
-daily report (Step 10) renders `flags` in the card's "Flags:" line and the
-step trace as the "Key factors" explanation.
+Step 6 (EV) consumes `sim.moneyline` / `sim.runLine` / `sim.total` to compare
+against sportsbook odds; Step 7 (confidence ranking) consumes `confidenceCap`
+as an upper bound; the daily report (Step 10) renders `flags` in the card's
+"Flags:" line and the step traces as the "Key factors" explanation.
 
 ## Develop
 

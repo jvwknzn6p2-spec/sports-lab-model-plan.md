@@ -32,3 +32,15 @@ export {
   type TeamRunEstimate,
 } from "./model/baseline";
 export * as baselineConstants from "./model/constants";
+
+// Step 5 — Monte Carlo simulation.
+export {
+  simulateGame,
+  explainSimulation,
+  type SimulationOptions,
+  type SimulationResult,
+  type MoneylineProbabilities,
+  type RunLineProbabilities,
+  type TotalProbabilities,
+} from "./model/simulate";
+export { createRng, type Rng } from "./model/random";
