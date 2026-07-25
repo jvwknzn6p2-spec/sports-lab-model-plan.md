@@ -97,3 +97,33 @@ export const EXTRA_INNING_RUN_MULTIPLIER = 2.0;
 
 /** Safety bound on extra-inning loops so a simulation can never hang. */
 export const MAX_EXTRA_INNINGS = 20;
+
+/* -------------------------------------------------------------------------- */
+/* Step 7 — Confidence ranking                                                */
+/* -------------------------------------------------------------------------- */
+
+/** Edge thresholds (as fractions) for the starting S / A / B tier. */
+export const CONFIDENCE_EDGE_S = 0.08;
+export const CONFIDENCE_EDGE_A = 0.05;
+export const CONFIDENCE_EDGE_B = 0.03;
+
+/**
+ * An edge this large is treated as suspicious rather than excellent. The
+ * market is sharp (plan Section 7), so a double-digit edge more often means a
+ * stale line, a bad input, or a model error than a real opportunity.
+ */
+export const IMPLAUSIBLE_EDGE = 0.15;
+
+/**
+ * How many Monte Carlo standard errors the edge must clear to be treated as
+ * a real signal rather than simulation noise. With 10,000 iterations the
+ * standard error is ~0.5%, so a 3× bar means edges under ~1.5% never rank high.
+ */
+export const MIN_EDGE_TO_NOISE_RATIO = 3;
+
+/**
+ * Deadband around neutral for the recent-form agreement check. Without it the
+ * test sits on a knife edge at exactly 1.0 and roughly half of all games would
+ * be penalised for a fraction of a percent — noise, not disagreement.
+ */
+export const FORM_DISAGREEMENT_TOLERANCE = 0.02;

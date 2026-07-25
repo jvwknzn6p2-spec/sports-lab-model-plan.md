@@ -11,6 +11,17 @@ export * from "./schemas";
 export * from "./flags";
 export * from "./validate";
 
+// Step 7 — confidence ranking.
+export {
+  assignConfidence,
+  rankGames,
+  explainConfidence,
+  type ConfidenceAssessment,
+  type ConfidenceFactor,
+  type ConfidenceInputs,
+  type FactorImpact,
+} from "./confidence";
+
 export { computeRecentForm } from "./context/recent-form";
 export { lookupBallparkFactors, SEED_PARK_COUNT } from "./context/ballpark";
 export {

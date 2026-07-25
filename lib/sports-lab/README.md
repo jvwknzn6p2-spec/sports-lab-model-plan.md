@@ -1,12 +1,13 @@
-# @workspace/sports-lab — Steps 3–6 of the AI Sports Lab pipeline
+# @workspace/sports-lab — Steps 3–7 of the AI Sports Lab pipeline
 
-Implements **Steps 3–6** of the [model plan](../../sports-lab/model-plan.md):
+Implements **Steps 3–7** of the [model plan](../../sports-lab/model-plan.md):
 the context-data layer (recent form, injuries, weather, ballpark factors), the
 **validation / flagging layer** that decides how far each game's data can be
 trusted, the **baseline statistical model** that turns those inputs into
 expected runs per team, the **Monte Carlo simulation** that converts expected
-runs into win / run-line / total probabilities, and the **EV layer** that
-compares those probabilities against sportsbook odds to find value.
+runs into win / run-line / total probabilities, the **EV layer** that compares
+those probabilities against sportsbook odds to find value, and the
+**confidence ranking** that reduces all of it to a single S/A/B/C letter.
 
 It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
 input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
@@ -31,6 +32,7 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `model/simulate.ts` | Step 5 — Monte Carlo → moneyline, run line, total probabilities |
 | `odds/conversion.ts` | American/decimal odds, implied probability, vig removal |
 | `odds/ev.ts` | Step 6 — edge and expected value per bet; flags value bets |
+| `confidence.ts` | Step 7 — combines all of the above into an S/A/B/C rank |
 
 ## Weather is observed-vs-forecast aware
 
@@ -172,6 +174,49 @@ missing market means "no bet here", not a broken game.
 `minEdge` (default 2 percentage points) keeps marginal disagreements — which
 are mostly model noise — from being flagged as value.
 
+## Step 7 — the confidence rank
+
+`assignConfidence` reduces Steps 3–6 to one letter, and shows its working:
+
+```
+Confidence: S  (Astros -1.5)
+  + Edge size: Astros -1.5 carries a 8.5% edge over the de-vigged market — a starting tier of S.
+  + Simulation noise: The edge is 17.2× the simulation's standard error.
+  · Recent form: Recent form is flat for the home team (-0.4%) — neither confirms nor contradicts.
+  + Data quality: All required inputs present and current.
+```
+
+The three plan inputs map onto three distinct roles:
+
+| Plan input | Role here |
+|---|---|
+| Edge size | Sets the **starting tier** (S ≥ 8%, A ≥ 5%, B ≥ 3%) |
+| Component agreement | Applies **penalties**, one rank step each |
+| Data completeness | A **hard ceiling** — Step 3's `confidenceCap` |
+
+Two commitments that shape the whole design:
+
+**Bigger is not always better.** An edge past `IMPLAUSIBLE_EDGE` (15%) *lowers*
+the rank. Sportsbook lines are sharp, so an edge that large is more often a
+stale line or a bad input than a real opportunity — and treating it as our best
+bet is exactly how a data bug becomes a confident recommendation.
+
+**Data quality is a ceiling, never a bonus.** Clean data cannot promote a weak
+edge; it can only fail to demote a strong one. A game with perfect data and no
+edge is a C — there is nothing to act on, which is what "informational only"
+means in the plan.
+
+The agreement checks are:
+
+- **Simulation noise** — the edge must clear `MIN_EDGE_TO_NOISE_RATIO` (3×) of
+  the Monte Carlo standard error, so an under-simulated run cannot rank high.
+- **Recent form** — does form back the team being backed? A deadband of
+  ±2% keeps a fraction-of-a-percent wobble from counting as disagreement.
+- **Forecast weather on a totals pick** — totals are weather-driven, and a
+  forecast is an estimate of an estimate. Observed readings carry no penalty.
+- **Baseline vs simulation direction** — a consistency guard. These are derived
+  from one another, so divergence means something is broken.
+
 ## Usage
 
 ```ts
@@ -202,14 +247,21 @@ if (!result.hasErrors) {
   // Step 6 — compare against the book and find value.
   const evaluation = evaluateOdds(sim, odds, { home: "Astros", away: "Angels" });
   console.log(explainEvaluation(evaluation).join("\n"));
-  // evaluation.valueBets — positive-EV bets clearing minEdge, best first
+
+  // Step 7 — reduce it all to one letter.
+  const confidence = assignConfidence({ validation: result, baseline, simulation: sim, evaluation });
+  console.log(explainConfidence(confidence).join("\n"));
 }
 ```
 
-Step 7 (confidence ranking) consumes `confidenceCap` as an upper bound and
-`valueBets` as the edge input; the daily report (Step 10) renders `flags` in
-the card's "Flags:" line, the step traces as "Key factors", and
-`explainEvaluation` as the "Value:" block.
+`rankGames` runs the same assessment over a slate and sorts it best-first,
+which is the "all games sorted by confidence" view from plan Section 6.
+
+The daily report (Step 10) renders `flags` in the card's "Flags:" line, the
+baseline step traces as "Key factors", `explainEvaluation` as the "Value:"
+block, and the rank as the card header. Step 8 (backtesting) checks whether
+S actually beat A actually beat B — and recalibrates the thresholds in
+`model/constants.ts` if not.
 
 ## Develop
 
