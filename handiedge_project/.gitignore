@@ -1,0 +1,33 @@
+# Secrets / local env
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenv
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Runtime data lake (HANDIEDGE_DATA_DIR) — live/runtime-synced snapshots, normalized
+# rows, datasets and artifacts. This is runtime/stale data (may contain vendor deep
+# links, limits, odds) and must NEVER be committed or shipped.
+/data/
+data/
+*.npz
+*.pkl
+*.meta.json

@@ -1,0 +1,18 @@
+{
+  "status_code": 200,
+  "data": {
+    "data": [
+      {
+        "id": "npb-fixture-0001",
+        "odds": [
+          {"sportsbook": "draftkings", "market_id": "moneyline", "selection": "Yomiuri Giants", "normalized_selection": "home", "price": 1.80, "points": null, "timestamp": 1775000000, "team_id": "npb-team-giants", "is_main": true, "grouping_key": "ml-home"},
+          {"sportsbook": "draftkings", "market_id": "moneyline", "selection": "Hanshin Tigers", "normalized_selection": "away", "price": 2.05, "points": null, "timestamp": 1775000000, "team_id": "npb-team-tigers", "is_main": true, "grouping_key": "ml-away"},
+          {"sportsbook": "fanduel", "market_id": "moneyline", "selection": "Yomiuri Giants", "normalized_selection": "home", "price": 1.83, "points": null, "timestamp": 1775000100, "team_id": "npb-team-giants", "is_main": true, "grouping_key": "ml-home"},
+          {"sportsbook": "fanduel", "market_id": "moneyline", "selection": "Hanshin Tigers", "normalized_selection": "away", "price": 2.00, "points": null, "timestamp": 1775000100, "team_id": "npb-team-tigers", "is_main": true, "grouping_key": "ml-away"},
+          {"sportsbook": "draftkings", "market_id": "total_runs", "selection": "Over 7.5", "normalized_selection": "over", "price": 1.95, "points": 7.5, "timestamp": 1775000000, "is_main": true, "grouping_key": "tot-over"},
+          {"sportsbook": "draftkings", "market_id": "total_runs", "selection": "Under 7.5", "normalized_selection": "under", "price": 1.90, "points": 7.5, "timestamp": 1775000000, "is_main": true, "grouping_key": "tot-under"}
+        ]
+      }
+    ]
+  }
+}

@@ -27,7 +27,8 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-- **`artifacts/handiedge` (`@workspace/handiedge`) — the daily tool. START HERE.** A single-language (TypeScript) end-to-end prediction pipeline (all 9 stages) the user runs every day: `pnpm --filter @workspace/handiedge run run --date <d>`. CLI + HTTP API + Docker, fixture-backed, fully tested. See its `README.md`.
+- **`handiedge_project/` — the canonical Python domain core (VERIFIED).** The mature HandiEdge implementation: safe/auditable handicap prediction with MLB+NPB league-separated models, vig removal, as-of features, calibration, backtest, fractional-Kelly risk, audit chain, responsible-gambling gate. **138 tests pass, ruff+mypy clean** (see `handiedge_project/VERIFIED_AUDIT.md`). Run: `cd handiedge_project && uv sync --extra dev && uv run pytest`. Models are UNTRAINED until real historical data is ingested (by design — never fabricates).
+- `artifacts/handiedge` (`@workspace/handiedge`) — a lightweight TypeScript end-to-end MVP (all 9 stages, fixture-backed, CLI+API+Docker). Simpler than the Python core; kept as an alternative daily driver. See its `README.md`.
 - `sports-lab/model-plan.md` — the technical plan (source of truth for scope and build order).
 - `lib/ai-review` (`@workspace/ai-review`) — **AI multi-agent review** (Data Auditor, Matchup Analyst, Risk Reviewer). Consumes the `GamePrediction` contract in `lib/ai-review/src/types.ts` and returns an adjusted confidence rank + warnings. See that package's `README.md`.
 - `prediction-engine/` (`sportslab-engine`, Python) — the ML half: data ingestion, feature engineering, XGBoost training/inference, ensemble, calibration, error analysis, self-learning. See its `README.md`.

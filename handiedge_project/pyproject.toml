@@ -1,0 +1,73 @@
+[project]
+name = "handiedge"
+version = "0.1.0"
+description = "HandiEdge — sports-betting handicap prediction domain core (safe, auditable, no guaranteed-win claims)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Internal use — HandiEdge project" }
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "fastapi>=0.110",
+    "httpx>=0.27",
+    # Runtime dependency of the injected `external-tool` connector binary, whose
+    # shebang is `#!/usr/bin/env python3`. Under `uv run`, `.venv/bin` shadows the
+    # system interpreter, so the tool executes with the project venv's python and
+    # must be able to `import requests`. This project never imports requests
+    # itself (the connector shells out via argv, no HTTP here) — it is pinned
+    # solely so the runtime connector resolves inside the project environment.
+    "requests>=2.32",
+]
+
+[project.scripts]
+handiedge = "handiedge.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/handiedge"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+# B008: FastAPI Depends() in defaults is idiomatic.
+# UP042: `str, Enum` is intentional (StrEnum changes str() semantics we rely on
+#        for JSON/value handling); keep the explicit mixin form.
+ignore = ["B008", "UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests intentionally assert on pydantic ValidationError via broad raises in a
+# couple of spots where two validators can fire; keep them readable.
+"tests/*" = ["B017"]
+
+[tool.mypy]
+# 3.12+ so mypy can parse PEP 695 `type` statements in the installed numpy stubs
+# (the package itself still targets >=3.11 and uses no 3.12-only syntax).
+python_version = "3.12"
+packages = ["handiedge"]
+mypy_path = "src"
+ignore_missing_imports = true
+warn_unused_ignores = false
+disallow_untyped_defs = false

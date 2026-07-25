@@ -1,0 +1,22 @@
+{
+  "status_code": 200,
+  "data": {
+    "data": [
+      {
+        "id": "npb-fixture-0001",
+        "game_id": null,
+        "start_date": "2026-04-01T09:00:00+09:00",
+        "status": "unplayed",
+        "is_live": false,
+        "has_odds": true,
+        "home_competitors": [{"id": "npb-team-giants", "name": "Yomiuri Giants", "record": null}],
+        "away_competitors": [{"id": "npb-team-tigers", "name": "Hanshin Tigers", "record": null}],
+        "home_starter": null,
+        "away_starter": null,
+        "venue_name": null,
+        "season_year": 2026,
+        "season_type": "regular"
+      }
+    ]
+  }
+}

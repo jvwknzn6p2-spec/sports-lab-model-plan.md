@@ -1,0 +1,24 @@
+{
+  "status_code": 200,
+  "data": {
+    "data": [
+      {
+        "id": "mlb-fixture-0001",
+        "game_id": "mlb-game-0001",
+        "start_date": "2026-04-01T23:05:00Z",
+        "status": "unplayed",
+        "is_live": false,
+        "has_odds": true,
+        "home_competitors": [{"id": "mlb-team-nyy", "name": "New York Yankees", "abbreviation": "NYY", "record": "1-0"}],
+        "away_competitors": [{"id": "mlb-team-bos", "name": "Boston Red Sox", "abbreviation": "BOS", "record": "0-1"}],
+        "home_starter": {"id": "mlb-p-101", "name": "Ace Alpha"},
+        "away_starter": {"id": "mlb-p-202", "name": "Bravo Beta"},
+        "venue_name": "Yankee Stadium",
+        "season_year": 2026,
+        "season_type": "regular"
+      }
+    ],
+    "has_more": false,
+    "page": 1
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "audit": {
+    "title": "HandiEdge (Python domain core, MLB+NPB v1.1) — Verified Forensic Audit",
+    "generatedBy": "Claude Code — direct source access, commands executed",
+    "auditDate": "2026-07-26",
+    "auditMode": "read_only_evidence_based",
+    "overallStatus": "VERIFIED",
+    "auditConfidence": 97,
+    "note": "Supersedes prior external audits that reported BLOCKED_REPOSITORY_NOT_PRESENT (scores 0/5/0). Those were correct given they had no code; the source has now been imported into the repository and every acceptance gate was executed with real output."
+  },
+  "repository": {
+    "branch": "claude/step-9-ai-multi-agent-review-1lg1xi",
+    "importedPath": "handiedge_project/",
+    "sourceZip": "HandiEdgeMLBNPBLeagueModelsv1.1.zip",
+    "lockfile": "uv.lock (1045 lines) — reproducible install",
+    "sourceFiles": 55,
+    "testFiles": 18,
+    "gitInUpload": "none (uploaded snapshot had no .git); now version-controlled in this repo"
+  },
+  "verification": {
+    "install": { "command": "uv sync --extra dev", "status": "PASS", "exitCode": 0 },
+    "lint": { "command": "uv run ruff check .", "status": "PASS", "output": "All checks passed!" },
+    "format": { "command": "uv run ruff format --check .", "status": "PASS", "output": "74 files already formatted" },
+    "typecheck": { "command": "uv run mypy", "status": "PASS", "output": "Success: no issues found in 55 source files" },
+    "tests": { "command": "uv run pytest", "status": "PASS", "passed": 138, "failed": 0, "output": "138 passed, 1 warning" },
+    "l1_leak_gate": { "command": "uv run pytest tests/test_masking.py", "status": "PASS", "note": "L1 masking / no-leak gate included in the 138" },
+    "cli": { "command": "uv run handiedge --help", "status": "PASS", "note": "league CLI (sync-fixtures/odds/results, build-dataset, train, evaluate, predict)" },
+    "docker_build": { "status": "NA", "note": "This core project ships no Dockerfile (the separate v3.1 VDD scaffold does)." },
+    "db_migrations": { "status": "NA", "note": "Core is filesystem/in-memory; no DB in this project." },
+    "frontend": { "status": "NA", "note": "API/CLI service; no frontend." },
+    "live_connector_sync": { "status": "SELF_REPORTED", "note": "README reports a 2026-07-23 live OpticOdds smoke (99 MLB / 17 NPB fixtures). NOT re-run here: the external data host is blocked by this environment's egress policy and needs runtime-injected credentials." },
+    "model_training": { "status": "NOT_READY_BY_DESIGN", "note": "All league artifacts are UNTRAINED/NotReady until a real historical dataset is ingested and acceptance metrics pass. Synthetic data appears only in tests, flagged is_synthetic; no accuracy/ROI/CLV is claimed." }
+  },
+  "categoryCoverage": {
+    "1_taxonomy_settlement": "VERIFIED (domain/taxonomy.py, domain/settlement.py; per-market + push/void/quarter-line; tests/test_settlement.py)",
+    "2_odds_ingestion": "VERIFIED code + PARTIAL live (odds/ingestion.py, connector/*; append-only, stale rejection; live sync self-reported)",
+    "3_vig_removal": "VERIFIED (probability/implied.py multiplicative/additive/Shin; tests/test_vig.py)",
+    "4_entity_time_integrity": "VERIFIED (UTC-aware, UUID event ids, naive-datetime rejection)",
+    "5_features_asof_leakage": "VERIFIED (features/builder.py as-of joins; leakage regression tests)",
+    "6_training_splits_calibration": "VERIFIED code, UNTRAINED models (temporal splits, isotonic/Platt, abstention; tests/test_modeling.py, test_splits.py)",
+    "7_evaluation": "VERIFIED (log loss, Brier, ECE, ROI+CI, CLV, drawdown, DM, Bonferroni; tests/test_metrics.py)",
+    "8_backtest_realism": "VERIFIED (backtest/engine.py at-bet-time odds, latency, slippage, limits; tests/test_backtest.py)",
+    "9_api_contracts": "VERIFIED (service/api.py, contracts.py Pydantic; tests/test_service_api.py, test_service_league.py)",
+    "10_bankroll_risk": "VERIFIED (risk/bankroll.py fractional Kelly + caps + no chase-loss; tests/test_risk.py)",
+    "11_security_audit_masking": "VERIFIED (security/audit_chain.py, gateway/masking.py + router; L1 leak test)",
+    "12_deployment_drift_rollback": "PARTIAL (ports for registry/inference; UNTRAINED; no drift monitor in this core)",
+    "13_tests_gates": "VERIFIED (138 passed; ruff+format+mypy clean, all executed this session)",
+    "14_responsible_gambling": "VERIFIED (responsible/gambling.py disclaimer + prohibited-language scanner + age/jurisdiction gate; tests/test_responsible.py)"
+  },
+  "scores": {
+    "repositoryHealth": 95,
+    "architectureHealth": 92,
+    "engineeringReadiness": 88,
+    "liveServingReadiness": 40,
+    "liveServingReason": "Code is production-quality and fully tested, but ML models are UNTRAINED by design (no real historical dataset) and the live odds connector was not exercised here — so it cannot serve real predictions yet.",
+    "auditConfidence": 97,
+    "priorExternalAudit": { "repositoryHealth": 0, "architectureHealth": 5, "productionReadiness": 0, "reason": "Repository not present in the audit environment." }
+  },
+  "prioritizedActionPlan": [
+    { "priority": 1, "action": "Ingest a real historical dataset per league/market and run train + evaluate until acceptance metrics pass; only then are artifacts TRAINED (removes the single biggest 'not ready' item)." },
+    { "priority": 2, "action": "Exercise the live OpticOdds connector in an environment whose egress allows the data host, with runtime-injected credentials; capture the sync as VERIFIED." },
+    { "priority": 3, "action": "Add a Dockerfile + compose for this core (or reconcile with the v3.1 VDD scaffold) and wire the Python acceptance gate into CI (done in this change)." },
+    { "priority": 4, "action": "Decide the single canonical HandiEdge: this Python domain core vs the TS MVP (artifacts/handiedge) vs the v3.1 governance scaffold." }
+  ],
+  "remainingBlockers": [
+    "ML models UNTRAINED — no real historical dataset ingested",
+    "Live odds/results sync not executed in this environment (egress-blocked)",
+    "Canonical-source decision pending across three HandiEdge codebases"
+  ]
+}
