@@ -24,6 +24,7 @@ from app.core.enums import (
 )
 from app.core.hashing import sha256_hex
 from app.core.logging import get_logger
+from app.domain.decision.calibration import complement_result
 from app.domain.decision.engine import DecisionEngine
 from app.domain.handicap.parser import parse_handicap
 from app.domain.prediction.adapter import PredictionAdapter
@@ -186,7 +187,10 @@ class OrchestrationService:
         calibrator,
     ) -> tuple[GameDecision, Any, Any]:
         calib_home = calibrator.calibrate(raw.raw_home_win_probability)
-        calib_away = calibrator.calibrate(raw.raw_away_win_probability)
+        # Binary outcome: derive away as the complement so calibrated home/away
+        # always sum to 1 (independent calibration would break that invariant).
+        t = self._settings.thresholds
+        calib_away = complement_result(calib_home, t.probability_floor, t.probability_ceil)
         handicap = parse_handicap(
             game.handicap_raw, favorite=game.favorite, receiver=game.receiver
         )

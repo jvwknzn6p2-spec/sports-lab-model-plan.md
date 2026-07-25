@@ -14,3 +14,5 @@ htmlcov/
 handiedge*.db
 .venv/
 venv/
+# Trained model artifacts are reproducible via scripts/train_xgboost.py (seeded).
+artifacts/

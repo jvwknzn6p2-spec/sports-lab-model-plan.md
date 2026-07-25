@@ -235,24 +235,62 @@ weighting are a conservative interpretation chosen so results are deterministic
 and distinct from decimals. Replace `app/domain/settlement/handicap_rules.py`
 strategies to match a specific book's rulebook.
 
-## 12. Production model adapter integration guide
+## 12. Production model adapter (XGBoost)
 
-1. Implement `app/domain/prediction/adapter.py::PredictionAdapter` (and, for a
-   trained model, `ProductionModelAdapter`): return per-game
-   `raw_home_win_probability`, `raw_away_win_probability`, score expectations,
-   and — importantly — a real `raw_margin_distribution` (the handicap engine
-   needs it; without it the handicap decision returns `UNAVAILABLE`).
-2. Expose missing-feature warnings via `inference_warnings`; never impute silently.
-3. Register it: `register_adapter("default", MyAdapter())` at startup (replace the
-   fallback in `app/infrastructure/model_adapters/registry.py`).
-4. Provide a fitted calibrator (`PlattCalibrator` / `IsotonicCalibrator`) through
-   `CalibrationService.get_calibrator`; identity calibration is reported as
-   `UNCALIBRATED` and must not be presented as calibrated.
-5. Keep outputs deterministic for identical inputs (seed any randomness).
+A real production adapter is included: **`XGBoostModelAdapter`**
+(`app/infrastructure/model_adapters/xgboost_adapter.py`). It uses two trained
+XGBoost `count:poisson` regressors to predict each team's **expected runs**, then
+derives the full integer **margin distribution** and a self-consistent moneyline
+from an independent-Poisson score model (`app/domain/prediction/poisson.py`). The
+normal-win probability and the handicap cover probability therefore come from the
+*same* distribution — the handicap is never a copy of the moneyline.
 
-The XGBoost library (a sibling repo) is a natural first production adapter:
-load a trained booster, map the Control Tower features to its feature vector, and
-return calibrated probabilities plus a margin distribution.
+Enable it (xgboost/numpy are an optional extra so the core engine runs without them):
+
+```bash
+make install-xgboost                       # pip install -e ".[xgboost]"
+make train-xgboost                         # writes artifacts/xgboost_mlb/ (seeded, reproducible)
+make predict-xgboost                       # runs the pipeline through the trained model
+```
+
+Or via environment:
+
+```bash
+export HANDIEDGE_MODEL_ADAPTER=xgboost
+export HANDIEDGE_MODEL_ARTIFACT_DIR=artifacts/xgboost_mlb
+export HANDIEDGE_CALIBRATION_ARTIFACT_PATH=artifacts/xgboost_mlb/calibration.json
+```
+
+The training script (`scripts/train_xgboost.py`) trains both regressors, computes
+feature medians, **fits a Platt calibrator** on a holdout, and writes a
+self-contained artifact bundle:
+
+```
+artifacts/xgboost_mlb/
+  metadata.json     model id/version, feature_version, feature_names, medians, max_runs
+  home_runs.ubj     home expected-runs booster
+  away_runs.ubj     away expected-runs booster
+  calibration.json  fitted Platt (a, b) — loaded as CALIBRATED, not UNCALIBRATED
+```
+
+**Feature contract** — `app/domain/prediction/features.py::FEATURE_NAMES` is the
+integration point. Extraction is deterministic; a missing feature is **flagged as
+a warning** and substituted with the artifact's training median (a documented,
+degraded mode) rather than silently imputed. The Decision Engine's
+evidence-completeness gate then decides whether to `PASS`.
+
+**To integrate a genuine model** (real data instead of the synthetic generator):
+1. Replace `_synthetic_dataset` in `scripts/train_xgboost.py` with a historical
+   loader that emits the same `FEATURE_NAMES` columns plus `home_runs`/`away_runs`.
+2. Retrain (`make train-xgboost`) — bump `model_version` / `feature_version`.
+3. Keep outputs deterministic for identical inputs (the boosters and the Poisson
+   math already are; seed any randomness you add).
+4. Register a custom adapter directly with `register_adapter("default", MyAdapter())`
+   if you need something other than the XGBoost/Poisson design.
+
+The bundled `DeterministicFallbackAdapter` remains available
+(`HANDIEDGE_MODEL_ADAPTER=fallback`, the default) for tests and local runs, and is
+always reported with `fallback_used=true`.
 
 ## 13. Security & auth
 
@@ -277,9 +315,11 @@ transaction rollback, immutable locked records, deterministic serialization.
 
 ## 15. Known limitations
 
-- Bundled model is a NON-PRODUCTION deterministic fallback.
+- The **default** adapter is a NON-PRODUCTION deterministic fallback. A real
+  `XGBoostModelAdapter` is included (section 12) but its bundled training data is
+  **synthetic** — retrain on real historical data before production use.
 - Calibration defaults to identity (reported `UNCALIBRATED`) until a fitted
-  artifact is supplied.
+  artifact is supplied; the XGBoost path ships a fitted Platt calibrator.
 - `1半n` weighting is a documented conservative interpretation, not a specific
   book's official rulebook.
 - Self-learning training is delegated to a test adapter for the MVP; the control

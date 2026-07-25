@@ -19,9 +19,10 @@ def configure_logging(level: str = "INFO", json_output: bool = True) -> None:
     if _configured:
         return
 
+    # Logs go to stderr so stdout stays reserved for machine-readable CLI output.
     logging.basicConfig(
         format="%(message)s",
-        stream=sys.stdout,
+        stream=sys.stderr,
         level=getattr(logging, level.upper(), logging.INFO),
     )
 
@@ -41,7 +42,7 @@ def configure_logging(level: str = "INFO", json_output: bool = True) -> None:
         wrapper_class=structlog.make_filtering_bound_logger(
             getattr(logging, level.upper(), logging.INFO)
         ),
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=True,
     )
     _configured = True

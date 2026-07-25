@@ -25,6 +25,19 @@ e2e:
 	HANDIEDGE_DATABASE_URL=sqlite+pysqlite:///./handiedge.db $(PY) -m alembic upgrade head
 	HANDIEDGE_DATABASE_URL=sqlite+pysqlite:///./handiedge.db $(PY) -m app.cli.main predict examples/control_tower_valid.json
 
+install-xgboost:
+	$(PY) -m pip install -e ".[xgboost]"
+
+train-xgboost:
+	$(PY) scripts/train_xgboost.py --out artifacts/xgboost_mlb --rows 4000 --seed 7
+
+predict-xgboost:
+	HANDIEDGE_DATABASE_URL=sqlite+pysqlite:///./handiedge.db \
+	HANDIEDGE_MODEL_ADAPTER=xgboost \
+	HANDIEDGE_MODEL_ARTIFACT_DIR=artifacts/xgboost_mlb \
+	HANDIEDGE_CALIBRATION_ARTIFACT_PATH=artifacts/xgboost_mlb/calibration.json \
+	$(PY) -m app.cli.main predict examples/control_tower_valid.json
+
 docker-up:
 	docker compose up --build -d
 

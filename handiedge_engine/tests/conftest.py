@@ -37,13 +37,16 @@ def settings(db_url, monkeypatch):
 def engine(settings):
     from app.infrastructure.database.base import Base
     from app.infrastructure.database.session import get_engine, reset_engine
+    from app.infrastructure.model_adapters.registry import clear_adapters
 
+    clear_adapters()
     reset_engine()
     eng = get_engine()
     Base.metadata.create_all(bind=eng)
     yield eng
     Base.metadata.drop_all(bind=eng)
     reset_engine()
+    clear_adapters()
 
 
 @pytest.fixture()

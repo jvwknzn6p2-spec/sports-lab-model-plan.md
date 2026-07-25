@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
 from app.core.enums import CalibrationStatus, ConfidenceTier, League
 from app.domain.decision.calibration import (
     IdentityCalibrator,
@@ -60,6 +62,46 @@ def test_confidence_tier_uses_calibrated_probability():
     )
     assert tier_for_probability(Decimal("0.50"), League.MLB) == ConfidenceTier.C_MINUS
     assert tier_for_probability(Decimal("0.49"), League.MLB) == ConfidenceTier.NONE
+
+
+def test_complement_keeps_binary_probabilities_summing_to_one():
+    from app.domain.decision.calibration import PlattCalibrator, complement_result
+
+    calib = PlattCalibrator(a=0.8, b=-0.25, artifact_id="a", version="v")
+    home = calib.calibrate(Decimal("0.62"))
+    away = complement_result(home)
+    assert (home.adjusted_probability + away.adjusted_probability) == Decimal("1")
+    assert away.status == home.status
+
+
+def test_load_platt_calibrator_from_artifact(tmp_path):
+    import json
+
+    from app.domain.decision.calibration import load_calibrator_from_artifact
+
+    path = tmp_path / "calibration.json"
+    path.write_text(
+        json.dumps(
+            {"method": "PLATT", "a": 1.0, "b": 0.0, "artifact_id": "x", "version": "v1"}
+        )
+    )
+    calib = load_calibrator_from_artifact(path)
+    result = calib.calibrate(Decimal("0.6"))
+    assert result.status is CalibrationStatus.CALIBRATED
+    assert result.artifact_id == "x"
+
+
+def test_registry_rejects_xgboost_without_artifact_dir(settings, monkeypatch):
+    from app.core.config import get_settings, reset_settings_cache
+    from app.core.exceptions import ConfigurationError
+    from app.infrastructure.model_adapters.registry import build_adapter
+
+    monkeypatch.setenv("HANDIEDGE_MODEL_ADAPTER", "xgboost")
+    monkeypatch.delenv("HANDIEDGE_MODEL_ARTIFACT_DIR", raising=False)
+    reset_settings_cache()
+    with pytest.raises(ConfigurationError):
+        build_adapter(get_settings())
+    reset_settings_cache()
 
 
 def test_ensemble_shell_averages_and_reports_disagreement(valid_payload, adapter):

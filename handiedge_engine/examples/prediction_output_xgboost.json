@@ -7,33 +7,33 @@
   "control_tower_status": "PASS",
   "prediction_status": "COMPLETED",
   "model_context": {
-    "model_id": "deterministic-fallback",
-    "model_version": "0.0.0-nonprod",
-    "fallback_used": true
+    "model_id": "xgboost-runs-mlb",
+    "model_version": "1.0.0",
+    "fallback_used": false
   },
   "calibration_context": {
-    "method": "IDENTITY",
-    "status": "UNCALIBRATED",
-    "artifact_id": null,
-    "version": "calibration-identity-1.0.0",
-    "warning": "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution."
+    "method": "PLATT",
+    "status": "CALIBRATED",
+    "artifact_id": "platt-xgboost-runs-mlb-1.0.0",
+    "version": "calibration-platt-1.0.0",
+    "warning": null
   },
   "games": [
     {
       "match_id": "MLB-2026-07-24-NYY-BOS",
       "home": "NYY",
       "away": "BOS",
-      "selected_team": "NYY",
-      "predicted_loser": "BOS",
-      "normal_win_probability": 0.6381,
-      "normal_loss_probability": 0.3619,
+      "selected_team": "BOS",
+      "predicted_loser": "NYY",
+      "normal_win_probability": 0.5239,
+      "normal_loss_probability": 0.4761,
       "handicap_pick": "BOS",
-      "handicap_cover_probability": 0.3678,
-      "confidence_tier": "A+",
+      "handicap_cover_probability": 0.5242,
+      "confidence_tier": "C",
       "risk_level": "LOW",
       "expected_score": {
-        "home": 4.85,
-        "away": 3.75
+        "home": 4.77,
+        "away": 4.44
       },
       "decision_status": "PREDICT",
       "pass_reason": null,
@@ -44,34 +44,31 @@
         "schedule_validated"
       ],
       "risk_factors": [],
-      "calibration_notes": [
-        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution.",
-        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution."
-      ],
+      "calibration_notes": [],
       "data_quality_status": "OK",
       "handicap_rule_status": "RESOLVED",
       "audit": {
         "prediction_id": "a1aee6efd3b8f602121e4d6ad07fe8ea",
         "input_hash": "9259c55fbc8b0df5b4c7962afdb4477e44b1792af65763c444a3b6d154432fd6",
         "feature_snapshot_id": "fs-nyy-bos-0724",
-        "created_at": "2026-07-25T05:07:02.684506Z"
+        "created_at": "2026-07-25T05:07:04.617592Z"
       }
     },
     {
       "match_id": "MLB-2026-07-24-LAD-SF",
       "home": "LAD",
       "away": "SF",
-      "selected_team": "LAD",
-      "predicted_loser": "SF",
-      "normal_win_probability": 0.6128,
-      "normal_loss_probability": 0.3872,
+      "selected_team": "SF",
+      "predicted_loser": "LAD",
+      "normal_win_probability": 0.5016,
+      "normal_loss_probability": 0.4984,
       "handicap_pick": "SF",
-      "handicap_cover_probability": 0.5517,
-      "confidence_tier": "A",
+      "handicap_cover_probability": 0.6338,
+      "confidence_tier": "C-",
       "risk_level": "LOW",
       "expected_score": {
         "home": 4.75,
-        "away": 3.85
+        "away": 4.24
       },
       "decision_status": "PREDICT",
       "pass_reason": null,
@@ -82,17 +79,14 @@
         "schedule_validated"
       ],
       "risk_factors": [],
-      "calibration_notes": [
-        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution.",
-        "Identity calibration only: probability is NOT statistically calibrated. Treat confidence with caution."
-      ],
+      "calibration_notes": [],
       "data_quality_status": "OK",
       "handicap_rule_status": "RESOLVED",
       "audit": {
         "prediction_id": "f1bb32a4e0a6669277017bdec7dcae2d",
         "input_hash": "662c42bfc2f364efb189eb8d39be1e6493e223dd1495c05cebbc0a15c2b497d1",
         "feature_snapshot_id": "fs-lad-sf-0724",
-        "created_at": "2026-07-25T05:07:02.692161Z"
+        "created_at": "2026-07-25T05:07:04.623745Z"
       }
     }
   ],
@@ -101,6 +95,6 @@
     "predictions": 2,
     "passes": 0,
     "blocked": 0,
-    "fallback_predictions": 2
+    "fallback_predictions": 0
   }
 }

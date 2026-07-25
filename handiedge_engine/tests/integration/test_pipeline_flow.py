@@ -128,6 +128,75 @@ def test_full_lifecycle_predict_lock_settle_error_learning(
     assert advanced.status is LearningWorkflowStatus.DATA_VALIDATED
 
 
+class _StubProductionAdapter:
+    """A minimal production-style adapter with a real margin distribution."""
+
+    def info(self):
+        from app.core.enums import ModelType
+        from app.domain.prediction.adapter import AdapterInfo
+
+        return AdapterInfo(
+            model_id="stub-prod",
+            model_version="1.0.0",
+            model_type=ModelType.XGBOOST,
+            is_production=True,
+        )
+
+    def predict_game(self, game, payload):
+        from decimal import Decimal
+
+        from app.domain.prediction.poisson import (
+            margin_distribution,
+            moneyline_from_margin,
+        )
+        from app.schemas.prediction import RawGamePrediction
+
+        dist = margin_distribution(5.2, 3.9)
+        home_p, away_p = moneyline_from_margin(dist)
+        return RawGamePrediction(
+            match_id=game.match_id,
+            raw_home_win_probability=home_p,
+            raw_away_win_probability=away_p,
+            raw_team_score_expectations={"home": Decimal("5.2"), "away": Decimal("3.9")},
+            raw_margin_distribution=dist,
+            feature_snapshot_id=game.feature_summary.feature_snapshot_id,
+            inference_warnings=(),
+            fallback_used=False,
+        )
+
+
+def test_production_adapter_path_with_platt_calibration(
+    session, settings, valid_payload, tmp_path
+):
+    import json
+
+    calib_path = tmp_path / "calibration.json"
+    calib_path.write_text(
+        json.dumps(
+            {"method": "PLATT", "a": 1.0, "b": 0.0, "artifact_id": "art", "version": "cv1"}
+        )
+    )
+    prod_settings = settings.model_copy(
+        update={"calibration_artifact_path": str(calib_path)}
+    )
+    service = OrchestrationService(session, prod_settings, _StubProductionAdapter())
+    resp = service.run_pipeline(valid_payload, correlation_id="prod")
+
+    assert resp.model_context.fallback_used is False
+    assert resp.summary.fallback_predictions == 0
+    assert resp.calibration_context.method == "PLATT"
+    assert resp.calibration_context.status == "CALIBRATED"
+    game = resp.games[0]
+    # Home/away calibrated probabilities remain consistent (binary complement).
+    assert game.normal_win_probability is not None
+    assert game.normal_loss_probability is not None
+    assert abs(
+        game.normal_win_probability + game.normal_loss_probability - 1.0
+    ) < 1e-6
+    # Handicap cover is derived from the real margin distribution.
+    assert game.handicap_rule_status == "RESOLVED"
+
+
 def test_settlement_conflict_detected(session, settings, adapter, valid_payload):
     resp = _run(session, settings, adapter, valid_payload)
     session.commit()

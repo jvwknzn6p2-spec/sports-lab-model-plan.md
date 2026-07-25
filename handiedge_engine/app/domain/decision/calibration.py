@@ -9,9 +9,11 @@ claims the probability is calibrated in that case. Clipping is always recorded
 from __future__ import annotations
 
 import bisect
+import json
 import math
 from dataclasses import dataclass
 from decimal import Decimal
+from pathlib import Path
 from typing import Protocol
 
 from app.core.enums import CalibrationMethod, CalibrationStatus
@@ -156,3 +158,65 @@ class IsotonicCalibrator:
             warning=None,
             clipped=clipped,
         )
+
+
+def load_calibrator_from_artifact(
+    path: str | Path,
+    floor: Decimal = Decimal("0.01"),
+    ceil: Decimal = Decimal("0.99"),
+) -> Calibrator:
+    """Load a fitted calibrator from a JSON artifact written by training.
+
+    Supported ``method`` values: ``PLATT`` (fields ``a``, ``b``) and ``ISOTONIC``
+    (fields ``x_points``, ``y_points``). Raises ``FileNotFoundError`` if missing.
+    """
+
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    method = str(data.get("method", "")).upper()
+    artifact_id = data.get("artifact_id", "unknown")
+    version = data.get("version", "calibration-unknown")
+
+    if method == "PLATT":
+        return PlattCalibrator(
+            a=float(data["a"]),
+            b=float(data["b"]),
+            artifact_id=artifact_id,
+            version=version,
+            floor=floor,
+            ceil=ceil,
+        )
+    if method == "ISOTONIC":
+        return IsotonicCalibrator(
+            x_points=[float(v) for v in data["x_points"]],
+            y_points=[float(v) for v in data["y_points"]],
+            artifact_id=artifact_id,
+            version=version,
+            floor=floor,
+            ceil=ceil,
+        )
+    raise ValueError(f"unsupported calibration method in artifact: {method!r}")
+
+
+def complement_result(
+    result: CalibrationResult,
+    floor: Decimal = Decimal("0.01"),
+    ceil: Decimal = Decimal("0.99"),
+) -> CalibrationResult:
+    """Return the complementary calibration for a binary outcome.
+
+    Calibrating home and away independently would break the sum-to-1 invariant, so
+    the away side is derived as ``1 - calibrated_home`` (then safely clipped). This
+    keeps the two calibrated probabilities consistent for a two-outcome market.
+    """
+
+    adjusted, clipped = _clip(Decimal("1") - result.adjusted_probability, floor, ceil)
+    return CalibrationResult(
+        method=result.method,
+        status=result.status,
+        artifact_id=result.artifact_id,
+        version=result.version,
+        original_probability=Decimal("1") - result.original_probability,
+        adjusted_probability=adjusted,
+        warning=result.warning,
+        clipped=result.clipped or clipped,
+    )

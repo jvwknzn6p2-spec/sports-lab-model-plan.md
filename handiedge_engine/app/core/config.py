@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     max_request_bytes: int = 2_000_000
     max_games_per_run: int = 40
 
+    # Prediction model selection. "fallback" uses the NON-PRODUCTION deterministic
+    # adapter; "xgboost" loads a trained artifact bundle from model_artifact_dir.
+    model_adapter: str = "fallback"
+    model_artifact_dir: str | None = None
+    calibration_artifact_path: str | None = None
+
     # Versioned policy identifiers embedded in locks and audit records.
     decision_policy_version: str = "decision-policy-1.0.0"
     settlement_rule_version: str = "settlement-rules-1.0.0"
