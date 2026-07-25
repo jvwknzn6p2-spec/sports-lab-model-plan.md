@@ -27,12 +27,16 @@ import {
 import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
 import type { BullpenWorkload } from "../features";
 import type { FixtureBundle } from "./fixture-source";
+import { getParkFactor } from "./park-factors";
 
 export interface BuildSlateOptions {
   date: string;
   season: number;
   client: MlbStatsClient;
-  /** Optional venueId → park factor map merged into the bundle. */
+  /**
+   * Optional venueId → park factor OVERRIDES. The builder auto-fills every
+   * game's venue from the built-in 30-park table; entries here win over it.
+   */
   parkFactors?: Record<string, number>;
   /** Optional teamId → workload map (manual until game-log ingestion lands). */
   workloads?: Record<string, BullpenWorkload>;
@@ -119,6 +123,23 @@ export async function buildSlate(
     if (pen) bullpens[String(id)] = pen;
   }
 
+  // Park factors: built-in table per venue, with caller overrides winning.
+  // Unknown venues stay absent (predict treats them as neutral 100) — warned,
+  // never silently guessed.
+  const parkFactors: Record<string, number> = {};
+  for (const g of games) {
+    const venueId = g.venue.id;
+    if (venueId === null) continue;
+    const pf = getParkFactor(venueId);
+    if (pf !== undefined) parkFactors[String(venueId)] = pf;
+    else {
+      warnings.push(
+        `game ${g.gamePk}: unknown venue ${venueId} (${g.venue.name ?? "?"}) — park treated as neutral (100)`,
+      );
+    }
+  }
+  Object.assign(parkFactors, opts.parkFactors ?? {});
+
   const bundle: FixtureBundle = {
     date,
     season,
@@ -127,7 +148,7 @@ export async function buildSlate(
     batting,
     bullpens,
     workloads: opts.workloads ?? {},
-    parkFactors: opts.parkFactors ?? {},
+    parkFactors,
   };
 
   const teamsFetched = Object.keys(batting).filter(
