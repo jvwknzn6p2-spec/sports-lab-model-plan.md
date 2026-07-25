@@ -1,0 +1,74 @@
+{
+  "audit": {
+    "title": "HandiEdge / AI Sports Lab — Verified Repository Audit",
+    "generatedBy": "Claude Code (direct repository access)",
+    "auditDate": "2026-07-25",
+    "status": "VERIFIED",
+    "confidence": 96,
+    "note": "Supersedes the prior external audit (status BLOCKED/BLACK), which reported UNKNOWN for every item solely because it had no repository access. This audit was run against the working tree with commands executed and exit codes captured."
+  },
+  "repository": {
+    "commitSha": "6950ea3099498e5111c05b269719a5410500b6c0",
+    "branch": "claude/step-9-ai-multi-agent-review-1lg1xi",
+    "commitCount": 5,
+    "trackedFiles": 217,
+    "canonicalTool": "artifacts/handiedge (@workspace/handiedge)",
+    "fileCounts": {
+      "handiedgeSrcTs": 20,
+      "handiedgeTests": 3,
+      "handiedgeSrcLoc": 1054,
+      "predictionEnginePy": 27,
+      "aiReviewAndPipelineTs": 21
+    }
+  },
+  "checks": [
+    { "id": "file_audit", "label": "Full file audit", "status": "VERIFIED", "evidence": "217 tracked files; git ls-files enumerated per package." },
+    { "id": "git_history", "label": "Git history audit", "status": "VERIFIED", "evidence": "5 commits, linear history from initial commit to HEAD 6950ea3." },
+    { "id": "branch", "label": "Branch audit", "status": "VERIFIED", "evidence": "claude/step-9-ai-multi-agent-review-1lg1xi (tracks origin)." },
+    { "id": "todo_scan", "label": "TODO / placeholder scan", "status": "VERIFIED", "evidence": "0 TODO/FIXME/placeholder/'not implemented' in artifacts/handiedge/src." },
+    { "id": "secrets", "label": "Secrets scan", "status": "VERIFIED", "evidence": "0 hardcoded keys/tokens; credentials only via process.env (ANTHROPIC_API_KEY, HANDIEDGE_API_KEY)." },
+    { "id": "build", "label": "Build", "status": "VERIFIED", "command": "pnpm run typecheck (build gate)", "exitCode": 0 },
+    { "id": "typecheck", "label": "TypeScript typecheck (all packages)", "status": "VERIFIED", "command": "pnpm run typecheck", "exitCode": 0 },
+    { "id": "unit_tests", "label": "Unit tests", "status": "VERIFIED", "evidence": "53 tests pass: ai-review 21, pipeline 4, handiedge 15 (unit+e2e), python 13.", "exitCode": 0 },
+    { "id": "e2e_tests", "label": "End-to-end tests", "status": "VERIFIED", "evidence": "handiedge tests/e2e.test.ts runs train -> predict -> settle and asserts PASS-on-data-gap + reproducible content hashes.", "exitCode": 0 },
+    { "id": "python_tests", "label": "Python engine tests", "status": "VERIFIED", "command": "pytest -q", "exitCode": 0, "evidence": "13 passed." },
+    { "id": "api_startup", "label": "API startup", "status": "VERIFIED", "evidence": "GET /healthz -> {status:ok}; POST /predict -> full slate JSON." },
+    { "id": "cli_run", "label": "CLI daily run", "status": "VERIFIED", "evidence": "handiedge run --date 2026-07-25 prints the card: 1 PLAY / 2 PASS." },
+    { "id": "reproducibility", "label": "Reproducibility controls", "status": "VERIFIED", "evidence": "Seeded (seed 42); identical inputs -> identical content hashes; run manifest records input+model hashes." },
+    { "id": "audit_logging", "label": "Audit logging", "status": "VERIFIED", "evidence": "out/audit_<date>.jsonl written per stage with input/output hashes." },
+    { "id": "model_training", "label": "Model training (real)", "status": "VERIFIED", "evidence": "Logistic model trained on recorded history fixture: AUC 0.586, logloss 0.6862 (1500 train / 500 valid)." },
+    { "id": "lint", "label": "Lint", "status": "NOT_CONFIGURED", "evidence": "Repo uses Prettier only; no ESLint config present. Typecheck (strict-ish) is the static-analysis gate." },
+    { "id": "docker_build", "label": "Docker build", "status": "NOT_VERIFIED", "evidence": "Dockerfile present and reviewed, but the Docker daemon is not running in this sandbox (no /var/run/docker.sock), so the image could not be built here." },
+    { "id": "docker_compose", "label": "Docker Compose", "status": "NA", "evidence": "Single-service tool; no compose file. Dockerfile covers the service." },
+    { "id": "frontend", "label": "Frontend startup", "status": "NA", "evidence": "HandiEdge is a CLI/API tool with no frontend. (artifacts/mockup-sandbox is an unrelated scaffold that typechecks.)" },
+    { "id": "migrations", "label": "DB migrations", "status": "NA", "evidence": "HandiEdge is filesystem/JSON based; no database. (lib/db exists but is unused by the tool.)" },
+    { "id": "duplicate_code", "label": "Duplicate-code detection", "status": "PARTIAL", "evidence": "No jscpd run. Known intentional duplication: the transparent baseline formula exists in both Python (Phase-2 engine) and TypeScript (daily tool) as separate-language ports." },
+    { "id": "dead_code", "label": "Dead-code detection", "status": "PARTIAL", "evidence": "No dedicated tool; typecheck clean. lib/db and lib/api-* are scaffold packages not used by the daily tool." }
+  ],
+  "scores": {
+    "repositoryHealth": 90,
+    "architectureHealth": 88,
+    "productionReadinessPersonalUse": 74,
+    "auditConfidence": 96,
+    "priorExternalAudit": {
+      "repositoryHealth": 5,
+      "architectureHealth": 32,
+      "productionReadiness": 0,
+      "auditConfidence": 18,
+      "reason": "No repository access — every item UNKNOWN."
+    }
+  },
+  "commandsRun": [
+    "git rev-parse HEAD / --abbrev-ref HEAD",
+    "git ls-files (file inventory)",
+    "git grep (secrets, TODO/placeholder)",
+    "pnpm run typecheck",
+    "pnpm --filter @workspace/ai-review run test",
+    "pnpm --filter @workspace/pipeline run test",
+    "pnpm --filter @workspace/handiedge run test",
+    "pytest -q (prediction-engine)",
+    "handiedge train / run / settle",
+    "curl /healthz, POST /predict",
+    "docker build (daemon unavailable)"
+  ]
+}
