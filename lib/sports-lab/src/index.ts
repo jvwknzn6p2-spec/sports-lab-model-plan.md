@@ -11,6 +11,38 @@ export * from "./schemas";
 export * from "./flags";
 export * from "./validate";
 
+// Step 9 — AI multi-agent review.
+export {
+  reviewGame,
+  applyReview,
+  explainReview,
+  REVIEW_AGENTS,
+  type ReviewFailure,
+  type ReviewOptions,
+  type ReviewOutcome,
+} from "./review/review";
+export {
+  createClaudeReviewer,
+  ruleBasedReviewer,
+  ReviewError,
+  type ClaudeReviewerOptions,
+  type Reviewer,
+} from "./review/reviewers";
+export {
+  buildDossier,
+  roleBrief,
+  type DossierInputs,
+} from "./review/prompts";
+export {
+  reviewVerdictSchema,
+  reviewAgentSchema,
+  assessmentSchema,
+  REVIEW_VERDICT_JSON_SCHEMA,
+  type Assessment,
+  type ReviewAgent,
+  type ReviewVerdict,
+} from "./review/schemas";
+
 // Step 8 — backtesting.
 export {
   runBacktest,

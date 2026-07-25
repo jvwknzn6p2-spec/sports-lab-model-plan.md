@@ -1,14 +1,15 @@
-# @workspace/sports-lab — Steps 3–8 of the AI Sports Lab pipeline
+# @workspace/sports-lab — Steps 3–9 of the AI Sports Lab pipeline
 
-Implements **Steps 3–8** of the [model plan](../../sports-lab/model-plan.md):
+Implements **Steps 3–9** of the [model plan](../../sports-lab/model-plan.md):
 the context-data layer (recent form, injuries, weather, ballpark factors), the
 **validation / flagging layer** that decides how far each game's data can be
 trusted, the **baseline statistical model** that turns those inputs into
 expected runs per team, the **Monte Carlo simulation** that converts expected
 runs into win / run-line / total probabilities, the **EV layer** that compares
 those probabilities against sportsbook odds to find value, the **confidence
-ranking** that reduces all of it to a single S/A/B/C letter, and the
-**backtester** that scores logged predictions against real results.
+ranking** that reduces all of it to a single S/A/B/C letter, the
+**backtester** that scores logged predictions against real results, and the
+**AI multi-agent review layer** that audits each pick before it is presented.
 
 It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
 input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
@@ -35,6 +36,10 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `odds/ev.ts` | Step 6 — edge and expected value per bet; flags value bets |
 | `confidence.ts` | Step 7 — combines all of the above into an S/A/B/C rank |
 | `backtest.ts` | Step 8 — settles logged predictions and scores accuracy/ROI |
+| `review/schemas.ts` | Step 9 — the verdict contract (zod + JSON Schema) |
+| `review/prompts.ts` | Step 9 — game dossier + the three agent role briefs |
+| `review/reviewers.ts` | Step 9 — Claude-backed and deterministic reviewer backends |
+| `review/review.ts` | Step 9 — runs the agents and applies verdicts to the rank |
 
 ## Weather is observed-vs-forecast aware
 
@@ -271,6 +276,58 @@ found edges with a **median near 2.5%**, which is below the B threshold of 3% �
 so essentially every pick ranked C. The tier thresholds in `model/constants.ts`
 (S ≥ 8%, A ≥ 5%, B ≥ 3%) are calibrated for a softer market than a real one.
 Recalibrating them against real results is the first job once live data exists.
+
+## Step 9 — the AI multi-agent review
+
+Three reviewers (Data Auditor, Matchup Analyst, Risk Reviewer) read the same
+dossier and return structured verdicts:
+
+```
+Statistical rank: S  (Astros -1.5)
+AI review:   S → A
+  + data-auditor: nothing in the dossier undermines this pick.
+  · matchup-analyst [-1]: a key hitter is out; lineup strength may shift more than the flat penalty implies.
+  + risk-reviewer: weather is forecast rather than observed.
+```
+
+**The review can only lower confidence — enforced three ways.** The plan says
+AI is the reviewer, not the source of truth, so that is not left to convention:
+
+1. **Structurally** — `ReviewOutcome` carries a rank and warnings and nothing
+   else. There is no field through which a probability, expected-runs figure,
+   or EV number could be changed. The review cannot touch them because it has
+   nowhere to put them.
+2. **In the schema** — `confidenceDelta` is a non-negative count of ranks to
+   *drop*, so the JSON schema the model is constrained to generate cannot
+   express a promotion.
+3. **In code** — `applyReview` clamps each delta and takes the worse of
+   (before, after), guarding against a hand-built verdict.
+
+**Two backends.** `createClaudeReviewer()` calls Claude with the verdict schema
+as a structured-output constraint. `ruleBasedReviewer` is deterministic and
+applies fixed heuristics to the same dossier. The daily pipeline must run
+without an API key, without a network, and inside tests — a review layer that
+takes the whole pipeline down with it would be worse than no review layer. The
+test suite uses the deterministic backend, so it stays hermetic and free.
+
+**Cost design.** Three levers, in order of impact:
+
+- **Skip games with no recommended bet** (the default). Most games on a slate
+  produce no value bet, and a pick nobody is being asked to act on has nothing
+  for a reviewer to protect against.
+- **Shared cached prefix.** All three agents see the same dossier, so it is the
+  *first* system block and carries the cache breakpoint; the per-agent role
+  brief goes after it. Putting the role brief first — the more natural layout —
+  would give three distinct prefixes and cache nothing. (The dossier runs ~900
+  tokens, comfortably over Opus 5's 512-token cache floor.)
+- **Effort tiered per agent** — `low` for the Data Auditor's checklist pass,
+  `high` for the Risk Reviewer's judgement call.
+
+**Failure is degradation, not deletion.** Agents run concurrently; one that
+errors is recorded in `failures` and the others still count. A failed reviewer
+does *not* lower the rank — an absent opinion is not evidence against a pick —
+but it is surfaced as a warning so the reader knows the pick got less scrutiny
+than the label implies.
 
 ## Usage
 
