@@ -1,0 +1,24 @@
+{
+  "name": "@workspace/sports-data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sabermetrics": "./src/sabermetrics/index.ts",
+    "./mlb": "./src/mlb/index.ts",
+    "./features": "./src/features/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "step2:report": "tsx src/cli/step2-report.ts"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}
