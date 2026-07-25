@@ -14,6 +14,8 @@ import type { CoreDataSource } from "../step2";
 export interface FixtureBundle {
   date: string;
   season: number;
+  /** When the slate was generated (set by fetch-slate; absent on hand-made fixtures). */
+  fetchedAt?: string;
   games: NormalizedGame[];
   /** Keyed by stringified pitcherId. */
   starters: Record<string, RawPitchingLine>;

@@ -1,6 +1,12 @@
 /**
  * HandiEdge — the daily-use MVP CLI.
  *
+ *   fetch-slate [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]
+ *     Pull today's schedule + starter/batting/bullpen season stats from the
+ *     live MLB Stats API and write data/slates/<date>.json, plus a
+ *     control-tower skeleton (data/control-towers/<date>.json) to fill in
+ *     handicap lines. Requires network access to statsapi.mlb.com.
+ *
  *   predict --control <control-tower.json> [--slate <slate.json>] [--force]
  *     Control Tower → run model → Monte Carlo → decision engine → calibration
  *     → prediction LOCK (data/predictions/<date>.json) + console report.
@@ -47,11 +53,15 @@ import {
   type HandicapInput,
 } from "../engine/decision";
 import { settle, type GameResult } from "../engine/settle";
+import { MlbStatsClient } from "../mlb/client";
+import { buildSlate } from "../sources/slate-builder";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(here, "..", "..");
 const DATA_DIR = join(PKG_ROOT, "data");
 const PRED_DIR = join(DATA_DIR, "predictions");
+const SLATE_DIR = join(DATA_DIR, "slates");
+const CT_DIR = join(DATA_DIR, "control-towers");
 const CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
 const HISTORY_PATH = join(DATA_DIR, "history.jsonl");
 const DEFAULT_SLATE = join(PKG_ROOT, "fixtures", "2024-slate.json");
@@ -119,6 +129,86 @@ function printPrediction(p: GamePrediction): void {
   if (p.flags.length) console.log(`  Flags: ${p.flags.join(", ")}`);
 }
 
+async function cmdFetchSlate(args: {
+  date?: string;
+  season?: string;
+  out?: string;
+  force?: boolean;
+}): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  const season = args.season ? Number(args.season) : Number(date.slice(0, 4));
+  const outPath = resolve(args.out ?? join(SLATE_DIR, `${date}.json`));
+  if (existsSync(outPath) && !args.force) {
+    throw new Error(
+      `Slate already exists for ${date} (${outPath}). Use --force to refetch.`,
+    );
+  }
+
+  console.log(`Fetching MLB slate for ${date} (season ${season})…`);
+  const client = new MlbStatsClient();
+  let report;
+  try {
+    report = await buildSlate({ date, season, client });
+  } catch (err) {
+    throw new Error(
+      `${err instanceof Error ? err.message : String(err)}\n` +
+        `  Could not reach the MLB Stats API (statsapi.mlb.com). If this ` +
+        `environment blocks outbound traffic, run fetch-slate from a machine ` +
+        `with network access, or pass predict an existing slate via --slate.`,
+    );
+  }
+  const bundle = { ...report.bundle, fetchedAt: new Date().toISOString() };
+  await saveJson(outPath, bundle);
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — slate for ${date}`);
+  console.log("=".repeat(72));
+  for (const g of bundle.games) {
+    const sp = (id: number | null) =>
+      id !== null && bundle.starters[String(id)] ? "✓" : "✗";
+    console.log(
+      `  ${g.gamePk}  ${g.away.teamName ?? "?"} @ ${g.home.teamName ?? "?"}` +
+        `  (SP ${g.away.probablePitcherName ?? "TBD"} ${sp(g.away.probablePitcherId)}` +
+        ` vs ${g.home.probablePitcherName ?? "TBD"} ${sp(g.home.probablePitcherId)})`,
+    );
+  }
+  console.log(
+    `  Starters ${report.startersFetched}/${report.startersExpected}, ` +
+      `teams ${report.teamsFetched}/${report.teamsExpected} (batting+bullpen).`,
+  );
+  if (report.warnings.length) {
+    console.log("  Warnings:");
+    for (const w of report.warnings) console.log(`    - ${w}`);
+  }
+  console.log(`  Slate written → ${outPath}`);
+
+  // Control-tower skeleton: create once, never overwrite the user's edits.
+  const ctPath = join(CT_DIR, `${date}.json`);
+  if (!existsSync(ctPath)) {
+    const handicaps: Record<string, HandicapInput> = {};
+    for (const g of bundle.games) {
+      handicaps[String(g.gamePk)] = { side: "home", line: -1.5 };
+    }
+    await saveJson(ctPath, {
+      date,
+      season,
+      sims: 10_000,
+      passThreshold: 0.55,
+      handicaps,
+    });
+    console.log(
+      `  Control-tower skeleton → ${ctPath}  (edit lines/totals, then run predict)`,
+    );
+  } else {
+    console.log(`  Control tower exists → ${ctPath}  (kept your edits)`);
+  }
+  console.log("");
+  console.log(`Next: pnpm run handiedge predict --control ${ctPath}`);
+}
+
 async function cmdPredict(args: {
   control?: string;
   slate?: string;
@@ -134,7 +224,11 @@ async function cmdPredict(args: {
     );
   }
 
-  const slatePath = resolve(args.slate ?? DEFAULT_SLATE);
+  // Slate resolution: explicit --slate > today's fetched slate > demo fixture.
+  const fetchedSlate = join(SLATE_DIR, `${ct.date}.json`);
+  const slatePath = resolve(
+    args.slate ?? (existsSync(fetchedSlate) ? fetchedSlate : DEFAULT_SLATE),
+  );
   const bundle = await readJson<FixtureBundle>(slatePath);
   const source = new FixtureCoreDataSource(bundle);
   const calibration = await loadCalibration();
@@ -268,14 +362,21 @@ async function main(): Promise<void> {
       control: { type: "string" },
       slate: { type: "string" },
       results: { type: "string" },
+      date: { type: "string" },
+      season: { type: "string" },
+      out: { type: "string" },
       force: { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];
-  if (cmd === "predict") await cmdPredict(values);
+  if (cmd === "fetch-slate") await cmdFetchSlate(values);
+  else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
   else {
     console.log("Usage:");
+    console.log(
+      "  handiedge fetch-slate [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]",
+    );
     console.log(
       "  handiedge predict --control <control-tower.json> [--slate <slate.json>] [--force]",
     );

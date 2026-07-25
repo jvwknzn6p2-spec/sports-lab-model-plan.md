@@ -34,10 +34,19 @@ value), not batting average or raw runs.
 ### HandiEdge — the daily prediction tool (MVP)
 
 ```bash
-# 1. Predict + LOCK (Control Tower JSON in, picks out):
-pnpm --filter @workspace/sports-data run handiedge predict --control fixtures/control-tower-2024-07-25.json
+# 1. Fetch today's slate from the live MLB API (needs network access);
+#    also writes a control-tower skeleton to fill handicap lines into:
+pnpm --filter @workspace/sports-data run handiedge fetch-slate
 
-# 2. After the games, settle + self-learn:
+# 2. Edit data/control-towers/<date>.json (lines, totals), then predict + LOCK.
+#    predict auto-uses data/slates/<date>.json when it exists:
+pnpm --filter @workspace/sports-data run handiedge predict --control data/control-towers/<date>.json
+
+# 3. After the games, settle + self-learn:
+pnpm --filter @workspace/sports-data run handiedge settle --results <results.json>
+
+# Offline demo (no network needed):
+pnpm --filter @workspace/sports-data run handiedge predict --control fixtures/control-tower-2024-07-25.json
 pnpm --filter @workspace/sports-data run handiedge settle --results fixtures/results-2024-07-25.json
 ```
 
