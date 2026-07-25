@@ -1,6 +1,12 @@
 # AI Sports Lab v1.0 — Technical Plan
 
-_A practical, beginner-friendly blueprint for building an MLB game-prediction system. This document describes **what** we will build and **why**. No code yet — this is the plan we build from._
+_A practical, beginner-friendly blueprint for building an MLB game-prediction system. This document describes **what** we build and **why**._
+
+> **Implementation status.** Steps 1-8 and 10 of Section 8 are implemented in
+> `lib/sports-lab/` (see its `README.md` to run them). Step 9, the AI
+> multi-agent review, and Step 11, scheduling, are not built yet. See
+> [Section 9](#9-implementation-status) for the honest per-step breakdown,
+> including the approximations and known gaps.
 
 ---
 
@@ -208,3 +214,56 @@ A suggested build order, from foundation to full pipeline. Each step is small en
 11. **Automate the daily workflow.** Schedule the full pipeline to run each morning with an optional pre-game refresh.
 
 **Guiding principle:** ship the smallest working slice first (schedule → one prediction), then layer accuracy and polish on top. Keep every component simple and explainable before making it fancy.
+
+---
+
+## 9. Implementation status
+
+Code lives in `lib/sports-lab/`. Run `pnpm --filter @workspace/sports-lab run demo`
+to see the whole loop execute against synthetic fixtures with no network access.
+
+| Step | Status | Where | Notes |
+|---|---|---|---|
+| 1. Schedule fetch | **Done** | `sources/mlb/schedule.ts` | One cached call per date also yields finals, recent form and bullpen load |
+| 2. Core game data | **Done** | `sources/mlb/{teams,pitchers,bullpen}.ts` | Bullpen RA9 is aggregated from zero-start pitchers; swingmen excluded |
+| 3. Context data + validation | **Done** | `sources/{weather,static}`, `pipeline/validate.ts` | Injuries counted not valued; bullpen fatigue is a schedule proxy |
+| 4. Baseline model | **Done** | `pipeline/baseline.ts` | Multiplicative, with a printed adjustment trail; every rate shrunk by sample size |
+| 5. Monte Carlo | **Done** | `pipeline/simulate.ts` | Negative binomial, seeded and reproducible; extra-innings correction applied |
+| 6. Odds + EV | **Done** | `sources/odds.ts`, `pipeline/ev.ts` | Requires `ODDS_API_KEY`; lines de-vigged before any edge is claimed |
+| 7. Confidence S/A/B/C | **Done** | `pipeline/confidence.ts` | Four scored components, then caps that can only lower the rank |
+| 8. Backtesting | **Partial** | `loop/{score,analyze,calibrate}.ts` | Forward grading is sound. `backtest` over past dates has look-ahead bias and says so |
+| 9. AI multi-agent review | **Not built** | — | Next major piece: Data Auditor, Matchup Analyst, Risk Reviewer |
+| 10. Daily output + logging | **Done** | `report/text.ts`, `store/store.ts` | Text report plus JSON with a full input snapshot |
+| 11. Automation | **Not built** | — | Commands are ready; no scheduler wired up |
+
+### The loop
+
+Section 5's daily workflow is implemented as a single command, `loop`:
+
+```
+score yesterday → analyse every graded day → refit calibration → predict today
+```
+
+`calibration.json` is the only file that carries learned parameters. `predict`
+reads it, `calibrate` writes it, and nothing else may hold a number learned from
+results. That is what makes "improve" a real step rather than hand-tuning.
+
+### Calibration state and known gaps
+
+- **The calibration ships unfitted.** Below 60 graded games `calibrate` refuses
+  to fit, and the confidence step withholds the S rank entirely until a fit
+  exists. A fit from 20 games is noise, and a loop that trusts it gets worse.
+- **Extra-innings rate: fixed and verified.** Independent negative-binomial draws
+  produce ties in ~10.4% of simulations against a real MLB rate near 8.7%. The
+  surplus tie mass is now redistributed to a one-run margin. The test suite
+  confirms the corrected rate lands within 0.6 points of the target while moving
+  the win probability by less than 1 point.
+- **NPB is still uncalibrated, and therefore not implemented.** `Sport` is a
+  parameter and calibration is keyed by sport, but only MLB has sources, park
+  factors and league constants. Shipping MLB constants under an NPB label would
+  be worse than shipping nothing.
+- **Park factors are hand-maintained** and need refreshing each season. An
+  unknown venue degrades to neutral 1.00 with a warning, never a guess.
+- **Injuries are the largest remaining modelling gap** — a count of IL players
+  cannot distinguish a lost star from a lost bench arm, which is why the penalty
+  is capped at 3%.

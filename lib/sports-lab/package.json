@@ -1,0 +1,29 @@
+{
+  "name": "@workspace/sports-lab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "scripts": {
+    "cli": "tsx ./src/cli.ts",
+    "predict": "tsx ./src/cli.ts predict",
+    "score": "tsx ./src/cli.ts score",
+    "analyze": "tsx ./src/cli.ts analyze",
+    "calibrate": "tsx ./src/cli.ts calibrate",
+    "loop": "tsx ./src/cli.ts loop",
+    "doctor": "tsx ./src/cli.ts doctor",
+    "demo": "tsx ./src/testing/demo.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}
