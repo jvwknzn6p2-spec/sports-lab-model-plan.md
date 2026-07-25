@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/sim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node src/selftest.ts",
+    "demo": "node src/demo.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}
