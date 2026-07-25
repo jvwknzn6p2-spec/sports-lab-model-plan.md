@@ -14,24 +14,35 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies first for better layer caching.
+# INSTALL_XGBOOST=true (default) bakes in the production XGBoost adapter so the
+# real model can run in the container; set to false for a slim fallback-only image.
+ARG INSTALL_XGBOOST=true
 COPY pyproject.toml README.md ./
-RUN pip install ".[dev]"
+RUN if [ "$INSTALL_XGBOOST" = "true" ]; then \
+        pip install ".[dev,xgboost]"; \
+    else \
+        pip install ".[dev]"; \
+    fi
 
 # Copy the application source.
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
 COPY examples ./examples
+COPY scripts ./scripts
 COPY tests ./tests
 
-# Non-root runtime user.
+RUN chmod +x scripts/docker-entrypoint.sh
+
+# Non-root runtime user; the artifacts dir is writable so train-if-missing works.
 RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /app/artifacts \
     && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -fsS http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["scripts/docker-entrypoint.sh"]

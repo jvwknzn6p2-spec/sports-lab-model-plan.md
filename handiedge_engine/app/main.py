@@ -8,7 +8,15 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.exception_handlers import register_exception_handlers
-from app.api.routes import errors, health, learning, locks, predictions, settlements
+from app.api.routes import (
+    errors,
+    health,
+    learning,
+    locks,
+    model,
+    predictions,
+    settlements,
+)
 from app.core.config import get_settings
 from app.core.ids import correlation_id as new_correlation_id
 from app.core.logging import configure_logging, get_logger
@@ -58,6 +66,7 @@ def create_app() -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(health.router)
+    app.include_router(model.router)
     app.include_router(predictions.router)
     app.include_router(locks.router)
     app.include_router(settlements.router)

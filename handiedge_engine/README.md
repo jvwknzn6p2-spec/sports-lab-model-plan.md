@@ -82,13 +82,39 @@ python -m pytest                            # or: make test
 ## 4. Docker setup (PostgreSQL, production default)
 
 ```bash
-docker compose up --build                   # starts Postgres + API (auto-migrates)
+docker compose up --build                   # Postgres + API running the REAL model
 docker compose run --rm api alembic upgrade head
 docker compose run --rm api pytest
 ```
 
 The compose stack provides a `db` (Postgres 16) service with a persistent volume
-and health checks, and an `api` service that runs migrations then `uvicorn`.
+and an `api` service whose entrypoint **migrates → trains the model artifact if
+missing → serves**. The image bakes in the XGBoost extra
+(`INSTALL_XGBOOST=true`), and the api service defaults to
+`HANDIEDGE_MODEL_ADAPTER=xgboost`, so `docker compose up` runs the genuine model
+(`fallback_used=false`) with the artifact persisted in the `handiedge_models`
+volume. Verify what's live:
+
+```bash
+curl -s localhost:8000/api/v1/model    # -> is_production: true, model_id: xgboost-runs-mlb
+```
+
+For a slim fallback-only image, build with `--build-arg INSTALL_XGBOOST=false`
+and set `HANDIEDGE_MODEL_ADAPTER=fallback`.
+
+## 4b. Where the production model runs
+
+| Target | Command | Runs the real model? |
+|---|---|---|
+| **Docker (compose)** | `docker compose up --build` | ✅ yes — entrypoint trains-if-missing, `/api/v1/model` confirms |
+| **Local Python** | `make install-xgboost && make train-xgboost && make predict-xgboost` | ✅ yes (reproducible, seeded) |
+| **Local API** | set the `HANDIEDGE_MODEL_ADAPTER=xgboost` env vars, then `make run` | ✅ yes |
+| **Fallback anywhere** | default (`HANDIEDGE_MODEL_ADAPTER=fallback`) | ❌ NON-PRODUCTION fallback |
+
+The trained `.ubj` artifacts are reproducible from the seeded training script and
+are **git-ignored**; a fresh clone regenerates them via any of the paths above.
+The bundled model is trained on **synthetic** data — replace the training data
+loader for genuine predictive power (see section 12).
 
 ## 5. Environment variables
 
@@ -124,6 +150,7 @@ Run the API: `make run` (or `uvicorn app.main:app --reload`). OpenAPI at `/docs`
 | Method & path | Purpose |
 |---|---|
 | `GET /health`, `GET /ready` | liveness / readiness |
+| `GET /api/v1/model` | which adapter is live (production vs fallback) |
 | `POST /api/v1/predictions/run` | run the pipeline (idempotent by run_id+hash) |
 | `GET /api/v1/predictions/runs/{run_id}` | fetch a run result |
 | `GET /api/v1/predictions/{prediction_id}` | fetch a single prediction |

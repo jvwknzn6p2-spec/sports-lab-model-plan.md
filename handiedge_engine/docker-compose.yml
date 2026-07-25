@@ -16,7 +16,11 @@ services:
       retries: 10
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        # Bake in the production XGBoost adapter so the real model runs here.
+        INSTALL_XGBOOST: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -24,12 +28,17 @@ services:
       HANDIEDGE_DATABASE_URL: postgresql+psycopg://handiedge:handiedge@db:5432/handiedge
       HANDIEDGE_ENVIRONMENT: docker
       HANDIEDGE_LOG_JSON: "true"
+      # Run the real trained model (fallback_used=false). The entrypoint trains a
+      # reproducible artifact on first boot if the mounted volume is empty.
+      HANDIEDGE_MODEL_ADAPTER: xgboost
+      HANDIEDGE_MODEL_ARTIFACT_DIR: /app/artifacts/xgboost_mlb
+      HANDIEDGE_CALIBRATION_ARTIFACT_PATH: /app/artifacts/xgboost_mlb/calibration.json
     ports:
       - "8000:8000"
-    # Apply migrations, then launch the API.
-    command: >-
-      sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      # Persist the trained model artifact across restarts.
+      - handiedge_models:/app/artifacts
+    # Migrations + train-if-missing + serve are handled by the image entrypoint.
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
       interval: 15s
@@ -38,3 +47,4 @@ services:
 
 volumes:
   handiedge_pgdata:
+  handiedge_models:

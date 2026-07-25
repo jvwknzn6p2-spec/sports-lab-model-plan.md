@@ -25,8 +25,18 @@ def test_openapi_schema_exposes_endpoints(api_client):
         "/api/v1/settlements",
         "/api/v1/error-analysis/{settlement_id}",
         "/api/v1/learning/workflows",
+        "/api/v1/model",
     ]:
         assert expected in paths, f"missing {expected}"
+
+
+def test_model_endpoint_reports_active_adapter(api_client):
+    body = api_client.get("/api/v1/model").json()
+    # Default adapter in tests is the NON-PRODUCTION fallback.
+    assert body["model_adapter"] == "fallback"
+    assert body["is_production"] is False
+    assert body["fallback"] is True
+    assert body["model_id"] == "deterministic-fallback"
 
 
 def test_run_prediction_response_shape(api_client, valid_payload):
