@@ -30,7 +30,8 @@ export interface MlbScheduleResponse {
 export interface MlbScheduleGame {
   gamePk: number;
   gameDate?: string;
-  status?: { detailedState?: string };
+  /** abstractGameState is "Preview" | "Live" | "Final" on the live API. */
+  status?: { detailedState?: string; abstractGameState?: string };
   teams?: {
     home?: MlbScheduleGameSide;
     away?: MlbScheduleGameSide;
@@ -41,6 +42,8 @@ export interface MlbScheduleGame {
 export interface MlbScheduleGameSide {
   team?: MlbTeamRef;
   probablePitcher?: MlbPersonRef;
+  /** Runs scored — present once the game is underway/final. */
+  score?: number;
 }
 
 /** Generic stats envelope used by people/team stats endpoints. */

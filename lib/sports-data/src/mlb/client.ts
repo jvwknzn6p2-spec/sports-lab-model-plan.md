@@ -118,6 +118,15 @@ export class MlbStatsClient {
     });
   }
 
+  /** Games on a date with linescore hydrated — final scores for settlement. */
+  scheduleResults(date: string): Promise<MlbScheduleResponse> {
+    return this.getJson<MlbScheduleResponse>("/schedule", {
+      sportId: 1,
+      date,
+      hydrate: "team,linescore",
+    });
+  }
+
   /** Season pitching stats for a player (the probable starter). */
   pitcherSeason(personId: number, season: number): Promise<MlbStatsResponse> {
     return this.getJson<MlbStatsResponse>(`/people/${personId}/stats`, {

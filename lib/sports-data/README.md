@@ -42,13 +42,18 @@ pnpm --filter @workspace/sports-data run handiedge fetch-slate
 #    predict auto-uses data/slates/<date>.json when it exists:
 pnpm --filter @workspace/sports-data run handiedge predict --control data/control-towers/<date>.json
 
-# 3. After the games, settle + self-learn:
-pnpm --filter @workspace/sports-data run handiedge settle --results <results.json>
+# 3. After the games: fetch final scores AND settle in one shot:
+pnpm --filter @workspace/sports-data run handiedge fetch-results --settle
 
 # Offline demo (no network needed):
 pnpm --filter @workspace/sports-data run handiedge predict --control fixtures/control-tower-2024-07-25.json
 pnpm --filter @workspace/sports-data run handiedge settle --results fixtures/results-2024-07-25.json
 ```
+
+The only manual input in the daily loop is the handicap lines in the control
+tower. `fetch-results` includes only games the API marks Final — live or
+postponed games are listed as pending (rerun with `--force` later); manual
+`settle --results <file>` still works for hand-written results.
 
 Pipeline: Control Tower → run model → Monte Carlo (seeded, reproducible) →
 decision engine → calibration → **prediction lock** (`data/predictions/<date>.json`).

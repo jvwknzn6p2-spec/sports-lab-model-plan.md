@@ -11,6 +11,12 @@
  *     Control Tower → run model → Monte Carlo → decision engine → calibration
  *     → prediction LOCK (data/predictions/<date>.json) + console report.
  *
+ *   fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]
+ *     Pull final scores from the live MLB Stats API (linescore hydrate) and
+ *     write data/results/<date>.json. Only Final games are included; live or
+ *     postponed games are listed as pending — rerun later with --force.
+ *     With --settle, settlement runs immediately after the fetch.
+ *
  *   settle --results <results.json>
  *     Settlement → error analysis → self-learning (updates data/calibration.json,
  *     appends data/history.jsonl) + console report.
@@ -55,6 +61,7 @@ import {
 import { settle, type GameResult } from "../engine/settle";
 import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
+import { buildResults } from "../sources/results-builder";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(here, "..", "..");
@@ -62,6 +69,7 @@ const DATA_DIR = join(PKG_ROOT, "data");
 const PRED_DIR = join(DATA_DIR, "predictions");
 const SLATE_DIR = join(DATA_DIR, "slates");
 const CT_DIR = join(DATA_DIR, "control-towers");
+const RESULTS_DIR = join(DATA_DIR, "results");
 const CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
 const HISTORY_PATH = join(DATA_DIR, "history.jsonl");
 const DEFAULT_SLATE = join(PKG_ROOT, "fixtures", "2024-slate.json");
@@ -281,6 +289,79 @@ async function cmdPredict(args: {
   );
 }
 
+async function cmdFetchResults(args: {
+  date?: string;
+  out?: string;
+  force?: boolean;
+  settle?: boolean;
+}): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  const outPath = resolve(args.out ?? join(RESULTS_DIR, `${date}.json`));
+  if (existsSync(outPath) && !args.force) {
+    throw new Error(
+      `Results already exist for ${date} (${outPath}). Use --force to refetch.`,
+    );
+  }
+
+  console.log(`Fetching MLB final scores for ${date}…`);
+  const client = new MlbStatsClient();
+  let report;
+  try {
+    report = await buildResults({ date, client });
+  } catch (err) {
+    throw new Error(
+      `${err instanceof Error ? err.message : String(err)}\n` +
+        `  Could not reach the MLB Stats API (statsapi.mlb.com). If this ` +
+        `environment blocks outbound traffic, run fetch-results from a ` +
+        `machine with network access, or write the results JSON by hand ` +
+        `and run settle --results.`,
+    );
+  }
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — results for ${date}`);
+  console.log("=".repeat(72));
+  for (const [gamePk, r] of Object.entries(report.results)) {
+    console.log(
+      `  ${gamePk}: home ${r.homeScore} — away ${r.awayScore}  (Final)`,
+    );
+  }
+  for (const p of report.pending) {
+    console.log(`  ${p.gamePk}: ${p.matchup} — PENDING (${p.reason})`);
+  }
+  if (report.finals === 0) {
+    throw new Error(
+      `No final games for ${date} yet (${report.pending.length} pending). ` +
+        `Nothing written — rerun after the games finish.`,
+    );
+  }
+
+  const payload = {
+    date,
+    fetchedAt: new Date().toISOString(),
+    results: report.results,
+    pending: report.pending,
+  };
+  await saveJson(outPath, payload);
+  console.log(`  Results written → ${outPath}`);
+  if (report.pending.length > 0) {
+    console.log(
+      `  NOTE: ${report.pending.length} game(s) not final — rerun with --force later to include them.`,
+    );
+  }
+
+  if (args.settle) {
+    console.log("");
+    await runSettle(payload);
+  } else {
+    console.log("");
+    console.log(`Next: pnpm run handiedge settle --results ${outPath}`);
+  }
+}
+
 async function cmdSettle(args: { results?: string }): Promise<void> {
   if (!args.results)
     throw new Error("settle requires --results <results.json>");
@@ -288,6 +369,13 @@ async function cmdSettle(args: { results?: string }): Promise<void> {
     date: string;
     results: Record<string, GameResult>;
   }>(resolve(args.results));
+  await runSettle(payload);
+}
+
+async function runSettle(payload: {
+  date: string;
+  results: Record<string, GameResult>;
+}): Promise<void> {
   const lockPath = join(PRED_DIR, `${payload.date}.json`);
   if (!existsSync(lockPath)) {
     throw new Error(
@@ -366,21 +454,26 @@ async function main(): Promise<void> {
       season: { type: "string" },
       out: { type: "string" },
       force: { type: "boolean", default: false },
+      settle: { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];
   if (cmd === "fetch-slate") await cmdFetchSlate(values);
+  else if (cmd === "fetch-results") await cmdFetchResults(values);
   else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
   else {
     console.log("Usage:");
     console.log(
-      "  handiedge fetch-slate [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]",
+      "  handiedge fetch-slate   [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]",
     );
     console.log(
-      "  handiedge predict --control <control-tower.json> [--slate <slate.json>] [--force]",
+      "  handiedge predict       --control <control-tower.json> [--slate <slate.json>] [--force]",
     );
-    console.log("  handiedge settle  --results <results.json>");
+    console.log(
+      "  handiedge fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]",
+    );
+    console.log("  handiedge settle        --results <results.json>");
     process.exitCode = cmd ? 1 : 0;
   }
 }

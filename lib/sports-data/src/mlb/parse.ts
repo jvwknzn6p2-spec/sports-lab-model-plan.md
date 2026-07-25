@@ -53,6 +53,8 @@ export interface NormalizedGame {
   gamePk: number;
   gameDate: string | null;
   status: string | null;
+  /** "Preview" | "Live" | "Final" (null when the API omits it). */
+  abstractState: string | null;
   venue: { id: number | null; name: string | null };
   home: NormalizedGameSide;
   away: NormalizedGameSide;
@@ -63,6 +65,8 @@ export interface NormalizedGameSide {
   teamName: string | null;
   probablePitcherId: number | null;
   probablePitcherName: string | null;
+  /** Final/live runs scored; null before first pitch. */
+  score: number | null;
 }
 
 export function normalizeSchedule(res: MlbScheduleResponse): NormalizedGame[] {
@@ -81,11 +85,13 @@ function normalizeGame(g: MlbScheduleGame): NormalizedGame {
     teamName: s?.team?.name ?? null,
     probablePitcherId: s?.probablePitcher?.id ?? null,
     probablePitcherName: s?.probablePitcher?.fullName ?? null,
+    score: typeof s?.score === "number" ? s.score : null,
   });
   return {
     gamePk: g.gamePk,
     gameDate: g.gameDate ?? null,
     status: g.status?.detailedState ?? null,
+    abstractState: g.status?.abstractGameState ?? null,
     venue: { id: g.venue?.id ?? null, name: g.venue?.name ?? null },
     home: side(g.teams?.home),
     away: side(g.teams?.away),
