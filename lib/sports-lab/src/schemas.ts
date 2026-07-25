@@ -297,6 +297,21 @@ export const gameOddsSchema = z.object({
 });
 export type GameOdds = z.infer<typeof gameOddsSchema>;
 
+/* -------------------------------------------------------------------------- */
+/* Settled results (Step 8)                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A completed game's final score, including any extra innings. This is the
+ * ground truth backtesting scores predictions against.
+ */
+export const finalScoreSchema = z.object({
+  gameId: z.string().min(1),
+  homeRuns: z.number().int().nonnegative(),
+  awayRuns: z.number().int().nonnegative(),
+});
+export type FinalScore = z.infer<typeof finalScoreSchema>;
+
 export const gameContextSchema = z.object({
   gameId: z.string().min(1),
   recentForm: z.object({ home: teamRecentFormSchema, away: teamRecentFormSchema }),

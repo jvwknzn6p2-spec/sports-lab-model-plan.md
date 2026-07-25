@@ -11,6 +11,22 @@ export * from "./schemas";
 export * from "./flags";
 export * from "./validate";
 
+// Step 8 — backtesting.
+export {
+  runBacktest,
+  settleBet,
+  betProfit,
+  toPredictionRecord,
+  explainBacktest,
+  type BacktestOptions,
+  type BacktestReport,
+  type BacktestSummary,
+  type BetOutcome,
+  type CalibrationBin,
+  type PredictionRecord,
+  type SettledBet,
+} from "./backtest";
+
 // Step 7 — confidence ranking.
 export {
   assignConfidence,

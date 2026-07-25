@@ -37,6 +37,11 @@ export interface BetEvaluation {
   selection: BetSelection;
   /** Report-ready description, e.g. "Astros ML" or "OVER 8.5". */
   label: string;
+  /**
+   * The market's line — the run-line spread or the total. Null for moneylines.
+   * Carried as a number so settlement (Step 8) never has to parse `label`.
+   */
+  line: number | null;
   americanOdds: AmericanOdds;
   decimalOdds: number;
   /** Model P(win), unconditional — pushes excluded from both win and lose. */
@@ -91,6 +96,7 @@ function evaluateBet(
   market: BetMarket,
   selection: BetSelection,
   label: string,
+  line: number | null,
   americanOdds: AmericanOdds,
   marketProbability: number,
   pWin: number,
@@ -112,6 +118,7 @@ function evaluateBet(
     market,
     selection,
     label,
+    line,
     americanOdds,
     decimalOdds: round(decimalOdds),
     modelProbability: round(pWin),
@@ -172,6 +179,7 @@ export function evaluateOdds(
         "moneyline",
         "home",
         `${labels.home} ML`,
+        null,
         odds.moneyline.home,
         homeMarket,
         simulation.moneyline.home,
@@ -182,6 +190,7 @@ export function evaluateOdds(
         "moneyline",
         "away",
         `${labels.away} ML`,
+        null,
         odds.moneyline.away,
         awayMarket,
         simulation.moneyline.away,
@@ -212,6 +221,7 @@ export function evaluateOdds(
         "run_line",
         "home",
         `${labels.home} -${odds.runLine.line}`,
+        odds.runLine.line,
         odds.runLine.homePrice,
         homeMarket,
         rl.homeCoversMinus,
@@ -222,6 +232,7 @@ export function evaluateOdds(
         "run_line",
         "away",
         `${labels.away} +${odds.runLine.line}`,
+        odds.runLine.line,
         odds.runLine.awayPrice,
         awayMarket,
         rl.awayCoversPlus,
@@ -255,6 +266,7 @@ export function evaluateOdds(
         "total",
         "over",
         `OVER ${odds.total.line}`,
+        odds.total.line,
         odds.total.overPrice,
         overMarket,
         t.over!,
@@ -265,6 +277,7 @@ export function evaluateOdds(
         "total",
         "under",
         `UNDER ${odds.total.line}`,
+        odds.total.line,
         odds.total.underPrice,
         underMarket,
         t.under!,

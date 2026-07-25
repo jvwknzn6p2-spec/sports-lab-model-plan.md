@@ -1,13 +1,14 @@
-# @workspace/sports-lab — Steps 3–7 of the AI Sports Lab pipeline
+# @workspace/sports-lab — Steps 3–8 of the AI Sports Lab pipeline
 
-Implements **Steps 3–7** of the [model plan](../../sports-lab/model-plan.md):
+Implements **Steps 3–8** of the [model plan](../../sports-lab/model-plan.md):
 the context-data layer (recent form, injuries, weather, ballpark factors), the
 **validation / flagging layer** that decides how far each game's data can be
 trusted, the **baseline statistical model** that turns those inputs into
 expected runs per team, the **Monte Carlo simulation** that converts expected
 runs into win / run-line / total probabilities, the **EV layer** that compares
-those probabilities against sportsbook odds to find value, and the
-**confidence ranking** that reduces all of it to a single S/A/B/C letter.
+those probabilities against sportsbook odds to find value, the **confidence
+ranking** that reduces all of it to a single S/A/B/C letter, and the
+**backtester** that scores logged predictions against real results.
 
 It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
 input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
@@ -33,6 +34,7 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `odds/conversion.ts` | American/decimal odds, implied probability, vig removal |
 | `odds/ev.ts` | Step 6 — edge and expected value per bet; flags value bets |
 | `confidence.ts` | Step 7 — combines all of the above into an S/A/B/C rank |
+| `backtest.ts` | Step 8 — settles logged predictions and scores accuracy/ROI |
 
 ## Weather is observed-vs-forecast aware
 
@@ -217,6 +219,59 @@ The agreement checks are:
 - **Baseline vs simulation direction** — a consistency guard. These are derived
   from one another, so divergence means something is broken.
 
+## Step 8 — backtesting
+
+`runBacktest` replays logged predictions against real final scores. This is the
+only stage that can tell you whether any of the constants above are right.
+
+```
+Recommended bets only:
+  recommended  1004 bets  482-522-0  hit  48.0%  ROI   10.1%  +101.75u
+
+By confidence rank:
+  S             344 bets  175-169-0  hit  50.9%  ROI   28.1%  +96.63u
+  A             310 bets  156-154-0  hit  50.3%  ROI   13.4%  +41.49u
+  B             234 bets  103-131-0  hit  44.0%  ROI   -8.5%  -19.80u
+  C             116 bets   48-68-0   hit  41.4%  ROI  -14.3%  -16.57u
+
+Brier score: 0.2446 (0.25 = always guessing 50%)
+Rank ordering holds: yes
+```
+
+**Odds are logged with the prediction, not looked up later.** A line moves;
+scoring yesterday's pick against today's price would be revisionist. That is
+why `PredictionRecord` carries the full `BetEvaluation`, decimal odds included.
+
+**Small samples lie, and the report says so.** Every summary carries `resolved`
+and `sufficientSample`; rates are `null` rather than a fake `0` when nothing
+has resolved; and `rankOrderingHolds` returns `null` — not `false` — when fewer
+than two ranks have enough data to compare. A confident-looking backtest built
+on 20 bets is worse than no backtest.
+
+**Pushes are handled as their own outcome.** They stake a unit but do not count
+toward accuracy, so a whole-number total that lands exactly on the line neither
+flatters nor penalises the hit rate.
+
+Metrics include hit rate and ROI (overall, by rank, by market), a calibration
+table, and a **Brier score** — the mean squared error of the probabilities,
+where 0.25 is what you score by always guessing 50%. Calibration and Brier
+together catch the failure hit rate alone misses: a model that is right often
+but wildly overconfident.
+
+### What the numbers above do and do not show
+
+That run is 600 **synthetic** games whose results were drawn from the model's
+own distribution. It validates the plumbing — settlement, ROI, calibration
+binning, and the rank ordering — and it confirms that a higher rank really does
+earn a better ROI. It says **nothing** about real-world accuracy, which needs
+real MLB results.
+
+One finding is worth carrying forward. Against a genuinely sharp book the model
+found edges with a **median near 2.5%**, which is below the B threshold of 3% —
+so essentially every pick ranked C. The tier thresholds in `model/constants.ts`
+(S ≥ 8%, A ≥ 5%, B ≥ 3%) are calibrated for a softer market than a real one.
+Recalibrating them against real results is the first job once live data exists.
+
 ## Usage
 
 ```ts
@@ -257,11 +312,19 @@ if (!result.hasErrors) {
 `rankGames` runs the same assessment over a slate and sorts it best-first,
 which is the "all games sorted by confidence" view from plan Section 6.
 
+Log each prediction with `toPredictionRecord(confidence, evaluation, sim)`, and
+once the games finish, score them:
+
+```ts
+const report = runBacktest(
+  logged.map((prediction) => ({ prediction, score: finalScores[prediction.gameId] })),
+);
+console.log(explainBacktest(report).join("\n"));
+```
+
 The daily report (Step 10) renders `flags` in the card's "Flags:" line, the
 baseline step traces as "Key factors", `explainEvaluation` as the "Value:"
-block, and the rank as the card header. Step 8 (backtesting) checks whether
-S actually beat A actually beat B — and recalibrates the thresholds in
-`model/constants.ts` if not.
+block, and the rank as the card header.
 
 ## Develop
 
