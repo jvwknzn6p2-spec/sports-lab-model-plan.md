@@ -65,7 +65,12 @@ const CAP = {
   parkFallback: "A",
   lineupUnconfirmed: "A",
   formMissing: "B",
+  missingBatting: "C",
+  missingBullpen: "B",
 } as const satisfies Record<string, ConfidenceRank>;
+
+/** Bullpen innings over the last 3 days beyond which fatigue is flagged. */
+const BULLPEN_FATIGUE_IP = 9;
 
 function hoursBetween(aISO: string, bISO: string): number {
   return Math.abs(Date.parse(aISO) - Date.parse(bISO)) / 3_600_000;
@@ -112,6 +117,47 @@ export function validateGame(
         message: `${side} starter ${starter.name} is not officially confirmed.`,
       });
       applyCap(CAP.unconfirmedStarter);
+    }
+  }
+
+  /* --- Team batting & bullpen (Step 2 inputs the baseline model needs) ---- */
+  for (const side of ["home", "away"] as const) {
+    const batting = side === "home" ? game.homeBatting : game.awayBatting;
+    // runsPerGame is the offense anchor — absent, the baseline cannot run.
+    const battingUsable = batting !== null && batting.runsPerGame !== null;
+    require(battingUsable);
+    if (!battingUsable) {
+      flags.push({
+        code: "missing_batting",
+        severity: "error",
+        field: `${side}Batting`,
+        message: `No team batting runs/game for the ${side} team; offense cannot be modeled.`,
+      });
+      applyCap(CAP.missingBatting);
+    }
+
+    const bullpen = side === "home" ? game.homeBullpen : game.awayBullpen;
+    const bullpenUsable = bullpen !== null && bullpen.era !== null;
+    require(bullpenUsable);
+    if (!bullpenUsable) {
+      flags.push({
+        code: "missing_bullpen",
+        severity: "warn",
+        field: `${side}Bullpen`,
+        message: `No bullpen ERA for the ${side} team; late-inning run prevention is unmodeled.`,
+      });
+      applyCap(CAP.missingBullpen);
+    } else if (
+      bullpen.inningsPitchedLast3Days !== null &&
+      bullpen.inningsPitchedLast3Days > BULLPEN_FATIGUE_IP
+    ) {
+      // Real signal for the model, not a data defect → info, no cap.
+      flags.push({
+        code: "bullpen_fatigue",
+        severity: "info",
+        field: `${side}Bullpen`,
+        message: `${side} bullpen threw ${bullpen.inningsPitchedLast3Days} innings in the last 3 days.`,
+      });
     }
   }
 

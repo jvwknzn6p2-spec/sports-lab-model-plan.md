@@ -60,7 +60,34 @@ export const startingPitcherSchema = z.object({
 });
 export type StartingPitcher = z.infer<typeof startingPitcherSchema>;
 
-/** The minimal per-game payload Steps 1–2 hand to Step 3. */
+/**
+ * Season-to-date team batting. `runsPerGame` is the offense anchor the
+ * baseline model scales from, so it is the one field the model cannot
+ * substitute for; the rate stats are carried for later refinement.
+ */
+export const teamBattingStatsSchema = z.object({
+  teamId: z.string().min(1),
+  runsPerGame: z.number().nonnegative().nullable(),
+  onBasePct: z.number().min(0).max(1).nullable(),
+  sluggingPct: z.number().nonnegative().nullable(),
+  wOBA: z.number().nonnegative().nullable(),
+  fetchedAt: isoTimestamp,
+});
+export type TeamBattingStats = z.infer<typeof teamBattingStatsSchema>;
+
+/**
+ * Bullpen quality plus recent workload. `inningsPitchedLast3Days` is the
+ * fatigue signal — a bullpen that just threw heavy innings allows more runs.
+ */
+export const bullpenStatsSchema = z.object({
+  teamId: z.string().min(1),
+  era: z.number().nonnegative().nullable(),
+  inningsPitchedLast3Days: z.number().nonnegative().nullable(),
+  fetchedAt: isoTimestamp,
+});
+export type BullpenStats = z.infer<typeof bullpenStatsSchema>;
+
+/** The per-game payload Steps 1–2 hand to Steps 3–4. */
 export const coreGameSchema = z.object({
   /** Stable per-game id (MLB Stats API gamePk or similar). */
   gameId: z.string().min(1),
@@ -74,6 +101,12 @@ export const coreGameSchema = z.object({
   /** null when a source failed or a starter is not yet named. */
   homeStarter: startingPitcherSchema.nullable(),
   awayStarter: startingPitcherSchema.nullable(),
+  /** Step 2 team batting; null when the source failed. */
+  homeBatting: teamBattingStatsSchema.nullable(),
+  awayBatting: teamBattingStatsSchema.nullable(),
+  /** Step 2 bullpen stats; null when the source failed. */
+  homeBullpen: bullpenStatsSchema.nullable(),
+  awayBullpen: bullpenStatsSchema.nullable(),
 });
 export type CoreGame = z.infer<typeof coreGameSchema>;
 

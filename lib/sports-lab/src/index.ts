@@ -21,3 +21,14 @@ export {
 } from "./context/weather";
 export { ruledOut, materialAbsences, hasMaterialAbsence } from "./context/injuries";
 export { assembleGameContext, type ContextParts } from "./context/assemble";
+
+// Step 4 — baseline statistical model.
+export {
+  computeBaseline,
+  explainEstimate,
+  BaselineInputError,
+  type AdjustmentStep,
+  type BaselineResult,
+  type TeamRunEstimate,
+} from "./model/baseline";
+export * as baselineConstants from "./model/constants";

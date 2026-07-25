@@ -25,6 +25,9 @@ export type FlagCode =
   | "lineup_unconfirmed" // official lineup not yet posted
   | "recent_form_small_sample" // fewer completed games than desired
   | "recent_form_missing" // no recent-form data for a side
+  | "missing_batting" // no team batting stats — offense cannot be modeled
+  | "missing_bullpen" // no bullpen stats for a side
+  | "bullpen_fatigue" // bullpen threw heavy innings in the last 3 days
   | "stale_data"; // a source was fetched too long ago
 
 export interface Flag {

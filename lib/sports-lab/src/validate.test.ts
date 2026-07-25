@@ -129,6 +129,40 @@ test("stale source (fetched >24h ago) warns and caps to A", () => {
   assert.equal(r.confidenceCap, "A");
 });
 
+test("missing batting is an error and caps to C", () => {
+  const { game, context } = validGame();
+  game.awayBatting = null;
+  const r = validateGame(game, context, opts);
+  assert.equal(r.hasErrors, true);
+  assert.equal(r.confidenceCap, "C");
+  assert.ok(r.flags.some((f) => f.code === "missing_batting"));
+});
+
+test("batting present but runsPerGame null still counts as missing", () => {
+  const { game, context } = validGame();
+  game.homeBatting!.runsPerGame = null;
+  const r = validateGame(game, context, opts);
+  assert.ok(r.flags.some((f) => f.code === "missing_batting"));
+});
+
+test("missing bullpen warns and caps to B", () => {
+  const { game, context } = validGame();
+  game.homeBullpen = null;
+  const r = validateGame(game, context, opts);
+  assert.ok(r.flags.some((f) => f.code === "missing_bullpen"));
+  assert.equal(r.confidenceCap, "B");
+});
+
+test("bullpen fatigue is an info signal, not a cap", () => {
+  const { game, context } = validGame();
+  game.awayBullpen!.inningsPitchedLast3Days = 12;
+  const r = validateGame(game, context, opts);
+  const f = r.flags.find((x) => x.code === "bullpen_fatigue");
+  assert.ok(f);
+  assert.equal(f!.severity, "info");
+  assert.equal(r.confidenceCap, "S");
+});
+
 test("flags are ordered most-severe first", () => {
   const { game, context } = validGame();
   game.awayStarter = null; // error

@@ -1,0 +1,65 @@
+/**
+ * Step 4 — Tunable constants for the baseline statistical model.
+ *
+ * Every magic number the model uses lives here, in one place, so the model
+ * reads as a sequence of named adjustments and so Step 8 (backtesting) has a
+ * single surface to calibrate against. Values are reasonable v1.0 starting
+ * points, not fitted parameters — backtesting is what earns them.
+ */
+
+/** League-average runs scored per team per game. */
+export const LEAGUE_RUNS_PER_GAME = 4.4;
+
+/** League-average ERA, the yardstick for pitcher/bullpen quality. */
+export const LEAGUE_ERA = 4.1;
+
+/** Typical innings covered by the starter vs the bullpen (sums to 9). */
+export const STARTER_INNINGS = 5.2;
+export const BULLPEN_INNINGS = 9 - STARTER_INNINGS;
+
+/**
+ * Shrinkage weights, in [0,1]. A weight of 1.0 trusts the raw ratio fully;
+ * lower values pull it toward league average. Season stats carry real signal
+ * but also park/schedule noise, so nothing is trusted at face value.
+ */
+export const OFFENSE_SHRINK = 0.8;
+export const PITCHING_SHRINK = 0.7;
+
+/**
+ * How far recent form may pull the season-based offense estimate. Scaled by
+ * sampleSize/window, so a 3-game sample moves the number far less than a full
+ * 10-game window (plan Section 7: recent form is noisy).
+ */
+export const FORM_WEIGHT = 0.2;
+
+/** Offense penalty per key hitter ruled out, and the total cap. */
+export const INJURY_KEY_HITTER_PENALTY = 0.03;
+export const INJURY_PENALTY_CAP = 0.09;
+
+/** Temperature effect: warm air carries the ball. Reference is 70°F. */
+export const TEMP_REFERENCE_F = 70;
+export const TEMP_EFFECT_PER_DEGREE = 0.004;
+/** Clamp on the temperature adjustment, ±. */
+export const TEMP_EFFECT_CAP = 0.1;
+
+/** Wind effect per mph blowing out (+) or in (−), and the mph it saturates at. */
+export const WIND_EFFECT_PER_MPH = 0.006;
+export const WIND_EFFECT_MAX_MPH = 20;
+
+/**
+ * Forecast damping. When `weatherMode === "forecast"` the weather adjustment
+ * is an estimate of an estimate, so we shrink its deviation from neutral.
+ * Observed readings are applied at full strength.
+ */
+export const FORECAST_WEATHER_DAMPING = 0.6;
+
+/** Bullpen fatigue: innings over the last 3 days beyond which runs tick up. */
+export const BULLPEN_FATIGUE_IP_THRESHOLD = 9;
+export const BULLPEN_FATIGUE_PER_IP = 0.01;
+export const BULLPEN_FATIGUE_CAP = 0.06;
+
+/**
+ * Home-field advantage as a run multiplier on the home offense. Small and
+ * deliberately conservative.
+ */
+export const HOME_FIELD_ADVANTAGE = 1.02;
