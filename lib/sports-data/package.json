@@ -12,7 +12,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test test/*.test.ts",
-    "step2:report": "tsx src/cli/step2-report.ts"
+    "step2:report": "tsx src/cli/step2-report.ts",
+    "handiedge": "tsx src/cli/handiedge.ts"
   },
   "dependencies": {
     "@workspace/db": "workspace:*"

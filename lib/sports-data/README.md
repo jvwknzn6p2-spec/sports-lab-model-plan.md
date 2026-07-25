@@ -31,6 +31,28 @@ value), not batting average or raw runs.
 
 ## Run
 
+### HandiEdge — the daily prediction tool (MVP)
+
+```bash
+# 1. Predict + LOCK (Control Tower JSON in, picks out):
+pnpm --filter @workspace/sports-data run handiedge predict --control fixtures/control-tower-2024-07-25.json
+
+# 2. After the games, settle + self-learn:
+pnpm --filter @workspace/sports-data run handiedge settle --results fixtures/results-2024-07-25.json
+```
+
+Pipeline: Control Tower → run model → Monte Carlo (seeded, reproducible) →
+decision engine → calibration → **prediction lock** (`data/predictions/<date>.json`).
+Outputs per game: winner, predicted loser, handicap pick, win probability,
+confidence S/A/B/C, reasons, and **PASS** when the edge is too small or data is
+bad. Settlement scores every pick (winner/handicap/total, Brier, margin/total
+error) and nudges the calibration state (`data/calibration.json`) — overconfident
+slates shrink future edges, underconfident ones expand them. History accumulates
+in `data/history.jsonl`. Edit the Control Tower JSON to set date, handicap lines,
+totals, sim count, and PASS threshold.
+
+### Development
+
 ```bash
 pnpm --filter @workspace/sports-data run step2:report   # offline FIP-forward report
 pnpm --filter @workspace/sports-data run test            # unit + integration tests
