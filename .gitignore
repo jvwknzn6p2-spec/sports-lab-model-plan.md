@@ -8,6 +8,10 @@ out-tsc
 .expo
 .expo-shared
 
+# HandiEdge: generated model artifacts + run outputs
+artifacts/handiedge/out/
+artifacts/handiedge/models/
+
 # Python prediction-engine: generated artifacts, outputs, caches
 prediction-engine/out/
 prediction-engine/artifacts/

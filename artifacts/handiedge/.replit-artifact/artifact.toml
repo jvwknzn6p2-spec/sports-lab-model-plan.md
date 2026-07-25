@@ -1,0 +1,22 @@
+kind = "api"
+title = "HandiEdge"
+version = "0.1.0"
+id = "handiedge-mvp"
+
+[[services]]
+localPort = 8080
+name = "HandiEdge API"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/handiedge run serve"
+
+[services.production.run]
+args = ["pnpm", "--filter", "@workspace/handiedge", "run", "serve"]
+
+[services.production.run.env]
+PORT = "8080"
+HANDIEDGE_SOURCE = "fixture"
+
+[services.production.health.startup]
+path = "/healthz"

@@ -1,0 +1,29 @@
+{
+  "name": "@workspace/handiedge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "make-history": "tsx tools/make-history.ts",
+    "train": "tsx src/cli.ts train",
+    "predict": "tsx src/cli.ts predict",
+    "run": "tsx src/cli.ts run",
+    "settle": "tsx src/cli.ts settle",
+    "serve": "tsx src/server.ts",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@workspace/ai-review": "workspace:*",
+    "express": "^5.2.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

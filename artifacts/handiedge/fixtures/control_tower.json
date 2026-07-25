@@ -1,0 +1,8 @@
+{
+  "runLabel": "daily",
+  "seed": 42,
+  "ensembleWeights": { "logistic": 0.6, "baseline": 0.4 },
+  "thresholds": { "winPassBand": 0.06, "handicapMinProb": 0.55, "passAtOrBelow": "C" },
+  "calibration": { "enabled": true },
+  "review": { "enabled": true, "provider": "auto" }
+}

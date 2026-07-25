@@ -9,7 +9,8 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `bash run_pipeline.sh 2026-07-25` — run the full prediction pipeline end-to-end on fixtures (train → predict → AI review + lock → settle → analyze → learn)
+- `pnpm --filter @workspace/handiedge run train` then `... run run --date 2026-07-25` — **the daily tool** (HandiEdge): produces the winner / handicap / PASS card. `... run settle --date <d>` grades + self-learns. `... run serve` starts the HTTP API.
+- `bash run_pipeline.sh 2026-07-25` — the earlier hybrid Python+TS pipeline (Phase-2 ML experiments; not the daily tool)
 - `pnpm --filter @workspace/ai-review run demo` — run the AI review over the sample slate (offline by default; set `ANTHROPIC_API_KEY` for the full Claude-backed review)
 - `pnpm --filter @workspace/ai-review run test` / `pnpm --filter @workspace/pipeline run test` — TypeScript unit tests
 - `cd prediction-engine && PYTHONPATH=src python -m pytest` — Python engine unit tests
@@ -26,6 +27,7 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
+- **`artifacts/handiedge` (`@workspace/handiedge`) — the daily tool. START HERE.** A single-language (TypeScript) end-to-end prediction pipeline (all 9 stages) the user runs every day: `pnpm --filter @workspace/handiedge run run --date <d>`. CLI + HTTP API + Docker, fixture-backed, fully tested. See its `README.md`.
 - `sports-lab/model-plan.md` — the technical plan (source of truth for scope and build order).
 - `lib/ai-review` (`@workspace/ai-review`) — **AI multi-agent review** (Data Auditor, Matchup Analyst, Risk Reviewer). Consumes the `GamePrediction` contract in `lib/ai-review/src/types.ts` and returns an adjusted confidence rank + warnings. See that package's `README.md`.
 - `prediction-engine/` (`sportslab-engine`, Python) — the ML half: data ingestion, feature engineering, XGBoost training/inference, ensemble, calibration, error analysis, self-learning. See its `README.md`.
