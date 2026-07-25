@@ -1,0 +1,35 @@
+{
+  "copyright": "Copyright 2024 MLB Advanced Media, L.P.",
+  "people": [
+    {
+      "id": 664299,
+      "fullName": "Framber Valdez",
+      "primaryNumber": "59",
+      "currentTeam": { "id": 117, "name": "Houston Astros" },
+      "primaryPosition": { "code": "1", "name": "Pitcher", "abbreviation": "P" },
+      "stats": [
+        {
+          "type": { "displayName": "season" },
+          "group": { "displayName": "pitching" },
+          "splits": [
+            {
+              "season": "2024",
+              "stat": {
+                "gamesPlayed": 20,
+                "gamesStarted": 20,
+                "era": "2.85",
+                "whip": "1.10",
+                "strikeOutsPer9Inn": "8.50",
+                "inningsPitched": "120.1",
+                "strikeOuts": 114,
+                "baseOnBalls": 40,
+                "wins": 9,
+                "losses": 5
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

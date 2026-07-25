@@ -5,12 +5,14 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schedule": "./src/schedule/index.ts"
+    "./schedule": "./src/schedule/index.ts",
+    "./stats": "./src/stats/index.ts"
   },
   "scripts": {
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "fetch-schedule": "node --import tsx src/cli/fetch-schedule.ts"
+    "fetch-schedule": "node --import tsx src/cli/fetch-schedule.ts",
+    "fetch-game-stats": "node --import tsx src/cli/fetch-game-stats.ts"
   },
   "dependencies": {
     "zod": "catalog:"
