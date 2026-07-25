@@ -9,7 +9,9 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/ai-review run demo` — run the Step 9 review over the sample slate (offline by default; set `ANTHROPIC_API_KEY` for the full Claude-backed review)
+- `pnpm --filter @workspace/ai-review run test` — Step 9 unit tests
+- Required env: `DATABASE_URL` — Postgres connection string; `ANTHROPIC_API_KEY` — enables the live AI review (optional; falls back to deterministic-only review when absent)
 
 ## Stack
 
@@ -22,15 +24,20 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `sports-lab/model-plan.md` — the technical plan (source of truth for scope and build order).
+- `lib/ai-review` (`@workspace/ai-review`) — **Step 9: AI multi-agent review.** The final sanity-check layer (Data Auditor, Matchup Analyst, Risk Reviewer). Consumes the `GamePrediction` contract in `lib/ai-review/src/types.ts` and returns an adjusted confidence rank + warnings. See that package's `README.md`.
+- Steps 1–8 (data + statistical model + Monte Carlo + EV + confidence ranking) and Steps 10–11 (daily output + automation) are not yet implemented; `lib/ai-review/src/sample-data.ts` stands in for the upstream output so the review layer runs on its own.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **AI review can only downgrade confidence, never raise it.** Enforced deterministically in `lib/ai-review/src/confidence.ts` (`applyReview`) and asserted by tests. The LLM annotates and caps; it never rewrites a model probability.
+- **Every review agent has a deterministic guardrail pass plus an optional LLM pass.** Objective checks (unconfirmed starter, missing odds, probability sums) always run and cannot be talked out of by the model; the LLM adds qualitative judgment on top.
+- **The reasoning provider is pluggable** (`ReviewProvider`). With no `ANTHROPIC_API_KEY` — or on a model refusal/error — the system degrades to deterministic-only review rather than blocking a pick. This keeps the whole layer runnable and testable offline / in CI.
+- **Live provider uses Claude `claude-opus-5`** with adaptive thinking, structured outputs (`output_config.format`), and a prompt-cached per-agent system prompt.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+AI Sports Lab v1.0 — an MLB game-prediction and betting-value decision-support tool. For each scheduled game it predicts the moneyline winner, run line, and total, assigns an S/A/B/C confidence rank, and flags positive-EV bets. The AI multi-agent review (Step 9) is the final layer that audits data quality, reviews qualitative matchup context, challenges over-confident picks, and can only ever downgrade confidence — never invent numbers.
 
 ## User preferences
 
