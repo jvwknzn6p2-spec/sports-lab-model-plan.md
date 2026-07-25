@@ -46,6 +46,30 @@ export interface MlbScheduleGameSide {
   score?: number;
 }
 
+/** /game/{gamePk}/boxscore — only the pitching-usage slice we read. */
+export interface MlbBoxscoreResponse {
+  teams?: {
+    home?: MlbBoxscoreTeam;
+    away?: MlbBoxscoreTeam;
+  };
+}
+
+export interface MlbBoxscoreTeam {
+  team?: MlbTeamRef;
+  /** Keyed "ID<personId>"; per-game stat lines for everyone who appeared. */
+  players?: Record<string, MlbBoxscorePlayer>;
+}
+
+export interface MlbBoxscorePlayer {
+  person?: MlbPersonRef;
+  stats?: {
+    pitching?: {
+      inningsPitched?: string | number;
+      gamesStarted?: number;
+    };
+  };
+}
+
 /** Generic stats envelope used by people/team stats endpoints. */
 export interface MlbStatsResponse {
   stats?: Array<{

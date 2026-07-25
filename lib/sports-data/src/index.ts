@@ -17,5 +17,6 @@ export * from "./sources/mlb-source";
 export * from "./sources/fixture-source";
 export * from "./sources/slate-builder";
 export * from "./sources/results-builder";
+export * from "./sources/workload-builder";
 export * from "./persist";
 export * from "./engine";

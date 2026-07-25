@@ -15,7 +15,11 @@
  * fetcher (see mlb/fixtures.ts) to run the pipeline fully offline.
  */
 
-import type { MlbScheduleResponse, MlbStatsResponse } from "./types";
+import type {
+  MlbBoxscoreResponse,
+  MlbScheduleResponse,
+  MlbStatsResponse,
+} from "./types";
 
 export const MLB_API_BASE = "https://statsapi.mlb.com/api/v1";
 
@@ -116,6 +120,11 @@ export class MlbStatsClient {
       date,
       hydrate: "probablePitcher,team,venue",
     });
+  }
+
+  /** Per-game boxscore — pitcher usage lines for bullpen-workload tracking. */
+  boxscore(gamePk: number): Promise<MlbBoxscoreResponse> {
+    return this.getJson<MlbBoxscoreResponse>(`/game/${gamePk}/boxscore`, {});
   }
 
   /** Games on a date with linescore hydrated — final scores for settlement. */

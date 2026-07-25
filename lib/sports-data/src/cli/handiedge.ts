@@ -2,10 +2,13 @@
  * HandiEdge — the daily-use MVP CLI.
  *
  *   fetch-slate [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]
+ *               [--skip-workloads]
  *     Pull today's schedule + starter/batting/bullpen season stats from the
  *     live MLB Stats API and write data/slates/<date>.json, plus a
  *     control-tower skeleton (data/control-towers/<date>.json) to fill in
- *     handicap lines. Requires network access to statsapi.mlb.com.
+ *     handicap lines. Also scans the last 3 days of boxscores to auto-fill
+ *     bullpen workloads (fatigue inputs) unless --skip-workloads is passed.
+ *     Requires network access to statsapi.mlb.com.
  *
  *   predict --control <control-tower.json> [--slate <slate.json>] [--force]
  *     Control Tower → run model → Monte Carlo → decision engine → calibration
@@ -62,6 +65,7 @@ import { settle, type GameResult } from "../engine/settle";
 import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
 import { buildResults } from "../sources/results-builder";
+import { buildWorkloads } from "../sources/workload-builder";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(here, "..", "..");
@@ -142,6 +146,7 @@ async function cmdFetchSlate(args: {
   season?: string;
   out?: string;
   force?: boolean;
+  "skip-workloads"?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -169,6 +174,24 @@ async function cmdFetchSlate(args: {
     );
   }
   const bundle = { ...report.bundle, fetchedAt: new Date().toISOString() };
+
+  // Bullpen workloads: relief IP over the last 3 days, from game boxscores.
+  // Fail-soft — a gap just means "no fatigue penalty for that team".
+  let workloadSummary: string[] = [];
+  if (!args["skip-workloads"]) {
+    console.log("Scanning last 3 days of boxscores for bullpen usage…");
+    const wl = await buildWorkloads({ date, client });
+    bundle.workloads = wl.workloads;
+    workloadSummary = [
+      `  Bullpen usage: ${wl.gamesScanned} boxscore(s) over ${wl.daysScanned.join(", ")}; ` +
+        `${Object.keys(wl.workloads).length} team(s) with relief IP tracked.`,
+      ...wl.warnings.map((w) => `    - workload: ${w}`),
+      `  (unavailableKeyArms stays manual — edit the slate JSON when an arm is down.)`,
+    ];
+  } else {
+    workloadSummary = ["  Bullpen usage scan skipped (--skip-workloads)."];
+  }
+
   await saveJson(outPath, bundle);
 
   console.log("=".repeat(72));
@@ -191,6 +214,7 @@ async function cmdFetchSlate(args: {
     console.log("  Warnings:");
     for (const w of report.warnings) console.log(`    - ${w}`);
   }
+  for (const line of workloadSummary) console.log(line);
   console.log(`  Slate written → ${outPath}`);
 
   // Control-tower skeleton: create once, never overwrite the user's edits.
@@ -455,6 +479,7 @@ async function main(): Promise<void> {
       out: { type: "string" },
       force: { type: "boolean", default: false },
       settle: { type: "boolean", default: false },
+      "skip-workloads": { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];
@@ -465,7 +490,7 @@ async function main(): Promise<void> {
   else {
     console.log("Usage:");
     console.log(
-      "  handiedge fetch-slate   [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]",
+      "  handiedge fetch-slate   [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force] [--skip-workloads]",
     );
     console.log(
       "  handiedge predict       --control <control-tower.json> [--slate <slate.json>] [--force]",
