@@ -50,11 +50,49 @@
       ],
       "data_quality_status": "OK",
       "handicap_rule_status": "RESOLVED",
+      "ai_review": {
+        "reviewed": true,
+        "original_rank": "A",
+        "final_rank": "A",
+        "original_tier": "A+",
+        "final_tier": "A+",
+        "downgraded": false,
+        "provider": "heuristic",
+        "reviewed_at": "2026-07-25T18:02:12.328718Z",
+        "warnings": [],
+        "flags": [],
+        "verdicts": [
+          {
+            "agent": "data-auditor",
+            "ok": true,
+            "suggested_max_rank": null,
+            "reasoning": "Data is complete, fresh, and internally consistent.",
+            "source": "heuristic",
+            "flags": []
+          },
+          {
+            "agent": "matchup-analyst",
+            "ok": true,
+            "suggested_max_rank": null,
+            "reasoning": "Deterministic matchup checks only (no LLM provider); qualitative review skipped.",
+            "source": "heuristic",
+            "flags": []
+          },
+          {
+            "agent": "risk-reviewer",
+            "ok": true,
+            "suggested_max_rank": null,
+            "reasoning": "Deterministic risk checks only (no LLM provider).",
+            "source": "heuristic",
+            "flags": []
+          }
+        ]
+      },
       "audit": {
         "prediction_id": "a1aee6efd3b8f602121e4d6ad07fe8ea",
         "input_hash": "9259c55fbc8b0df5b4c7962afdb4477e44b1792af65763c444a3b6d154432fd6",
         "feature_snapshot_id": "fs-nyy-bos-0724",
-        "created_at": "2026-07-25T05:07:02.684506Z"
+        "created_at": "2026-07-25T18:02:12.329088Z"
       }
     },
     {
@@ -67,7 +105,7 @@
       "normal_loss_probability": 0.3872,
       "handicap_pick": "SF",
       "handicap_cover_probability": 0.5517,
-      "confidence_tier": "A",
+      "confidence_tier": "B+",
       "risk_level": "LOW",
       "expected_score": {
         "home": 4.75,
@@ -88,11 +126,66 @@
       ],
       "data_quality_status": "OK",
       "handicap_rule_status": "RESOLVED",
+      "ai_review": {
+        "reviewed": true,
+        "original_rank": "A",
+        "final_rank": "B",
+        "original_tier": "A",
+        "final_tier": "B+",
+        "downgraded": true,
+        "provider": "heuristic",
+        "reviewed_at": "2026-07-25T18:02:12.337051Z",
+        "warnings": [
+          "Confidence downgraded A -> B after AI review.",
+          "[WARNING] (risk-reviewer) Rank A but market edge is only 0.7%."
+        ],
+        "flags": [
+          {
+            "agent": "risk-reviewer",
+            "severity": "warning",
+            "code": "THIN_EDGE",
+            "message": "Rank A but market edge is only 0.7%."
+          }
+        ],
+        "verdicts": [
+          {
+            "agent": "data-auditor",
+            "ok": true,
+            "suggested_max_rank": null,
+            "reasoning": "Data is complete, fresh, and internally consistent.",
+            "source": "heuristic",
+            "flags": []
+          },
+          {
+            "agent": "matchup-analyst",
+            "ok": true,
+            "suggested_max_rank": null,
+            "reasoning": "Deterministic matchup checks only (no LLM provider); qualitative review skipped.",
+            "source": "heuristic",
+            "flags": []
+          },
+          {
+            "agent": "risk-reviewer",
+            "ok": false,
+            "suggested_max_rank": "B",
+            "reasoning": "Deterministic risk checks only (no LLM provider).",
+            "source": "heuristic",
+            "flags": [
+              {
+                "agent": "risk-reviewer",
+                "severity": "warning",
+                "code": "THIN_EDGE",
+                "message": "Rank A but market edge is only 0.7%."
+              }
+            ]
+          }
+        ]
+      },
       "audit": {
         "prediction_id": "f1bb32a4e0a6669277017bdec7dcae2d",
         "input_hash": "662c42bfc2f364efb189eb8d39be1e6493e223dd1495c05cebbc0a15c2b497d1",
         "feature_snapshot_id": "fs-lad-sf-0724",
-        "created_at": "2026-07-25T05:07:02.692161Z"
+        "created_at": "2026-07-25T18:02:12.337384Z"
       }
     }
   ],

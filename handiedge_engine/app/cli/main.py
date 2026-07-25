@@ -67,6 +67,41 @@ def predict(input_file: Path) -> None:
     _emit(response.model_dump(mode="json"))
 
 
+@app.command("ai-review")
+def ai_review(prediction_id: str) -> None:
+    """Show the AI multi-agent review (Step 9) recorded for a prediction."""
+
+    from app.repositories.prediction_repository import PredictionRepository
+
+    with session_scope() as session:
+        record = PredictionRepository(session).get_prediction(prediction_id)
+        if record is None:
+            typer.echo(
+                json.dumps({"error": "prediction_not_found", "prediction_id": prediction_id})
+            )
+            raise typer.Exit(code=1)
+        final = record.final_prediction or {}
+        review = final.get("ai_review")
+    if review is None:
+        _emit(
+            {
+                "prediction_id": prediction_id,
+                "match_id": final.get("match_id"),
+                "ai_review": None,
+                "note": "AI review was not run for this prediction.",
+            }
+        )
+        return
+    _emit(
+        {
+            "prediction_id": prediction_id,
+            "match_id": final.get("match_id"),
+            "confidence_tier": final.get("confidence_tier"),
+            "ai_review": review,
+        }
+    )
+
+
 @app.command("lock")
 def lock(prediction_id: str, supersede: bool = typer.Option(False)) -> None:
     """Lock a prediction, making it immutable."""

@@ -36,6 +36,7 @@ from app.infrastructure.database.models import (
     PredictionRun,
 )
 from app.repositories.prediction_repository import PredictionRepository
+from app.schemas.ai_review import AiReviewOut
 from app.schemas.control_tower import ControlTowerGame, ControlTowerPayload
 from app.schemas.decision import GameDecision
 from app.schemas.prediction import (
@@ -48,6 +49,7 @@ from app.schemas.prediction import (
     PredictionSummaryOut,
     RawGamePrediction,
 )
+from app.services.ai_review_service import AiReviewService
 from app.services.audit_service import AuditService
 from app.services.calibration_service import CalibrationService
 from app.services.control_tower_validation_service import ControlTowerValidationService
@@ -74,6 +76,7 @@ class OrchestrationService:
         self._prediction = PredictionService(adapter)
         self._calibration = CalibrationService(settings)
         self._decision = DecisionEngine(settings.thresholds)
+        self._ai_review = AiReviewService(settings)
 
     def run_pipeline(
         self, raw_payload: dict[str, Any], correlation_id: str | None = None
@@ -150,10 +153,29 @@ class OrchestrationService:
                     warning=calib_home.warning,
                 )
 
-            out = self._build_game_output(game, payload, raw, decision)
+            prediction_id = self._prediction_id(payload.run_id, game.match_id)
+
+            # Step 9: AI multi-agent review. Runs after decisioning; may only
+            # downgrade the confidence tier and attach warnings (never rewrites a
+            # probability). Offline-deterministic unless an LLM provider is set.
+            ai_review: AiReviewOut | None = None
+            if self._settings.ai_review_enabled:
+                decision, ai_review, _ = self._ai_review.apply(
+                    game,
+                    payload,
+                    raw,
+                    decision,
+                    calib_home.adjusted_probability,
+                    calib_away.adjusted_probability,
+                    prediction_id,
+                )
+
+            out = self._build_game_output(game, payload, raw, decision, prediction_id, ai_review)
             game_outputs.append(out)
             self._persist_game(run, game, payload, raw, decision, out, calib_home, calib_away)
             self._audit_decision(payload.run_id, out, decision, correlation_id)
+            if ai_review is not None:
+                self._audit_ai_review(payload.run_id, out, ai_review, correlation_id)
 
         response = PredictionRunResponse(
             schema_version=payload.schema_version,
@@ -199,16 +221,19 @@ class OrchestrationService:
         )
         return decision, calib_home, calib_away
 
+    @staticmethod
+    def _prediction_id(run_id: str, match_id: str) -> str:
+        return sha256_hex({"run_id": run_id, "match_id": match_id})[:32]
+
     def _build_game_output(
         self,
         game: ControlTowerGame,
         payload: ControlTowerPayload,
         raw: RawGamePrediction,
         decision: GameDecision,
+        prediction_id: str,
+        ai_review: AiReviewOut | None = None,
     ) -> GamePredictionOut:
-        prediction_id = sha256_hex(
-            {"run_id": payload.run_id, "match_id": game.match_id}
-        )[:32]
         input_hash = sha256_hex(game.model_dump(mode="json"))
         h = decision.handicap
         return GamePredictionOut(
@@ -234,6 +259,7 @@ class OrchestrationService:
             calibration_notes=list(decision.calibration_notes),
             data_quality_status=payload.data_quality_status.value,
             handicap_rule_status=h.handicap_rule_status,
+            ai_review=ai_review,
             audit=GameAuditOut(
                 prediction_id=prediction_id,
                 input_hash=input_hash,
@@ -346,6 +372,31 @@ class OrchestrationService:
             aggregate_id=out.audit.prediction_id,
             correlation_id=correlation_id,
             metadata={"tier": decision.confidence_tier.value},
+        )
+
+    def _audit_ai_review(
+        self, run_id: str, out: GamePredictionOut, review: AiReviewOut, correlation_id
+    ) -> None:
+        self._audit.record(
+            AuditEventType.AI_REVIEW_APPLIED,
+            aggregate_type="game_prediction",
+            aggregate_id=out.audit.prediction_id,
+            prior_state=review.original_tier,
+            new_state=review.final_tier,
+            reason=(
+                f"AI review downgraded {review.original_tier} -> {review.final_tier}"
+                if review.downgraded
+                else "AI review: confidence upheld"
+            ),
+            correlation_id=correlation_id,
+            metadata={
+                "match_id": out.match_id,
+                "run_id": run_id,
+                "provider": review.provider,
+                "policy_version": self._settings.ai_review_policy_version,
+                "flags": len(review.flags),
+                "downgraded": review.downgraded,
+            },
         )
 
     @staticmethod

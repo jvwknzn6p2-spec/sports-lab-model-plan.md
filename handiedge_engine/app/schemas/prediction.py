@@ -9,6 +9,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import ModelType
+from app.schemas.ai_review import AiReviewOut
 
 
 class RawGamePrediction(BaseModel):
@@ -96,6 +97,7 @@ class GamePredictionOut(BaseModel):
     calibration_notes: list[str] = Field(default_factory=list)
     data_quality_status: str
     handicap_rule_status: str
+    ai_review: AiReviewOut | None = None
     audit: GameAuditOut
 
 

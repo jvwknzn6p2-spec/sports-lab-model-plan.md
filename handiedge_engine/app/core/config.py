@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     model_artifact_dir: str | None = None
     calibration_artifact_path: str | None = None
 
+    # AI multi-agent review (Step 9). Enabled by default; runs offline
+    # (deterministic guardrails only) unless an LLM provider is configured.
+    ai_review_enabled: bool = True
+    ai_review_policy_version: str = "ai-review-1.0.0"
+
     # Versioned policy identifiers embedded in locks and audit records.
     decision_policy_version: str = "decision-policy-1.0.0"
     settlement_rule_version: str = "settlement-rules-1.0.0"

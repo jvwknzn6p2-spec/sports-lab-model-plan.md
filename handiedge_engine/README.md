@@ -33,11 +33,23 @@ flowchart LR
   CT[Control Tower payload] --> PE[Prediction Engine]
   PE --> CAL[Calibration]
   CAL --> DE[Decision Engine]
-  DE --> LK[Prediction Lock]
+  DE --> AI[AI Multi-Agent Review]
+  AI --> LK[Prediction Lock]
   LK --> ST[Settlement Engine]
   ST --> EA[Error Analysis Engine]
   EA --> SL[Self-Learning Engine]
 ```
+
+The **AI Multi-Agent Review** (model-plan Step 9 / §4.5) is a final sanity check
+between decisioning and lock. Three specialist reviewers — **Data Auditor**,
+**Matchup Analyst**, and **Risk Reviewer** — examine the finished prediction and
+its Control Tower context. Per the plan's invariant they may only **downgrade**
+the confidence tier or attach warnings; they never rewrite a probability. The
+review runs offline (deterministic guardrails) by default and upgrades to an LLM
+reasoning pass automatically when `ANTHROPIC_API_KEY` is set — degrading back to
+deterministic-only, never blocking a pick, if the model errors or refuses. Every
+verdict, flag, and tier movement is persisted in the locked prediction and the
+audit trail.
 
 ## 2. Architecture & domain boundaries
 
@@ -53,6 +65,7 @@ app/
     handicap/     handicap parser — 1半 preserved distinctly (NOT 1.5)
     prediction/   adapter protocol, deterministic fallback, ensemble shell
     decision/     calibration, confidence tiers, handicap + decision engine
+    ai_review/    Step 9 reviewers (data-auditor, matchup-analyst, risk-reviewer)
     settlement/   scope strategies + handicap rule registry
     error_analysis/  facts / metrics / hypotheses
     self_learning/   workflow state machine + gates
