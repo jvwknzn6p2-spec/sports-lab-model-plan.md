@@ -36,10 +36,28 @@ test("moneyline probabilities sum to 1", () => {
   assert.ok(Math.abs(r.moneyline.home + r.moneyline.away - 1) < 1e-9);
 });
 
-test("run-line sides are complements of each other", () => {
+test("each run-line market's sides and push sum to 1", () => {
   const r = simulateGame(baselineFor(), { iterations: FAST });
-  assert.ok(Math.abs(r.runLine.homeCoversMinus + r.runLine.awayCoversPlus - 1) < 1e-9);
-  assert.ok(Math.abs(r.runLine.awayCoversMinus + r.runLine.homeCoversPlus - 1) < 1e-9);
+  const rl = r.runLine;
+  assert.ok(Math.abs(rl.homeCoversMinus + rl.awayCoversPlus + rl.homeSidePush - 1) < 1e-9);
+  assert.ok(Math.abs(rl.awayCoversMinus + rl.homeCoversPlus + rl.awaySidePush - 1) < 1e-9);
+});
+
+test("the standard 1.5 run line can never push", () => {
+  const r = simulateGame(baselineFor(), { iterations: FAST });
+  assert.equal(r.runLine.homeSidePush, 0);
+  assert.equal(r.runLine.awaySidePush, 0);
+});
+
+test("a whole-number run line pushes instead of crediting the underdog", () => {
+  const r = simulateGame(baselineFor(), { iterations: 20_000, runLine: 1 });
+  // A 1-run margin is common, so a 1.0 line should push often.
+  assert.ok(r.runLine.homeSidePush > 0.1, `push rate was ${r.runLine.homeSidePush}`);
+  assert.ok(r.runLine.awaySidePush > 0.1);
+  assert.ok(
+    Math.abs(r.runLine.homeCoversMinus + r.runLine.awayCoversPlus + r.runLine.homeSidePush - 1) <
+      1e-9,
+  );
 });
 
 test("an evenly matched game is near a coin flip, with a slight home edge", () => {

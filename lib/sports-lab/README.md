@@ -1,11 +1,12 @@
-# @workspace/sports-lab — Steps 3–5: context, validation, model, simulation
+# @workspace/sports-lab — Steps 3–6 of the AI Sports Lab pipeline
 
-Implements **Steps 3–5** of the [model plan](../../sports-lab/model-plan.md):
+Implements **Steps 3–6** of the [model plan](../../sports-lab/model-plan.md):
 the context-data layer (recent form, injuries, weather, ballpark factors), the
 **validation / flagging layer** that decides how far each game's data can be
 trusted, the **baseline statistical model** that turns those inputs into
-expected runs per team, and the **Monte Carlo simulation** that converts
-expected runs into win / run-line / total probabilities.
+expected runs per team, the **Monte Carlo simulation** that converts expected
+runs into win / run-line / total probabilities, and the **EV layer** that
+compares those probabilities against sportsbook odds to find value.
 
 It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
 input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
@@ -28,6 +29,8 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `model/baseline.ts` | Step 4 — expected runs per team as an explainable step chain |
 | `model/random.ts` | seeded PRNG + Poisson / gamma / negative-binomial sampling |
 | `model/simulate.ts` | Step 5 — Monte Carlo → moneyline, run line, total probabilities |
+| `odds/conversion.ts` | American/decimal odds, implied probability, vig removal |
+| `odds/ev.ts` | Step 6 — edge and expected value per bet; flags value bets |
 
 ## Weather is observed-vs-forecast aware
 
@@ -129,6 +132,46 @@ counterpart, so pairs sum to exactly 1 — Step 6's EV maths depends on that.
 Runs for the two teams are sampled independently; real games have mild
 dependence (a blowout changes bullpen usage) that v1.0 deliberately ignores.
 
+## Step 6 — odds and expected value
+
+`evaluateOdds` prices every market the book posted:
+
+```
+Value:       Astros -1.5       +8.5% edge  (EV positive) ✅
+             Astros ML         +5.4% edge  (EV positive) ✅
+             OVER 9.5          +0.8% edge  (EV negative)
+             Angels ML         -5.4% edge  (EV negative)
+```
+
+**The vig comes out first.** A book pricing both sides at −110 implies
+52.4% + 52.4% = 104.8%. That 4.8% overround is its margin, and comparing the
+model against the raw implied numbers would understate our edge on every bet.
+`removeVig` normalises the market to sum to 1 before any comparison.
+
+Note the third line above: a **positive edge can still be negative EV**. At
+−110 you need roughly a 2.4% edge just to break even, so a 0.8% edge is not a
+bet. Reporting both numbers keeps that distinction visible instead of letting
+a "positive edge" read as a recommendation.
+
+**Two probabilities, two jobs.** Conflating these is the classic way to invent
+an edge that isn't there:
+
+- **EV** uses the model's *unconditional* probabilities — a push really does
+  return the stake, so it belongs in the expectation.
+- **Edge** compares the model against the de-vigged market *conditional on no
+  push*, because a two-way price is exactly that. Comparing an unconditional
+  model number against a conditional market number would overstate the edge on
+  any market that can push.
+
+**Mismatched lines are refused, not guessed.** Pricing a 2.5 run line against
+a simulation that counted 1.5 would be a silent, plausible-looking bug, so
+`evaluateOdds` throws and tells you which line to re-simulate at. Markets the
+book simply hasn't posted are skipped and listed in `skippedMarkets` — a
+missing market means "no bet here", not a broken game.
+
+`minEdge` (default 2 percentage points) keeps marginal disagreements — which
+are mostly model noise — from being flagged as value.
+
 ## Usage
 
 ```ts
@@ -152,17 +195,21 @@ if (!result.hasErrors) {
   const baseline = computeBaseline(coreGame, context);
   console.log(explainEstimate(baseline.home).join("\n"));
 
-  // Step 5 — convert expected runs into probabilities.
-  const sim = simulateGame(baseline, { totalLine: 9.5 });
-  // sim.moneyline.home, sim.runLine.homeCoversMinus, sim.total.over ...
-  console.log(explainSimulation(sim, { home: "Astros", away: "Angels" }).join("\n"));
+  // Step 5 — convert expected runs into probabilities. Simulate at the same
+  // lines the book posted, or Step 6 will (deliberately) refuse to price them.
+  const sim = simulateGame(baseline, { totalLine: odds.total?.line ?? null });
+
+  // Step 6 — compare against the book and find value.
+  const evaluation = evaluateOdds(sim, odds, { home: "Astros", away: "Angels" });
+  console.log(explainEvaluation(evaluation).join("\n"));
+  // evaluation.valueBets — positive-EV bets clearing minEdge, best first
 }
 ```
 
-Step 6 (EV) consumes `sim.moneyline` / `sim.runLine` / `sim.total` to compare
-against sportsbook odds; Step 7 (confidence ranking) consumes `confidenceCap`
-as an upper bound; the daily report (Step 10) renders `flags` in the card's
-"Flags:" line and the step traces as the "Key factors" explanation.
+Step 7 (confidence ranking) consumes `confidenceCap` as an upper bound and
+`valueBets` as the edge input; the daily report (Step 10) renders `flags` in
+the card's "Flags:" line, the step traces as "Key factors", and
+`explainEvaluation` as the "Value:" block.
 
 ## Develop
 

@@ -52,17 +52,30 @@ export interface MoneylineProbabilities {
   away: number;
 }
 
+/**
+ * Both run-line markets. The standard MLB market is the home-favourite pair
+ * (`homeCoversMinus` / `awayCoversPlus`); the mirrored pair prices the away
+ * team as the favourite.
+ *
+ * Pushes are tracked separately rather than folded into the underdog side.
+ * At the standard 1.5 line a push is impossible, but on a whole-number
+ * alternate line the stake is refunded — and Step 6's EV maths needs to know.
+ */
 export interface RunLineProbabilities {
   /** The spread used, e.g. 1.5. */
   line: number;
   /** P(home wins by more than the line) — the "home -1.5" side. */
   homeCoversMinus: number;
-  /** P(not that) — the "away +1.5" side. Complement of `homeCoversMinus`. */
+  /** P(margin falls short of the line) — the "away +1.5" side. */
   awayCoversPlus: number;
+  /** P(margin lands exactly on the line) — a push on the above pair. */
+  homeSidePush: number;
   /** P(away wins by more than the line) — the "away -1.5" side. */
   awayCoversMinus: number;
-  /** P(not that) — the "home +1.5" side. */
+  /** P(margin falls short from the away side) — the "home +1.5" side. */
   homeCoversPlus: number;
+  /** P(margin lands exactly on minus the line) — a push on the above pair. */
+  awaySidePush: number;
 }
 
 export interface TotalProbabilities {
@@ -160,6 +173,8 @@ export function simulateGame(
   let homeWins = 0;
   let homeCoversMinus = 0;
   let awayCoversMinus = 0;
+  let homeSidePush = 0;
+  let awaySidePush = 0;
   let over = 0;
   let under = 0;
   let push = 0;
@@ -196,8 +211,12 @@ export function simulateGame(
     // safety bound — vanishingly rare. Award it to the home team rather than
     // dropping the iteration, so the two moneyline sides always sum to 1.
     if (margin >= 0) homeWins++;
+    // Home -line wins on margin > line, pushes on margin === line.
     if (margin > runLine) homeCoversMinus++;
-    if (-margin > runLine) awayCoversMinus++;
+    else if (margin === runLine) homeSidePush++;
+    // Away -line wins on margin < -line, pushes on margin === -line.
+    if (margin < -runLine) awayCoversMinus++;
+    else if (margin === -runLine) awaySidePush++;
 
     if (line !== null) {
       if (total > line) over++;
@@ -212,6 +231,8 @@ export function simulateGame(
   const homeWinProbability = round(homeWins / iterations);
   const homeCoversMinusProbability = round(homeCoversMinus / iterations);
   const awayCoversMinusProbability = round(awayCoversMinus / iterations);
+  const homeSidePushProbability = round(homeSidePush / iterations);
+  const awaySidePushProbability = round(awaySidePush / iterations);
   const overProbability = round(over / iterations);
   const pushProbability = round(push / iterations);
 
@@ -226,9 +247,11 @@ export function simulateGame(
     runLine: {
       line: runLine,
       homeCoversMinus: homeCoversMinusProbability,
-      awayCoversPlus: round(1 - homeCoversMinusProbability),
+      awayCoversPlus: round(1 - homeCoversMinusProbability - homeSidePushProbability),
+      homeSidePush: homeSidePushProbability,
       awayCoversMinus: awayCoversMinusProbability,
-      homeCoversPlus: round(1 - awayCoversMinusProbability),
+      homeCoversPlus: round(1 - awayCoversMinusProbability - awaySidePushProbability),
+      awaySidePush: awaySidePushProbability,
     },
     total: {
       mean: round(totals.reduce((s, t) => s + t, 0) / iterations, 3),

@@ -44,3 +44,25 @@ export {
   type TotalProbabilities,
 } from "./model/simulate";
 export { createRng, type Rng } from "./model/random";
+
+// Step 6 — betting odds and expected value.
+export {
+  americanToDecimal,
+  decimalToAmerican,
+  impliedProbability,
+  overround,
+  removeVig,
+  removeVigAmerican,
+  InvalidOddsError,
+  type AmericanOdds,
+} from "./odds/conversion";
+export {
+  evaluateOdds,
+  expectedValue,
+  explainEvaluation,
+  type BetEvaluation,
+  type BetMarket,
+  type BetSelection,
+  type EvOptions,
+  type GameEvaluation,
+} from "./odds/ev";

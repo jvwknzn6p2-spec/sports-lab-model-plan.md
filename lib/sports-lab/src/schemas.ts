@@ -240,6 +240,63 @@ export type BallparkFactors = z.infer<typeof ballparkFactorsSchema>;
 /* Assembled per-game context                                                  */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/* Betting odds (Step 6)                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * American odds, the US sportsbook convention: −150 means risk 150 to win 100,
+ * +130 means risk 100 to win 130. Values strictly between −100 and +100 are
+ * not valid odds.
+ */
+export const americanOddsSchema = z
+  .number()
+  .refine((v) => Math.abs(v) >= 100, {
+    message: "American odds must be <= -100 or >= +100",
+  })
+  .describe("American (moneyline-style) odds");
+
+export const moneylineOddsSchema = z.object({
+  home: americanOddsSchema,
+  away: americanOddsSchema,
+});
+export type MoneylineOdds = z.infer<typeof moneylineOddsSchema>;
+
+/**
+ * Run-line market. `line` is the spread laid by the home team, so the standard
+ * MLB market is `line: 1.5` — home −1.5 at `homePrice`, away +1.5 at `awayPrice`.
+ */
+export const runLineOddsSchema = z.object({
+  line: z.number().positive(),
+  homePrice: americanOddsSchema,
+  awayPrice: americanOddsSchema,
+});
+export type RunLineOdds = z.infer<typeof runLineOddsSchema>;
+
+export const totalOddsSchema = z.object({
+  line: z.number().positive(),
+  overPrice: americanOddsSchema,
+  underPrice: americanOddsSchema,
+});
+export type TotalOdds = z.infer<typeof totalOddsSchema>;
+
+/**
+ * A sportsbook's posted markets for one game. Each market is independently
+ * nullable — a book may not have posted a total yet, and a missing market
+ * means "no bet here", not a broken game.
+ */
+export const gameOddsSchema = z.object({
+  gameId: z.string().min(1),
+  /** Which book these came from, recorded for auditing. */
+  sportsbook: z.string().min(1),
+  moneyline: moneylineOddsSchema.nullable(),
+  runLine: runLineOddsSchema.nullable(),
+  total: totalOddsSchema.nullable(),
+  /** Odds move — this timestamp is what makes an EV figure interpretable. */
+  fetchedAt: isoTimestamp,
+});
+export type GameOdds = z.infer<typeof gameOddsSchema>;
+
 export const gameContextSchema = z.object({
   gameId: z.string().min(1),
   recentForm: z.object({ home: teamRecentFormSchema, away: teamRecentFormSchema }),
