@@ -11,6 +11,34 @@ export * from "./schemas";
 export * from "./flags";
 export * from "./validate";
 
+// Step 11 — the daily workflow.
+export {
+  runDailyPipeline,
+  seedForGame,
+  type PipelineFailure,
+  type PipelineOptions,
+  type PipelineResult,
+  type RunMode,
+  type SlateEntry,
+} from "./pipeline";
+
+// Step 10 — daily report and structured log.
+export {
+  renderDailyReport,
+  renderDailySummary,
+  renderGameCard,
+  sortByConfidence,
+  keyFactors,
+  finalRank,
+  toDailyLog,
+  serializeDailyLog,
+  type DailyLog,
+  type GamePrediction,
+  type LoggedGame,
+  type ReportMeta,
+  type ReportOptions,
+} from "./report";
+
 // Step 9 — AI multi-agent review.
 export {
   reviewGame,

@@ -241,6 +241,19 @@ test("the rule-based auditor catches a neutral-fallback ballpark", async () => {
   assert.ok(auditor.confidenceDelta > 0);
 });
 
+test("the rule-based auditor catches an unconfirmed starter", async () => {
+  const inputs = buildInputs(({ game }) => {
+    game.homeStarter!.confirmed = false;
+  });
+  const outcome = await reviewGame(inputs, { reviewer: ruleBasedReviewer });
+  const auditor = outcome.verdicts.find((v) => v.agent === "data-auditor")!;
+  assert.ok(
+    auditor.warnings.some((w) => /not yet confirmed by the club/i.test(w)),
+    "a named-but-unconfirmed starter is squarely the auditor's remit",
+  );
+  assert.ok(auditor.confidenceDelta > 0);
+});
+
 test("the rule-based risk reviewer notes forecast weather", async () => {
   const inputs = buildInputs(({ game, context }) => {
     context.weather = {

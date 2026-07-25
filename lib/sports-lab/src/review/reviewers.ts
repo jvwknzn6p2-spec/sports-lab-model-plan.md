@@ -173,6 +173,10 @@ export const ruleBasedReviewer: Reviewer = async (agent, dossier) => {
         warnings.push("A lineup is not yet confirmed.");
         delta += 1;
       }
+      if (mentions(dossier, "confirmed=false")) {
+        warnings.push("A named starting pitcher is not yet confirmed by the club.");
+        delta += 1;
+      }
       if (mentions(dossier, "[error]")) {
         warnings.push("Validation raised an error-level flag.");
         delta += 1;

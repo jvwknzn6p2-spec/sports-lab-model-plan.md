@@ -1,6 +1,6 @@
-# @workspace/sports-lab — Steps 3–9 of the AI Sports Lab pipeline
+# @workspace/sports-lab — Steps 3–11 of the AI Sports Lab pipeline
 
-Implements **Steps 3–9** of the [model plan](../../sports-lab/model-plan.md):
+Implements **Steps 3–11** of the [model plan](../../sports-lab/model-plan.md):
 the context-data layer (recent form, injuries, weather, ballpark factors), the
 **validation / flagging layer** that decides how far each game's data can be
 trusted, the **baseline statistical model** that turns those inputs into
@@ -8,8 +8,12 @@ expected runs per team, the **Monte Carlo simulation** that converts expected
 runs into win / run-line / total probabilities, the **EV layer** that compares
 those probabilities against sportsbook odds to find value, the **confidence
 ranking** that reduces all of it to a single S/A/B/C letter, the
-**backtester** that scores logged predictions against real results, and the
-**AI multi-agent review layer** that audits each pick before it is presented.
+**backtester** that scores logged predictions against real results, the
+**AI multi-agent review layer** that audits each pick before it is presented,
+and the **daily report, structured log, and workflow** that tie it together.
+
+`runDailyPipeline` runs the whole sequence over a slate — see
+[Steps 10–11](#steps-1011--the-daily-report-and-the-workflow-that-produces-it).
 
 It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
 input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
@@ -40,6 +44,8 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `review/prompts.ts` | Step 9 — game dossier + the three agent role briefs |
 | `review/reviewers.ts` | Step 9 — Claude-backed and deterministic reviewer backends |
 | `review/review.ts` | Step 9 — runs the agents and applies verdicts to the rank |
+| `report.ts` | Step 10 — prediction cards, daily summary, structured log |
+| `pipeline.ts` | Step 11 — the daily workflow over a whole slate |
 
 ## Weather is observed-vs-forecast aware
 
@@ -329,6 +335,65 @@ does *not* lower the rank — an absent opinion is not evidence against a pick �
 but it is surfaced as a warning so the reader knows the pick got less scrutiny
 than the label implies.
 
+## Steps 10–11 — the daily report and the workflow that produces it
+
+`runDailyPipeline` is the whole thing end to end. It is what a scheduler calls:
+
+```ts
+const result = await runDailyPipeline(slate, { runMode: "morning" });
+console.log(result.report);          // human-readable
+await writeFile(logPath, serializeDailyLog(result.log));  // for Step 8
+```
+
+The report follows plan Section 6 — a Best Bets block, the slate sorted by
+confidence, a data-issues note, then a card per game:
+
+```
+BEST BETS (S/A with positive EV)
+  [S] BOS @ NYY  OVER 8.5  +8.4% edge  (EV +11.4%)
+  [A] SD @ COL   OVER 8.5  +12.4% edge  (EV +19.2%)
+
+DATA ISSUES AND DOWNGRADES
+  SD @ COL: unconfirmed_starter
+  LAA @ HOU: AI review B→C
+```
+
+Three things this layer gets right that are easy to get wrong:
+
+**One broken game must not take down the slate.** Every game is wrapped and a
+failure is recorded against that game with the stage that threw. On any given
+morning *some* game is missing something, so a pipeline that throws on the
+first missing starter would never finish a real slate. Un-predictable games are
+printed in the report rather than left in a return value nobody renders.
+
+**Re-runs reproduce.** Each game's simulation seed is derived from its game id
+(`seedForGame`), so the same slate re-run gives the same probabilities and two
+games in one slate never share a random stream.
+
+**The log is the record, not a rendering of the report.** It carries the
+simulation seed, the odds timestamp, and the book — so a prediction can be
+reproduced exactly and scored against the price that was actually available,
+not the price the line moved to afterwards. It also logs the rank that was
+*acted on* (post-review), so a backtest scores what was recommended rather than
+what the model alone suggested.
+
+### The two daily runs
+
+The plan calls for an early run plus an optional refresh near first pitch. The
+difference is the staleness bar: `morning` accepts data up to 24h old,
+`pregame` tightens to 6h. By the refresh, lineups and weather have moved —
+data still sitting at twelve hours old is stale in a way it was not at 8am, and
+that tightening is what makes the second run worth doing.
+
+Scheduling itself is deployment-specific and deliberately outside the library —
+a library that installs a cron is a library you cannot test. Wire
+`runDailyPipeline` to whatever your deployment uses:
+
+```
+0 14 * * *   morning run   (10am ET)
+0 22 * * *   pregame refresh (6pm ET)
+```
+
 ## Usage
 
 ```ts
@@ -379,9 +444,11 @@ const report = runBacktest(
 console.log(explainBacktest(report).join("\n"));
 ```
 
-The daily report (Step 10) renders `flags` in the card's "Flags:" line, the
-baseline step traces as "Key factors", `explainEvaluation` as the "Value:"
-block, and the rank as the card header.
+The daily report renders `flags` in the card's "Flags:" line, the baseline step
+traces as "Key factors", `explainEvaluation` as the "Value:" block, and the
+post-review rank as the card header — but you rarely assemble this by hand.
+`runDailyPipeline` does the whole sequence over a slate; the code above is what
+it runs per game.
 
 ## Develop
 
