@@ -47,3 +47,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Fetched data snapshots (see lib/snapshot-store)
+# Un-ignore this if you want git to be your durable record of daily pulls.
+data/

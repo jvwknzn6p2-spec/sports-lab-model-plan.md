@@ -77,9 +77,12 @@ The model is only as good as its inputs. Below is every data source v1.0 needs, 
 | **Betting odds** | Moneyline, run line, and total lines from sportsbooks | The market baseline we compare against for EV | Odds API |
 
 **Data principles for v1.0:**
-- **Fail loudly, not silently.** If a data source is missing (e.g. no confirmed starter), the affected prediction should be flagged/downgraded — never filled with a fake number.
+- **Fail loudly, not silently.** If a data source is missing (e.g. no confirmed starter), the affected prediction should be flagged/downgraded — never filled with a fake number. _Implemented as the `DataFlag` list in `@workspace/mlb-stats`._
 - **Cache daily pulls.** Pull each source once per morning and store it, so re-runs are fast and reproducible.
 - **Timestamp everything.** Record when data was fetched so we can debug and backtest fairly.
+- **Version snapshots; never overwrite them.** The morning pull and the pre-game refresh are different observations of a moving target — starters get announced, games get postponed, odds drift. Overwriting destroys the only record of what we believed when we made the prediction, and a backtest that reads the evening data to grade a morning pick is crediting the model with information it did not have. `@workspace/snapshot-store` keeps every version and can answer "what did we know at 09:00?".
+- **Use MLB's calendar, not the server's clock.** `officialDate` is US Eastern. A machine running in UTC or JST that asks for "today" will ask for tomorrow's games all evening.
+- **Key games on `gamePk`.** A natural key of date + teams collides on doubleheaders — two different games that would then share a prediction and a simulation seed.
 
 ---
 
@@ -133,7 +136,7 @@ The prediction is not one giant model — it's a pipeline of simpler, understand
 ### 4.5 AI multi-agent review
 - **What it does:** A final "sanity check" layer where AI agents review the model's output and the context (news, injuries, matchup notes) before a pick is finalized.
 - **Example agents (v1.0 concept):**
-  - **Data Auditor** — confirms inputs are present and reasonable; flags stale or missing data.
+  - **Data Auditor** — confirms inputs are present and reasonable; flags stale or missing data. _The mechanical half of this already exists: `@workspace/mlb-stats` emits structured `DataFlag`s, so the agent reviews a list rather than re-deriving what is missing._
   - **Matchup Analyst** — reviews the pick against qualitative context (injury news, pitcher trends).
   - **Risk Reviewer** — challenges over-confident picks and can downgrade the confidence rank.
 - **How it fits:** The AI review can **lower** confidence or add warnings, but the numbers still come from the statistical model + simulation. AI is the reviewer, not the source of truth.
@@ -144,9 +147,9 @@ The prediction is not one giant model — it's a pipeline of simpler, understand
 
 What actually happens each day, start to finish:
 
-1. **Fetch schedule** — Get today's games from the MLB schedule.
+1. **Fetch schedule** ✅ — `pnpm --filter @workspace/scripts run fetch-schedule`. Pulls the day's games with probable pitchers, and writes a timestamped snapshot to `data/schedule/<date>/`.
 2. **Pull data** — For each game, gather starting pitchers, batting stats, bullpen stats, recent form, injuries, weather, ballpark factors, and current betting odds. Cache it all.
-3. **Validate data** — Check each game has what it needs. Flag games with missing/late data (e.g. unconfirmed starter).
+3. **Validate data** — Check each game has what it needs. Flag games with missing/late data (e.g. unconfirmed starter). _Partially done: the schedule layer already emits `DataFlag`s and an `isPredictable` verdict per game._
 4. **Run baseline model** — Compute expected runs for each team.
 5. **Run Monte Carlo simulation** — Simulate each game thousands of times to get win/run-line/total probabilities.
 6. **Calculate EV** — Compare probabilities to sportsbook odds; identify positive-EV bets.
@@ -155,7 +158,7 @@ What actually happens each day, start to finish:
 9. **Produce output** — Generate the daily report (see Section 6).
 10. **Log for backtesting** — Save every prediction with its inputs and timestamp so results can be scored later.
 
-**Timing note:** Run early enough to be useful, but late enough that starting pitchers are confirmed. A practical pattern is a first run in the morning and an optional refresh a few hours before first pitch.
+**Timing note:** Run early enough to be useful, but late enough that starting pitchers are confirmed. A practical pattern is a first run in the morning and an optional refresh a few hours before first pitch. Both runs are stored separately, so the refresh does not erase what the morning knew — and the difference between them is itself data worth having.
 
 ---
 
@@ -226,7 +229,7 @@ Being upfront about what this system can and cannot do:
 
 A suggested build order, from foundation to full pipeline. Each step is small enough to complete and verify before moving on.
 
-1. **Set up the schedule fetch.** Pull today's MLB games reliably and store them. This is the smallest end-to-end slice.
+1. ~~**Set up the schedule fetch.**~~ ✅ **Done** — `lib/integrations/mlb-stats` + `lib/snapshot-store`. Pulls the day's games, validates them, flags data problems, and stores a timestamped snapshot. Run with `pnpm --filter @workspace/scripts run fetch-schedule`. Handles doubleheaders, postponements, unannounced starters, and MLB's own calendar date.
 2. **Add core game data.** Starting pitchers, team batting, and bullpen stats for each scheduled game. Verify the data looks sane.
 3. **Add context data.** Recent form, injuries, weather, and ballpark factors. Build the data-validation/flagging layer here.
 4. **Build the baseline statistical model.** Expected runs per team, with clear step-by-step adjustments. Make it explainable. **Prefer FIP / xFIP / SIERA over ERA** for starting pitchers — ERA is contaminated by defence and sequencing luck and is a weaker predictor of the next start.
@@ -240,4 +243,4 @@ A suggested build order, from foundation to full pipeline. Each step is small en
 
 **Guiding principle:** ship the smallest working slice first (schedule → one prediction), then layer accuracy and polish on top. Keep every component simple and explainable before making it fancy.
 
-**Current bottleneck:** steps 5 and 6's maths are built and tested, but **steps 1–3 are not**. Nothing is fetching data, so the pipeline produces zero predictions per day. Comparable services are all live and running daily. Further sophistication in the model is worth less right now than a working schedule fetch — the next work should be step 1, not step 7.
+**Current bottleneck:** step 1 now runs, and steps 5–6's maths are built and tested. The gap is **steps 2–4**: the schedule arrives with starting pitchers named, but nothing yet fetches their stats, so there are no expected runs to simulate. The next work is step 2, not step 7 — the pipeline is one component away from producing its first real prediction.
