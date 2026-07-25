@@ -1,0 +1,110 @@
+{
+  "_comment": "Recorded consolidated slate fixture in the pipeline's schema. Stands in for the live MLB/odds/weather join (blocked by egress in this sandbox). Replace with a real recording; the schema is identical.",
+  "date": "2026-07-25",
+  "games": [
+    {
+      "gameId": "2026-07-25-LAA-HOU",
+      "startTimeLocal": "7:10 PM",
+      "home": { "abbreviation": "HOU", "name": "Astros" },
+      "away": { "abbreviation": "LAA", "name": "Angels" },
+      "data": {
+        "scheduleConfirmed": true,
+        "homePitcher": { "name": "Framber Valdez", "confirmed": true, "era": 2.9, "whip": 1.05, "kPer9": 9.4, "inningsPitched": 130 },
+        "awayPitcher": { "name": "Reid Detmers", "confirmed": true, "era": 4.3, "whip": 1.31, "kPer9": 8.7, "inningsPitched": 110 },
+        "battingStatsAvailable": true,
+        "bullpenStatsAvailable": true,
+        "recentFormAvailable": true,
+        "injuries": [],
+        "weather": { "tempF": 88, "windMph": 12, "windDir": "out", "precipitationChance": 0.05 },
+        "parkFactorsAvailable": true,
+        "oddsAvailable": true,
+        "fetchedAt": "2026-07-25T16:30:00Z",
+        "staleAfterMinutes": 240
+      },
+      "features": {
+        "home_bat_runs_pg": 4.9,
+        "away_bat_runs_pg": 4.1,
+        "home_bullpen_era": 3.4,
+        "away_bullpen_era": 4.5,
+        "home_form_l10": 0.6,
+        "away_form_l10": 0.4,
+        "park_factor": 1.02
+      },
+      "odds": {
+        "moneyline": { "home": -150, "away": 130 },
+        "total": { "line": 8.5, "over": -110, "under": -110 },
+        "runline": { "favorite": -1.5, "favoriteOdds": 120, "underdogOdds": -140 }
+      }
+    },
+    {
+      "gameId": "2026-07-25-NYY-BOS",
+      "startTimeLocal": "1:05 PM",
+      "home": { "abbreviation": "BOS", "name": "Red Sox" },
+      "away": { "abbreviation": "NYY", "name": "Yankees" },
+      "data": {
+        "scheduleConfirmed": true,
+        "homePitcher": { "name": "Brayan Bello", "confirmed": false, "era": 3.8, "whip": 1.25, "kPer9": 8.1, "inningsPitched": 95 },
+        "awayPitcher": { "name": "Carlos Rodon", "confirmed": true, "era": 3.4, "whip": 1.18, "kPer9": 10.2, "inningsPitched": 120 },
+        "battingStatsAvailable": true,
+        "bullpenStatsAvailable": false,
+        "recentFormAvailable": true,
+        "injuries": [
+          { "player": "Rafael Devers", "team": "home", "status": "questionable", "keyPlayer": true }
+        ],
+        "weather": { "tempF": 79, "windMph": 6, "windDir": "cross", "precipitationChance": 0.1 },
+        "parkFactorsAvailable": true,
+        "oddsAvailable": true,
+        "fetchedAt": "2026-07-25T09:00:00Z",
+        "staleAfterMinutes": 240
+      },
+      "features": {
+        "home_bat_runs_pg": 4.6,
+        "away_bat_runs_pg": 4.8,
+        "home_bullpen_era": 4.1,
+        "away_bullpen_era": 3.7,
+        "home_form_l10": 0.5,
+        "away_form_l10": 0.55,
+        "park_factor": 1.05
+      },
+      "odds": {
+        "moneyline": { "home": 100, "away": -120 },
+        "total": { "line": 9.0, "over": -105, "under": -115 },
+        "runline": { "favorite": -1.5, "favoriteOdds": 135, "underdogOdds": -155 }
+      }
+    },
+    {
+      "gameId": "2026-07-25-LAD-SF",
+      "startTimeLocal": "9:15 PM",
+      "home": { "abbreviation": "SF", "name": "Giants" },
+      "away": { "abbreviation": "LAD", "name": "Dodgers" },
+      "data": {
+        "scheduleConfirmed": true,
+        "homePitcher": { "name": "Logan Webb", "confirmed": true, "era": 3.1, "whip": 1.12, "kPer9": 8.9, "inningsPitched": 140 },
+        "awayPitcher": { "name": "Tyler Glasnow", "confirmed": true, "era": 3.0, "whip": 1.08, "kPer9": 11.5, "inningsPitched": 118 },
+        "battingStatsAvailable": true,
+        "bullpenStatsAvailable": true,
+        "recentFormAvailable": true,
+        "injuries": [],
+        "weather": { "tempF": 62, "windMph": 8, "windDir": "in", "precipitationChance": 0.0 },
+        "parkFactorsAvailable": true,
+        "oddsAvailable": true,
+        "fetchedAt": "2026-07-25T17:15:00Z",
+        "staleAfterMinutes": 240
+      },
+      "features": {
+        "home_bat_runs_pg": 4.4,
+        "away_bat_runs_pg": 4.5,
+        "home_bullpen_era": 3.6,
+        "away_bullpen_era": 3.5,
+        "home_form_l10": 0.5,
+        "away_form_l10": 0.52,
+        "park_factor": 0.95
+      },
+      "odds": {
+        "moneyline": { "home": -105, "away": -105 },
+        "total": { "line": 7.5, "over": -110, "under": -110 },
+        "runline": { "favorite": -1.5, "favoriteOdds": 155, "underdogOdds": -175 }
+      }
+    }
+  ]
+}

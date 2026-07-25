@@ -455,6 +455,19 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
+  lib/pipeline:
+    dependencies:
+      '@workspace/ai-review':
+        specifier: workspace:*
+        version: link:../ai-review
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.4
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.4
+
   scripts:
     devDependencies:
       '@types/node':

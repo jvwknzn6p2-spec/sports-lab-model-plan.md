@@ -1,0 +1,29 @@
+[project]
+name = "sportslab-engine"
+version = "0.1.0"
+description = "AI Sports Lab — prediction engine (Steps 1–7): data ingestion, training, inference, ensemble, calibration, error analysis, self-learning."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "xgboost>=2.0",
+]
+
+[project.optional-dependencies]
+lightgbm = ["lightgbm>=4.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+sportslab-engine = "sportslab_engine.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

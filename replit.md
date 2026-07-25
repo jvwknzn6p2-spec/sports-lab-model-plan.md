@@ -9,8 +9,10 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/ai-review run demo` — run the Step 9 review over the sample slate (offline by default; set `ANTHROPIC_API_KEY` for the full Claude-backed review)
-- `pnpm --filter @workspace/ai-review run test` — Step 9 unit tests
+- `bash run_pipeline.sh 2026-07-25` — run the full prediction pipeline end-to-end on fixtures (train → predict → AI review + lock → settle → analyze → learn)
+- `pnpm --filter @workspace/ai-review run demo` — run the AI review over the sample slate (offline by default; set `ANTHROPIC_API_KEY` for the full Claude-backed review)
+- `pnpm --filter @workspace/ai-review run test` / `pnpm --filter @workspace/pipeline run test` — TypeScript unit tests
+- `cd prediction-engine && PYTHONPATH=src python -m pytest` — Python engine unit tests
 - Required env: `DATABASE_URL` — Postgres connection string; `ANTHROPIC_API_KEY` — enables the live AI review (optional; falls back to deterministic-only review when absent)
 
 ## Stack
@@ -25,8 +27,11 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Where things live
 
 - `sports-lab/model-plan.md` — the technical plan (source of truth for scope and build order).
-- `lib/ai-review` (`@workspace/ai-review`) — **Step 9: AI multi-agent review.** The final sanity-check layer (Data Auditor, Matchup Analyst, Risk Reviewer). Consumes the `GamePrediction` contract in `lib/ai-review/src/types.ts` and returns an adjusted confidence rank + warnings. See that package's `README.md`.
-- Steps 1–8 (data + statistical model + Monte Carlo + EV + confidence ranking) and Steps 10–11 (daily output + automation) are not yet implemented; `lib/ai-review/src/sample-data.ts` stands in for the upstream output so the review layer runs on its own.
+- `lib/ai-review` (`@workspace/ai-review`) — **AI multi-agent review** (Data Auditor, Matchup Analyst, Risk Reviewer). Consumes the `GamePrediction` contract in `lib/ai-review/src/types.ts` and returns an adjusted confidence rank + warnings. See that package's `README.md`.
+- `prediction-engine/` (`sportslab-engine`, Python) — the ML half: data ingestion, feature engineering, XGBoost training/inference, ensemble, calibration, error analysis, self-learning. See its `README.md`.
+- `lib/pipeline` (`@workspace/pipeline`) — TypeScript orchestration: **Prediction Lock** (runs the AI review, then freezes an immutable hashed pick) and **Settlement Engine**.
+- `run_pipeline.sh` — runs the full end-to-end loop (train → predict → lock+review → settle → analyze → learn) on recorded fixtures.
+- **Architecture (v1.1):** ML is the source of truth; the transparent v1.0 baseline is an ensemble member. See `sports-lab/model-plan.md` §9 for the 7-component pipeline, decisions, and remaining live-wiring work. Live data ingestion is blocked by this environment's egress policy, so the pipeline runs on recorded fixtures (`SPORTSLAB_USE_FIXTURES=1`).
 
 ## Architecture decisions
 

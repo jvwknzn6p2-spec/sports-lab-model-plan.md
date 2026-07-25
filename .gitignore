@@ -8,6 +8,15 @@ out-tsc
 .expo
 .expo-shared
 
+# Python prediction-engine: generated artifacts, outputs, caches
+prediction-engine/out/
+prediction-engine/artifacts/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+
 # dependencies
 node_modules
 

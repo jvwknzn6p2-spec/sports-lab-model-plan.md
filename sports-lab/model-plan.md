@@ -208,3 +208,43 @@ A suggested build order, from foundation to full pipeline. Each step is small en
 11. **Automate the daily workflow.** Schedule the full pipeline to run each morning with an optional pre-game refresh.
 
 **Guiding principle:** ship the smallest working slice first (schedule → one prediction), then layer accuracy and polish on top. Keep every component simple and explainable before making it fancy.
+
+---
+
+## 9. Architecture revision (v1.1) — ML-first, end-to-end pipeline
+
+The v1.0 plan above (transparent baseline formula + Monte Carlo) is the historical record. As of v1.1 the project adopts a **machine-learning pipeline as the source of truth**, while **keeping the transparent baseline as an ensemble member** for explainability and as a sanity anchor. The priority shifted from adding features to running an **executable end-to-end pipeline** on top of the already-completed AI multi-agent review (Step 9).
+
+### Decisions
+
+- **ML is the source of truth; the transparent baseline stays in the ensemble.** The XGBoost gradient-boosted model drives predictions; the v1.0 expected-runs formula is one input to the Ensemble Manager, so every pick keeps an explainable component.
+- **Hybrid stack.** Python owns the model/stats stages (using the real `xgboost` library); TypeScript owns orchestration and the finished AI review layer. The halves communicate through JSON files matching the `@workspace/ai-review` `GamePrediction` contract.
+- **Fixtures now, live later.** The current environment's egress policy blocks the external data APIs, so ingestion defaults to recorded fixtures and training runs on a recorded historical dataset. The ingestion clients target the real APIs and go live when those hosts are reachable (`SPORTSLAB_USE_FIXTURES=0`).
+
+### The pipeline (7 components + review)
+
+| # | Component | Stack | Status |
+|---|---|---|---|
+| 1 | Prediction Engine (XGBoost + transparent baseline) | Python | ✅ thin-but-real |
+| 2 | Ensemble Manager | Python | ✅ |
+| 3 | Probability Calibration (isotonic) | Python | ✅ |
+| — | AI Multi-Agent Review (Step 9) | TypeScript | ✅ complete |
+| 4 | Prediction Lock (immutable, hashed, post-review) | TypeScript | ✅ |
+| 5 | Settlement Engine | TypeScript | ✅ |
+| 6 | Error Analysis Engine (accuracy by rank, ECE, Brier, ROI) | Python | ✅ |
+| 7 | Self-Learning Engine (weight/calibration feedback) | Python | ✅ |
+
+The AI review sits between Calibration (#3) and Prediction Lock (#4): the locked confidence is the reviewed (possibly downgraded) rank, never the raw quant rank.
+
+### Where the code lives
+
+- `prediction-engine/` — the Python engine (components 1–3, 6–7, ingestion, features, training). See its `README.md`.
+- `lib/pipeline/` (`@workspace/pipeline`) — TypeScript Prediction Lock + Settlement (components 4–5).
+- `lib/ai-review/` (`@workspace/ai-review`) — the Step 9 review layer.
+- `run_pipeline.sh` — runs the whole loop end-to-end on fixtures.
+
+### Remaining live-wiring work
+
+- Odds / weather / advanced-stats providers in the live slate assembler (needs those hosts and API keys).
+- Training on a real historical export instead of the recorded fixture.
+- Deepening each thin stage (richer features, run-line/total models, multi-day backtests) — the vertical slice runs end-to-end first; depth is layered on next.
