@@ -73,6 +73,19 @@ it pulls the over-confident probabilities toward reality:
 - stated **66% → 53%**
 - stated **55% → 50%**
 
+## Use it daily — calibrate a pick
+
+The correction is now a runnable, tested tool (`analysis/calibrate_pick.py`):
+
+```bash
+uv run python analysis/calibrate_pick.py --prob 66
+# stated 66%  ->  calibrated 53%  (-13 pts)   PASS
+```
+
+It de-biases a stated probability with the fitted calibrator and calls **PASS**
+when the corrected number is within a coin-flip band. On the logged picks, most
+land as PASS once corrected — i.e. they weren't the strong plays they looked like.
+
 ## What this means for the project
 
 1. **The stated probabilities need calibration before they're trustworthy.** The

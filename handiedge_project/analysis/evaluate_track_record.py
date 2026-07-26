@@ -70,9 +70,10 @@ def gradeable(rows: list[dict]) -> list[dict]:
     return out
 
 
-def _platt_fit(p: np.ndarray, y: np.ndarray, epochs: int = 800, lr: float = 0.5) -> tuple[float, float]:
+def _platt_fit(
+    p: np.ndarray, y: np.ndarray, epochs: int = 800, lr: float = 0.5
+) -> tuple[float, float]:
     a, b = 1.0, 0.0
-    n = len(p)
     for _ in range(epochs):
         z = a * p + b
         pred = 1.0 / (1.0 + np.exp(-z))
@@ -139,9 +140,7 @@ def summarize(rows: list[dict]) -> dict:
     # Non-gradeable accounting (honesty: what was excluded and why).
     excluded = {
         "push": sum(1 for r in rows if (r.get("hit_status") or "").strip() == PUSH),
-        "postponed_or_excluded": sum(
-            1 for r in rows if "延期" in (r.get("hit_status") or "")
-        ),
+        "postponed_or_excluded": sum(1 for r in rows if "延期" in (r.get("hit_status") or "")),
         "pending_or_scheduled": sum(
             1
             for r in rows
@@ -172,8 +171,8 @@ def summarize(rows: list[dict]) -> dict:
         "byLeague": by_league,
         "calibrationHoldout": calibrated_holdout,
         "caveats": [
-            f"Small sample (n={n}); rank/league sub-groups are smaller still — treat as indicative, not decisive.",
-            "Stated win_probability is the picked side's probability; hit_status is whether that pick covered.",
+            f"Small sample (n={n}); subgroups smaller still — indicative, not decisive.",
+            "Stated probability is the pick's; hit_status is whether that pick covered.",
             "Push/postponed/pending rows are excluded from win/loss, not scored as losses.",
         ],
     }

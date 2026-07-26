@@ -56,5 +56,5 @@ jobs:
           uv run ruff check .
           uv run ruff format --check .
           uv run mypy
-      - name: Tests (138)
+      - name: Tests
         run: cd handiedge_project && uv run pytest
