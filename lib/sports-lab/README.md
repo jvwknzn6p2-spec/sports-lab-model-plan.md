@@ -30,6 +30,10 @@ or odds still produces an honest report rather than a confident-looking one.
 | `sources/mlb/responses.ts` | Steps 1–2 — MLB API response schemas + value parsing |
 | `sources/mlb/client.ts` | Steps 1–2 — injectable HTTP client with retry and strict parsing |
 | `sources/mlb/fetch.ts` | Steps 1–2 — schedule, starters, batting, bullpen, recent form |
+| `sources/ballparks.ts` | park coordinates, roof type, field orientation |
+| `sources/openmeteo.ts` | weather provider (temperature, wind, precipitation) |
+| `sources/oddsapi.ts` | odds provider + the game↔event join |
+| `sources/slate.ts` | `fetchSlate` — all providers into pipeline input |
 | `schemas.ts` | zod schemas + inferred types for the whole context contract |
 | `context/recent-form.ts` | collapse recent game results into a per-team form summary |
 | `context/injuries.ts` | classify material absences (key hitter / starter out) |
@@ -93,30 +97,114 @@ three layers down.
 
 ### What is verified, and what is not
 
-The ingest layer is fully tested against recorded fixtures (26 tests) and runs
-end-to-end into a rendered daily report. It has **not** been run against the
-live API from this environment: outbound access to `statsapi.mlb.com` is denied
-by this session's egress policy (the proxy reports
-`connect_rejected … policy denial` for `statsapi.mlb.com:443`). Once the host is
-reachable, verify with:
+Every source layer is tested against recorded fixtures and runs end-to-end into
+a rendered daily report. **None has been run against its live API from this
+environment** — all three hosts are denied by this session's egress policy:
+
+```
+statsapi.mlb.com:443     connect_rejected — gateway answered 403 to CONNECT
+api.open-meteo.com:443   connect_rejected — gateway answered 403 to CONNECT
+api.the-odds-api.com:443 connect_rejected — gateway answered 403 to CONNECT
+```
+
+Allowlisting those three hosts for the environment is the one step that turns
+this from "correct against recorded shapes" into "verified against reality".
+Once reachable, verify with:
 
 ```bash
 curl -s "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2024-07-25&hydrate=probablePitcher,team,venue" | head -c 400
+curl -s "https://api.open-meteo.com/v1/forecast?latitude=29.7572&longitude=-95.3552&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=UTC" | head -c 300
+curl -s "https://api.the-odds-api.com/v4/sports/baseball_mlb/odds?apiKey=$ODDS_API_KEY&regions=us&markets=h2h,spreads,totals&oddsFormat=american" | head -c 400
 ```
 
-Two things specifically warrant a live check, because they are the least
-certain and both degrade to `null` if wrong: the relief-pitching split
-(`stats=statSplits&sitCodes=rp`) and the presence of `abbreviation` on the
-`/teams` response. Node's built-in `fetch` does not read `HTTPS_PROXY` unless
-run with `NODE_USE_ENV_PROXY=1`.
+Three things specifically warrant a live check, because they are the least
+certain — all three degrade to `null` rather than to a wrong number, but a
+`null` means a capped confidence rank every day until it is fixed:
+
+1. the relief-pitching split (`stats=statSplits&sitCodes=rp`),
+2. the presence of `abbreviation` on the `/teams` response, and
+3. whether The Odds API's team names match MLB's exactly after normalisation
+   (a mismatch shows up as every game unmatched, which is loud, not silent).
+
+Node's built-in `fetch` does not read `HTTPS_PROXY` unless run with
+`NODE_USE_ENV_PROXY=1`.
+
+## Weather and odds providers
+
+`fetchSlate` is the single call that turns a date into pipeline input, fanning
+out across three independent services:
+
+```ts
+const slate = await fetchSlate("2024-07-25", {
+  odds: { apiKey: process.env.ODDS_API_KEY, preferredBookmakers: ["draftkings"] },
+});
+const result = await runDailyPipeline(slate.entries, { runMode: "morning" });
+```
+
+| Source | Fills | Key needed |
+|---|---|---|
+| MLB Stats API | schedule, starters, batting, bullpen, recent form | no |
+| Open-Meteo | temperature, wind, precipitation at the first-pitch hour | no |
+| The Odds API | moneyline, run line, total | yes (`ODDS_API_KEY`) |
+
+**A provider being down degrades the slate; it does not cancel it.** Only the
+MLB call is load-bearing. Without weather a game still predicts and
+`weather_missing` fires; without odds it produces probabilities but no bet.
+Every degradation lands in `problems` rather than being absorbed silently — an
+odds outage is recorded once for the slate, an unmatched game once per game.
+
+### Observed vs forecast is decided by the clock
+
+The weather provider sets `weatherMode` by comparing the requested hour to
+`asOf`, not by which endpoint answered. That one field then drives everything
+downstream — the baseline damps a forecast to 60%, the confidence layer
+penalises a totals pick resting on one, and the report prints which it was — so
+deriving it from timestamps keeps all three consistent.
+
+### Field orientation ships unset, on purpose
+
+Turning a compass wind bearing into "blowing out" needs to know which way the
+field points. `ballparks.ts` carries coordinates and roof type for all 30 parks
+but leaves `centerFieldBearing` **null**: those are measured values this library
+has no citable source for, and a bearing wrong by 90° turns "wind out" into
+"crosswind" and quietly moves every total. Until you supply them, wind speed is
+reported, `windRelative` is null, and the baseline skips the wind term while
+still applying temperature:
+
+```ts
+weather: { centerFieldBearings: { HOU: 11, BOS: 45 } }   // your measured values
+```
+
+Retractable roofs are the same shape of problem — the roof's position is a
+game-day decision no weather API knows — so they default to open (weather
+applies) and accept a per-park override.
+
+### Odds matching refuses to guess
+
+The Odds API identifies games by team *name* and start time; MLB uses `gamePk`.
+Joining them wrongly would price one game with another's line — confident,
+completely invalid output rather than an obvious failure. So a match requires
+both normalised team names **and** a start time within tolerance, and a game
+matching zero or more than one event is reported unmatched rather than priced
+from a best guess. That last case is real: doubleheaders put the same two teams
+on the card twice.
+
+**Known limitation — away-favourite run lines.** `GameOdds.runLine` models the
+market where the *home* team lays the spread. When the away team is the
+favourite the book posts away −1.5 / home +1.5, which that shape cannot express,
+so the run line is left null and those games get no run-line bet. Filling it in
+anyway would price "home −1.5" using the "home +1.5" number and invert the edge.
+The fix, when it is worth doing: carry which side lays the runs on
+`GameOdds.runLine` and have `evaluateOdds` pick the matching probability pair —
+`simulateGame` already computes both (`awayCoversMinus` / `homeCoversPlus`).
 
 ### Still needed for a live slate
 
-`CoreGame` is complete; the context layer is not. Weather and betting odds come
-from other providers, and injuries need a separate ingest, so those are still
-supplied by the caller. `inningsPitchedLast3Days` is left `null` — recent
-bullpen workload needs per-reliever game logs. Every one of these gaps is
-already flagged by the validation layer rather than silently defaulted.
+Injuries are the remaining gap: `fetchSlate` defaults to an empty report with
+`lineupConfirmed: false`, so `lineup_unconfirmed` fires and the game caps at A.
+Pass `injuriesFor` to supply real data. `inningsPitchedLast3Days` is also left
+null — recent bullpen workload needs per-reliever game logs. Both gaps are
+flagged rather than silently defaulted.
 
 ## Weather is observed-vs-forecast aware
 

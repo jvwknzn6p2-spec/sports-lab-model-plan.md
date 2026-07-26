@@ -38,6 +38,41 @@ export {
   firstSplitStat,
 } from "./sources/mlb/responses";
 
+// Ballpark geography, weather, and odds providers.
+export {
+  lookupBallparkGeo,
+  allBallparkGeo,
+  BALLPARK_GEO_COUNT,
+  type BallparkGeo,
+  type RoofType,
+} from "./sources/ballparks";
+export {
+  fetchWeather,
+  resolveRoofState,
+  toHourKey,
+  WeatherProviderError,
+  OPEN_METEO_BASE,
+  type FetchWeatherArgs,
+  type WeatherProviderOptions,
+} from "./sources/openmeteo";
+export {
+  fetchOddsEvents,
+  fetchOddsForSlate,
+  matchOddsToGames,
+  toGameOdds,
+  normalizeTeamName,
+  OddsProviderError,
+  ODDS_API_BASE,
+  type MatchOddsResult,
+  type OddsEvent,
+  type OddsProviderOptions,
+} from "./sources/oddsapi";
+export {
+  fetchSlate,
+  type FetchSlateOptions,
+  type FetchSlateResult,
+} from "./sources/slate";
+
 // Step 11 — the daily workflow.
 export {
   runDailyPipeline,
