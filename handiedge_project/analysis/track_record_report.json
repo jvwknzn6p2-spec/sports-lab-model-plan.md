@@ -1,0 +1,93 @@
+{
+  "source": "AI_Sports_Log_Master",
+  "totalRows": 162,
+  "gradeable": 149,
+  "excluded": {
+    "push": 3,
+    "postponed_or_excluded": 4,
+    "pending_or_scheduled": 10
+  },
+  "overall": {
+    "hitRate": 0.5101,
+    "wilsonCi": [
+      0.4306,
+      0.5891
+    ],
+    "brier": 0.2543,
+    "logLoss": 0.7021,
+    "ece": 0.0671,
+    "meanStatedProb": 0.5772,
+    "reliabilityBins": [
+      {
+        "meanPred": 0.5772,
+        "observed": 0.5101,
+        "n": 149
+      }
+    ]
+  },
+  "byConfidenceRank": {
+    "S": {
+      "n": 5,
+      "hitRate": 0.6,
+      "ci": [
+        0.2307,
+        0.8824
+      ],
+      "meanStatedProb": 0.656
+    },
+    "A": {
+      "n": 39,
+      "hitRate": 0.5128,
+      "ci": [
+        0.362,
+        0.6613
+      ],
+      "meanStatedProb": 0.6128
+    },
+    "B": {
+      "n": 81,
+      "hitRate": 0.5062,
+      "ci": [
+        0.3995,
+        0.6123
+      ],
+      "meanStatedProb": 0.5688
+    },
+    "C": {
+      "n": 24,
+      "hitRate": 0.5,
+      "ci": [
+        0.3143,
+        0.6857
+      ],
+      "meanStatedProb": 0.5312
+    }
+  },
+  "byLeague": {
+    "MLB": {
+      "n": 107,
+      "hitRate": 0.514
+    },
+    "NPB": {
+      "n": 42,
+      "hitRate": 0.5
+    }
+  },
+  "calibrationHoldout": {
+    "nTrain": 89,
+    "nHoldout": 60,
+    "platt": {
+      "a": 0.9071,
+      "b": -0.3691
+    },
+    "rawBrier": 0.2603,
+    "calibratedBrier": 0.2538,
+    "rawEce": 0.1045,
+    "calibratedEce": 0.0705
+  },
+  "caveats": [
+    "Small sample (n=149); rank/league sub-groups are smaller still — treat as indicative, not decisive.",
+    "Stated win_probability is the picked side's probability; hit_status is whether that pick covered.",
+    "Push/postponed/pending rows are excluded from win/loss, not scored as losses."
+  ]
+}
