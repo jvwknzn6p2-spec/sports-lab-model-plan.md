@@ -9,7 +9,7 @@
 import type { BullpenWorkload } from "../features";
 import type { NormalizedGame } from "../mlb/parse";
 import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
-import type { CoreDataSource } from "../step2";
+import type { CoreDataSource, TeamRecentForm } from "../step2";
 
 export interface FixtureBundle {
   date: string;
@@ -27,6 +27,8 @@ export interface FixtureBundle {
   workloads?: Record<string, BullpenWorkload>;
   /** Keyed by stringified venueId (optional). */
   parkFactors?: Record<string, number>;
+  /** Keyed by stringified teamId (optional): last-N-games scoring. */
+  forms?: Record<string, TeamRecentForm>;
 }
 
 export class FixtureCoreDataSource implements CoreDataSource {
@@ -58,5 +60,9 @@ export class FixtureCoreDataSource implements CoreDataSource {
   async getParkFactor(venueId: number | null): Promise<number | undefined> {
     if (venueId === null) return undefined;
     return this.bundle.parkFactors?.[String(venueId)];
+  }
+
+  async getRecentForm(teamId: number): Promise<TeamRecentForm | undefined> {
+    return this.bundle.forms?.[String(teamId)];
   }
 }

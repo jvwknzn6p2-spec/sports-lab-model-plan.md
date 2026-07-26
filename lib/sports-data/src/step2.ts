@@ -45,6 +45,16 @@ export interface CoreDataSource {
   getBullpenWorkload?(teamId: number): Promise<BullpenWorkload | undefined>;
   /** Optional one-year venue park factor (100 = neutral). */
   getParkFactor?(venueId: number | null): Promise<number | undefined>;
+  /** Optional recent form (last-N-games scoring); undefined when untracked. */
+  getRecentForm?(teamId: number): Promise<TeamRecentForm | undefined>;
+}
+
+/** A team's scoring over its most recent games (Final games only). */
+export interface TeamRecentForm {
+  /** Number of games in the sample (target 15; fewer early in a season). */
+  games: number;
+  runsScoredPerGame: number;
+  runsAllowedPerGame: number;
 }
 
 export interface TeamCoreData {
@@ -53,6 +63,8 @@ export interface TeamCoreData {
   starter: StartingPitcherFeatures | null;
   batting: TeamBattingFeatures | null;
   bullpen: BullpenFeatures | null;
+  /** Recent form; null = untracked, and the run model applies no adjustment. */
+  form: TeamRecentForm | null;
 }
 
 export interface GameCoreData {
@@ -162,12 +174,18 @@ export async function assembleGameCoreData(
       }
     }
 
+    const form =
+      side.teamId !== null && source.getRecentForm
+        ? ((await source.getRecentForm(side.teamId)) ?? null)
+        : null;
+
     return {
       teamId: side.teamId,
       teamName: side.teamName,
       starter,
       batting,
       bullpen,
+      form,
     };
   };
 

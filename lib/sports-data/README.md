@@ -37,9 +37,11 @@ value), not batting average or raw runs.
 # 1. Fetch today's slate from the live MLB API (needs network access);
 #    also writes a control-tower skeleton to fill handicap lines into, and
 #    auto-fills bullpen fatigue from the last 3 days of boxscores
-#    (relief IP per team; opt out with --skip-workloads) and real park
+#    (relief IP per team; opt out with --skip-workloads), real park
 #    factors from the built-in 30-venue table (unknown venues warn + stay
-#    neutral; refresh the table each offseason like the Guts! constants):
+#    neutral; refresh the table each offseason like the Guts! constants),
+#    and recent form — each team's last ~15 finals blended into the run
+#    model with hard regression (opt out with --skip-form):
 pnpm --filter @workspace/sports-data run handiedge fetch-slate
 
 # 2. Edit data/control-towers/<date>.json (lines, totals), then predict + LOCK.

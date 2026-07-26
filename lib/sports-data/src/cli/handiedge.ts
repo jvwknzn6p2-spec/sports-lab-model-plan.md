@@ -66,6 +66,7 @@ import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
+import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(here, "..", "..");
@@ -147,6 +148,7 @@ async function cmdFetchSlate(args: {
   out?: string;
   force?: boolean;
   "skip-workloads"?: boolean;
+  "skip-form"?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -190,6 +192,23 @@ async function cmdFetchSlate(args: {
     ];
   } else {
     workloadSummary = ["  Bullpen usage scan skipped (--skip-workloads)."];
+  }
+
+  // Recent form: last-15-games scoring per slate team (fail-soft).
+  if (!args["skip-form"]) {
+    console.log("Scanning recent schedules for team form (last 15 games)…");
+    const teamIds = bundle.games
+      .flatMap((g) => [g.home.teamId, g.away.teamId])
+      .filter((id): id is number => id !== null);
+    const fm = await buildForms({ date, client, teamIds });
+    bundle.forms = fm.forms;
+    workloadSummary.push(
+      `  Recent form: ${Object.keys(fm.forms).length} team(s) over ` +
+        `${fm.daysScanned} day(s) / ${fm.gamesScanned} game(s) (target ${FORM_GAMES_TARGET} finals each).`,
+      ...fm.warnings.map((w) => `    - form: ${w}`),
+    );
+  } else {
+    workloadSummary.push("  Recent-form scan skipped (--skip-form).");
   }
 
   await saveJson(outPath, bundle);
@@ -480,6 +499,7 @@ async function main(): Promise<void> {
       force: { type: "boolean", default: false },
       settle: { type: "boolean", default: false },
       "skip-workloads": { type: "boolean", default: false },
+      "skip-form": { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];
@@ -490,7 +510,7 @@ async function main(): Promise<void> {
   else {
     console.log("Usage:");
     console.log(
-      "  handiedge fetch-slate   [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force] [--skip-workloads]",
+      "  handiedge fetch-slate   [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force] [--skip-workloads] [--skip-form]",
     );
     console.log(
       "  handiedge predict       --control <control-tower.json> [--slate <slate.json>] [--force]",
