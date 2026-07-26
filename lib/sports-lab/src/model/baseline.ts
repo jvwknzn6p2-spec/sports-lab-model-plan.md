@@ -238,7 +238,9 @@ function estimateSide(game: CoreGame, context: GameContext, side: Side): TeamRun
   chain.apply(
     "Team offense",
     shrink(batting.runsPerGame / LEAGUE_RUNS_PER_GAME, OFFENSE_SHRINK),
-    `${team.abbreviation} scores ${batting.runsPerGame} r/g vs league ${LEAGUE_RUNS_PER_GAME} ` +
+    // Rounded for display only — the multiplier above uses full precision.
+    // Real feeds derive this by division, so the raw value is long.
+    `${team.abbreviation} scores ${round(batting.runsPerGame, 2)} r/g vs league ${LEAGUE_RUNS_PER_GAME} ` +
       `(trusted at ${Math.round(OFFENSE_SHRINK * 100)}%).`,
   );
 

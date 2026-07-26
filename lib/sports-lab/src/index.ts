@@ -11,6 +11,33 @@ export * from "./schemas";
 export * from "./flags";
 export * from "./validate";
 
+// Steps 1–2 — MLB Stats API ingest.
+export {
+  MlbClient,
+  MlbApiError,
+  MLB_API_BASE,
+  type FetchLike,
+  type MlbClientOptions,
+} from "./sources/mlb/client";
+export {
+  fetchCoreGames,
+  fetchSchedule,
+  fetchStartingPitcher,
+  fetchTeamBatting,
+  fetchBullpen,
+  fetchRecentForm,
+  fetchTeamAbbreviations,
+  seasonForDate,
+  shiftDate,
+  type FetchCoreGamesOptions,
+  type FetchCoreGamesResult,
+} from "./sources/mlb/fetch";
+export {
+  parseInningsPitched,
+  parseStatNumber,
+  firstSplitStat,
+} from "./sources/mlb/responses";
+
 // Step 11 — the daily workflow.
 export {
   runDailyPipeline,

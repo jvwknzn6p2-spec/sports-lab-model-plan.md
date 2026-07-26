@@ -209,6 +209,20 @@ test("every step records a consistent before → after transition", () => {
   }
 });
 
+test("step notes stay readable when a stat comes from division", () => {
+  // A real feed derives runs/game by dividing totals, so the raw value has
+  // full float precision. That belongs in the maths, never in the prose.
+  const { game, context } = neutralGame();
+  game.homeBatting!.runsPerGame = 490 / 101; // 4.851485148514851…
+  const r = computeBaseline(game, context);
+  const note = step(r.home.steps, "Team offense").note;
+
+  assert.match(note, /scores 4\.85 r\/g/);
+  assert.ok(!/\d\.\d{4,}/.test(note), `note should not carry raw precision: ${note}`);
+  // The multiplier itself must still be computed from the unrounded value.
+  assert.ok(Math.abs(step(r.home.steps, "Team offense").multiplier - 1) > 0.05);
+});
+
 test("explainEstimate renders one line per step plus a header", () => {
   const { game, context } = validGame();
   const r = computeBaseline(game, context);

@@ -1,6 +1,7 @@
-# @workspace/sports-lab — Steps 3–11 of the AI Sports Lab pipeline
+# @workspace/sports-lab — the AI Sports Lab pipeline (Steps 1–11)
 
-Implements **Steps 3–11** of the [model plan](../../sports-lab/model-plan.md):
+Implements the full [model plan](../../sports-lab/model-plan.md): the
+**MLB Stats API ingest** that fills `CoreGame` from a date,
 the context-data layer (recent form, injuries, weather, ballpark factors), the
 **validation / flagging layer** that decides how far each game's data can be
 trusted, the **baseline statistical model** that turns those inputs into
@@ -15,16 +16,20 @@ and the **daily report, structured log, and workflow** that tie it together.
 `runDailyPipeline` runs the whole sequence over a slate — see
 [Steps 10–11](#steps-1011--the-daily-report-and-the-workflow-that-produces-it).
 
-It consumes the output of Steps 1–2 (schedule + core game data) via a pinned
-input contract (`CoreGame` in `schemas.ts`) and produces, per game, a set of
-typed flags plus a **confidence cap** — the best S/A/B/C rank the data quality
-permits. It never invents numbers and never silently drops a game: gaps become
-flags. This is the "fail loudly, not silently" principle from plan Section 3.
+`CoreGame` (in `schemas.ts`) is the contract between ingest and everything
+downstream: Steps 1–2 fill it from the MLB Stats API, and Steps 3–11 consume it.
+The library never invents numbers and never silently drops a game — gaps become
+typed flags that cap the achievable confidence. This is the "fail loudly, not
+silently" principle from plan Section 3, and it is why a slate missing weather
+or odds still produces an honest report rather than a confident-looking one.
 
 ## What's here
 
 | Module | Role |
 |---|---|
+| `sources/mlb/responses.ts` | Steps 1–2 — MLB API response schemas + value parsing |
+| `sources/mlb/client.ts` | Steps 1–2 — injectable HTTP client with retry and strict parsing |
+| `sources/mlb/fetch.ts` | Steps 1–2 — schedule, starters, batting, bullpen, recent form |
 | `schemas.ts` | zod schemas + inferred types for the whole context contract |
 | `context/recent-form.ts` | collapse recent game results into a per-team form summary |
 | `context/injuries.ts` | classify material absences (key hitter / starter out) |
@@ -46,6 +51,72 @@ flags. This is the "fail loudly, not silently" principle from plan Section 3.
 | `review/review.ts` | Step 9 — runs the agents and applies verdicts to the rank |
 | `report.ts` | Step 10 — prediction cards, daily summary, structured log |
 | `pipeline.ts` | Step 11 — the daily workflow over a whole slate |
+
+## Steps 1–2 — filling `CoreGame` from the MLB Stats API
+
+`fetchCoreGames` turns a date into the contract the rest of the library was
+built against:
+
+```ts
+const client = new MlbClient();            // public, unauthenticated
+const { games, failures } = await fetchCoreGames(client, "2024-07-25");
+```
+
+It fills `gameId`, `startTime`, venue, both teams, both probable starters with
+their season ERA/WHIP/IP, both teams' batting, and both bullpens.
+`fetchRecentForm` covers the recent-form half of the context from the same API.
+
+**Innings pitched is baseball notation, not a decimal.** `"120.1"` means 120
+**and one third** innings — the fractional digit counts *outs*. Reading it as a
+float silently understates workload on two thirds of all values, so
+`parseInningsPitched` decodes it and rejects invalid notation (`.3`+) rather
+than guessing. Rate stats also arrive as strings (`"2.90"`, `".318"`) with
+placeholders (`"-.--"`) for not-applicable, which become `null`, not `NaN`.
+
+**A missing stat stays missing.** If the relief-pitching split is unavailable,
+bullpen ERA is left `null` rather than substituted with the team's *overall*
+pitching ERA — that would fold the rotation into the bullpen number and quietly
+distort every late-innings estimate. The validation layer raises
+`missing_bullpen` and caps confidence at B, which is the point of having it.
+
+**A probable pitcher is not a confirmed one.** MLB's "probable pitcher" is
+exactly that; clubs scratch starters after announcing them, and the API carries
+no confirmation flag. `confirmed` is therefore `false` by default, so the
+validation layer raises `unconfirmed_starter` and caps the game at A — the
+honest position for a morning run. `treatProbableAsConfirmed: true` is opt-in
+for callers who have separately checked the posted lineup.
+
+**Shape drift fails loudly.** Responses are parsed with zod, which strips
+unknown fields (so upstream additions never break us) but rejects a removal or
+rename at the boundary — rather than letting it surface as a mysterious `null`
+three layers down.
+
+### What is verified, and what is not
+
+The ingest layer is fully tested against recorded fixtures (26 tests) and runs
+end-to-end into a rendered daily report. It has **not** been run against the
+live API from this environment: outbound access to `statsapi.mlb.com` is denied
+by this session's egress policy (the proxy reports
+`connect_rejected … policy denial` for `statsapi.mlb.com:443`). Once the host is
+reachable, verify with:
+
+```bash
+curl -s "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2024-07-25&hydrate=probablePitcher,team,venue" | head -c 400
+```
+
+Two things specifically warrant a live check, because they are the least
+certain and both degrade to `null` if wrong: the relief-pitching split
+(`stats=statSplits&sitCodes=rp`) and the presence of `abbreviation` on the
+`/teams` response. Node's built-in `fetch` does not read `HTTPS_PROXY` unless
+run with `NODE_USE_ENV_PROXY=1`.
+
+### Still needed for a live slate
+
+`CoreGame` is complete; the context layer is not. Weather and betting odds come
+from other providers, and injuries need a separate ingest, so those are still
+supplied by the caller. `inningsPitchedLast3Days` is left `null` — recent
+bullpen workload needs per-reliever game logs. Every one of these gaps is
+already flagged by the validation layer rather than silently defaulted.
 
 ## Weather is observed-vs-forecast aware
 
