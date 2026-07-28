@@ -111,6 +111,10 @@ export interface GamePrediction {
   expectedRuns: { home: number; away: number };
   reasons: string[];
   flags: string[];
+  /** First pitch minus 9 minutes: when this pick stopped being editable. */
+  lockDeadline?: string | null;
+  /** True once the deadline has passed and the pick is frozen. */
+  final?: boolean;
 }
 
 /** Pull a raw probability toward 50% by the market's learned shrink. */
