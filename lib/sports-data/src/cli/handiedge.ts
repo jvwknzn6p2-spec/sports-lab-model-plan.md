@@ -79,6 +79,11 @@ import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
 import { aggregateHistory } from "../engine/report";
 import {
+  isFinalized,
+  lockDeadline,
+  minutesUntilLock,
+} from "../engine/deadline";
+import {
   predictionsToMarkdown,
   settlementToMarkdown,
   summaryToMarkdown,
@@ -344,8 +349,30 @@ async function cmdPredict(args: {
     );
   }
 
+  // A pick freezes 9 minutes before ITS OWN first pitch, so a re-run must
+  // carry finalized games through untouched while still refreshing the ones
+  // whose deadline is still ahead. Without this, re-running late in the day
+  // would silently rewrite a pick that was already committed to.
+  const now = new Date();
+  const previous = existsSync(lockPath)
+    ? await readJson<PredictionLock>(lockPath)
+    : null;
+  const alreadyFinal = new Map<number, GamePrediction>();
+  for (const p of previous?.predictions ?? []) {
+    if (p.final) alreadyFinal.set(p.gamePk, p);
+  }
+
   const predictions: GamePrediction[] = [];
+  let carried = 0;
+  let lateCount = 0;
   for (const g of games) {
+    const kept = alreadyFinal.get(g.gamePk);
+    if (kept) {
+      predictions.push(kept);
+      carried++;
+      continue;
+    }
+
     const runs = expectedRuns(g, ct.season);
     const sim = simulateGame(runs.homeMu, runs.awayMu, {
       sims: ct.sims ?? 10_000,
@@ -356,7 +383,24 @@ async function cmdPredict(args: {
         : {}),
     });
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
-    predictions.push(decide(g, runs, sim, calibration, handicap, cfg));
+    const p = decide(g, runs, sim, calibration, handicap, cfg);
+
+    if (g.gameDate) {
+      const deadline = lockDeadline(g.gameDate);
+      p.lockDeadline = deadline.toISOString();
+      p.final = isFinalized(g.gameDate, now);
+      if (p.final) {
+        // Predicted after its own cut-off — recorded as such rather than
+        // passed off as a pick that was made in time.
+        p.flags = [...p.flags, "[warn] predicted_after_lock_deadline"];
+        lateCount++;
+      }
+    } else {
+      p.lockDeadline = null;
+      p.final = false;
+      p.flags = [...p.flags, "[warn] no_start_time_no_lock_deadline"];
+    }
+    predictions.push(p);
   }
 
   const lock: PredictionLock = {
@@ -386,6 +430,23 @@ async function cmdPredict(args: {
       `LOCKED → ${lockPath}`,
   );
   console.log(`Readable report → ${mdPath}`);
+  if (carried > 0) {
+    console.log(
+      `${carried} game(s) were already final and were carried through unchanged.`,
+    );
+  }
+  if (lateCount > 0) {
+    console.log(
+      `WARNING: ${lateCount} game(s) were predicted after their lock deadline.`,
+    );
+  }
+  const upcoming = predictions
+    .filter((p) => !p.final && p.lockDeadline)
+    .map((p) => minutesUntilLock(new Date(p.lockDeadline!), now))
+    .sort((a, b) => a - b)[0];
+  if (upcoming !== undefined) {
+    console.log(`Next pick freezes in ${upcoming} minute(s).`);
+  }
 }
 
 async function cmdFetchResults(args: {

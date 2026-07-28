@@ -1,0 +1,85 @@
+name: HandiEdge NPB — predict and settle
+
+# NPB deadlines, expressed in the league's own clock (JST = UTC+9):
+#
+#   PREDICT — a pick freezes 9 minutes before ITS OWN first pitch, so the job
+#   runs repeatedly through the day rather than once. Each run refreshes only
+#   the games still ahead of their cut-off and carries the already-frozen ones
+#   through untouched, which is enforced in `predict` itself, not here.
+#     day games   start 12:00–15:00 (weekends and holidays as a rule)
+#     night games start 18:00
+#   Runs are placed ~20 minutes ahead of each window's cut-off because GitHub's
+#   scheduler drifts by several minutes and a late run would miss the deadline.
+#
+#   SETTLE — 23:13 JST on the day of the games (14:13 UTC), the slate-wide
+#   cut-off for settle → error analysis → learning → save.
+on:
+  schedule:
+    - cron: "30 2 * * *" # 11:30 JST — before the 12:00 day games freeze at 11:51
+    - cron: "30 3 * * *" # 12:30 JST — 13:00 starts
+    - cron: "30 4 * * *" # 13:30 JST — 14:00 starts
+    - cron: "30 5 * * *" # 14:30 JST — 15:00 starts (latest day game)
+    - cron: "30 8 * * *" # 17:30 JST — before the 18:00 nighters freeze at 17:51
+    - cron: "13 14 * * *" # 23:13 JST — settle, analyse, learn, save
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD, JST). Blank = today."
+        required: false
+        type: string
+      mode:
+        description: "What to run."
+        required: false
+        default: predict
+        type: choice
+        options: [predict, settle]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-data
+  cancel-in-progress: false
+
+jobs:
+  npb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The slate date is the JST calendar day, which is what the schedule and
+      # the 23:13 cut-off are both keyed to — not the runner's UTC date.
+      - name: Resolve slate date (JST) and mode
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(TZ=Asia/Tokyo date +%F); fi
+          MODE="${{ inputs.mode }}"
+          if [ -z "$MODE" ]; then
+            if [ "${{ github.event.schedule }}" = "13 14 * * *" ]; then
+              MODE=settle
+            else
+              MODE=predict
+            fi
+          fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Slate $DATE (JST), mode $MODE"
+
+      - name: NPB slate is not yet sourced
+        run: |
+          echo "::warning::NPB has no data feed wired up yet — statsapi.mlb.com does not cover it." >> "$GITHUB_STEP_SUMMARY"
+          echo "NPB deadlines and settlement rules are implemented and tested;" >> "$GITHUB_STEP_SUMMARY"
+          echo "this workflow starts producing picks once an NPB slate source exists." >> "$GITHUB_STEP_SUMMARY"
+          echo "Slate ${{ steps.d.outputs.date }} (JST), mode ${{ steps.d.outputs.mode }}." >> "$GITHUB_STEP_SUMMARY"
