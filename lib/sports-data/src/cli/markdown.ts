@@ -10,6 +10,7 @@
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import type { HistorySummary } from "../engine/report";
 import type { SettlementReport } from "../engine/settle";
+import { pickTrackerBlock } from "./pick-tracker";
 
 const pct = (p: number) => `${(p * 100).toFixed(1)}%`;
 
@@ -81,6 +82,17 @@ export function predictionsToMarkdown(
     out.push("");
   }
 
+  // Paste target for the Pick Tracker Pro phone app (see pick-tracker.ts).
+  const paste = pickTrackerBlock(date, predictions);
+  if (paste) {
+    out.push("## Pick Tracker Pro 貼り付け用");
+    out.push("");
+    out.push("```");
+    out.push(paste.trimEnd());
+    out.push("```");
+    out.push("");
+  }
+
   out.push("---");
   out.push(
     `_Shrink: moneyline ${calibration.shrink}, handicap ` +
@@ -102,7 +114,17 @@ export function settlementToMarkdown(r: SettlementReport): string {
   out.push("");
   for (const g of r.games) {
     if (g.pass) {
-      out.push(`- ${g.away} @ ${g.home}: PASS (won by ${g.actualWinner})`);
+      out.push(
+        `- ${g.away} @ ${g.home}: PASS (${g.actualWinner ? `won by ${g.actualWinner}` : "引き分け"})`,
+      );
+      continue;
+    }
+    if (g.winnerCorrect === null) {
+      // Tie: the moneyline pushed, so it is neither a win nor a loss.
+      out.push(
+        `- ${g.away} @ ${g.home}: **PUSH (引き分け)** — ` +
+          `picked ${g.predictedWinner}, stake returned`,
+      );
       continue;
     }
     out.push(

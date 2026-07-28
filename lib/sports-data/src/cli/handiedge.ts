@@ -57,7 +57,7 @@ import {
   type FixtureBundle,
 } from "../sources/fixture-source";
 import { expectedRuns } from "../engine/run-model";
-import { simulateGame } from "../engine/simulate";
+import { simulateGame, type League } from "../engine/simulate";
 import {
   decide,
   DEFAULT_CALIBRATION,
@@ -102,6 +102,10 @@ interface ControlTower {
   season: number;
   sims?: number;
   passThreshold?: number;
+  /** "MLB" (extra innings, no ties) or "NPB" (a tie is a real outcome). */
+  league?: League;
+  /** Overrides the league default for how many extras are played. */
+  maxExtraInnings?: number;
   handicaps?: Record<string, HandicapInput>;
 }
 
@@ -346,6 +350,10 @@ async function cmdPredict(args: {
     const sim = simulateGame(runs.homeMu, runs.awayMu, {
       sims: ct.sims ?? 10_000,
       seed: `${ct.date}:${g.gamePk}`,
+      league: ct.league ?? "MLB",
+      ...(ct.maxExtraInnings !== undefined
+        ? { maxExtraInnings: ct.maxExtraInnings }
+        : {}),
     });
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
     predictions.push(decide(g, runs, sim, calibration, handicap, cfg));
