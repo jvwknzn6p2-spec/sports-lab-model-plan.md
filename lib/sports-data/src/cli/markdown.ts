@@ -10,6 +10,7 @@
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import type { HistorySummary } from "../engine/report";
 import type { SettlementReport } from "../engine/settle";
+import { pickTrackerBlock } from "./pick-tracker";
 
 const pct = (p: number) => `${(p * 100).toFixed(1)}%`;
 
@@ -78,6 +79,17 @@ export function predictionsToMarkdown(
           `${p.reasons[0] ?? "below threshold"}`,
       );
     }
+    out.push("");
+  }
+
+  // Paste target for the Pick Tracker Pro phone app (see pick-tracker.ts).
+  const paste = pickTrackerBlock(date, predictions);
+  if (paste) {
+    out.push("## Pick Tracker Pro 貼り付け用");
+    out.push("");
+    out.push("```");
+    out.push(paste.trimEnd());
+    out.push("```");
     out.push("");
   }
 
