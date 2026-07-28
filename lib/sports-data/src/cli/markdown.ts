@@ -8,7 +8,7 @@
  */
 
 import type { CalibrationState, GamePrediction } from "../engine/decision";
-import { fmtPct, rankByValue } from "../engine/decision";
+import { fmtPct, fmtUnits, rankByValue } from "../engine/decision";
 import type { HistorySummary } from "../engine/report";
 import type { SettlementReport } from "../engine/settle";
 import { pickTrackerBlock } from "./pick-tracker";
@@ -117,7 +117,10 @@ export function settlementToMarkdown(r: SettlementReport): string {
   out.push("");
   out.push(
     `Winner **${r.winnerRecord.wins}-${r.winnerRecord.losses}** · ` +
-      `Handicap ${r.handicapRecord.wins}-${r.handicapRecord.losses} · ` +
+      `Handicap ${r.handicapRecord.wins}-${r.handicapRecord.losses}` +
+      (r.handicapProfit === null
+        ? " · "
+        : ` (**${fmtUnits(r.handicapProfit)}** units) · `) +
       `Total ${r.totalRecord.wins}-${r.totalRecord.losses}`,
   );
   out.push("");
@@ -139,7 +142,10 @@ export function settlementToMarkdown(r: SettlementReport): string {
     out.push(
       `- ${g.away} @ ${g.home}: **${g.winnerCorrect ? "WIN" : "LOSS"}** — ` +
         `picked ${g.predictedWinner} at ${pct(g.statedProbability!)}, ` +
-        `${g.actualWinner} won`,
+        `${g.actualWinner} won` +
+        (g.handicapProfit === null
+          ? ""
+          : ` · ハンデ ${g.handicapPick} ${fmtUnits(g.handicapProfit)}`),
     );
   }
   out.push("");

@@ -7,7 +7,7 @@
  */
 
 import { mulberry32, poisson, seedFromString, type Rng } from "./rng";
-import type { WeightedLine } from "./handicap-notation";
+import { settleParts, splitLine, type WeightedLine } from "./handicap-notation";
 
 export interface SimulationResult {
   sims: number;
@@ -62,27 +62,6 @@ export interface AsianCover {
   loss: number;
   /** win / (win + loss) — the honest quote once pushes are set aside. */
   probability: number;
-}
-
-/**
- * Split a bare number into the sub-lines it is really made of. A quarter line
- * (x.25 / x.75) is half a stake on each neighbouring half-line; everything
- * else is a single full-stake line.
- *
- * Japanese 半 notation produces UNEVEN splits (see handicap-notation.ts), so
- * `asianCover` also accepts pre-weighted parts directly and only falls back to
- * this when handed a plain number.
- */
-function subLines(line: number): WeightedLine[] {
-  const quarter = Math.abs(line * 4 - Math.round(line * 4)) < 1e-9;
-  const half = Math.abs(line * 2 - Math.round(line * 2)) < 1e-9;
-  if (quarter && !half) {
-    return [
-      { line: line - 0.25, weight: 0.5 },
-      { line: line + 0.25, weight: 0.5 },
-    ];
-  }
-  return [{ line, weight: 1 }];
 }
 
 function playExtras(
@@ -140,18 +119,17 @@ export function simulateGame(
   ): AsianCover => {
     // side+line in sportsbook convention: home -1.5 covers if margin > 1.5;
     // away +1.5 covers if (away margin + 1.5) > 0, i.e. home margin < 1.5.
-    const parts = typeof line === "number" ? subLines(line) : line;
+    // settleParts is the same rule settlement uses on the real score, so a
+    // quoted price and its eventual result can never disagree about a push.
+    const parts = typeof line === "number" ? splitLine(line) : line;
     let win = 0;
     let push = 0;
     let loss = 0;
     for (const m of margins) {
-      const sideMargin = side === "home" ? m : -m;
-      for (const part of parts) {
-        const settled = sideMargin + part.line;
-        if (settled > 0) win += part.weight;
-        else if (settled === 0) push += part.weight;
-        else loss += part.weight;
-      }
+      const s = settleParts(parts, side === "home" ? m : -m);
+      win += s.win;
+      push += s.push;
+      loss += s.loss;
     }
     win /= sims;
     push /= sims;

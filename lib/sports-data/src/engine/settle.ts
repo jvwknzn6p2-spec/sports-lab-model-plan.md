@@ -9,7 +9,13 @@
  *     if underconfident, expand them. Bounded, small steps (v1 self-learning).
  */
 
+import { resolveHandicap } from "./decision";
 import type { CalibrationState, GamePrediction } from "./decision";
+import {
+  expectedProfit,
+  oppositeParts,
+  settleParts,
+} from "./handicap-notation";
 
 export interface GameResult {
   homeScore: number;
@@ -30,6 +36,12 @@ export interface SettledGame {
   brier: number | null;
   handicapPick: string | null;
   handicapCorrect: boolean | null;
+  /**
+   * Realized profit per unit staked, after the house's cut. A 半 line can
+   * settle between −1 and +0.9, so this — not the win/loss column — is what
+   * the bet was actually worth.
+   */
+  handicapProfit: number | null;
   /** Stated probability that the handicap pick covers (for learning). */
   handicapProbability: number | null;
   totalPick: "OVER" | "UNDER" | null;
@@ -47,6 +59,13 @@ export interface SettlementReport {
   gamesMissingResults: number;
   winnerRecord: { wins: number; losses: number };
   handicapRecord: { wins: number; losses: number };
+  /**
+   * The day's handicap P&L in units staked, after commission. `null` when no
+   * handicap was settled. This is the number that decides whether the tool is
+   * working: a winning record can still lose money once 10% comes off every
+   * winner and 半 lines pay part stakes.
+   */
+  handicapProfit: number | null;
   totalRecord: { wins: number; losses: number };
   meanBrier: number | null;
   statedVsActual: { statedMean: number; actualRate: number } | null;
@@ -204,24 +223,30 @@ export function settle(
     }
 
     let handicapCorrect: boolean | null = null;
+    let handicapProfit: number | null = null;
     if (!p.pass && p.handicap.pick && p.handicap.input) {
-      // The pick string names the covering side; recompute from the score.
-      // A whole-number line that lands exactly on the margin is a PUSH — the
+      // Re-settle the exact basket of lines that was priced, against the score
+      // that happened. A whole-number line landing on the margin PUSHES — the
       // stake comes back, so it is neither a win nor a loss and must not be
-      // scored at all (scoring it as a loss would both misstate the record and
-      // teach the calibrator from an outcome that never happened).
-      const line = p.handicap.input.line;
+      // scored (scoring it as a loss would both misstate the record and teach
+      // the calibrator from an outcome that never happened). A 半 line pushes
+      // only PART of the stake, which is why this settles shares rather than a
+      // yes/no: 〈1半2〉 winning by two runs is +8分, not a win and not a loss.
+      const r = resolveHandicap(p.handicap.input);
       const quotedSideMargin =
         p.handicap.input.side === "home" ? actualMargin : -actualMargin;
       const pickedQuotedSide = p.handicap.pick.startsWith(
         p.handicap.input.side === "home" ? p.home : p.away,
       );
-      const pickedLine = pickedQuotedSide ? line : -line;
-      const pickedMargin = pickedQuotedSide
-        ? quotedSideMargin
-        : -quotedSideMargin;
-      const settled = pickedMargin + pickedLine;
-      handicapCorrect = settled === 0 ? null : settled > 0;
+      const settled = settleParts(
+        pickedQuotedSide ? r.parts : oppositeParts(r.parts),
+        pickedQuotedSide ? quotedSideMargin : -quotedSideMargin,
+      );
+      // The record counts which way the stake mostly went; the money is
+      // carried separately, because "8分勝ち" is a win that is not worth 1.
+      handicapCorrect =
+        settled.win === settled.loss ? null : settled.win > settled.loss;
+      handicapProfit = round3(expectedProfit(settled));
     }
 
     let totalCorrect: boolean | null = null;
@@ -249,6 +274,7 @@ export function settle(
       brier: brier === null ? null : Math.round(brier * 10000) / 10000,
       handicapPick: p.handicap.pick,
       handicapCorrect,
+      handicapProfit,
       handicapProbability: p.handicap.coverProbability,
       totalPick: p.total.pick,
       totalCorrect,
@@ -277,6 +303,7 @@ export function settle(
     gamesMissingResults: missing,
     winnerRecord: record(games.map((g) => g.winnerCorrect)),
     handicapRecord: record(games.map((g) => g.handicapCorrect)),
+    handicapProfit: sumProfit(games),
     totalRecord: record(games.map((g) => g.totalCorrect)),
     meanBrier: mean(scored.map((g) => g.brier ?? 0)),
     statedVsActual:
@@ -309,3 +336,10 @@ const mean = (xs: number[]): number | null =>
     ? null
     : Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 1000) / 1000;
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+/** Total handicap P&L in units, or null when nothing was settled. */
+function sumProfit(games: SettledGame[]): number | null {
+  const settled = games.filter((g) => g.handicapProfit !== null);
+  if (settled.length === 0) return null;
+  return round3(settled.reduce((a, g) => a + g.handicapProfit!, 0));
+}
