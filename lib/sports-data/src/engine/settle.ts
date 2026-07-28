@@ -194,14 +194,22 @@ export function settle(
     let handicapCorrect: boolean | null = null;
     if (!p.pass && p.handicap.pick && p.handicap.input) {
       // The pick string names the covering side; recompute from the score.
+      // A whole-number line that lands exactly on the margin is a PUSH — the
+      // stake comes back, so it is neither a win nor a loss and must not be
+      // scored at all (scoring it as a loss would both misstate the record and
+      // teach the calibrator from an outcome that never happened).
       const line = p.handicap.input.line;
       const quotedSideMargin =
         p.handicap.input.side === "home" ? actualMargin : -actualMargin;
-      const quotedCovered = quotedSideMargin + line > 0;
       const pickedQuotedSide = p.handicap.pick.startsWith(
         p.handicap.input.side === "home" ? p.home : p.away,
       );
-      handicapCorrect = pickedQuotedSide ? quotedCovered : !quotedCovered;
+      const pickedLine = pickedQuotedSide ? line : -line;
+      const pickedMargin = pickedQuotedSide
+        ? quotedSideMargin
+        : -quotedSideMargin;
+      const settled = pickedMargin + pickedLine;
+      handicapCorrect = settled === 0 ? null : settled > 0;
     }
 
     let totalCorrect: boolean | null = null;
