@@ -53,7 +53,11 @@ export function pickTrackerBlock(
   date: string,
   predictions: GamePrediction[],
 ): string | null {
-  const picks = predictions.filter((p) => !p.pass && p.predictedWinner);
+  // Numbered in recommendation order (best expected value first), so the
+  // paste doubles as the 優先度 list rather than an arbitrary slate order.
+  const picks = predictions
+    .filter((p) => !p.pass && p.predictedWinner)
+    .sort((a, b) => (b.handicap.ev ?? -Infinity) - (a.handicap.ev ?? -Infinity));
   if (picks.length === 0) return null;
 
   // Header: the tracker reads `sport` from the first three lines and `date`

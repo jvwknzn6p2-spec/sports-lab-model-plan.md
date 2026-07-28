@@ -12,6 +12,10 @@
 import type { GameCoreData } from "../step2";
 import type { RunExpectation } from "./run-model";
 import type { SimulationResult } from "./simulate";
+import {
+  breakEvenProbability,
+  expectedValueFromProbability,
+} from "./ev";
 
 export type Confidence = "S" | "A" | "B" | "C";
 
@@ -73,6 +77,12 @@ export function normalizeCalibration(
 export interface DecisionConfig {
   /** Below this calibrated win probability the game is a PASS. */
   passThreshold: number;
+  /**
+   * Minimum profit per unit staked for a handicap to be offered. 0 means
+   * "must at least break even after the cut"; raise it to demand a margin
+   * over the noise in the model's own probability.
+   */
+  minEv: number;
   /** Confidence bands on the calibrated win probability. */
   bandS: number;
   bandA: number;
@@ -81,6 +91,7 @@ export interface DecisionConfig {
 
 export const DEFAULT_DECISION_CONFIG: DecisionConfig = {
   passThreshold: 0.55,
+  minEv: 0,
   bandS: 0.65,
   bandA: 0.6,
   bandB: 0.55,
@@ -101,6 +112,8 @@ export interface GamePrediction {
     input: HandicapInput | null;
     pick: string | null; // e.g. "home -1.5" or "away +1.5"
     coverProbability: number | null;
+    /** Profit per unit staked after the house's cut. Negative = losing bet. */
+    ev: number | null;
   };
   total: {
     line: number | null;
@@ -225,25 +238,39 @@ export function decide(
 
   const confidence = confidenceFor(pWinner, g, cfg);
   const hasDowngrade = g.flags.some((f) => f.severity === "downgrade");
-  const pass = pWinner < cfg.passThreshold || !g.complete || hasDowngrade;
 
-  // Handicap: probability the QUOTED side covers its line (calibrated).
+  // Handicap: probability the QUOTED side covers its line (calibrated), and
+  // what that is actually worth once the house takes its cut.
   let handicapPick: string | null = null;
   let coverProbability: number | null = null;
+  let handicapEv: number | null = null;
   if (handicap) {
-    const pCoverRaw = sim.coverProb(handicap.side, handicap.line);
-    const pCover = calibrate(pCoverRaw, calibration.handicapShrink);
+    const quoted = sim.asianCover(handicap.side, handicap.line);
+    const pCover = calibrate(quoted.probability, calibration.handicapShrink);
     const sideName = handicap.side === "home" ? homeName : awayName;
     const otherName = handicap.side === "home" ? awayName : homeName;
     const otherLine = -handicap.line;
-    if (pCover >= 0.5) {
-      handicapPick = `${sideName} ${fmtLine(handicap.line)}`;
-      coverProbability = round3(pCover);
-    } else {
-      handicapPick = `${otherName} ${fmtLine(otherLine)}`;
-      coverProbability = round3(1 - pCover);
-    }
+    // Back whichever side the model prefers; the push share is a property of
+    // the line, so it is the same whichever side of it you take.
+    const chosen = pCover >= 0.5 ? pCover : 1 - pCover;
+    handicapPick =
+      pCover >= 0.5
+        ? `${sideName} ${fmtLine(handicap.line)}`
+        : `${otherName} ${fmtLine(otherLine)}`;
+    coverProbability = round3(chosen);
+    handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
   }
+
+  // A handicap quoted at a price that cannot clear the house's cut is not a
+  // bet, however confident the model is about who wins: winning 60% of a
+  // market that pays 0.72 on a win still loses money. When a line is on offer,
+  // its EV decides.
+  const handicapUnprofitable = handicapEv !== null && handicapEv <= cfg.minEv;
+  const pass =
+    pWinner < cfg.passThreshold ||
+    !g.complete ||
+    hasDowngrade ||
+    handicapUnprofitable;
 
   // Total.
   let totalPick: "OVER" | "UNDER" | null = null;
@@ -257,11 +284,19 @@ export function decide(
   }
 
   const reasons = buildReasons(g, runs, sim);
+  if (handicap && handicapEv !== null) {
+    reasons.unshift(
+      `Handicap EV ${handicapEv >= 0 ? "+" : ""}${(handicapEv * 100).toFixed(1)}% per unit ` +
+        `(need ${(breakEvenProbability() * 100).toFixed(1)}% to break even after the 10% cut)`,
+    );
+  }
   if (pass) {
     reasons.unshift(
       !g.complete || hasDowngrade
         ? "PASS: incomplete/downgraded data"
-        : `PASS: edge too small (win prob ${(pWinner * 100).toFixed(1)}% < ${(cfg.passThreshold * 100).toFixed(0)}%)`,
+        : handicapUnprofitable
+          ? `PASS: handicap does not clear the cut (EV ${(handicapEv! * 100).toFixed(1)}% per unit)`
+          : `PASS: edge too small (win prob ${(pWinner * 100).toFixed(1)}% < ${(cfg.passThreshold * 100).toFixed(0)}%)`,
     );
   }
 
@@ -280,6 +315,7 @@ export function decide(
       input: handicap,
       pick: pass ? null : handicapPick,
       coverProbability,
+      ev: handicapEv,
     },
     total: {
       line: totalLine,

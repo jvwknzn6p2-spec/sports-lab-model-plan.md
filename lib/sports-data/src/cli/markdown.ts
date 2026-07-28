@@ -36,24 +36,36 @@ export function predictionsToMarkdown(
     out.push("");
   }
 
-  // Best picks first: S, A, B, C, then by probability.
+  // Recommendation order is by expected value, not by confidence: a
+  // near-certain bet that pays almost nothing is worth less than a narrower
+  // one priced properly. Games with no line quoted fall back to confidence.
   const rank = { S: 0, A: 1, B: 2, C: 3 } as const;
-  const sorted = [...picks].sort(
-    (a, b) =>
+  const sorted = [...picks].sort((a, b) => {
+    const ae = a.handicap.ev;
+    const be = b.handicap.ev;
+    if (ae !== null && be !== null) return be - ae;
+    if (ae !== null) return -1;
+    if (be !== null) return 1;
+    return (
       rank[a.confidence] - rank[b.confidence] ||
-      b.winProbability - a.winProbability,
-  );
+      b.winProbability - a.winProbability
+    );
+  });
 
-  for (const p of sorted) {
-    out.push(`## ${p.away} @ ${p.home}`);
+  sorted.forEach((p, i) => {
+    out.push(`## ${i + 1}. ${p.away} @ ${p.home}`);
     out.push("");
     out.push(`**${p.predictedWinner}** to win — ${pct(p.winProbability)}`);
     out.push("");
     out.push(`- Confidence: **${p.confidence}**`);
     out.push(`- Losing side: ${p.predictedLoser}`);
     if (p.handicap.pick) {
+      const ev = p.handicap.ev;
       out.push(
-        `- Handicap: **${p.handicap.pick}** (${pct(p.handicap.coverProbability!)})`,
+        `- Handicap: **${p.handicap.pick}** (${pct(p.handicap.coverProbability!)})` +
+          (ev === null
+            ? ""
+            : ` · EV **${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%** per unit`),
       );
     }
     if (p.total.pick) {
@@ -68,7 +80,7 @@ export function predictionsToMarkdown(
     out.push("Why:");
     for (const r of p.reasons.slice(0, 5)) out.push(`- ${r}`);
     out.push("");
-  }
+  });
 
   if (passes.length > 0) {
     out.push("## PASS");

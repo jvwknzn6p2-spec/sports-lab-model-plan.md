@@ -167,8 +167,12 @@ function printPrediction(p: GamePrediction): void {
       `  Winner:   ${p.predictedWinner}  (${pct(p.winProbability)}; loser: ${p.predictedLoser})`,
     );
     if (p.handicap.pick) {
+      const ev = p.handicap.ev;
       console.log(
-        `  Handicap: ${p.handicap.pick}  (${pct(p.handicap.coverProbability!)})`,
+        `  Handicap: ${p.handicap.pick}  (${pct(p.handicap.coverProbability!)})` +
+          (ev === null
+            ? ""
+            : `  EV ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%/unit`),
       );
     }
     if (p.total.pick) {
