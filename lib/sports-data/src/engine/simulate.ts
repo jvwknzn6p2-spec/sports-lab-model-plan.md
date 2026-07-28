@@ -7,6 +7,7 @@
  */
 
 import { mulberry32, poisson, seedFromString, type Rng } from "./rng";
+import type { WeightedLine } from "./handicap-notation";
 
 export interface SimulationResult {
   sims: number;
@@ -26,9 +27,15 @@ export interface SimulationResult {
    * Asian-handicap settlement for an arbitrary line, including pushes and the
    * half-stake split of quarter lines.
    */
-  asianCover: (side: "home" | "away", line: number) => AsianCover;
+  asianCover: (
+    side: "home" | "away",
+    line: number | readonly WeightedLine[],
+  ) => AsianCover;
   /** Push-excluded cover probability — the number to quote and calibrate. */
-  coverProb: (side: "home" | "away", line: number) => number;
+  coverProb: (
+    side: "home" | "away",
+    line: number | readonly WeightedLine[],
+  ) => number;
   totalProb: (line: number) => { over: number; under: number };
 }
 
@@ -80,11 +87,15 @@ export interface AsianCover {
 }
 
 /**
- * Split a line into the sub-lines it is really made of. A quarter line
+ * Split a bare number into the sub-lines it is really made of. A quarter line
  * (x.25 / x.75) is half a stake on each neighbouring half-line; everything
  * else is a single full-stake line.
+ *
+ * Japanese 半 notation produces UNEVEN splits (see handicap-notation.ts), so
+ * `asianCover` also accepts pre-weighted parts directly and only falls back to
+ * this when handed a plain number.
  */
-function subLines(line: number): Array<{ line: number; weight: number }> {
+function subLines(line: number): WeightedLine[] {
   const quarter = Math.abs(line * 4 - Math.round(line * 4)) < 1e-9;
   const half = Math.abs(line * 2 - Math.round(line * 2)) < 1e-9;
   if (quarter && !half) {
@@ -162,10 +173,13 @@ export function simulateGame(
     sumA += a;
   }
 
-  const asianCover = (side: "home" | "away", line: number): AsianCover => {
+  const asianCover = (
+    side: "home" | "away",
+    line: number | readonly WeightedLine[],
+  ): AsianCover => {
     // side+line in sportsbook convention: home -1.5 covers if margin > 1.5;
     // away +1.5 covers if (away margin + 1.5) > 0, i.e. home margin < 1.5.
-    const parts = subLines(line);
+    const parts = typeof line === "number" ? subLines(line) : line;
     let win = 0;
     let push = 0;
     let loss = 0;
@@ -190,8 +204,10 @@ export function simulateGame(
     };
   };
 
-  const coverProb = (side: "home" | "away", line: number): number =>
-    asianCover(side, line).probability;
+  const coverProb = (
+    side: "home" | "away",
+    line: number | readonly WeightedLine[],
+  ): number => asianCover(side, line).probability;
 
   const totalProb = (line: number) => {
     let over = 0;
