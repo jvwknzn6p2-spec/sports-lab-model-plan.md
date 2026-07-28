@@ -24,6 +24,11 @@
  *     Settlement → error analysis → self-learning (updates data/calibration.json,
  *     appends data/history.jsonl) + console report.
  *
+ *   report
+ *     Cumulative accuracy from data/history.jsonl: per-date lines, winner/
+ *     handicap/total records, pooled Brier, stated-vs-actual calibration, and
+ *     the current self-learning state. Re-settled dates count once (last wins).
+ *
  * Control Tower JSON (the single input that controls a run):
  *   {
  *     "date": "2024-07-25", "season": 2024,
@@ -67,6 +72,13 @@ import { buildSlate } from "../sources/slate-builder";
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
+import { aggregateHistory } from "../engine/report";
+import {
+  predictionsToMarkdown,
+  settlementToMarkdown,
+  summaryToMarkdown,
+} from "./markdown";
+import type { SettlementReport } from "../engine/settle";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(here, "..", "..");
@@ -77,6 +89,7 @@ const CT_DIR = join(DATA_DIR, "control-towers");
 const RESULTS_DIR = join(DATA_DIR, "results");
 const CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
 const HISTORY_PATH = join(DATA_DIR, "history.jsonl");
+const REPORTS_DIR = join(DATA_DIR, "reports");
 const DEFAULT_SLATE = join(PKG_ROOT, "fixtures", "2024-slate.json");
 
 interface ControlTower {
@@ -106,6 +119,12 @@ async function loadCalibration(): Promise<CalibrationState> {
 async function saveJson(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(value, null, 2), "utf8");
+}
+
+/** Write a phone-readable Markdown file (the deliverable for unattended runs). */
+async function saveMarkdown(path: string, body: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, body, "utf8");
 }
 
 const pct = (p: number) => `${(p * 100).toFixed(1)}%`;
@@ -316,6 +335,11 @@ async function cmdPredict(args: {
     predictions,
   };
   await saveJson(lockPath, lock);
+  const mdPath = join(REPORTS_DIR, `${ct.date}.md`);
+  await saveMarkdown(
+    mdPath,
+    predictionsToMarkdown(ct.date, predictions, calibration),
+  );
 
   console.log("=".repeat(72));
   console.log(
@@ -330,6 +354,7 @@ async function cmdPredict(args: {
     `${predictions.length} game(s): ${picks.length} pick(s), ${predictions.length - picks.length} PASS. ` +
       `LOCKED → ${lockPath}`,
   );
+  console.log(`Readable report → ${mdPath}`);
 }
 
 async function cmdFetchResults(args: {
@@ -439,6 +464,10 @@ async function runSettle(payload: {
   await saveJson(CALIBRATION_PATH, report.calibrationAfter);
   await mkdir(DATA_DIR, { recursive: true });
   await appendFile(HISTORY_PATH, JSON.stringify(report) + "\n", "utf8");
+  await saveMarkdown(
+    join(REPORTS_DIR, `${report.date}-settled.md`),
+    settlementToMarkdown(report),
+  );
 
   console.log("=".repeat(72));
   console.log(`HandiEdge — settlement for ${report.date}`);
@@ -486,6 +515,78 @@ async function runSettle(payload: {
   console.log(`  History appended → ${HISTORY_PATH}`);
 }
 
+async function cmdReport(): Promise<void> {
+  if (!existsSync(HISTORY_PATH)) {
+    console.log(
+      "No history yet (data/history.jsonl missing). Run settle or " +
+        "fetch-results --settle after games finish, then try again.",
+    );
+    return;
+  }
+  const raw = await readFile(HISTORY_PATH, "utf8");
+  const reports: SettlementReport[] = raw
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .map((line) => JSON.parse(line) as SettlementReport);
+  const s = aggregateHistory(reports);
+  const calibration = await loadCalibration();
+  const summaryPath = join(REPORTS_DIR, "summary.md");
+  await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration));
+
+  console.log("=".repeat(72));
+  console.log(
+    `HandiEdge — cumulative results (${s.dates} settled date(s), ` +
+      `${s.gamesSettled} pick(s), ${s.gamesPassed} PASS)`,
+  );
+  console.log("=".repeat(72));
+  for (const d of s.perDate) {
+    console.log(
+      `  ${d.date}: ${d.winnerRecord.wins}-${d.winnerRecord.losses}` +
+        ` (${d.settled} pick(s), ${d.passed} PASS` +
+        (d.meanBrier === null ? ")" : `, Brier ${d.meanBrier})`),
+    );
+  }
+  console.log("");
+  console.log(
+    `  Winner:   ${s.winnerRecord.wins}-${s.winnerRecord.losses}` +
+      (s.winnerRate === null ? "" : `  (${(s.winnerRate * 100).toFixed(1)}%)`),
+  );
+  console.log(
+    `  Handicap: ${s.handicapRecord.wins}-${s.handicapRecord.losses}`,
+  );
+  console.log(`  Total:    ${s.totalRecord.wins}-${s.totalRecord.losses}`);
+  if (s.meanBrier !== null) {
+    console.log(
+      `  Mean Brier: ${s.meanBrier}  (0.25 = coin flip; lower is better)`,
+    );
+  }
+  if (s.statedMean !== null && s.actualRate !== null) {
+    const gap = s.actualRate - s.statedMean;
+    console.log(
+      `  Calibration: stated ${(s.statedMean * 100).toFixed(1)}% vs actual ` +
+        `${(s.actualRate * 100).toFixed(1)}%  ` +
+        `(${gap >= 0 ? "underconfident" : "overconfident"} by ${Math.abs(gap * 100).toFixed(1)}pt)`,
+    );
+  }
+  if (s.meanMarginError !== null) {
+    console.log(`  Mean margin error: ${s.meanMarginError} runs`);
+  }
+  if (s.meanTotalError !== null) {
+    console.log(`  Mean total error:  ${s.meanTotalError} runs`);
+  }
+  console.log(
+    `  Self-learning state: shrink ${calibration.shrink} ` +
+      `(${calibration.gamesSettled} games settled lifetime)`,
+  );
+  if (s.gamesSettled < 30) {
+    console.log(
+      `  NOTE: ${s.gamesSettled} settled pick(s) is a small sample — judge ` +
+        `trends, not single days; ~50+ picks before tuning anything.`,
+    );
+  }
+  console.log(`  Readable summary → ${summaryPath}`);
+}
+
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -507,6 +608,7 @@ async function main(): Promise<void> {
   else if (cmd === "fetch-results") await cmdFetchResults(values);
   else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
+  else if (cmd === "report") await cmdReport();
   else {
     console.log("Usage:");
     console.log(
@@ -519,6 +621,7 @@ async function main(): Promise<void> {
       "  handiedge fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]",
     );
     console.log("  handiedge settle        --results <results.json>");
+    console.log("  handiedge report");
     process.exitCode = cmd ? 1 : 0;
   }
 }

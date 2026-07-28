@@ -1,0 +1,102 @@
+name: HandiEdge — daily predictions
+
+# Runs unattended so the tool is usable without a computer: the slate, the
+# bullpen/park/form context, and the locked predictions are all produced here
+# and committed back to the repo. Read the result on a phone either in the run
+# summary (Actions tab) or in data/reports/<date>.md.
+#
+# 15:00 UTC = 11:00 ET (probable starters confirmed, before first pitch)
+#           = 00:00 JST
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD). Blank = today (UTC)."
+        required: false
+        type: string
+      force:
+        description: "Overwrite an existing slate/lock (use after editing handicap lines)."
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+# Never let predict and settle push at the same time.
+concurrency:
+  group: handiedge-data
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch slate (schedule, stats, bullpen usage, park factors, form)
+        working-directory: lib/sports-data
+        run: |
+          FORCE=""
+          if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
+          pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" $FORCE
+
+      # No games scheduled (off day, offseason) is normal, not a failure.
+      - name: Check the slate has games
+        id: guard
+        run: |
+          SLATE="lib/sports-data/data/slates/${{ steps.d.outputs.date }}.json"
+          COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$SLATE','utf8')).games.length)")
+          echo "Games on ${{ steps.d.outputs.date }}: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No games scheduled — nothing to predict." >> "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Predict and lock
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: |
+          FORCE=""
+          if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
+          pnpm run handiedge predict \
+            --control "data/control-towers/${{ steps.d.outputs.date }}.json" $FORCE
+
+      - name: Publish to run summary
+        if: steps.guard.outputs.run == 'true'
+        run: cat "lib/sports-data/data/reports/${{ steps.d.outputs.date }}.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit today's slate and predictions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge: predictions for ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

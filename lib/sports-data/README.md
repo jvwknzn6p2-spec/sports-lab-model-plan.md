@@ -71,6 +71,29 @@ slates shrink future edges, underconfident ones expand them. History accumulates
 in `data/history.jsonl`. Edit the Control Tower JSON to set date, handicap lines,
 totals, sim count, and PASS threshold.
 
+### Running it without a computer (GitHub Actions)
+
+The scheduled workflows in `.github/workflows/` are the real runtime — no
+laptop, no local install. They run on GitHub's servers, which can reach the MLB
+Stats API, and commit every slate, lock, result, and report back to this repo.
+
+| Workflow | When | What it does |
+|---|---|---|
+| `handiedge-predict.yml` | 15:00 UTC (00:00 JST / 11:00 ET) | fetch-slate → predict → lock + `data/reports/<date>.md` |
+| `handiedge-settle.yml` | 12:00 UTC (21:00 JST / 08:00 ET) | fetch-results (yesterday) → settle → self-learning → `data/reports/summary.md` |
+
+Read the output on a phone two ways: open the run in the **Actions** tab (the
+picks are printed into the run summary), or open `data/reports/<date>.md` in the
+repo. Running results accumulate in `data/reports/summary.md`.
+
+Both workflows also have **Run workflow** buttons for manual runs, and accept an
+optional date. To use real handicap lines instead of the default -1.5: edit
+`data/control-towers/<date>.json` in GitHub, then re-run the predict workflow
+with `force` checked.
+
+**Scheduled workflows only fire from the default branch** — merge these files to
+`main` before the cron starts working.
+
 ### Development
 
 ```bash

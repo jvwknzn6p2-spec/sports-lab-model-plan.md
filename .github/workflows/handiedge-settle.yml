@@ -1,0 +1,90 @@
+name: HandiEdge — settle and score
+
+# Fetches final scores for YESTERDAY's slate, settles every locked pick, runs
+# the self-learning calibration update, and refreshes the running-results
+# summary. Read it on a phone in the run summary or data/reports/summary.md.
+#
+# 12:00 UTC = 08:00 ET (every game from the previous slate is final)
+#           = 21:00 JST
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date to settle (YYYY-MM-DD). Blank = yesterday (UTC)."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-data
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date -u -d 'yesterday' +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Skip when that date was never predicted
+        id: guard
+        run: |
+          if [ -f "lib/sports-data/data/predictions/${{ steps.d.outputs.date }}.json" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No prediction lock for ${{ steps.d.outputs.date }} — nothing to settle."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # --force lets a re-run pick up games that were still in progress earlier.
+      - name: Fetch final scores and settle
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: pnpm run handiedge fetch-results --date "${{ steps.d.outputs.date }}" --force --settle
+
+      - name: Refresh running results
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: pnpm run handiedge report
+
+      - name: Publish to run summary
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          cat "lib/sports-data/data/reports/${{ steps.d.outputs.date }}-settled.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          cat lib/sports-data/data/reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit results and updated calibration
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge: settled ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
