@@ -22,10 +22,22 @@ export interface HandicapInput {
   total?: number; // over/under line, optional
 }
 
-/** Learned calibration state (the "self-learning" seed of the MVP). */
+/**
+ * Learned calibration state (the "self-learning" part of the loop).
+ *
+ * Each market gets its OWN shrink, because they are not equally well
+ * modelled: a Monte Carlo win probability can be well calibrated while the
+ * run-line cover probability is systematically overconfident (margin is
+ * harder to predict than the winner). Learning them together would let one
+ * market's error corrupt the others.
+ */
 export interface CalibrationState {
-  /** Shrink of (p−0.5): 1 = trust the model fully, 0.5 = halve every edge. */
+  /** Shrink of (p−0.5) for the moneyline: 1 = trust fully, 0.5 = halve. */
   shrink: number;
+  /** Same, for the handicap / run-line cover probability. */
+  handicapShrink: number;
+  /** Same, for the over/under total. */
+  totalShrink: number;
   gamesSettled: number;
   brierSum: number;
   updatedAt: string | null;
@@ -33,10 +45,30 @@ export interface CalibrationState {
 
 export const DEFAULT_CALIBRATION: CalibrationState = {
   shrink: 0.85,
+  handicapShrink: 0.85,
+  totalShrink: 0.85,
   gamesSettled: 0,
   brierSum: 0,
   updatedAt: null,
 };
+
+/**
+ * Fill in markets missing from an older calibration.json (which only had a
+ * single `shrink`), so upgrading never silently resets learned state.
+ */
+export function normalizeCalibration(
+  raw: Partial<CalibrationState> & { shrink?: number },
+): CalibrationState {
+  const shrink = raw.shrink ?? DEFAULT_CALIBRATION.shrink;
+  return {
+    shrink,
+    handicapShrink: raw.handicapShrink ?? shrink,
+    totalShrink: raw.totalShrink ?? shrink,
+    gamesSettled: raw.gamesSettled ?? 0,
+    brierSum: raw.brierSum ?? 0,
+    updatedAt: raw.updatedAt ?? null,
+  };
+}
 
 export interface DecisionConfig {
   /** Below this calibrated win probability the game is a PASS. */
@@ -81,8 +113,9 @@ export interface GamePrediction {
   flags: string[];
 }
 
-export function calibrate(pRaw: number, state: CalibrationState): number {
-  return 0.5 + (pRaw - 0.5) * state.shrink;
+/** Pull a raw probability toward 50% by the market's learned shrink. */
+export function calibrate(pRaw: number, shrink: number): number {
+  return 0.5 + (pRaw - 0.5) * shrink;
 }
 
 function confidenceFor(
@@ -180,7 +213,7 @@ export function decide(
   const homeName = g.home.teamName ?? "home";
   const awayName = g.away.teamName ?? "away";
 
-  const pHomeCal = calibrate(sim.pHomeWin, calibration);
+  const pHomeCal = calibrate(sim.pHomeWin, calibration.shrink);
   const homeFavored = pHomeCal >= 0.5;
   const pWinner = homeFavored ? pHomeCal : 1 - pHomeCal;
   const winner = homeFavored ? homeName : awayName;
@@ -195,7 +228,7 @@ export function decide(
   let coverProbability: number | null = null;
   if (handicap) {
     const pCoverRaw = sim.coverProb(handicap.side, handicap.line);
-    const pCover = calibrate(pCoverRaw, calibration);
+    const pCover = calibrate(pCoverRaw, calibration.handicapShrink);
     const sideName = handicap.side === "home" ? homeName : awayName;
     const otherName = handicap.side === "home" ? awayName : homeName;
     const otherLine = -handicap.line;
@@ -214,7 +247,7 @@ export function decide(
   const totalLine = handicap?.total ?? null;
   if (totalLine !== null) {
     const { over } = sim.totalProb(totalLine);
-    const pOver = calibrate(over, calibration);
+    const pOver = calibrate(over, calibration.totalShrink);
     totalPick = pOver >= 0.5 ? "OVER" : "UNDER";
     totalProbability = round3(pOver >= 0.5 ? pOver : 1 - pOver);
   }

@@ -83,7 +83,8 @@ export function predictionsToMarkdown(
 
   out.push("---");
   out.push(
-    `_Calibration shrink ${calibration.shrink} · ` +
+    `_Shrink: moneyline ${calibration.shrink}, handicap ` +
+      `${calibration.handicapShrink}, total ${calibration.totalShrink} · ` +
       `${calibration.gamesSettled} games settled lifetime._`,
   );
   return out.join("\n") + "\n";
@@ -118,7 +119,9 @@ export function settlementToMarkdown(r: SettlementReport): string {
     );
   }
   out.push(
-    `- Self-learning: shrink ${r.calibrationBefore.shrink} → ${r.calibrationAfter.shrink}`,
+    `- Self-learning — moneyline ${r.calibrationBefore.shrink} → ${r.calibrationAfter.shrink}, ` +
+      `handicap ${r.calibrationBefore.handicapShrink} → ${r.calibrationAfter.handicapShrink}, ` +
+      `total ${r.calibrationBefore.totalShrink} → ${r.calibrationAfter.totalShrink}`,
   );
   if (r.gamesMissingResults > 0) {
     out.push(`- ${r.gamesMissingResults} game(s) had no result yet`);
@@ -154,6 +157,20 @@ export function summaryToMarkdown(
         `${gap >= 0 ? "under" : "over"}confident by ${Math.abs(gap * 100).toFixed(1)}pt`,
     );
   }
+  if (s.handicapCalibration) {
+    const h = s.handicapCalibration;
+    out.push(
+      `- Handicap calibration: says ${pct(h.statedMean)}, actually ` +
+        `${pct(h.actualRate)} over ${h.n} bet${h.n === 1 ? "" : "s"}`,
+    );
+  }
+  if (s.totalCalibration) {
+    const t = s.totalCalibration;
+    out.push(
+      `- Total calibration: says ${pct(t.statedMean)}, actually ` +
+        `${pct(t.actualRate)} over ${t.n} bet${t.n === 1 ? "" : "s"}`,
+    );
+  }
   if (s.meanMarginError !== null) {
     out.push(`- Mean margin error: ${s.meanMarginError} runs`);
   }
@@ -161,7 +178,9 @@ export function summaryToMarkdown(
     out.push(`- Mean total error: ${s.meanTotalError} runs`);
   }
   out.push(
-    `- Self-learning shrink: ${calibration.shrink} (${calibration.gamesSettled} games)`,
+    `- Learned shrink — moneyline ${calibration.shrink}, handicap ` +
+      `${calibration.handicapShrink}, total ${calibration.totalShrink} ` +
+      `(${calibration.gamesSettled} games)`,
   );
   out.push("");
 

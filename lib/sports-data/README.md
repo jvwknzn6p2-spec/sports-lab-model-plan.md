@@ -66,10 +66,18 @@ decision engine → calibration → **prediction lock** (`data/predictions/<date
 Outputs per game: winner, predicted loser, handicap pick, win probability,
 confidence S/A/B/C, reasons, and **PASS** when the edge is too small or data is
 bad. Settlement scores every pick (winner/handicap/total, Brier, margin/total
-error) and nudges the calibration state (`data/calibration.json`) — overconfident
-slates shrink future edges, underconfident ones expand them. History accumulates
-in `data/history.jsonl`. Edit the Control Tower JSON to set date, handicap lines,
+error) and updates `data/calibration.json`. History accumulates in
+`data/history.jsonl`. Edit the Control Tower JSON to set date, handicap lines,
 totals, sim count, and PASS threshold.
+
+**Self-learning is per market.** The moneyline, the handicap, and the total each
+carry their own shrink and learn only from their own settled bets, because they
+are not equally well modelled — a win probability can be well calibrated while
+the run-line cover probability is systematically overconfident (margin is harder
+to predict than the winner). Learning them together would let one market's error
+corrupt the others. `handiedge report` shows the realized calibration for each
+market separately ("handicap says 66%, actually hits 50%"), which is the number
+that tells you whether the handicap model is worth trusting.
 
 ### Running it without a computer (GitHub Actions)
 
@@ -80,7 +88,13 @@ Stats API, and commit every slate, lock, result, and report back to this repo.
 | Workflow | When | What it does |
 |---|---|---|
 | `handiedge-predict.yml` | 15:00 UTC (00:00 JST / 11:00 ET) | fetch-slate → predict → lock + `data/reports/<date>.md` |
-| `handiedge-settle.yml` | 12:00 UTC (21:00 JST / 08:00 ET) | fetch-results (yesterday) → settle → self-learning → `data/reports/summary.md` |
+| `handiedge-settle.yml` | 05:00 UTC (14:00 JST) + 07:00 UTC (16:00 JST) | fetch-results (yesterday) → settle → self-learning → `data/reports/summary.md` |
+
+The settle workflow runs twice because a late West Coast game (22:10 ET first
+pitch) is often still in progress at the 14:00 JST pass. The 16:00 JST pass
+does nothing unless the earlier one left games pending, and re-settling is
+safe by construction — history keeps one report per date and the calibration
+is recomputed from the whole history, so no game is ever learned from twice.
 
 Read the output on a phone two ways: open the run in the **Actions** tab (the
 picks are printed into the run summary), or open `data/reports/<date>.md` in the

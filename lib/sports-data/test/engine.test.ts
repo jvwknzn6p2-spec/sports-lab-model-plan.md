@@ -68,9 +68,9 @@ test("run model favors the stronger side and applies home advantage", async () =
 });
 
 test("calibration shrinks the edge toward 50%", () => {
-  const p = calibrate(0.7, { ...DEFAULT_CALIBRATION, shrink: 0.85 });
+  const p = calibrate(0.7, 0.85);
   assert.ok(Math.abs(p - 0.67) < 0.001, `p=${p}`);
-  assert.equal(calibrate(0.5, DEFAULT_CALIBRATION), 0.5);
+  assert.equal(calibrate(0.5, DEFAULT_CALIBRATION.shrink), 0.5);
 });
 
 test("decision engine picks a winner with reasons, PASSes near coin-flips", async () => {
@@ -207,8 +207,10 @@ test("updateCalibration is bounded and damped", () => {
       brier: 0.98,
       handicapPick: null,
       handicapCorrect: null,
+      handicapProbability: null,
       totalPick: null,
       totalCorrect: null,
+      totalProbability: null,
       marginError: 1,
       totalError: 1,
     },

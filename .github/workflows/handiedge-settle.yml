@@ -4,11 +4,17 @@ name: HandiEdge — settle and score
 # the self-learning calibration update, and refreshes the running-results
 # summary. Read it on a phone in the run summary or data/reports/summary.md.
 #
-# 12:00 UTC = 08:00 ET (every game from the previous slate is final)
-#           = 21:00 JST
+# Two passes, because a late West Coast game (first pitch 22:10 ET) is often
+# still in progress at the first one:
+#   05:00 UTC = 14:00 JST = 01:00 ET — main pass, settles the finished games
+#   07:00 UTC = 16:00 JST = 03:00 ET — straggler pass, runs ONLY if the first
+#                                      pass left games unfinished
+# Re-settling is safe: history keeps one report per date and the calibration is
+# recomputed from the whole history, so nothing is ever learned from twice.
 on:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 5 * * *"
+    - cron: "0 7 * * *"
   workflow_dispatch:
     inputs:
       date:
@@ -47,15 +53,30 @@ jobs:
           if [ -z "$DATE" ]; then DATE=$(date -u -d 'yesterday' +%F); fi
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
-      - name: Skip when that date was never predicted
+      # Runs when there is a locked slate AND something is still unsettled.
+      # The 16:00 JST pass therefore no-ops on a normal night and only does
+      # work when the 14:00 pass reported games still in progress.
+      - name: Decide whether anything needs settling
         id: guard
         run: |
-          if [ -f "lib/sports-data/data/predictions/${{ steps.d.outputs.date }}.json" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No prediction lock for ${{ steps.d.outputs.date }} — nothing to settle."
+          DATE="${{ steps.d.outputs.date }}"
+          LOCK="lib/sports-data/data/predictions/$DATE.json"
+          RESULTS="lib/sports-data/data/results/$DATE.json"
+          if [ ! -f "$LOCK" ]; then
+            echo "No prediction lock for $DATE — nothing to settle."
             echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          if [ -f "$RESULTS" ]; then
+            PENDING=$(node -e "console.log((JSON.parse(require('fs').readFileSync('$RESULTS','utf8')).pending||[]).length)")
+            if [ "$PENDING" -eq 0 ]; then
+              echo "$DATE is already fully settled — no games were left pending."
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "$PENDING game(s) were unfinished at the last pass — settling again."
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
 
       # --force lets a re-run pick up games that were still in progress earlier.
       - name: Fetch final scores and settle

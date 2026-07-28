@@ -26,6 +26,13 @@ export interface HistorySummary {
   actualRate: number | null;
   meanMarginError: number | null;
   meanTotalError: number | null;
+  /**
+   * Per-market calibration: what we said vs. what actually happened. This is
+   * the number that tells you whether the HANDICAP model is trustworthy
+   * independently of the moneyline model.
+   */
+  handicapCalibration: MarketCalibration | null;
+  totalCalibration: MarketCalibration | null;
   /** One line per date, oldest first. */
   perDate: Array<{
     date: string;
@@ -34,6 +41,30 @@ export interface HistorySummary {
     winnerRecord: { wins: number; losses: number };
     meanBrier: number | null;
   }>;
+}
+
+export interface MarketCalibration {
+  /** Scored bets in this market. */
+  n: number;
+  statedMean: number;
+  actualRate: number;
+}
+
+function marketCalibration(
+  samples: Array<{ stated: number | null; correct: boolean | null }>,
+): MarketCalibration | null {
+  const scored = samples.filter(
+    (s): s is { stated: number; correct: boolean } =>
+      s.stated !== null && s.correct !== null,
+  );
+  if (scored.length === 0) return null;
+  return {
+    n: scored.length,
+    statedMean: round3(
+      scored.reduce((a, s) => a + s.stated, 0) / scored.length,
+    ),
+    actualRate: round3(scored.filter((s) => s.correct).length / scored.length),
+  };
 }
 
 export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
@@ -55,6 +86,14 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
   let marginErrN = 0;
   let totalErrSum = 0;
   let totalErrN = 0;
+  const handicapSamples: Array<{
+    stated: number | null;
+    correct: boolean | null;
+  }> = [];
+  const totalSamples: Array<{
+    stated: number | null;
+    correct: boolean | null;
+  }> = [];
 
   for (const r of finals) {
     games += r.gamesSettled;
@@ -78,6 +117,16 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
       totalErrSum += r.meanTotalError * n;
       totalErrN += n;
     }
+    for (const g of r.games) {
+      handicapSamples.push({
+        stated: g.handicapProbability,
+        correct: g.handicapCorrect,
+      });
+      totalSamples.push({
+        stated: g.totalProbability,
+        correct: g.totalCorrect,
+      });
+    }
   }
 
   const decided = winner.wins + winner.losses;
@@ -95,6 +144,8 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
     meanMarginError:
       marginErrN === 0 ? null : round3(marginErrSum / marginErrN),
     meanTotalError: totalErrN === 0 ? null : round3(totalErrSum / totalErrN),
+    handicapCalibration: marketCalibration(handicapSamples),
+    totalCalibration: marketCalibration(totalSamples),
     perDate: finals.map((r) => ({
       date: r.date,
       settled: r.gamesSettled,

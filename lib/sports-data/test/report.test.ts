@@ -4,7 +4,14 @@ import assert from "node:assert/strict";
 import { aggregateHistory } from "../src/engine/report";
 import type { SettlementReport } from "../src/engine/settle";
 
-const CAL = { shrink: 0.85, gamesSettled: 0, brierSum: 0, updatedAt: null };
+const CAL = {
+  shrink: 0.85,
+  handicapShrink: 0.85,
+  totalShrink: 0.85,
+  gamesSettled: 0,
+  brierSum: 0,
+  updatedAt: null,
+};
 
 function report(
   date: string,
@@ -38,8 +45,10 @@ function report(
       brier,
       handicapPick: null,
       handicapCorrect: null,
+      handicapProbability: null,
       totalPick: null,
       totalCorrect: null,
+      totalProbability: null,
       marginError: 2,
       totalError: 3,
     })),

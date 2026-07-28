@@ -28,8 +28,12 @@ export interface SettledGame {
   brier: number | null;
   handicapPick: string | null;
   handicapCorrect: boolean | null;
+  /** Stated probability that the handicap pick covers (for learning). */
+  handicapProbability: number | null;
   totalPick: "OVER" | "UNDER" | null;
   totalCorrect: boolean | null;
+  /** Stated probability for the total pick (for learning). */
+  totalProbability: number | null;
   marginError: number | null; // |predicted margin − actual margin|
   totalError: number | null; // |predicted total − actual total|
 }
@@ -56,39 +60,106 @@ const LEARN_RATE = 0.25;
 const SHRINK_MIN = 0.5;
 const SHRINK_MAX = 1.0;
 
+/** One scored bet: what we said would happen, and whether it did. */
+interface MarketSample {
+  stated: number;
+  correct: boolean;
+}
+
+/**
+ * Move one market's shrink toward reality.
+ *
+ * Overconfident (we said 60%, we hit 50%) lowers the shrink so future edges
+ * are quoted closer to 50%; underconfident raises it. Damped by sample size so
+ * a single slate never swings the state, and clamped so it can never collapse
+ * to "always 50%" or run away past "trust the raw model".
+ */
+function learnMarket(current: number, samples: MarketSample[]): number {
+  if (samples.length === 0) return current;
+  const statedMean =
+    samples.reduce((acc, s) => acc + s.stated, 0) / samples.length;
+  const actualRate = samples.filter((s) => s.correct).length / samples.length;
+  const gap = actualRate - statedMean;
+  const damping = samples.length / (samples.length + 20);
+  return (
+    Math.round(
+      clamp(current + LEARN_RATE * gap * damping, SHRINK_MIN, SHRINK_MAX) *
+        1000,
+    ) / 1000
+  );
+}
+
+/** Every market learns from its OWN scored bets, independently. */
 export function updateCalibration(
   state: CalibrationState,
   settled: SettledGame[],
   now: Date,
 ): CalibrationState {
-  const scored = settled.filter(
-    (s) => s.winnerCorrect !== null && s.statedProbability !== null,
-  );
-  if (scored.length === 0) return state;
+  const winner: MarketSample[] = [];
+  const handicap: MarketSample[] = [];
+  const total: MarketSample[] = [];
+  let brierSum = 0;
 
-  const statedMean =
-    scored.reduce((acc, s) => acc + (s.statedProbability ?? 0), 0) /
-    scored.length;
-  const actualRate =
-    scored.filter((s) => s.winnerCorrect).length / scored.length;
-  const brierSum = scored.reduce((acc, s) => acc + (s.brier ?? 0), 0);
+  for (const s of settled) {
+    if (s.winnerCorrect !== null && s.statedProbability !== null) {
+      winner.push({ stated: s.statedProbability, correct: s.winnerCorrect });
+      brierSum += s.brier ?? 0;
+    }
+    if (s.handicapCorrect !== null && s.handicapProbability !== null) {
+      handicap.push({
+        stated: s.handicapProbability,
+        correct: s.handicapCorrect,
+      });
+    }
+    if (s.totalCorrect !== null && s.totalProbability !== null) {
+      total.push({ stated: s.totalProbability, correct: s.totalCorrect });
+    }
+  }
 
-  // Overconfident (actual < stated) → lower shrink; underconfident → raise.
-  // Damped by sample size so one slate never swings the state violently.
-  const gap = actualRate - statedMean;
-  const damping = scored.length / (scored.length + 20);
-  const shrink = clamp(
-    state.shrink + LEARN_RATE * gap * damping,
-    SHRINK_MIN,
-    SHRINK_MAX,
-  );
+  if (winner.length === 0 && handicap.length === 0 && total.length === 0) {
+    return state;
+  }
 
   return {
-    shrink: Math.round(shrink * 1000) / 1000,
-    gamesSettled: state.gamesSettled + scored.length,
+    shrink: learnMarket(state.shrink, winner),
+    handicapShrink: learnMarket(state.handicapShrink, handicap),
+    totalShrink: learnMarket(state.totalShrink, total),
+    gamesSettled: state.gamesSettled + winner.length,
     brierSum: Math.round((state.brierSum + brierSum) * 10000) / 10000,
     updatedAt: now.toISOString(),
   };
+}
+
+/**
+ * Recompute the calibration state from the WHOLE settlement history.
+ *
+ * Settling is not a one-shot event: a slate gets settled once when the early
+ * games finish and again later to pick up west-coast stragglers. Applying
+ * `updateCalibration` incrementally on every run would learn from the same
+ * games twice. Folding the full history instead — one report per date, oldest
+ * first — makes settlement idempotent and lets a corrected re-settle actually
+ * correct the learned state rather than compound it.
+ */
+export function recalibrateFromHistory(
+  reports: SettlementReport[],
+  base: CalibrationState,
+  now: Date,
+): CalibrationState {
+  const byDate = new Map<string, SettlementReport>();
+  for (const r of reports) byDate.set(r.date, r);
+  const chronological = [...byDate.values()].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+  let state: CalibrationState = {
+    ...base,
+    gamesSettled: 0,
+    brierSum: 0,
+    updatedAt: null,
+  };
+  for (const r of chronological) {
+    state = updateCalibration(state, r.games, now);
+  }
+  return state;
 }
 
 export function settle(
@@ -158,8 +229,10 @@ export function settle(
       brier: brier === null ? null : Math.round(brier * 10000) / 10000,
       handicapPick: p.handicap.pick,
       handicapCorrect,
+      handicapProbability: p.handicap.coverProbability,
       totalPick: p.total.pick,
       totalCorrect,
+      totalProbability: p.total.probability,
       marginError: p.pass
         ? null
         : Math.round(Math.abs(predictedMargin - actualMargin) * 100) / 100,

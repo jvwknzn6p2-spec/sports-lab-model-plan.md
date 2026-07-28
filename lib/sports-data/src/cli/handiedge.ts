@@ -45,7 +45,7 @@
  * numbers reproducible bit-for-bit.
  */
 
-import { mkdir, readFile, writeFile, appendFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,11 +62,16 @@ import {
   decide,
   DEFAULT_CALIBRATION,
   DEFAULT_DECISION_CONFIG,
+  normalizeCalibration,
   type CalibrationState,
   type GamePrediction,
   type HandicapInput,
 } from "../engine/decision";
-import { settle, type GameResult } from "../engine/settle";
+import {
+  settle,
+  recalibrateFromHistory,
+  type GameResult,
+} from "../engine/settle";
 import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
 import { buildResults } from "../sources/results-builder";
@@ -113,7 +118,25 @@ async function readJson<T>(path: string): Promise<T> {
 
 async function loadCalibration(): Promise<CalibrationState> {
   if (!existsSync(CALIBRATION_PATH)) return { ...DEFAULT_CALIBRATION };
-  return readJson<CalibrationState>(CALIBRATION_PATH);
+  return normalizeCalibration(
+    await readJson<Partial<CalibrationState>>(CALIBRATION_PATH),
+  );
+}
+
+async function loadHistory(): Promise<SettlementReport[]> {
+  if (!existsSync(HISTORY_PATH)) return [];
+  const raw = await readFile(HISTORY_PATH, "utf8");
+  return raw
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .map((line) => JSON.parse(line) as SettlementReport);
+}
+
+/** Rewrite history with one report per date (a re-settle REPLACES the old one). */
+async function saveHistory(reports: SettlementReport[]): Promise<void> {
+  await mkdir(DATA_DIR, { recursive: true });
+  const body = reports.map((r) => JSON.stringify(r)).join("\n") + "\n";
+  await writeFile(HISTORY_PATH, body, "utf8");
 }
 
 async function saveJson(path: string, value: unknown): Promise<void> {
@@ -453,17 +476,33 @@ async function runSettle(payload: {
   const lock = await readJson<PredictionLock>(lockPath);
   const calibration = await loadCalibration();
 
-  const report = settle(
+  const now = new Date();
+  const scored = settle(
     payload.date,
     lock.predictions,
     payload.results,
     calibration,
-    new Date(),
+    now,
   );
 
-  await saveJson(CALIBRATION_PATH, report.calibrationAfter);
-  await mkdir(DATA_DIR, { recursive: true });
-  await appendFile(HISTORY_PATH, JSON.stringify(report) + "\n", "utf8");
+  // A slate is settled more than once (early pass, then west-coast
+  // stragglers). Replace this date's report rather than appending a second
+  // one, then relearn from the whole history so the same games are never
+  // learned from twice and a corrected re-settle actually corrects the state.
+  const history = await loadHistory();
+  const merged = [
+    ...history.filter((r) => r.date !== scored.date),
+    scored,
+  ].sort((a, b) => a.date.localeCompare(b.date));
+  const relearned = recalibrateFromHistory(merged, DEFAULT_CALIBRATION, now);
+
+  const report = {
+    ...scored,
+    calibrationBefore: calibration,
+    calibrationAfter: relearned,
+  };
+  await saveHistory(merged.map((r) => (r.date === report.date ? report : r)));
+  await saveJson(CALIBRATION_PATH, relearned);
   await saveMarkdown(
     join(REPORTS_DIR, `${report.date}-settled.md`),
     settlementToMarkdown(report),
@@ -523,12 +562,7 @@ async function cmdReport(): Promise<void> {
     );
     return;
   }
-  const raw = await readFile(HISTORY_PATH, "utf8");
-  const reports: SettlementReport[] = raw
-    .split("\n")
-    .filter((line) => line.trim() !== "")
-    .map((line) => JSON.parse(line) as SettlementReport);
-  const s = aggregateHistory(reports);
+  const s = aggregateHistory(await loadHistory());
   const calibration = await loadCalibration();
   const summaryPath = join(REPORTS_DIR, "summary.md");
   await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration));
@@ -574,8 +608,23 @@ async function cmdReport(): Promise<void> {
   if (s.meanTotalError !== null) {
     console.log(`  Mean total error:  ${s.meanTotalError} runs`);
   }
+  if (s.handicapCalibration) {
+    const h = s.handicapCalibration;
+    console.log(
+      `  Handicap calibration: stated ${(h.statedMean * 100).toFixed(1)}% vs actual ` +
+        `${(h.actualRate * 100).toFixed(1)}%  (${h.n} bets)`,
+    );
+  }
+  if (s.totalCalibration) {
+    const t = s.totalCalibration;
+    console.log(
+      `  Total calibration:    stated ${(t.statedMean * 100).toFixed(1)}% vs actual ` +
+        `${(t.actualRate * 100).toFixed(1)}%  (${t.n} bets)`,
+    );
+  }
   console.log(
-    `  Self-learning state: shrink ${calibration.shrink} ` +
+    `  Learned shrink: moneyline ${calibration.shrink}, handicap ` +
+      `${calibration.handicapShrink}, total ${calibration.totalShrink} ` +
       `(${calibration.gamesSettled} games settled lifetime)`,
   );
   if (s.gamesSettled < 30) {
