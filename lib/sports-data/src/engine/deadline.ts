@@ -2,8 +2,9 @@
  * When a prediction stops being editable.
  *
  * A pick is only honest if it was fixed before the game could inform it. The
- * rule here is per-GAME, not per-slate: each prediction is final 9 minutes
- * before its own first pitch. A slate with a 12:00 day game and an 18:00
+ * offset is uniform — the same number of minutes for day games and nighters
+ * alike — but the deadline itself is per GAME, because it is measured from
+ * each game's own first pitch. A slate with a 12:00 day game and an 18:00
  * nighter therefore has two different cut-offs, and re-running the pipeline at
  * 15:00 must leave the day game exactly as it was locked while still being
  * free to refresh the nighter with newer information.
@@ -16,8 +17,35 @@
  * deadline at 23:13 JST on the day of the games.
  */
 
-/** Minutes before first pitch at which a prediction becomes final. */
-export const LOCK_MINUTES_BEFORE_START = 9;
+/** Leagues that may carry their own cut-off. */
+export type LockLeague = "MLB" | "NPB";
+
+/**
+ * Minutes before first pitch at which a prediction becomes final.
+ *
+ * NPB: 39, uniform across day games and nighters — an 18:00 start freezes at
+ * 17:21, a 12:00 start at 11:21.
+ *
+ * MLB: `null`, meaning NO cut-off has been specified. An MLB pick is therefore
+ * never frozen automatically. Borrowing NPB's 39 would be inventing a rule for
+ * a league whose rule has not been given, and this repository is MLB-first —
+ * an unasked-for freeze there is the more damaging error. Set the number here
+ * once the MLB cut-off is decided; nothing else has to move.
+ */
+export const LOCK_MINUTES_BEFORE_START: Record<LockLeague, number | null> = {
+  NPB: 39,
+  MLB: null,
+};
+
+/** This repository's data pipeline is MLB-only, so MLB is the default. */
+const DEFAULT_LOCK_LEAGUE: LockLeague = "MLB";
+
+/** Minutes before first pitch for a league, or null when no rule is set. */
+export function lockMinutesFor(
+  league: LockLeague = DEFAULT_LOCK_LEAGUE,
+): number | null {
+  return LOCK_MINUTES_BEFORE_START[league];
+}
 
 /** Slate-wide cut-off for settle → analyse → learn → save, in JST. */
 export const SETTLEMENT_DEADLINE_JST = { hour: 23, minute: 13 } as const;
@@ -32,26 +60,44 @@ export class DeadlineError extends Error {
 }
 
 /**
- * The moment a game's prediction is frozen: first pitch minus 9 minutes.
+ * The moment a game's prediction is frozen: first pitch minus the league's
+ * cut-off (39 minutes for NPB). `null` when the league has no rule, which
+ * means picks are never frozen automatically.
  */
-export function lockDeadline(gameStart: string | Date): Date {
+export function lockDeadline(
+  gameStart: string | Date,
+  league: LockLeague = DEFAULT_LOCK_LEAGUE,
+): Date | null {
+  const minutes = lockMinutesFor(league);
+  if (minutes === null) return null;
   const start = gameStart instanceof Date ? gameStart : new Date(gameStart);
   if (Number.isNaN(start.getTime())) {
     throw new DeadlineError(`Unreadable game start: ${String(gameStart)}`);
   }
-  return new Date(start.getTime() - LOCK_MINUTES_BEFORE_START * 60_000);
+  return new Date(start.getTime() - minutes * 60_000);
 }
 
 /** True once the prediction for this game may no longer change. */
-export function isFinalized(gameStart: string | Date, now: Date): boolean {
-  return now.getTime() >= lockDeadline(gameStart).getTime();
+export function isFinalized(
+  gameStart: string | Date,
+  now: Date,
+  league: LockLeague = DEFAULT_LOCK_LEAGUE,
+): boolean {
+  const deadline = lockDeadline(gameStart, league);
+  // No rule for this league: nothing is ever frozen behind the owner's back.
+  if (deadline === null) return false;
+  return now.getTime() >= deadline.getTime();
 }
 
 /** Minutes remaining before the pick freezes; negative once it has. */
-export function minutesUntilLock(gameStart: string | Date, now: Date): number {
-  return Math.round(
-    (lockDeadline(gameStart).getTime() - now.getTime()) / 60_000,
-  );
+export function minutesUntilLock(
+  gameStart: string | Date,
+  now: Date,
+  league: LockLeague = DEFAULT_LOCK_LEAGUE,
+): number | null {
+  const deadline = lockDeadline(gameStart, league);
+  if (deadline === null) return null;
+  return Math.round((deadline.getTime() - now.getTime()) / 60_000);
 }
 
 /**

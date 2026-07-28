@@ -385,10 +385,11 @@ async function cmdPredict(args: {
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
     const p = decide(g, runs, sim, calibration, handicap, cfg);
 
-    if (g.gameDate) {
-      const deadline = lockDeadline(g.gameDate);
+    const lockLeague = ct.league ?? "MLB";
+    const deadline = g.gameDate ? lockDeadline(g.gameDate, lockLeague) : null;
+    if (g.gameDate && deadline) {
       p.lockDeadline = deadline.toISOString();
-      p.final = isFinalized(g.gameDate, now);
+      p.final = isFinalized(g.gameDate, now, lockLeague);
       if (p.final) {
         // Predicted after its own cut-off — recorded as such rather than
         // passed off as a pick that was made in time.
@@ -396,9 +397,14 @@ async function cmdPredict(args: {
         lateCount++;
       }
     } else {
+      // Either no start time, or a league with no cut-off rule (MLB today).
+      // Both mean the pick is not auto-frozen; only the missing start time is
+      // a data problem worth flagging.
       p.lockDeadline = null;
       p.final = false;
-      p.flags = [...p.flags, "[warn] no_start_time_no_lock_deadline"];
+      if (!g.gameDate) {
+        p.flags = [...p.flags, "[warn] no_start_time_no_lock_deadline"];
+      }
     }
     predictions.push(p);
   }
@@ -442,7 +448,11 @@ async function cmdPredict(args: {
   }
   const upcoming = predictions
     .filter((p) => !p.final && p.lockDeadline)
-    .map((p) => minutesUntilLock(new Date(p.lockDeadline!), now))
+    .map((p) =>
+      Math.round(
+        (new Date(p.lockDeadline!).getTime() - now.getTime()) / 60_000,
+      ),
+    )
     .sort((a, b) => a - b)[0];
   if (upcoming !== undefined) {
     console.log(`Next pick freezes in ${upcoming} minute(s).`);

@@ -18,49 +18,79 @@ const NIGHT_START = jstInstant("2024-07-25", NPB_DEFAULT_STARTS_JST.night);
 /** 12:00 JST — the earliest NPB day game. */
 const DAY_START = jstInstant("2024-07-25", NPB_DEFAULT_STARTS_JST.dayEarliest);
 
-test("a pick freezes exactly 9 minutes before its own first pitch", () => {
-  assert.equal(LOCK_MINUTES_BEFORE_START, 9);
-  const d = lockDeadline(NIGHT_START);
-  assert.equal(NIGHT_START.getTime() - d.getTime(), 9 * 60_000);
-  // 18:00 JST → 17:51 JST.
-  assert.equal(d.toISOString(), "2024-07-25T08:51:00.000Z");
+test("an NPB pick freezes 39 minutes before its own first pitch", () => {
+  assert.equal(LOCK_MINUTES_BEFORE_START.NPB, 39);
+  const d = lockDeadline(NIGHT_START, "NPB")!;
+  assert.equal(NIGHT_START.getTime() - d.getTime(), 39 * 60_000);
+  // 18:00 JST → 17:21 JST.
+  assert.equal(d.toISOString(), "2024-07-25T08:21:00.000Z");
 });
 
-test("the day-game deadline is 11:51 JST, not the nighter's", () => {
-  // The cut-off is per game, so a 12:00 start freezes six hours earlier.
+test("MLB has no cut-off, so an MLB pick is never frozen automatically", () => {
+  // This repository is MLB-first and no MLB rule has been given. Borrowing
+  // NPB's number would freeze MLB picks under a rule nobody asked for.
+  assert.equal(LOCK_MINUTES_BEFORE_START.MLB, null);
+  assert.equal(lockDeadline(NIGHT_START, "MLB"), null);
+  assert.equal(isFinalized(NIGHT_START, new Date("2030-01-01"), "MLB"), false);
+  assert.equal(minutesUntilLock(NIGHT_START, new Date(), "MLB"), null);
+  // MLB is also the default, so an unqualified call cannot freeze anything.
+  assert.equal(lockDeadline(NIGHT_START), null);
+});
+
+test("the offset is uniform but the deadline is per game", () => {
+  // Same 39 minutes for day games and nighters; different absolute cut-offs
+  // because each is measured from its own first pitch. 12:00 → 11:21 JST.
   assert.equal(
-    lockDeadline(DAY_START).toISOString(),
-    "2024-07-25T02:51:00.000Z",
+    lockDeadline(DAY_START, "NPB")!.toISOString(),
+    "2024-07-25T02:21:00.000Z",
+  );
+  assert.equal(
+    NIGHT_START.getTime() - lockDeadline(NIGHT_START, "NPB")!.getTime(),
+    DAY_START.getTime() - lockDeadline(DAY_START, "NPB")!.getTime(),
+    "identical offset",
   );
   assert.notEqual(
-    lockDeadline(DAY_START).getTime(),
-    lockDeadline(NIGHT_START).getTime(),
+    lockDeadline(DAY_START, "NPB")!.getTime(),
+    lockDeadline(NIGHT_START, "NPB")!.getTime(),
+    "different moments",
   );
 });
 
 test("finalization flips at the deadline, not at first pitch", () => {
-  const deadline = lockDeadline(NIGHT_START);
+  const deadline = lockDeadline(NIGHT_START, "NPB")!;
   const oneMinuteBefore = new Date(deadline.getTime() - 60_000);
   const atDeadline = new Date(deadline.getTime());
-  assert.equal(isFinalized(NIGHT_START, oneMinuteBefore), false);
-  assert.equal(isFinalized(NIGHT_START, atDeadline), true, "inclusive");
+  assert.equal(isFinalized(NIGHT_START, oneMinuteBefore, "NPB"), false);
+  assert.equal(isFinalized(NIGHT_START, atDeadline, "NPB"), true, "inclusive");
   // Still final well after first pitch, obviously.
   assert.equal(
-    isFinalized(NIGHT_START, new Date(NIGHT_START.getTime() + 3_600_000)),
+    isFinalized(
+      NIGHT_START,
+      new Date(NIGHT_START.getTime() + 3_600_000),
+      "NPB",
+    ),
     true,
   );
 });
 
 test("minutesUntilLock counts down and then goes negative", () => {
   const t = new Date(NIGHT_START.getTime() - 60 * 60_000); // 17:00 JST
-  assert.equal(minutesUntilLock(NIGHT_START, t), 51);
-  assert.equal(minutesUntilLock(NIGHT_START, NIGHT_START), -9);
+  assert.equal(minutesUntilLock(NIGHT_START, t, "NPB"), 21);
+  assert.equal(minutesUntilLock(NIGHT_START, NIGHT_START, "NPB"), -39);
 });
 
 test("a mid-afternoon re-run leaves the day game frozen but the nighter open", () => {
   const at15 = jstInstant("2024-07-25", { hour: 15, minute: 0 });
-  assert.equal(isFinalized(DAY_START, at15), true, "12:00 game is committed");
-  assert.equal(isFinalized(NIGHT_START, at15), false, "18:00 game still open");
+  assert.equal(
+    isFinalized(DAY_START, at15, "NPB"),
+    true,
+    "12:00 game is committed",
+  );
+  assert.equal(
+    isFinalized(NIGHT_START, at15, "NPB"),
+    false,
+    "18:00 game still open",
+  );
 });
 
 test("settlement is due at 23:13 JST on the slate's own date", () => {
@@ -89,7 +119,7 @@ test("NPB start-time defaults match the stated schedule", () => {
 });
 
 test("unreadable dates and start times throw rather than defaulting", () => {
-  assert.throws(() => lockDeadline("not-a-time"), DeadlineError);
+  assert.throws(() => lockDeadline("not-a-time", "NPB"), DeadlineError);
   assert.throws(() => settlementDeadline("2024/07/25"), DeadlineError);
   assert.throws(
     () => jstInstant("25-07-2024", { hour: 18, minute: 0 }),
