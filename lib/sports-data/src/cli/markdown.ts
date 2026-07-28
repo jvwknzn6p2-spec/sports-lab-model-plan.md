@@ -114,7 +114,17 @@ export function settlementToMarkdown(r: SettlementReport): string {
   out.push("");
   for (const g of r.games) {
     if (g.pass) {
-      out.push(`- ${g.away} @ ${g.home}: PASS (won by ${g.actualWinner})`);
+      out.push(
+        `- ${g.away} @ ${g.home}: PASS (${g.actualWinner ? `won by ${g.actualWinner}` : "引き分け"})`,
+      );
+      continue;
+    }
+    if (g.winnerCorrect === null) {
+      // Tie: the moneyline pushed, so it is neither a win nor a loss.
+      out.push(
+        `- ${g.away} @ ${g.home}: **PUSH (引き分け)** — ` +
+          `picked ${g.predictedWinner}, stake returned`,
+      );
       continue;
     }
     out.push(

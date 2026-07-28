@@ -22,8 +22,10 @@ export interface SettledGame {
   away: string;
   pass: boolean;
   predictedWinner: string | null;
-  actualWinner: string;
-  winnerCorrect: boolean | null; // null for PASS
+  /** null when the game ended tied (NPB) — nobody won. */
+  actualWinner: string | null;
+  /** null for PASS, and null for an NPB tie (the moneyline pushes). */
+  winnerCorrect: boolean | null;
   statedProbability: number | null;
   brier: number | null;
   handicapPick: string | null;
@@ -178,14 +180,22 @@ export function settle(
       missing++;
       continue;
     }
-    const actualWinner = r.homeScore > r.awayScore ? p.home : p.away;
+    // A tie is a real outcome in NPB (no extra innings), so it must not be
+    // silently recorded as an away win the way `home > away ? home : away`
+    // would. It is a moneyline push: unscored, and invisible to learning.
+    const tied = r.homeScore === r.awayScore;
+    const actualWinner = tied
+      ? null
+      : r.homeScore > r.awayScore
+        ? p.home
+        : p.away;
     const actualMargin = r.homeScore - r.awayScore; // home perspective
     const actualTotal = r.homeScore + r.awayScore;
     const predictedMargin = p.expectedRuns.home - p.expectedRuns.away;
 
     let winnerCorrect: boolean | null = null;
     let brier: number | null = null;
-    if (!p.pass && p.predictedWinner) {
+    if (!p.pass && p.predictedWinner && !tied) {
       winnerCorrect = p.predictedWinner === actualWinner;
       const outcome = winnerCorrect ? 1 : 0;
       brier = (p.winProbability - outcome) ** 2;
