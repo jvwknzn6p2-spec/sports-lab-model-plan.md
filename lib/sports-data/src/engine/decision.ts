@@ -13,15 +13,87 @@ import type { GameCoreData } from "../step2";
 import type { RunExpectation } from "./run-model";
 import type { SimulationResult } from "./simulate";
 import { breakEvenProbability, expectedValueFromProbability } from "./ev";
-import { WIN_COMMISSION } from "./handicap-notation";
+import {
+  HandicapNotationError,
+  oppositeParts,
+  parseHandicapNotation,
+  splitLine,
+  WIN_COMMISSION,
+  type WeightedLine,
+} from "./handicap-notation";
 
 export type Confidence = "S" | "A" | "B" | "C";
 
-/** Handicap line for one game, sportsbook convention (side gives the line). */
+/**
+ * The handicap quoted on one game.
+ *
+ * Two ways to state it, and exactly one must be given:
+ *
+ *   `notation` — the market's own form, as written on the slate: "0.8",
+ *     "1半", "1半2", "〈1.4〉, "なし". UNSIGNED: it is the handicap `side`
+ *     GIVES, which is how the line is actually quoted. 〈1半2〉 on the home
+ *     side means home −1.5 with 20% of the stake on home −2.
+ *
+ *   `line` — a signed sportsbook number (−1.5 on the favourite). Kept because
+ *     the run line is what the MLB feed and older control towers speak.
+ */
 export interface HandicapInput {
   side: "home" | "away";
-  line: number; // e.g. -1.5 on the favorite
+  line?: number;
+  notation?: string;
   total?: number; // over/under line, optional
+}
+
+/** A handicap reduced to the weighted lines it settles as. */
+export interface ResolvedHandicap {
+  /** Signed lines from the QUOTED side's perspective. */
+  parts: WeightedLine[];
+  /** How the quoted side's bet is written, e.g. "-1.5" or "-〈1半2〉". */
+  giveLabel: string;
+  /** How the other side's bet is written. */
+  takeLabel: string;
+  /** Stake-weighted signed line, for display and ordering. */
+  effectiveLine: number;
+}
+
+/**
+ * Turn either input form into the one thing everything downstream needs: a
+ * basket of signed, weighted lines belonging to the quoted side.
+ *
+ * Resolving in ONE place is the point. The simulator prices these parts, the
+ * settler scores them, and the report names them; deriving them separately
+ * anywhere would let a 半 line be quoted as a split stake and settled as a
+ * plain one.
+ */
+export function resolveHandicap(h: HandicapInput): ResolvedHandicap {
+  if (h.notation !== undefined && h.line !== undefined) {
+    throw new HandicapNotationError(
+      h.notation,
+      "give either `notation` or `line`, not both — they can disagree",
+    );
+  }
+  if (h.notation !== undefined) {
+    const p = parseHandicapNotation(h.notation);
+    // The notation says what the side GIVES, so its own lines are negative.
+    return {
+      parts: oppositeParts(p.parts),
+      giveLabel: `-〈${p.notation}〉`,
+      takeLabel: `+〈${p.notation}〉`,
+      effectiveLine: -p.effectiveLine,
+    };
+  }
+  if (h.line !== undefined) {
+    return {
+      parts: splitLine(h.line),
+      giveLabel: fmtLine(h.line),
+      takeLabel: fmtLine(-h.line),
+      effectiveLine: h.line,
+    };
+  }
+  throw new HandicapNotationError(
+    JSON.stringify(h),
+    'no line given — set `notation` (e.g. "1半2") or `line` (e.g. -1.5)',
+  );
 }
 
 /**
@@ -128,7 +200,7 @@ export interface GamePrediction {
   expectedRuns: { home: number; away: number };
   reasons: string[];
   flags: string[];
-  /** First pitch minus 9 minutes: when this pick stopped being editable. */
+  /** 22:21 JST the evening before: when this pick stopped being editable. */
   lockDeadline?: string | null;
   /** True once the deadline has passed and the pick is frozen. */
   final?: boolean;
@@ -249,15 +321,18 @@ export function decide(
   let coverProbability: number | null = null;
   let handicapEv: number | null = null;
   if (handicap) {
-    const quoted = sim.asianCover(handicap.side, handicap.line);
+    const r = resolveHandicap(handicap);
+    const quoted = sim.asianCover(handicap.side, r.parts);
     const pCover = calibrate(quoted.probability, calibration.handicapShrink);
-    // Back whichever side the model prefers; the push share is a property of
-    // the line, so it is the same whichever side of it you take.
+    // Back whichever side the model prefers. The push share is a property of
+    // the line itself, so it is the same whichever side of it you take — but
+    // it is NOT the same for a 半 line as for the whole line it resembles,
+    // which is exactly why the parts are priced rather than the number.
     const takeQuoted = pCover >= 0.5;
     const chosen = takeQuoted ? pCover : 1 - pCover;
     handicapPick = takeQuoted
-      ? `${handicap.side === "home" ? homeName : awayName} ${fmtLine(handicap.line)}`
-      : `${handicap.side === "home" ? awayName : homeName} ${fmtLine(-handicap.line)}`;
+      ? `${handicap.side === "home" ? homeName : awayName} ${r.giveLabel}`
+      : `${handicap.side === "home" ? awayName : homeName} ${r.takeLabel}`;
     coverProbability = round3(chosen);
     handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
   }
@@ -349,6 +424,9 @@ const round3 = (v: number) => Math.round(v * 1000) / 1000;
  */
 export const fmtPct = (v: number) =>
   `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
+
+/** A signed stake figure in units, e.g. "+0.72" for 〈1半2〉 winning by two. */
+export const fmtUnits = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
 
 /**
  * Recommendation order: best expected value first.

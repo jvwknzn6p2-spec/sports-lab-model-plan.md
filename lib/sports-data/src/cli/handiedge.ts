@@ -36,7 +36,13 @@
  *     "passThreshold": 0.55,                  // optional
  *     "minEv": 0,                             // optional: profit per unit a
  *                                             // handicap must clear to be bet
- *     "handicaps": { "<gamePk>": { "side": "home", "line": -1.5, "total": 8.5 } }
+ *     "handicaps": {
+ *       // Market notation — the handicap `side` GIVES, as written on the
+ *       // slate. This is the normal form: "0", "0.8", "1半", "1半2".
+ *       "<gamePk>": { "side": "home", "notation": "1半2", "total": 8.5 },
+ *       // Or a signed sportsbook run line, if that is what you have.
+ *       "<gamePk>": { "side": "home", "line": -1.5 }
+ *     }
  *   }
  *
  * Results JSON:
@@ -65,6 +71,7 @@ import {
   DEFAULT_CALIBRATION,
   DEFAULT_DECISION_CONFIG,
   fmtPct,
+  fmtUnits,
   normalizeCalibration,
   type CalibrationState,
   type GamePrediction,
@@ -298,7 +305,10 @@ async function cmdFetchSlate(args: {
   if (!existsSync(ctPath)) {
     const handicaps: Record<string, HandicapInput> = {};
     for (const g of bundle.games) {
-      handicaps[String(g.gamePk)] = { side: "home", line: -1.5 };
+      // "0" = ハンデなし: a placeholder that is honest about knowing nothing,
+      // rather than a -1.5 run line the user never quoted. Replace each with
+      // the slate's real handicap, then re-run predict --force.
+      handicaps[String(g.gamePk)] = { side: "home", notation: "0" };
     }
     await saveJson(ctPath, {
       date,
@@ -607,7 +617,10 @@ async function runSettle(payload: {
     `  Winner record:   ${report.winnerRecord.wins}-${report.winnerRecord.losses}`,
   );
   console.log(
-    `  Handicap record: ${report.handicapRecord.wins}-${report.handicapRecord.losses}`,
+    `  Handicap record: ${report.handicapRecord.wins}-${report.handicapRecord.losses}` +
+      (report.handicapProfit === null
+        ? ""
+        : `  (${fmtUnits(report.handicapProfit)} units after the cut)`),
   );
   console.log(
     `  Total record:    ${report.totalRecord.wins}-${report.totalRecord.losses}`,

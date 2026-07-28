@@ -139,8 +139,66 @@ function plain(value: number, notation: string): ParsedHandicap {
  * share is reduced by the house's cut.
  */
 export function expectedProfit(
-  settled: { win: number; push: number; loss: number },
+  settled: StakeOutcome,
   commission = WIN_COMMISSION,
 ): number {
   return settled.win * (1 - commission) - settled.loss;
+}
+
+/** How a stake came back: shares that won, pushed and lost. Sums to 1. */
+export interface StakeOutcome {
+  win: number;
+  push: number;
+  loss: number;
+}
+
+/**
+ * Split a bare number into the sub-lines it is really made of.
+ *
+ * A quarter line (x.25 / x.75) is half a stake on each neighbouring half-line;
+ * everything else carries the whole stake on one line. This is the same idea as
+ * the 半 family — a handicap is a weighted basket of lines — which is why both
+ * settle through the same code below.
+ */
+export function splitLine(line: number): WeightedLine[] {
+  const quarter = Math.abs(line * 4 - Math.round(line * 4)) < 1e-9;
+  const half = Math.abs(line * 2 - Math.round(line * 2)) < 1e-9;
+  if (quarter && !half) {
+    return [
+      { line: line - 0.25, weight: 0.5 },
+      { line: line + 0.25, weight: 0.5 },
+    ];
+  }
+  return [{ line, weight: 1 }];
+}
+
+/**
+ * Settle a basket of lines against one realized margin, from the perspective
+ * of the side that holds them (its own margin, its own signed lines).
+ *
+ * This is THE settlement rule. The simulator runs it over ten thousand
+ * imagined margins and the settler runs it over the one that happened, so a
+ * 半 line cannot be quoted as a split stake and then scored as win-or-lose —
+ * an inconsistency that would teach the calibrator from an outcome the market
+ * never actually pays.
+ */
+export function settleParts(
+  parts: readonly WeightedLine[],
+  margin: number,
+): StakeOutcome {
+  let win = 0;
+  let push = 0;
+  let loss = 0;
+  for (const part of parts) {
+    const settled = margin + part.line;
+    if (settled > 0) win += part.weight;
+    else if (settled === 0) push += part.weight;
+    else loss += part.weight;
+  }
+  return { win, push, loss };
+}
+
+/** Flip a basket of lines to the other side of the same handicap. */
+export function oppositeParts(parts: readonly WeightedLine[]): WeightedLine[] {
+  return parts.map((p) => ({ line: -p.line, weight: p.weight }));
 }
