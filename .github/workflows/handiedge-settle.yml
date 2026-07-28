@@ -4,16 +4,15 @@ name: HandiEdge — settle and score
 # the self-learning calibration update, and refreshes the running-results
 # summary. Read it on a phone in the run summary or data/reports/summary.md.
 #
-# Two passes, because a late West Coast game (first pitch 22:10 ET) is often
-# still in progress at the first one:
-#   05:00 UTC = 14:00 JST = 01:00 ET — main pass, settles the finished games
-#   07:00 UTC = 16:00 JST = 03:00 ET — straggler pass, runs ONLY if the first
-#                                      pass left games unfinished
-# Re-settling is safe: history keeps one report per date and the calibration is
-# recomputed from the whole history, so nothing is ever learned from twice.
+# 07:00 UTC = 16:00 JST = 03:00 ET. One pass is enough at this hour: the latest
+# possible MLB start is 22:10 ET (02:10 UTC), so even a long extra-innings game
+# is final well before it.
+#
+# Re-settling the same date is still safe by construction — history keeps one
+# report per date and the calibration is recomputed from the whole history, so
+# a manual re-run never learns from the same games twice.
 on:
   schedule:
-    - cron: "0 5 * * *"
     - cron: "0 7 * * *"
   workflow_dispatch:
     inputs:
@@ -53,9 +52,10 @@ jobs:
           if [ -z "$DATE" ]; then DATE=$(date -u -d 'yesterday' +%F); fi
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
-      # Runs when there is a locked slate AND something is still unsettled.
-      # The 16:00 JST pass therefore no-ops on a normal night and only does
-      # work when the 14:00 pass reported games still in progress.
+      # Runs when there is a locked slate AND something is still unsettled, so
+      # a repeat dispatch for an already-finished date is a no-op rather than
+      # pointless work. Pass an explicit --date to settle a postponed game that
+      # finished on a later day.
       - name: Decide whether anything needs settling
         id: guard
         run: |
@@ -74,11 +74,11 @@ jobs:
               echo "run=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            echo "$PENDING game(s) were unfinished at the last pass — settling again."
+            echo "$PENDING game(s) were unfinished last time — settling again."
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
-      # --force lets a re-run pick up games that were still in progress earlier.
+      # --force lets a re-run pick up anything unfinished last time.
       - name: Fetch final scores and settle
         if: steps.guard.outputs.run == 'true'
         working-directory: lib/sports-data

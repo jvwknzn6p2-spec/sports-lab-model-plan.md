@@ -88,13 +88,14 @@ Stats API, and commit every slate, lock, result, and report back to this repo.
 | Workflow | When | What it does |
 |---|---|---|
 | `handiedge-predict.yml` | 15:00 UTC (00:00 JST / 11:00 ET) | fetch-slate → predict → lock + `data/reports/<date>.md` |
-| `handiedge-settle.yml` | 05:00 UTC (14:00 JST) + 07:00 UTC (16:00 JST) | fetch-results (yesterday) → settle → self-learning → `data/reports/summary.md` |
+| `handiedge-settle.yml` | 07:00 UTC (16:00 JST) | fetch-results (yesterday) → settle → self-learning → `data/reports/summary.md` |
 
-The settle workflow runs twice because a late West Coast game (22:10 ET first
-pitch) is often still in progress at the 14:00 JST pass. The 16:00 JST pass
-does nothing unless the earlier one left games pending, and re-settling is
-safe by construction — history keeps one report per date and the calibration
-is recomputed from the whole history, so no game is ever learned from twice.
+Settlement runs once, at 16:00 JST, by which point every game is final — the
+latest possible MLB start is 22:10 ET (02:10 UTC), so even a long extra-innings
+game has ended. Re-settling a date is still safe by construction: history keeps
+one report per date and the calibration is recomputed from the whole history, so
+a manual re-run never learns from the same games twice. For a postponed game
+that finishes on a later day, dispatch the workflow with an explicit date.
 
 Read the output on a phone two ways: open the run in the **Actions** tab (the
 picks are printed into the run summary), or open `data/reports/<date>.md` in the
