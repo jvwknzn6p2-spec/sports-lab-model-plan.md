@@ -11,11 +11,8 @@ import type { WeightedLine } from "./handicap-notation";
 
 export interface SimulationResult {
   sims: number;
-  /** Push-excluded: P(home wins | the game is decided). */
   pHomeWin: number;
   pAwayWin: number;
-  /** P(the game ends tied). Always 0 for MLB. */
-  pTie: number;
   meanHomeRuns: number;
   meanAwayRuns: number;
   meanTotal: number;
@@ -39,28 +36,9 @@ export interface SimulationResult {
   totalProb: (line: number) => { over: number; under: number };
 }
 
-/**
- * The only rule difference that matters to the model.
- *
- * MLB plays extra innings until someone wins, so a settled game always has a
- * winner. NPB stops, so a tie is a real outcome — which makes the moneyline a
- * push rather than a loss, and makes a level (0) handicap pushable. Everything
- * downstream — the handicap grid, the settlement, the calibration — is
- * identical between the two leagues; only this changes.
- */
-export type League = "MLB" | "NPB";
-
 export interface SimulateOptions {
   sims?: number;
   seed?: string | number;
-  league?: League;
-  /**
-   * Extra innings played before a tie is allowed to stand. Defaults to
-   * unlimited for MLB and none for NPB. NPB's real limit has moved over the
-   * years (12 innings currently, 10 in 2020-21, none in some seasons), so it
-   * is configurable rather than hardcoded.
-   */
-  maxExtraInnings?: number;
 }
 
 const MAX_EXTRA_INNINGS = 30;
@@ -113,16 +91,14 @@ function playExtras(
   muH: number,
   muA: number,
   rng: Rng,
-  maxExtra: number,
-  forceDecision: boolean,
 ): [number, number] {
-  for (let i = 0; i < maxExtra && h === a; i++) {
+  for (let i = 0; i < MAX_EXTRA_INNINGS && h === a; i++) {
     h += poisson(muH / 9, rng);
     a += poisson(muA / 9, rng);
   }
-  if (h === a && forceDecision) {
-    // MLB cannot end level: break a pathological tie streak with a coin
-    // weighted by run expectation.
+  if (h === a) {
+    // MLB plays on until someone wins: break a pathological tie streak with a
+    // coin weighted by run expectation.
     if (rng() < muH / (muH + muA)) h += 1;
     else a += 1;
   }
@@ -140,32 +116,17 @@ export function simulateGame(
       ? opts.seed
       : seedFromString(String(opts.seed ?? "handiedge"));
   const rng = mulberry32(seed);
-  const league: League = opts.league ?? "MLB";
-  const maxExtra =
-    opts.maxExtraInnings ?? (league === "MLB" ? MAX_EXTRA_INNINGS : 0);
 
   const margins: number[] = new Array(sims);
   const totals: number[] = new Array(sims);
   let homeWins = 0;
-  let ties = 0;
   let sumH = 0;
   let sumA = 0;
 
   for (let i = 0; i < sims; i++) {
     let h = poisson(homeMu, rng);
     let a = poisson(awayMu, rng);
-    if (h === a) {
-      [h, a] = playExtras(
-        h,
-        a,
-        homeMu,
-        awayMu,
-        rng,
-        maxExtra,
-        league === "MLB",
-      );
-    }
-    if (h === a) ties++;
+    if (h === a) [h, a] = playExtras(h, a, homeMu, awayMu, rng);
     if (h > a) homeWins++;
     margins[i] = h - a;
     totals[i] = h + a;
@@ -223,16 +184,10 @@ export function simulateGame(
     };
   };
 
-  // A tie is a push on the moneyline: stake returned, so it belongs in
-  // neither column. Quote the probability over decided games only — the same
-  // convention the handicap and total already use.
-  const decidedGames = sims - ties;
   return {
     sims,
-    pHomeWin: decidedGames === 0 ? 0.5 : homeWins / decidedGames,
-    pAwayWin:
-      decidedGames === 0 ? 0.5 : (decidedGames - homeWins) / decidedGames,
-    pTie: ties / sims,
+    pHomeWin: homeWins / sims,
+    pAwayWin: 1 - homeWins / sims,
     meanHomeRuns: sumH / sims,
     meanAwayRuns: sumA / sims,
     meanTotal: (sumH + sumA) / sims,

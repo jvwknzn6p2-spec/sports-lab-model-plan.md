@@ -5,11 +5,14 @@ name: HandiEdge — daily predictions
 # and committed back to the repo. Read the result on a phone either in the run
 # summary (Actions tab) or in data/reports/<date>.md.
 #
-# 15:00 UTC = 11:00 ET (probable starters confirmed, before first pitch)
-#           = 00:00 JST
+# 13:21 UTC = 22:21 JST — the fixed prediction deadline, on the evening before
+# the games. In MLB's own clock that is 09:21 ET on the slate date, comfortably
+# ahead of the earliest first pitch (about 13:05 ET / 17:05 UTC).
+#
+# The slate date is MLB's game date, which is the UTC date this job runs on.
 on:
   schedule:
-    - cron: "0 15 * * *"
+    - cron: "21 13 * * *"
   workflow_dispatch:
     inputs:
       date:

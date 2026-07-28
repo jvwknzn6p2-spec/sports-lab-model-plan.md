@@ -4,9 +4,11 @@ name: HandiEdge — settle and score
 # the self-learning calibration update, and refreshes the running-results
 # summary. Read it on a phone in the run summary or data/reports/summary.md.
 #
-# 07:00 UTC = 16:00 JST = 03:00 ET. One pass is enough at this hour: the latest
-# possible MLB start is 22:10 ET (02:10 UTC), so even a long extra-innings game
-# is final well before it.
+# 07:00 UTC = 16:00 JST — the fixed results deadline, on the day the games
+# finish. One pass is enough at this hour: the latest possible MLB start is
+# 22:10 ET (02:10 UTC), so even a long extra-innings game is final well before
+# it. The slate being settled is YESTERDAY's UTC date, which is the MLB game
+# date those results belong to.
 #
 # Re-settling the same date is still safe by construction — history keeps one
 # report per date and the calibration is recomputed from the whole history, so

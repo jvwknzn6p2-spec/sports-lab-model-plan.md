@@ -22,9 +22,9 @@ export interface SettledGame {
   away: string;
   pass: boolean;
   predictedWinner: string | null;
-  /** null when the game ended tied (NPB) — nobody won. */
+  /** null when the final score was level — nobody won. */
   actualWinner: string | null;
-  /** null for PASS, and null for an NPB tie (the moneyline pushes). */
+  /** null for PASS, and null for a level score (the moneyline pushes). */
   winnerCorrect: boolean | null;
   statedProbability: number | null;
   brier: number | null;
@@ -180,9 +180,11 @@ export function settle(
       missing++;
       continue;
     }
-    // A tie is a real outcome in NPB (no extra innings), so it must not be
-    // silently recorded as an away win the way `home > away ? home : away`
-    // would. It is a moneyline push: unscored, and invisible to learning.
+    // MLB plays extras, so a level final score should not occur — but a
+    // suspended game, a corrected box score or a feed glitch can still deliver
+    // one, and `home > away ? home : away` would quietly call that an AWAY
+    // WIN: a fabricated result, counted against the record and fed to the
+    // calibrator as evidence the model was wrong. Treat it as the push it is.
     const tied = r.homeScore === r.awayScore;
     const actualWinner = tied
       ? null
