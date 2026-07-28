@@ -25,6 +25,7 @@
  */
 
 import type { GamePrediction } from "../engine/decision";
+import { rankByValue } from "../engine/decision";
 
 /** Fields the tracker reads, in the order its `pickAfter` regex expects. */
 function gameBlock(index: number, p: GamePrediction): string[] {
@@ -53,7 +54,13 @@ export function pickTrackerBlock(
   date: string,
   predictions: GamePrediction[],
 ): string | null {
-  const picks = predictions.filter((p) => !p.pass && p.predictedWinner);
+  // Numbered in recommendation order (best expected value first), so the paste
+  // doubles as the 優先度 list rather than an arbitrary slate order. Shares
+  // rankByValue with the Markdown report: numbering the two independently gave
+  // two different "3." for the same slate.
+  const picks = rankByValue(
+    predictions.filter((p) => !p.pass && p.predictedWinner),
+  );
   if (picks.length === 0) return null;
 
   // Header: the tracker reads `sport` from the first three lines and `date`
