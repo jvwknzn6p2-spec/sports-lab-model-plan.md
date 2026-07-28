@@ -57,7 +57,7 @@ import {
   type FixtureBundle,
 } from "../sources/fixture-source";
 import { expectedRuns } from "../engine/run-model";
-import { simulateGame, type League } from "../engine/simulate";
+import { simulateGame } from "../engine/simulate";
 import {
   decide,
   DEFAULT_CALIBRATION,
@@ -79,9 +79,9 @@ import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
 import { aggregateHistory } from "../engine/report";
 import {
-  isFinalized,
-  lockDeadline,
-  minutesUntilLock,
+  isPredictionLocked,
+  minutesUntilPredictionLock,
+  predictionDeadline,
 } from "../engine/deadline";
 import {
   predictionsToMarkdown,
@@ -107,10 +107,6 @@ interface ControlTower {
   season: number;
   sims?: number;
   passThreshold?: number;
-  /** "MLB" (extra innings, no ties) or "NPB" (a tie is a real outcome). */
-  league?: League;
-  /** Overrides the league default for how many extras are played. */
-  maxExtraInnings?: number;
   handicaps?: Record<string, HandicapInput>;
 }
 
@@ -349,17 +345,23 @@ async function cmdPredict(args: {
     );
   }
 
-  // A pick freezes 9 minutes before ITS OWN first pitch, so a re-run must
-  // carry finalized games through untouched while still refreshing the ones
-  // whose deadline is still ahead. Without this, re-running late in the day
-  // would silently rewrite a pick that was already committed to.
+  // The slate's predictions freeze at 22:21 JST the evening before the games.
+  // Once that has passed, a re-run must carry the committed picks through
+  // untouched rather than silently rewriting what was already decided.
   const now = new Date();
+  const locked = isPredictionLocked(ct.date, now);
+  const deadlineIso = predictionDeadline(ct.date).toISOString();
   const previous = existsSync(lockPath)
     ? await readJson<PredictionLock>(lockPath)
     : null;
   const alreadyFinal = new Map<number, GamePrediction>();
   for (const p of previous?.predictions ?? []) {
     if (p.final) alreadyFinal.set(p.gamePk, p);
+  }
+  if (locked && alreadyFinal.size === 0 && previous) {
+    // Deadline passed and an unfrozen lock exists: freeze what is there rather
+    // than recomputing it, so the committed slate is what gets settled.
+    for (const p of previous.predictions) alreadyFinal.set(p.gamePk, p);
   }
 
   const predictions: GamePrediction[] = [];
@@ -377,34 +379,17 @@ async function cmdPredict(args: {
     const sim = simulateGame(runs.homeMu, runs.awayMu, {
       sims: ct.sims ?? 10_000,
       seed: `${ct.date}:${g.gamePk}`,
-      league: ct.league ?? "MLB",
-      ...(ct.maxExtraInnings !== undefined
-        ? { maxExtraInnings: ct.maxExtraInnings }
-        : {}),
     });
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
     const p = decide(g, runs, sim, calibration, handicap, cfg);
 
-    const lockLeague = ct.league ?? "MLB";
-    const deadline = g.gameDate ? lockDeadline(g.gameDate, lockLeague) : null;
-    if (g.gameDate && deadline) {
-      p.lockDeadline = deadline.toISOString();
-      p.final = isFinalized(g.gameDate, now, lockLeague);
-      if (p.final) {
-        // Predicted after its own cut-off — recorded as such rather than
-        // passed off as a pick that was made in time.
-        p.flags = [...p.flags, "[warn] predicted_after_lock_deadline"];
-        lateCount++;
-      }
-    } else {
-      // Either no start time, or a league with no cut-off rule (MLB today).
-      // Both mean the pick is not auto-frozen; only the missing start time is
-      // a data problem worth flagging.
-      p.lockDeadline = null;
-      p.final = false;
-      if (!g.gameDate) {
-        p.flags = [...p.flags, "[warn] no_start_time_no_lock_deadline"];
-      }
+    p.lockDeadline = deadlineIso;
+    p.final = locked;
+    if (locked) {
+      // Produced after the slate's cut-off — recorded as such rather than
+      // passed off as a pick that was made in time.
+      p.flags = [...p.flags, "[warn] predicted_after_deadline"];
+      lateCount++;
     }
     predictions.push(p);
   }
