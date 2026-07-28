@@ -1,0 +1,68 @@
+/**
+ * Offline CoreDataSource backed by an in-memory fixture bundle.
+ *
+ * Lets the full Step-2 pipeline run without network access (the MLB API is
+ * often blocked by egress policy in CI/sandboxes). The bundle is plain JSON, so
+ * it doubles as recorded test data and as a reproducible demo slate.
+ */
+
+import type { BullpenWorkload } from "../features";
+import type { NormalizedGame } from "../mlb/parse";
+import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
+import type { CoreDataSource, TeamRecentForm } from "../step2";
+
+export interface FixtureBundle {
+  date: string;
+  season: number;
+  /** When the slate was generated (set by fetch-slate; absent on hand-made fixtures). */
+  fetchedAt?: string;
+  games: NormalizedGame[];
+  /** Keyed by stringified pitcherId. */
+  starters: Record<string, RawPitchingLine>;
+  /** Keyed by stringified teamId. */
+  batting: Record<string, RawBattingLine>;
+  /** Keyed by stringified teamId. */
+  bullpens: Record<string, RawPitchingLine>;
+  /** Keyed by stringified teamId (optional). */
+  workloads?: Record<string, BullpenWorkload>;
+  /** Keyed by stringified venueId (optional). */
+  parkFactors?: Record<string, number>;
+  /** Keyed by stringified teamId (optional): last-N-games scoring. */
+  forms?: Record<string, TeamRecentForm>;
+}
+
+export class FixtureCoreDataSource implements CoreDataSource {
+  constructor(private readonly bundle: FixtureBundle) {}
+
+  async getSchedule(date: string): Promise<NormalizedGame[]> {
+    if (date !== this.bundle.date) return [];
+    return this.bundle.games;
+  }
+
+  async getStarterLine(pitcherId: number): Promise<RawPitchingLine | null> {
+    return this.bundle.starters[String(pitcherId)] ?? null;
+  }
+
+  async getTeamBattingLine(teamId: number): Promise<RawBattingLine | null> {
+    return this.bundle.batting[String(teamId)] ?? null;
+  }
+
+  async getBullpenLine(teamId: number): Promise<RawPitchingLine | null> {
+    return this.bundle.bullpens[String(teamId)] ?? null;
+  }
+
+  async getBullpenWorkload(
+    teamId: number,
+  ): Promise<BullpenWorkload | undefined> {
+    return this.bundle.workloads?.[String(teamId)];
+  }
+
+  async getParkFactor(venueId: number | null): Promise<number | undefined> {
+    if (venueId === null) return undefined;
+    return this.bundle.parkFactors?.[String(venueId)];
+  }
+
+  async getRecentForm(teamId: number): Promise<TeamRecentForm | undefined> {
+    return this.bundle.forms?.[String(teamId)];
+  }
+}

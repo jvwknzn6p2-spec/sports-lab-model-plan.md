@@ -1,6 +1,6 @@
-# [Project name]
+# AI Sports Lab
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+_An MLB game-prediction and betting-value decision-support system: for every scheduled game it estimates win probability, run line, and total runs, ranks confidence (S/A/B/C), and flags positive-EV bets. See `sports-lab/model-plan.md` for the full technical plan._
 
 ## Run & Operate
 
@@ -22,11 +22,19 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `sports-lab/model-plan.md` — the technical plan and implementation status (source of truth for scope).
+- `lib/sports-data/` — **Step 2** package: sabermetrics (FIP-family, wOBA), MLB Stats API client, feature builders, orchestrator, persistence mappers. See its `README.md`.
+- `lib/db/src/schema/` — Drizzle DB schema (teams, games, pitcher/team/bullpen stats with FIP columns).
+- `lib/api-spec/openapi.yaml` — OpenAPI contract; `lib/api-zod` and `lib/api-client-react` are generated from it (Orval).
+- `artifacts/api-server/` — Express API server; `artifacts/mockup-sandbox/` — React frontend.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **FIP over ERA.** Pitching is ranked/projected by FIP/xFIP/FIP- (defense-independent), not ERA. Offense by wOBA/wRC+, not AVG/raw runs. ERA/AVG are kept only as reference fields.
+- **Fail loud, never fabricate.** Missing inputs downgrade a single game (flag + `complete:false`); no source is ever silently filled with a fake number.
+- **Transport-agnostic ingestion.** The orchestrator depends on a `CoreDataSource` interface, so identical code runs against the live MLB API, cached pulls, or offline fixtures (the MLB host is often egress-blocked in CI).
+- **Auditable stats.** Every derived metric records the season whose league constants were applied; every pull is timestamped for reproducible backtesting.
+- **Sample-size honesty.** Rates are regressed to league means by innings/PA, and each feature carries a 0–1 reliability weight.
 
 ## Product
 

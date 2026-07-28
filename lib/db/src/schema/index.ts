@@ -17,4 +17,10 @@
 //   export type InsertPost = z.infer<typeof insertPostSchema>;
 //   export type Post = typeof postsTable.$inferSelect;
 
-export {}
+// Step 2 — core game data (starting pitchers, team batting, bullpen).
+export * from "./teams";
+export * from "./pitchers";
+export * from "./games";
+export * from "./pitcherSeasonStats";
+export * from "./teamBattingStats";
+export * from "./bullpenStats";

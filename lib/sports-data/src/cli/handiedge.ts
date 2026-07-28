@@ -1,0 +1,683 @@
+/**
+ * HandiEdge — the daily-use MVP CLI.
+ *
+ *   fetch-slate [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force]
+ *               [--skip-workloads]
+ *     Pull today's schedule + starter/batting/bullpen season stats from the
+ *     live MLB Stats API and write data/slates/<date>.json, plus a
+ *     control-tower skeleton (data/control-towers/<date>.json) to fill in
+ *     handicap lines. Also scans the last 3 days of boxscores to auto-fill
+ *     bullpen workloads (fatigue inputs) unless --skip-workloads is passed.
+ *     Requires network access to statsapi.mlb.com.
+ *
+ *   predict --control <control-tower.json> [--slate <slate.json>] [--force]
+ *     Control Tower → run model → Monte Carlo → decision engine → calibration
+ *     → prediction LOCK (data/predictions/<date>.json) + console report.
+ *
+ *   fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]
+ *     Pull final scores from the live MLB Stats API (linescore hydrate) and
+ *     write data/results/<date>.json. Only Final games are included; live or
+ *     postponed games are listed as pending — rerun later with --force.
+ *     With --settle, settlement runs immediately after the fetch.
+ *
+ *   settle --results <results.json>
+ *     Settlement → error analysis → self-learning (updates data/calibration.json,
+ *     appends data/history.jsonl) + console report.
+ *
+ *   report
+ *     Cumulative accuracy from data/history.jsonl: per-date lines, winner/
+ *     handicap/total records, pooled Brier, stated-vs-actual calibration, and
+ *     the current self-learning state. Re-settled dates count once (last wins).
+ *
+ * Control Tower JSON (the single input that controls a run):
+ *   {
+ *     "date": "2024-07-25", "season": 2024,
+ *     "sims": 10000,                          // optional
+ *     "passThreshold": 0.55,                  // optional
+ *     "handicaps": { "<gamePk>": { "side": "home", "line": -1.5, "total": 8.5 } }
+ *   }
+ *
+ * Results JSON:
+ *   { "date": "2024-07-25", "results": { "<gamePk>": { "homeScore": 5, "awayScore": 3 } } }
+ *
+ * Predictions are LOCKED: re-running the same date refuses to overwrite the
+ * existing lock unless --force is passed, and the seeded simulator makes the
+ * numbers reproducible bit-for-bit.
+ */
+
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
+
+import { assembleDate } from "../step2";
+import {
+  FixtureCoreDataSource,
+  type FixtureBundle,
+} from "../sources/fixture-source";
+import { expectedRuns } from "../engine/run-model";
+import { simulateGame } from "../engine/simulate";
+import {
+  decide,
+  DEFAULT_CALIBRATION,
+  DEFAULT_DECISION_CONFIG,
+  normalizeCalibration,
+  type CalibrationState,
+  type GamePrediction,
+  type HandicapInput,
+} from "../engine/decision";
+import {
+  settle,
+  recalibrateFromHistory,
+  type GameResult,
+} from "../engine/settle";
+import { MlbStatsClient } from "../mlb/client";
+import { buildSlate } from "../sources/slate-builder";
+import { buildResults } from "../sources/results-builder";
+import { buildWorkloads } from "../sources/workload-builder";
+import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
+import { aggregateHistory } from "../engine/report";
+import {
+  predictionsToMarkdown,
+  settlementToMarkdown,
+  summaryToMarkdown,
+} from "./markdown";
+import type { SettlementReport } from "../engine/settle";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const PKG_ROOT = resolve(here, "..", "..");
+const DATA_DIR = join(PKG_ROOT, "data");
+const PRED_DIR = join(DATA_DIR, "predictions");
+const SLATE_DIR = join(DATA_DIR, "slates");
+const CT_DIR = join(DATA_DIR, "control-towers");
+const RESULTS_DIR = join(DATA_DIR, "results");
+const CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
+const HISTORY_PATH = join(DATA_DIR, "history.jsonl");
+const REPORTS_DIR = join(DATA_DIR, "reports");
+const DEFAULT_SLATE = join(PKG_ROOT, "fixtures", "2024-slate.json");
+
+interface ControlTower {
+  date: string;
+  season: number;
+  sims?: number;
+  passThreshold?: number;
+  handicaps?: Record<string, HandicapInput>;
+}
+
+interface PredictionLock {
+  lockedAt: string;
+  controlTower: ControlTower;
+  calibration: CalibrationState;
+  predictions: GamePrediction[];
+}
+
+async function readJson<T>(path: string): Promise<T> {
+  return JSON.parse(await readFile(path, "utf8")) as T;
+}
+
+async function loadCalibration(): Promise<CalibrationState> {
+  if (!existsSync(CALIBRATION_PATH)) return { ...DEFAULT_CALIBRATION };
+  return normalizeCalibration(
+    await readJson<Partial<CalibrationState>>(CALIBRATION_PATH),
+  );
+}
+
+async function loadHistory(): Promise<SettlementReport[]> {
+  if (!existsSync(HISTORY_PATH)) return [];
+  const raw = await readFile(HISTORY_PATH, "utf8");
+  return raw
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .map((line) => JSON.parse(line) as SettlementReport);
+}
+
+/** Rewrite history with one report per date (a re-settle REPLACES the old one). */
+async function saveHistory(reports: SettlementReport[]): Promise<void> {
+  await mkdir(DATA_DIR, { recursive: true });
+  const body = reports.map((r) => JSON.stringify(r)).join("\n") + "\n";
+  await writeFile(HISTORY_PATH, body, "utf8");
+}
+
+async function saveJson(path: string, value: unknown): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(value, null, 2), "utf8");
+}
+
+/** Write a phone-readable Markdown file (the deliverable for unattended runs). */
+async function saveMarkdown(path: string, body: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, body, "utf8");
+}
+
+const pct = (p: number) => `${(p * 100).toFixed(1)}%`;
+
+function printPrediction(p: GamePrediction): void {
+  console.log("");
+  console.log(
+    `${p.away} @ ${p.home}   [${p.pass ? "PASS" : `PICK · confidence ${p.confidence}`}]`,
+  );
+  if (!p.pass) {
+    console.log(
+      `  Winner:   ${p.predictedWinner}  (${pct(p.winProbability)}; loser: ${p.predictedLoser})`,
+    );
+    if (p.handicap.pick) {
+      console.log(
+        `  Handicap: ${p.handicap.pick}  (${pct(p.handicap.coverProbability!)})`,
+      );
+    }
+    if (p.total.pick) {
+      console.log(
+        `  Total:    ${p.total.pick} ${p.total.line}  (${pct(p.total.probability!)}; model ${p.total.predicted})`,
+      );
+    }
+  } else {
+    console.log(
+      `  Model lean: ${pct(p.winProbability)} — below threshold or data issue → no bet`,
+    );
+  }
+  console.log(
+    `  Expected runs: ${p.home} ${p.expectedRuns.home} — ${p.away} ${p.expectedRuns.away}`,
+  );
+  console.log(`  Reasons:`);
+  for (const r of p.reasons.slice(0, 6)) console.log(`    - ${r}`);
+  if (p.flags.length) console.log(`  Flags: ${p.flags.join(", ")}`);
+}
+
+async function cmdFetchSlate(args: {
+  date?: string;
+  season?: string;
+  out?: string;
+  force?: boolean;
+  "skip-workloads"?: boolean;
+  "skip-form"?: boolean;
+}): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  const season = args.season ? Number(args.season) : Number(date.slice(0, 4));
+  const outPath = resolve(args.out ?? join(SLATE_DIR, `${date}.json`));
+  if (existsSync(outPath) && !args.force) {
+    throw new Error(
+      `Slate already exists for ${date} (${outPath}). Use --force to refetch.`,
+    );
+  }
+
+  console.log(`Fetching MLB slate for ${date} (season ${season})…`);
+  const client = new MlbStatsClient();
+  let report;
+  try {
+    report = await buildSlate({ date, season, client });
+  } catch (err) {
+    throw new Error(
+      `${err instanceof Error ? err.message : String(err)}\n` +
+        `  Could not reach the MLB Stats API (statsapi.mlb.com). If this ` +
+        `environment blocks outbound traffic, run fetch-slate from a machine ` +
+        `with network access, or pass predict an existing slate via --slate.`,
+    );
+  }
+  const bundle = { ...report.bundle, fetchedAt: new Date().toISOString() };
+
+  // Bullpen workloads: relief IP over the last 3 days, from game boxscores.
+  // Fail-soft — a gap just means "no fatigue penalty for that team".
+  let workloadSummary: string[] = [];
+  if (!args["skip-workloads"]) {
+    console.log("Scanning last 3 days of boxscores for bullpen usage…");
+    const wl = await buildWorkloads({ date, client });
+    bundle.workloads = wl.workloads;
+    workloadSummary = [
+      `  Bullpen usage: ${wl.gamesScanned} boxscore(s) over ${wl.daysScanned.join(", ")}; ` +
+        `${Object.keys(wl.workloads).length} team(s) with relief IP tracked.`,
+      ...wl.warnings.map((w) => `    - workload: ${w}`),
+      `  (unavailableKeyArms stays manual — edit the slate JSON when an arm is down.)`,
+    ];
+  } else {
+    workloadSummary = ["  Bullpen usage scan skipped (--skip-workloads)."];
+  }
+
+  // Recent form: last-15-games scoring per slate team (fail-soft).
+  if (!args["skip-form"]) {
+    console.log("Scanning recent schedules for team form (last 15 games)…");
+    const teamIds = bundle.games
+      .flatMap((g) => [g.home.teamId, g.away.teamId])
+      .filter((id): id is number => id !== null);
+    const fm = await buildForms({ date, client, teamIds });
+    bundle.forms = fm.forms;
+    workloadSummary.push(
+      `  Recent form: ${Object.keys(fm.forms).length} team(s) over ` +
+        `${fm.daysScanned} day(s) / ${fm.gamesScanned} game(s) (target ${FORM_GAMES_TARGET} finals each).`,
+      ...fm.warnings.map((w) => `    - form: ${w}`),
+    );
+  } else {
+    workloadSummary.push("  Recent-form scan skipped (--skip-form).");
+  }
+
+  await saveJson(outPath, bundle);
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — slate for ${date}`);
+  console.log("=".repeat(72));
+  for (const g of bundle.games) {
+    const sp = (id: number | null) =>
+      id !== null && bundle.starters[String(id)] ? "✓" : "✗";
+    console.log(
+      `  ${g.gamePk}  ${g.away.teamName ?? "?"} @ ${g.home.teamName ?? "?"}` +
+        `  (SP ${g.away.probablePitcherName ?? "TBD"} ${sp(g.away.probablePitcherId)}` +
+        ` vs ${g.home.probablePitcherName ?? "TBD"} ${sp(g.home.probablePitcherId)})`,
+    );
+  }
+  console.log(
+    `  Starters ${report.startersFetched}/${report.startersExpected}, ` +
+      `teams ${report.teamsFetched}/${report.teamsExpected} (batting+bullpen).`,
+  );
+  if (report.warnings.length) {
+    console.log("  Warnings:");
+    for (const w of report.warnings) console.log(`    - ${w}`);
+  }
+  for (const line of workloadSummary) console.log(line);
+  console.log(`  Slate written → ${outPath}`);
+
+  // Control-tower skeleton: create once, never overwrite the user's edits.
+  const ctPath = join(CT_DIR, `${date}.json`);
+  if (!existsSync(ctPath)) {
+    const handicaps: Record<string, HandicapInput> = {};
+    for (const g of bundle.games) {
+      handicaps[String(g.gamePk)] = { side: "home", line: -1.5 };
+    }
+    await saveJson(ctPath, {
+      date,
+      season,
+      sims: 10_000,
+      passThreshold: 0.55,
+      handicaps,
+    });
+    console.log(
+      `  Control-tower skeleton → ${ctPath}  (edit lines/totals, then run predict)`,
+    );
+  } else {
+    console.log(`  Control tower exists → ${ctPath}  (kept your edits)`);
+  }
+  console.log("");
+  console.log(`Next: pnpm run handiedge predict --control ${ctPath}`);
+}
+
+async function cmdPredict(args: {
+  control?: string;
+  slate?: string;
+  force?: boolean;
+}): Promise<void> {
+  if (!args.control)
+    throw new Error("predict requires --control <control-tower.json>");
+  const ct = await readJson<ControlTower>(resolve(args.control));
+  const lockPath = join(PRED_DIR, `${ct.date}.json`);
+  if (existsSync(lockPath) && !args.force) {
+    throw new Error(
+      `Prediction lock already exists for ${ct.date} (${lockPath}). Use --force to re-lock.`,
+    );
+  }
+
+  // Slate resolution: explicit --slate > today's fetched slate > demo fixture.
+  const fetchedSlate = join(SLATE_DIR, `${ct.date}.json`);
+  const slatePath = resolve(
+    args.slate ?? (existsSync(fetchedSlate) ? fetchedSlate : DEFAULT_SLATE),
+  );
+  const bundle = await readJson<FixtureBundle>(slatePath);
+  const source = new FixtureCoreDataSource(bundle);
+  const calibration = await loadCalibration();
+
+  const cfg = {
+    ...DEFAULT_DECISION_CONFIG,
+    ...(ct.passThreshold !== undefined
+      ? { passThreshold: ct.passThreshold }
+      : {}),
+  };
+
+  const games = await assembleDate(ct.date, source, { season: ct.season });
+  if (games.length === 0) {
+    throw new Error(
+      `No games for ${ct.date} in slate ${slatePath} — check the date fields match.`,
+    );
+  }
+
+  const predictions: GamePrediction[] = [];
+  for (const g of games) {
+    const runs = expectedRuns(g, ct.season);
+    const sim = simulateGame(runs.homeMu, runs.awayMu, {
+      sims: ct.sims ?? 10_000,
+      seed: `${ct.date}:${g.gamePk}`,
+    });
+    const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
+    predictions.push(decide(g, runs, sim, calibration, handicap, cfg));
+  }
+
+  const lock: PredictionLock = {
+    lockedAt: new Date().toISOString(),
+    controlTower: ct,
+    calibration,
+    predictions,
+  };
+  await saveJson(lockPath, lock);
+  const mdPath = join(REPORTS_DIR, `${ct.date}.md`);
+  await saveMarkdown(
+    mdPath,
+    predictionsToMarkdown(ct.date, predictions, calibration),
+  );
+
+  console.log("=".repeat(72));
+  console.log(
+    `HandiEdge — predictions for ${ct.date}  (calibration shrink ${calibration.shrink})`,
+  );
+  console.log("=".repeat(72));
+  for (const p of predictions) printPrediction(p);
+  const picks = predictions.filter((p) => !p.pass);
+  console.log("");
+  console.log("-".repeat(72));
+  console.log(
+    `${predictions.length} game(s): ${picks.length} pick(s), ${predictions.length - picks.length} PASS. ` +
+      `LOCKED → ${lockPath}`,
+  );
+  console.log(`Readable report → ${mdPath}`);
+}
+
+async function cmdFetchResults(args: {
+  date?: string;
+  out?: string;
+  force?: boolean;
+  settle?: boolean;
+}): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  const outPath = resolve(args.out ?? join(RESULTS_DIR, `${date}.json`));
+  if (existsSync(outPath) && !args.force) {
+    throw new Error(
+      `Results already exist for ${date} (${outPath}). Use --force to refetch.`,
+    );
+  }
+
+  console.log(`Fetching MLB final scores for ${date}…`);
+  const client = new MlbStatsClient();
+  let report;
+  try {
+    report = await buildResults({ date, client });
+  } catch (err) {
+    throw new Error(
+      `${err instanceof Error ? err.message : String(err)}\n` +
+        `  Could not reach the MLB Stats API (statsapi.mlb.com). If this ` +
+        `environment blocks outbound traffic, run fetch-results from a ` +
+        `machine with network access, or write the results JSON by hand ` +
+        `and run settle --results.`,
+    );
+  }
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — results for ${date}`);
+  console.log("=".repeat(72));
+  for (const [gamePk, r] of Object.entries(report.results)) {
+    console.log(
+      `  ${gamePk}: home ${r.homeScore} — away ${r.awayScore}  (Final)`,
+    );
+  }
+  for (const p of report.pending) {
+    console.log(`  ${p.gamePk}: ${p.matchup} — PENDING (${p.reason})`);
+  }
+  if (report.finals === 0) {
+    throw new Error(
+      `No final games for ${date} yet (${report.pending.length} pending). ` +
+        `Nothing written — rerun after the games finish.`,
+    );
+  }
+
+  const payload = {
+    date,
+    fetchedAt: new Date().toISOString(),
+    results: report.results,
+    pending: report.pending,
+  };
+  await saveJson(outPath, payload);
+  console.log(`  Results written → ${outPath}`);
+  if (report.pending.length > 0) {
+    console.log(
+      `  NOTE: ${report.pending.length} game(s) not final — rerun with --force later to include them.`,
+    );
+  }
+
+  if (args.settle) {
+    console.log("");
+    await runSettle(payload);
+  } else {
+    console.log("");
+    console.log(`Next: pnpm run handiedge settle --results ${outPath}`);
+  }
+}
+
+async function cmdSettle(args: { results?: string }): Promise<void> {
+  if (!args.results)
+    throw new Error("settle requires --results <results.json>");
+  const payload = await readJson<{
+    date: string;
+    results: Record<string, GameResult>;
+  }>(resolve(args.results));
+  await runSettle(payload);
+}
+
+async function runSettle(payload: {
+  date: string;
+  results: Record<string, GameResult>;
+}): Promise<void> {
+  const lockPath = join(PRED_DIR, `${payload.date}.json`);
+  if (!existsSync(lockPath)) {
+    throw new Error(
+      `No prediction lock for ${payload.date} (${lockPath}). Run predict first.`,
+    );
+  }
+  const lock = await readJson<PredictionLock>(lockPath);
+  const calibration = await loadCalibration();
+
+  const now = new Date();
+  const scored = settle(
+    payload.date,
+    lock.predictions,
+    payload.results,
+    calibration,
+    now,
+  );
+
+  // A slate is settled more than once (early pass, then west-coast
+  // stragglers). Replace this date's report rather than appending a second
+  // one, then relearn from the whole history so the same games are never
+  // learned from twice and a corrected re-settle actually corrects the state.
+  const history = await loadHistory();
+  const merged = [
+    ...history.filter((r) => r.date !== scored.date),
+    scored,
+  ].sort((a, b) => a.date.localeCompare(b.date));
+  const relearned = recalibrateFromHistory(merged, DEFAULT_CALIBRATION, now);
+
+  const report = {
+    ...scored,
+    calibrationBefore: calibration,
+    calibrationAfter: relearned,
+  };
+  await saveHistory(merged.map((r) => (r.date === report.date ? report : r)));
+  await saveJson(CALIBRATION_PATH, relearned);
+  await saveMarkdown(
+    join(REPORTS_DIR, `${report.date}-settled.md`),
+    settlementToMarkdown(report),
+  );
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — settlement for ${report.date}`);
+  console.log("=".repeat(72));
+  for (const g of report.games) {
+    const mark = g.pass ? "PASS" : g.winnerCorrect ? "WIN ✓" : "LOSS ✗";
+    console.log(
+      `  ${g.away} @ ${g.home}: ${mark}` +
+        (g.pass
+          ? ""
+          : `  (picked ${g.predictedWinner} ${pct(g.statedProbability!)}, actual ${g.actualWinner})`) +
+        (g.handicapCorrect === null
+          ? ""
+          : `  | handicap ${g.handicapCorrect ? "✓" : "✗"} (${g.handicapPick})`) +
+        (g.totalCorrect === null
+          ? ""
+          : `  | total ${g.totalCorrect ? "✓" : "✗"} (${g.totalPick})`),
+    );
+  }
+  console.log("");
+  console.log(
+    `  Winner record:   ${report.winnerRecord.wins}-${report.winnerRecord.losses}`,
+  );
+  console.log(
+    `  Handicap record: ${report.handicapRecord.wins}-${report.handicapRecord.losses}`,
+  );
+  console.log(
+    `  Total record:    ${report.totalRecord.wins}-${report.totalRecord.losses}`,
+  );
+  if (report.meanBrier !== null)
+    console.log(`  Mean Brier:      ${report.meanBrier}`);
+  if (report.statedVsActual) {
+    console.log(
+      `  Calibration:     stated ${pct(report.statedVsActual.statedMean)} vs actual ${pct(report.statedVsActual.actualRate)}`,
+    );
+  }
+  if (report.meanMarginError !== null)
+    console.log(`  Mean margin err: ${report.meanMarginError} runs`);
+  if (report.meanTotalError !== null)
+    console.log(`  Mean total err:  ${report.meanTotalError} runs`);
+  console.log(
+    `  Self-learning:   shrink ${report.calibrationBefore.shrink} → ${report.calibrationAfter.shrink} ` +
+      `(${report.calibrationAfter.gamesSettled} games settled lifetime)`,
+  );
+  console.log(`  History appended → ${HISTORY_PATH}`);
+}
+
+async function cmdReport(): Promise<void> {
+  if (!existsSync(HISTORY_PATH)) {
+    console.log(
+      "No history yet (data/history.jsonl missing). Run settle or " +
+        "fetch-results --settle after games finish, then try again.",
+    );
+    return;
+  }
+  const s = aggregateHistory(await loadHistory());
+  const calibration = await loadCalibration();
+  const summaryPath = join(REPORTS_DIR, "summary.md");
+  await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration));
+
+  console.log("=".repeat(72));
+  console.log(
+    `HandiEdge — cumulative results (${s.dates} settled date(s), ` +
+      `${s.gamesSettled} pick(s), ${s.gamesPassed} PASS)`,
+  );
+  console.log("=".repeat(72));
+  for (const d of s.perDate) {
+    console.log(
+      `  ${d.date}: ${d.winnerRecord.wins}-${d.winnerRecord.losses}` +
+        ` (${d.settled} pick(s), ${d.passed} PASS` +
+        (d.meanBrier === null ? ")" : `, Brier ${d.meanBrier})`),
+    );
+  }
+  console.log("");
+  console.log(
+    `  Winner:   ${s.winnerRecord.wins}-${s.winnerRecord.losses}` +
+      (s.winnerRate === null ? "" : `  (${(s.winnerRate * 100).toFixed(1)}%)`),
+  );
+  console.log(
+    `  Handicap: ${s.handicapRecord.wins}-${s.handicapRecord.losses}`,
+  );
+  console.log(`  Total:    ${s.totalRecord.wins}-${s.totalRecord.losses}`);
+  if (s.meanBrier !== null) {
+    console.log(
+      `  Mean Brier: ${s.meanBrier}  (0.25 = coin flip; lower is better)`,
+    );
+  }
+  if (s.statedMean !== null && s.actualRate !== null) {
+    const gap = s.actualRate - s.statedMean;
+    console.log(
+      `  Calibration: stated ${(s.statedMean * 100).toFixed(1)}% vs actual ` +
+        `${(s.actualRate * 100).toFixed(1)}%  ` +
+        `(${gap >= 0 ? "underconfident" : "overconfident"} by ${Math.abs(gap * 100).toFixed(1)}pt)`,
+    );
+  }
+  if (s.meanMarginError !== null) {
+    console.log(`  Mean margin error: ${s.meanMarginError} runs`);
+  }
+  if (s.meanTotalError !== null) {
+    console.log(`  Mean total error:  ${s.meanTotalError} runs`);
+  }
+  if (s.handicapCalibration) {
+    const h = s.handicapCalibration;
+    console.log(
+      `  Handicap calibration: stated ${(h.statedMean * 100).toFixed(1)}% vs actual ` +
+        `${(h.actualRate * 100).toFixed(1)}%  (${h.n} bets)`,
+    );
+  }
+  if (s.totalCalibration) {
+    const t = s.totalCalibration;
+    console.log(
+      `  Total calibration:    stated ${(t.statedMean * 100).toFixed(1)}% vs actual ` +
+        `${(t.actualRate * 100).toFixed(1)}%  (${t.n} bets)`,
+    );
+  }
+  console.log(
+    `  Learned shrink: moneyline ${calibration.shrink}, handicap ` +
+      `${calibration.handicapShrink}, total ${calibration.totalShrink} ` +
+      `(${calibration.gamesSettled} games settled lifetime)`,
+  );
+  if (s.gamesSettled < 30) {
+    console.log(
+      `  NOTE: ${s.gamesSettled} settled pick(s) is a small sample — judge ` +
+        `trends, not single days; ~50+ picks before tuning anything.`,
+    );
+  }
+  console.log(`  Readable summary → ${summaryPath}`);
+}
+
+async function main(): Promise<void> {
+  const { positionals, values } = parseArgs({
+    allowPositionals: true,
+    options: {
+      control: { type: "string" },
+      slate: { type: "string" },
+      results: { type: "string" },
+      date: { type: "string" },
+      season: { type: "string" },
+      out: { type: "string" },
+      force: { type: "boolean", default: false },
+      settle: { type: "boolean", default: false },
+      "skip-workloads": { type: "boolean", default: false },
+      "skip-form": { type: "boolean", default: false },
+    },
+  });
+  const cmd = positionals[0];
+  if (cmd === "fetch-slate") await cmdFetchSlate(values);
+  else if (cmd === "fetch-results") await cmdFetchResults(values);
+  else if (cmd === "predict") await cmdPredict(values);
+  else if (cmd === "settle") await cmdSettle(values);
+  else if (cmd === "report") await cmdReport();
+  else {
+    console.log("Usage:");
+    console.log(
+      "  handiedge fetch-slate   [--date YYYY-MM-DD] [--season YYYY] [--out <slate.json>] [--force] [--skip-workloads] [--skip-form]",
+    );
+    console.log(
+      "  handiedge predict       --control <control-tower.json> [--slate <slate.json>] [--force]",
+    );
+    console.log(
+      "  handiedge fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]",
+    );
+    console.log("  handiedge settle        --results <results.json>");
+    console.log("  handiedge report");
+    process.exitCode = cmd ? 1 : 0;
+  }
+}
+
+main().catch((err) => {
+  console.error(
+    `handiedge failed: ${err instanceof Error ? err.message : String(err)}`,
+  );
+  process.exitCode = 1;
+});

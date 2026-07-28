@@ -208,3 +208,47 @@ A suggested build order, from foundation to full pipeline. Each step is small en
 11. **Automate the daily workflow.** Schedule the full pipeline to run each morning with an optional pre-game refresh.
 
 **Guiding principle:** ship the smallest working slice first (schedule → one prediction), then layer accuracy and polish on top. Keep every component simple and explainable before making it fancy.
+
+---
+
+## 9. Implementation Status
+
+### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
+
+Built as the `@workspace/sports-data` package (`lib/sports-data`).
+
+**Metric policy: FIP over ERA.** Pitching (starters and bullpens) is ranked and
+projected by **FIP / xFIP / FIP-**, not ERA. ERA involves team defense,
+sequencing luck, and inherited runners the pitcher does not control and is a
+poor predictor of future run prevention; FIP isolates the three true outcomes a
+pitcher owns (K, BB/HBP, HR), and xFIP normalizes home runs to a league
+fly-ball rate for small-sample stability. ERA is retained only as a labeled
+reference. Offense is measured by **wOBA / wRC+**, not batting average or raw
+runs. This upgrades the Section 3 table (which listed ERA/WHIP) accordingly.
+
+What shipped:
+
+- **Sabermetrics core** (`src/sabermetrics/`): FIP, xFIP, FIP-, kwERA, per-9
+  rates, K%/BB%/K-BB%, WHIP, LOB%, BABIP (pitching); wOBA, wRC, wRC+,
+  OBP/SLG/ISO (batting). Season-keyed FanGraphs "Guts!" constants and correct
+  base-3 innings-pitched handling ("180.1" = 180⅓, not 180.1).
+- **MLB Stats API client** (`src/mlb/`): timeouts, bounded exponential-backoff
+  retries, fail-loud errors, a timestamped daily cache, and an injectable
+  transport so the pipeline runs offline against recorded fixtures.
+- **Feature builders** (`src/features/`): starter and bullpen run-prevention
+  from FIP (regressed to league mean by innings, park- and fatigue-adjusted) and
+  team offense from wOBA (regressed by PA), each carrying a reliability weight
+  and data-quality flags.
+- **Orchestrator** (`src/step2.ts`): assembles per-game core data for a whole
+  slate; a missing starter/team downgrades that one game (flag + `complete:
+  false`) rather than fabricating a number.
+- **Storage** (`lib/db` schema + `src/persist/`): Drizzle tables for teams,
+  games, pitcher-season stats, team batting, and bullpen stats — all with FIP
+  columns — and pure mappers from features to insert rows.
+- **Verification**: 26 passing unit/integration tests and an offline CLI report
+  (`pnpm --filter @workspace/sports-data run step2:report`).
+
+> Environment note: `statsapi.mlb.com` was blocked by egress policy during
+> development, so live pulls were validated against fixtures through the same
+> client + parser code path. Point `MlbCoreDataSource` at the live API when the
+> host is reachable.

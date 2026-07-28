@@ -47,3 +47,8 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# HandiEdge state (predictions, results, calibration, history, reports) is
+# COMMITTED on purpose: the scheduled GitHub Actions run is the runtime, so the
+# repo is where the daily output lives and where prediction history persists.
+# Keeping the slates too preserves exactly what the model saw, for backtesting.
