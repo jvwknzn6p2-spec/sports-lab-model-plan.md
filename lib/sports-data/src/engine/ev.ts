@@ -21,22 +21,10 @@
  * treating it as a win overstates the edge.
  */
 
-import type { AsianCover } from "./simulate";
-import { WIN_COMMISSION } from "./handicap-notation";
+import { expectedProfit, WIN_COMMISSION } from "./handicap-notation";
 
 /**
- * Profit per unit staked. Positive means the bet makes money at this price
- * over the long run; zero is break-even; negative is a losing bet.
- */
-export function expectedValue(
-  cover: Pick<AsianCover, "win" | "push" | "loss">,
-  commission = WIN_COMMISSION,
-): number {
-  return cover.win * (1 - commission) - cover.loss;
-}
-
-/**
- * The same figure, rebuilt from a CALIBRATED cover probability.
+ * Profit per unit staked, rebuilt from a CALIBRATED cover probability.
  *
  * `decide` shrinks the raw simulation probability toward 50% by what the
  * settled record has taught it, so the EV that reaches the user has to be
@@ -54,9 +42,14 @@ export function expectedValueFromProbability(
   commission = WIN_COMMISSION,
 ): number {
   const atRisk = 1 - pushShare;
-  const win = atRisk * probability;
-  const loss = atRisk * (1 - probability);
-  return win * (1 - commission) - loss;
+  return expectedProfit(
+    {
+      win: atRisk * probability,
+      push: pushShare,
+      loss: atRisk * (1 - probability),
+    },
+    commission,
+  );
 }
 
 /**
@@ -65,25 +58,4 @@ export function expectedValueFromProbability(
  */
 export function breakEvenProbability(commission = WIN_COMMISSION): number {
   return 1 / (2 - commission);
-}
-
-/** How far the model's probability sits above break-even, in points. */
-export function edgeOverBreakEven(
-  probability: number,
-  commission = WIN_COMMISSION,
-): number {
-  return probability - breakEvenProbability(commission);
-}
-
-/**
- * Order picks by expected value, best first — the recommendation order.
- *
- * Sorting by win probability instead would promote a near-certain bet that
- * pays almost nothing over a genuinely profitable one, which is the mistake
- * this ordering exists to prevent.
- */
-export function byExpectedValue<T extends { ev: number | null }>(
-  items: readonly T[],
-): T[] {
-  return [...items].sort((a, b) => (b.ev ?? -Infinity) - (a.ev ?? -Infinity));
 }

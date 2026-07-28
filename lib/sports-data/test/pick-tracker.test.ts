@@ -88,6 +88,8 @@ function prediction(over: Partial<GamePrediction> = {}): GamePrediction {
       input: { side: "home", line: -1.5 },
       pick: "Cleveland Guardians -1.5",
       coverProbability: 0.55,
+      ev: null,
+      noValue: false,
     },
     total: { line: 8.5, predicted: 7.9, pick: "UNDER", probability: 0.58 },
     expectedRuns: { home: 4.6, away: 4.1 },
@@ -119,14 +121,17 @@ test("generated block survives the consumer's parser", () => {
   const parsed = splitBlocks(text).map(parseBlock).filter(Boolean);
   assert.equal(parsed.length, 2, "both games parse");
 
-  assert.equal(parsed[0]!.match, "Detroit Tigers vs Cleveland Guardians");
-  assert.equal(parsed[0]!.pick, "Cleveland Guardians");
-  assert.equal(parsed[0]!.handicap, "Cleveland Guardians -1.5");
-  assert.ok(Math.abs(parsed[0]!.winProb - 61.2) < 0.001);
+  // Neither game has a quoted line here, so rankByValue falls through EV to
+  // confidence and then win probability: the 66.4% game leads the 61.2% one.
+  assert.equal(parsed[0]!.match, "Philadelphia Phillies vs Atlanta Braves");
+  assert.equal(parsed[1]!.match, "Detroit Tigers vs Cleveland Guardians");
+  assert.equal(parsed[1]!.pick, "Cleveland Guardians");
+  assert.equal(parsed[1]!.handicap, "Cleveland Guardians -1.5");
+  assert.ok(Math.abs(parsed[1]!.winProb - 61.2) < 0.001);
 
   // The rank the consumer derives must agree with the engine's own band.
-  assert.equal(fineRankFromProb(parsed[0]!.winProb)[0], "A");
-  assert.equal(fineRankFromProb(parsed[1]!.winProb)[0], "S");
+  assert.equal(fineRankFromProb(parsed[1]!.winProb)[0], "A");
+  assert.equal(fineRankFromProb(parsed[0]!.winProb)[0], "S");
 });
 
 test("PASS games are excluded so they cannot dilute the hit rate", () => {

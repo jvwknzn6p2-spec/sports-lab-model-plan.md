@@ -34,6 +34,8 @@
  *     "date": "2024-07-25", "season": 2024,
  *     "sims": 10000,                          // optional
  *     "passThreshold": 0.55,                  // optional
+ *     "minEv": 0,                             // optional: profit per unit a
+ *                                             // handicap must clear to be bet
  *     "handicaps": { "<gamePk>": { "side": "home", "line": -1.5, "total": 8.5 } }
  *   }
  *
@@ -62,6 +64,7 @@ import {
   decide,
   DEFAULT_CALIBRATION,
   DEFAULT_DECISION_CONFIG,
+  fmtPct,
   normalizeCalibration,
   type CalibrationState,
   type GamePrediction,
@@ -107,6 +110,7 @@ interface ControlTower {
   season: number;
   sims?: number;
   passThreshold?: number;
+  minEv?: number;
   handicaps?: Record<string, HandicapInput>;
 }
 
@@ -167,12 +171,14 @@ function printPrediction(p: GamePrediction): void {
       `  Winner:   ${p.predictedWinner}  (${pct(p.winProbability)}; loser: ${p.predictedLoser})`,
     );
     if (p.handicap.pick) {
-      const ev = p.handicap.ev;
       console.log(
         `  Handicap: ${p.handicap.pick}  (${pct(p.handicap.coverProbability!)})` +
-          (ev === null
-            ? ""
-            : `  EV ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%/unit`),
+          (p.handicap.ev === null ? "" : `  EV ${fmtPct(p.handicap.ev)}/unit`),
+      );
+    } else if (p.handicap.noValue) {
+      console.log(
+        `  Handicap: no bet at this line  (${pct(p.handicap.coverProbability!)}` +
+          `, EV ${fmtPct(p.handicap.ev!)}/unit)`,
       );
     }
     if (p.total.pick) {
@@ -299,6 +305,7 @@ async function cmdFetchSlate(args: {
       season,
       sims: 10_000,
       passThreshold: 0.55,
+      minEv: 0,
       handicaps,
     });
     console.log(
@@ -340,6 +347,7 @@ async function cmdPredict(args: {
     ...(ct.passThreshold !== undefined
       ? { passThreshold: ct.passThreshold }
       : {}),
+    ...(ct.minEv !== undefined ? { minEv: ct.minEv } : {}),
   };
 
   const games = await assembleDate(ct.date, source, { season: ct.season });

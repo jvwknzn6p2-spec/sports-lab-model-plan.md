@@ -12,10 +12,8 @@
 import type { GameCoreData } from "../step2";
 import type { RunExpectation } from "./run-model";
 import type { SimulationResult } from "./simulate";
-import {
-  breakEvenProbability,
-  expectedValueFromProbability,
-} from "./ev";
+import { breakEvenProbability, expectedValueFromProbability } from "./ev";
+import { WIN_COMMISSION } from "./handicap-notation";
 
 export type Confidence = "S" | "A" | "B" | "C";
 
@@ -114,6 +112,12 @@ export interface GamePrediction {
     coverProbability: number | null;
     /** Profit per unit staked after the house's cut. Negative = losing bet. */
     ev: number | null;
+    /**
+     * A line was quoted, the model has an opinion about it, and that opinion
+     * is not worth backing at this price. Distinct from `pass`: the game is
+     * still predicted and still scored — only this one market is skipped.
+     */
+    noValue: boolean;
   };
   total: {
     line: number | null;
@@ -247,30 +251,31 @@ export function decide(
   if (handicap) {
     const quoted = sim.asianCover(handicap.side, handicap.line);
     const pCover = calibrate(quoted.probability, calibration.handicapShrink);
-    const sideName = handicap.side === "home" ? homeName : awayName;
-    const otherName = handicap.side === "home" ? awayName : homeName;
-    const otherLine = -handicap.line;
     // Back whichever side the model prefers; the push share is a property of
     // the line, so it is the same whichever side of it you take.
-    const chosen = pCover >= 0.5 ? pCover : 1 - pCover;
-    handicapPick =
-      pCover >= 0.5
-        ? `${sideName} ${fmtLine(handicap.line)}`
-        : `${otherName} ${fmtLine(otherLine)}`;
+    const takeQuoted = pCover >= 0.5;
+    const chosen = takeQuoted ? pCover : 1 - pCover;
+    handicapPick = takeQuoted
+      ? `${handicap.side === "home" ? homeName : awayName} ${fmtLine(handicap.line)}`
+      : `${handicap.side === "home" ? awayName : homeName} ${fmtLine(-handicap.line)}`;
     coverProbability = round3(chosen);
     handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
   }
 
+  const pass = pWinner < cfg.passThreshold || !g.complete || hasDowngrade;
+
   // A handicap quoted at a price that cannot clear the house's cut is not a
   // bet, however confident the model is about who wins: winning 60% of a
-  // market that pays 0.72 on a win still loses money. When a line is on offer,
-  // its EV decides.
+  // market that pays 0.9 on a win still loses money.
+  //
+  // This suppresses THIS MARKET ONLY — it deliberately does not set `pass`.
+  // A bad price on the run line says nothing about who wins or how many runs
+  // are scored, and folding it into `pass` would null out the moneyline and
+  // the total as well. It would also stop the settler scoring the game at
+  // all (settle.ts skips passed games), so a stretch of poorly priced lines
+  // would freeze every market's learned shrink — the model would stop
+  // learning who wins because of a price on a different bet.
   const handicapUnprofitable = handicapEv !== null && handicapEv <= cfg.minEv;
-  const pass =
-    pWinner < cfg.passThreshold ||
-    !g.complete ||
-    hasDowngrade ||
-    handicapUnprofitable;
 
   // Total.
   let totalPick: "OVER" | "UNDER" | null = null;
@@ -284,19 +289,22 @@ export function decide(
   }
 
   const reasons = buildReasons(g, runs, sim);
-  if (handicap && handicapEv !== null) {
+  if (handicapEv !== null) {
     reasons.unshift(
-      `Handicap EV ${handicapEv >= 0 ? "+" : ""}${(handicapEv * 100).toFixed(1)}% per unit ` +
-        `(need ${(breakEvenProbability() * 100).toFixed(1)}% to break even after the 10% cut)`,
+      handicapUnprofitable
+        ? `No handicap bet: ${fmtPct(handicapEv)} per unit at this line ` +
+            `(needs ${(breakEvenProbability() * 100).toFixed(1)}% to break even ` +
+            `after the ${WIN_COMMISSION * 100}% cut)`
+        : `Handicap EV ${fmtPct(handicapEv)} per unit ` +
+            `(needs ${(breakEvenProbability() * 100).toFixed(1)}% to break even ` +
+            `after the ${WIN_COMMISSION * 100}% cut)`,
     );
   }
   if (pass) {
     reasons.unshift(
       !g.complete || hasDowngrade
         ? "PASS: incomplete/downgraded data"
-        : handicapUnprofitable
-          ? `PASS: handicap does not clear the cut (EV ${(handicapEv! * 100).toFixed(1)}% per unit)`
-          : `PASS: edge too small (win prob ${(pWinner * 100).toFixed(1)}% < ${(cfg.passThreshold * 100).toFixed(0)}%)`,
+        : `PASS: edge too small (win prob ${(pWinner * 100).toFixed(1)}% < ${(cfg.passThreshold * 100).toFixed(0)}%)`,
     );
   }
 
@@ -313,9 +321,10 @@ export function decide(
     confidence,
     handicap: {
       input: handicap,
-      pick: pass ? null : handicapPick,
+      pick: pass || handicapUnprofitable ? null : handicapPick,
       coverProbability,
       ev: handicapEv,
+      noValue: !pass && handicapUnprofitable,
     },
     total: {
       line: totalLine,
@@ -332,3 +341,38 @@ export function decide(
 const fmtLine = (l: number) => (l > 0 ? `+${l}` : `${l}`);
 const round2 = (v: number) => Math.round(v * 100) / 100;
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+/**
+ * A signed percentage. EV is the one number here that is routinely negative,
+ * and "-3.1%" versus "3.1%" is the difference between a bet and a refusal, so
+ * the sign is always shown rather than left to the minus sign alone.
+ */
+export const fmtPct = (v: number) =>
+  `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
+
+/**
+ * Recommendation order: best expected value first.
+ *
+ * This lives here rather than in each renderer because the order IS part of
+ * the prediction — the report headings and the Pick Tracker paste block are
+ * numbered from it, and two renderers sorting independently produced two
+ * different "#3" for the same slate.
+ *
+ * Sorting by win probability instead would promote a near-certain bet that
+ * pays almost nothing over a genuinely profitable one, which is the mistake
+ * this ordering exists to prevent. Games with no line quoted have no EV at
+ * all; they sort below every real price (EV cannot fall below -1) and fall
+ * back to confidence among themselves.
+ */
+export function rankByValue(
+  picks: readonly GamePrediction[],
+): GamePrediction[] {
+  const rank = { S: 0, A: 1, B: 2, C: 3 } as const;
+  const ev = (p: GamePrediction) => p.handicap.ev ?? -2;
+  return [...picks].sort(
+    (a, b) =>
+      ev(b) - ev(a) ||
+      rank[a.confidence] - rank[b.confidence] ||
+      b.winProbability - a.winProbability,
+  );
+}

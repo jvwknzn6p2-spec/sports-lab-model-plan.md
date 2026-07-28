@@ -8,6 +8,7 @@
  */
 
 import type { CalibrationState, GamePrediction } from "../engine/decision";
+import { fmtPct, rankByValue } from "../engine/decision";
 import type { HistorySummary } from "../engine/report";
 import type { SettlementReport } from "../engine/settle";
 import { pickTrackerBlock } from "./pick-tracker";
@@ -36,21 +37,10 @@ export function predictionsToMarkdown(
     out.push("");
   }
 
-  // Recommendation order is by expected value, not by confidence: a
-  // near-certain bet that pays almost nothing is worth less than a narrower
-  // one priced properly. Games with no line quoted fall back to confidence.
-  const rank = { S: 0, A: 1, B: 2, C: 3 } as const;
-  const sorted = [...picks].sort((a, b) => {
-    const ae = a.handicap.ev;
-    const be = b.handicap.ev;
-    if (ae !== null && be !== null) return be - ae;
-    if (ae !== null) return -1;
-    if (be !== null) return 1;
-    return (
-      rank[a.confidence] - rank[b.confidence] ||
-      b.winProbability - a.winProbability
-    );
-  });
+  // Ordered by expected value (see rankByValue): the numbering below is the
+  // 優先度 list, and the Pick Tracker block at the foot of this same file is
+  // numbered from the same function so the two can never disagree.
+  const sorted = rankByValue(picks);
 
   sorted.forEach((p, i) => {
     out.push(`## ${i + 1}. ${p.away} @ ${p.home}`);
@@ -60,12 +50,19 @@ export function predictionsToMarkdown(
     out.push(`- Confidence: **${p.confidence}**`);
     out.push(`- Losing side: ${p.predictedLoser}`);
     if (p.handicap.pick) {
-      const ev = p.handicap.ev;
       out.push(
         `- Handicap: **${p.handicap.pick}** (${pct(p.handicap.coverProbability!)})` +
-          (ev === null
+          (p.handicap.ev === null
             ? ""
-            : ` · EV **${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%** per unit`),
+            : ` · EV **${fmtPct(p.handicap.ev)}** per unit`),
+      );
+    } else if (p.handicap.noValue) {
+      // The game is still a pick — only this market is skipped, and saying so
+      // is the point: it is the difference between "no opinion" and "the
+      // opinion is not worth the price".
+      out.push(
+        `- Handicap: **no bet at this line** (${pct(p.handicap.coverProbability!)}, ` +
+          `EV ${fmtPct(p.handicap.ev!)} per unit)`,
       );
     }
     if (p.total.pick) {
