@@ -1,0 +1,814 @@
+{
+  "lockedAt": "2026-08-05T15:33:04.988Z",
+  "controlTower": {
+    "date": "2026-08-05",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "822866": {
+        "side": "home",
+        "notation": "0"
+      },
+      "823106": {
+        "side": "home",
+        "notation": "0"
+      },
+      "823429": {
+        "side": "home",
+        "notation": "0"
+      },
+      "823516": {
+        "side": "home",
+        "notation": "0"
+      },
+      "823753": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824082": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824158": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824322": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824402": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824482": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824646": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824728": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824806": {
+        "side": "home",
+        "notation": "0"
+      },
+      "824889": {
+        "side": "home",
+        "notation": "0"
+      },
+      "825052": {
+        "side": "home",
+        "notation": "0"
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.853,
+    "handicapShrink": 0.853,
+    "totalShrink": 0.85,
+    "gamesSettled": 55,
+    "brierSum": 13.3561,
+    "updatedAt": "2026-08-05T09:29:41.052Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 824158,
+      "gameDate": "2026-08-05T18:10:00Z",
+      "home": "Houston Astros",
+      "away": "Toronto Blue Jays",
+      "pass": false,
+      "predictedWinner": "Houston Astros",
+      "predictedLoser": "Toronto Blue Jays",
+      "winProbability": 0.708,
+      "rawWinProbability": 0.744,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Houston Astros -〈0〉",
+        "coverProbability": 0.708,
+        "ev": 0.346,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.41,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 5.51,
+        "away": 3.66
+      },
+      "reasons": [
+        "Handicap EV +34.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Houston Astros (Hunter Brown projFIP 4.30 vs 4.86)",
+        "Offense edge: Houston Astros (wOBA 0.320 vs 0.300)",
+        "Bullpen edge: Toronto Blue Jays",
+        "Houston Astros bullpen fatigued (+0.02 R/9)",
+        "Toronto Blue Jays bullpen fatigued (+0.20 R/9)",
+        "Park factor 99 (pitcher-friendly)",
+        "Expected runs 5.51–3.66 over 10000 sims",
+        "home: hot bats — 5.5 R/G last 15 (season baseline 4.7)",
+        "away: cold bats — 3.1 R/G last 15 (season baseline 4.0)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824646,
+      "gameDate": "2026-08-05T18:20:00Z",
+      "home": "Chicago Cubs",
+      "away": "Los Angeles Dodgers",
+      "pass": false,
+      "predictedWinner": "Chicago Cubs",
+      "predictedLoser": "Los Angeles Dodgers",
+      "winProbability": 0.656,
+      "rawWinProbability": 0.683,
+      "confidence": "S",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Chicago Cubs -〈0〉",
+        "coverProbability": 0.656,
+        "ev": 0.247,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 10.67,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 5.95,
+        "away": 4.55
+      },
+      "reasons": [
+        "Handicap EV +24.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Chicago Cubs (Shota Imanaga projFIP 4.10 vs 4.83)",
+        "Bullpen edge: Los Angeles Dodgers",
+        "Los Angeles Dodgers bullpen fatigued (+0.18 R/9)",
+        "Expected runs 5.95–4.55 over 10000 sims",
+        "home: hot bats — 5.5 R/G last 15 (season baseline 4.9)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 822866,
+      "gameDate": "2026-08-05T18:35:00Z",
+      "home": "Texas Rangers",
+      "away": "San Francisco Giants",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.535,
+      "rawWinProbability": 0.541,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": null,
+        "coverProbability": 0.535,
+        "ev": 0.016,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.29,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.66,
+        "away": 4.39
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +1.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "San Francisco Giants bullpen fatigued (+0.06 R/9)",
+        "Park factor 99 (pitcher-friendly)",
+        "Expected runs 4.66–4.39 over 10000 sims",
+        "home: cold bats — 3.9 R/G last 15 (season baseline 4.5)",
+        "home: no starter data — league-average assumed"
+      ],
+      "flags": [
+        "[downgrade] home_starter_stats_missing",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824322,
+      "gameDate": "2026-08-05T19:10:00Z",
+      "home": "Colorado Rockies",
+      "away": "Tampa Bay Rays",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.502,
+      "rawWinProbability": 0.502,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": null,
+        "coverProbability": 0.502,
+        "ev": -0.047,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 11.81,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 5.74,
+        "away": 5.78
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 50.2% < 55%)",
+        "No handicap bet: -4.7% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Tampa Bay Rays (Nick Martinez projFIP 4.69 vs 5.22)",
+        "Colorado Rockies bullpen fatigued (+0.16 R/9)",
+        "Tampa Bay Rays bullpen fatigued (+0.32 R/9)",
+        "Park factor 112 (hitter-friendly)",
+        "Expected runs 5.74–5.78 over 10000 sims",
+        "home: hot bats — 5.7 R/G last 15 (season baseline 4.8)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824806,
+      "gameDate": "2026-08-05T22:35:00Z",
+      "home": "Baltimore Orioles",
+      "away": "Los Angeles Angels",
+      "pass": false,
+      "predictedWinner": "Baltimore Orioles",
+      "predictedLoser": "Los Angeles Angels",
+      "winProbability": 0.565,
+      "rawWinProbability": 0.576,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Baltimore Orioles -〈0〉",
+        "coverProbability": 0.565,
+        "ev": 0.073,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 7.98,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.13,
+        "away": 3.58
+      },
+      "reasons": [
+        "Handicap EV +7.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Los Angeles Angels (Reid Detmers projFIP 3.59 vs 3.87)",
+        "Park factor 98 (pitcher-friendly)",
+        "Expected runs 4.13–3.58 over 10000 sims",
+        "away: cold bats — 2.7 R/G last 15 (season baseline 4.3)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824402,
+      "gameDate": "2026-08-05T22:40:00Z",
+      "home": "Cleveland Guardians",
+      "away": "New York Mets",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.532,
+      "rawWinProbability": 0.538,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": null,
+        "coverProbability": 0.532,
+        "ev": 0.012,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 7.87,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 3.7,
+        "away": 3.93
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 53.2% < 55%)",
+        "Handicap EV +1.2% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: New York Mets (Christian Scott projFIP 3.81 vs 4.24)",
+        "Park factor 98 (pitcher-friendly)",
+        "Expected runs 3.70–3.93 over 10000 sims"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824482,
+      "gameDate": "2026-08-05T22:40:00Z",
+      "home": "Cincinnati Reds",
+      "away": "Athletics",
+      "pass": false,
+      "predictedWinner": "Cincinnati Reds",
+      "predictedLoser": "Athletics",
+      "winProbability": 0.619,
+      "rawWinProbability": 0.639,
+      "confidence": "A",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Cincinnati Reds -〈0〉",
+        "coverProbability": 0.619,
+        "ev": 0.176,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 10.31,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 5.63,
+        "away": 4.49
+      },
+      "reasons": [
+        "Handicap EV +17.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Cincinnati Reds (Rhett Lowder projFIP 4.65 vs 5.06)",
+        "Park factor 106 (hitter-friendly)",
+        "Expected runs 5.63–4.49 over 10000 sims",
+        "away: cold bats — 3.3 R/G last 15 (season baseline 4.5)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823429,
+      "gameDate": "2026-08-05T22:40:00Z",
+      "home": "Philadelphia Phillies",
+      "away": "Washington Nationals",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.547,
+      "rawWinProbability": 0.555,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": null,
+        "coverProbability": 0.547,
+        "ev": 0.039,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 10.14,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 5.15,
+        "away": 4.74
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.7% < 55%)",
+        "Handicap EV +3.9% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Washington Nationals (Jake Irvin projFIP 4.41 vs 4.69)",
+        "Offense edge: Washington Nationals (wOBA 0.330 vs 0.308)",
+        "Bullpen edge: Philadelphia Phillies",
+        "Washington Nationals bullpen fatigued (+0.14 R/9)",
+        "Park factor 102 (hitter-friendly)",
+        "Expected runs 5.15–4.74 over 10000 sims",
+        "away: cold bats — 4.3 R/G last 15 (season baseline 5.0)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823516,
+      "gameDate": "2026-08-05T23:05:00Z",
+      "home": "New York Yankees",
+      "away": "St. Louis Cardinals",
+      "pass": false,
+      "predictedWinner": "New York Yankees",
+      "predictedLoser": "St. Louis Cardinals",
+      "winProbability": 0.603,
+      "rawWinProbability": 0.62,
+      "confidence": "A",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "New York Yankees -〈0〉",
+        "coverProbability": 0.603,
+        "ev": 0.145,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.41,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.49,
+        "away": 3.68
+      },
+      "reasons": [
+        "Handicap EV +14.5% per unit (needs 52.6% to break even after the 10% cut)",
+        "Offense edge: New York Yankees (wOBA 0.314 vs 0.306)",
+        "New York Yankees bullpen fatigued (+0.20 R/9)",
+        "St. Louis Cardinals bullpen fatigued (+0.02 R/9)",
+        "Park factor 102 (hitter-friendly)",
+        "Expected runs 4.49–3.68 over 10000 sims",
+        "home: cold bats — 3.6 R/G last 15 (season baseline 4.5)",
+        "away: cold bats — 3.3 R/G last 15 (season baseline 4.2)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824728,
+      "gameDate": "2026-08-05T23:10:00Z",
+      "home": "Boston Red Sox",
+      "away": "Chicago White Sox",
+      "pass": false,
+      "predictedWinner": "Boston Red Sox",
+      "predictedLoser": "Chicago White Sox",
+      "winProbability": 0.606,
+      "rawWinProbability": 0.624,
+      "confidence": "A",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Boston Red Sox -〈0〉",
+        "coverProbability": 0.606,
+        "ev": 0.15,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.23,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.94,
+        "away": 4.06
+      },
+      "reasons": [
+        "Handicap EV +15.0% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Chicago White Sox (Sean Burke projFIP 3.94 vs 4.19)",
+        "Bullpen edge: Boston Red Sox",
+        "Park factor 107 (hitter-friendly)",
+        "Expected runs 4.94–4.06 over 10000 sims",
+        "home: hot bats — 5.4 R/G last 15 (season baseline 4.5)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824889,
+      "gameDate": "2026-08-05T23:15:00Z",
+      "home": "Atlanta Braves",
+      "away": "Miami Marlins",
+      "pass": false,
+      "predictedWinner": "Atlanta Braves",
+      "predictedLoser": "Miami Marlins",
+      "winProbability": 0.553,
+      "rawWinProbability": 0.562,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Atlanta Braves -〈0〉",
+        "coverProbability": 0.553,
+        "ev": 0.05,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.84,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.53,
+        "away": 4.09
+      },
+      "reasons": [
+        "Handicap EV +5.0% per unit (needs 52.6% to break even after the 10% cut)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 4.53–4.09 over 10000 sims",
+        "away: cold bats — 3.5 R/G last 15 (season baseline 4.6)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824082,
+      "gameDate": "2026-08-05T23:40:00Z",
+      "home": "Kansas City Royals",
+      "away": "Minnesota Twins",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.524,
+      "rawWinProbability": 0.528,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": null,
+        "coverProbability": 0.524,
+        "ev": -0.005,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.44,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.7,
+        "away": 4.52
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 52.4% < 55%)",
+        "No handicap bet: -0.5% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Kansas City Royals (Noah Cameron projFIP 4.11 vs 4.54)",
+        "Bullpen edge: Minnesota Twins",
+        "Park factor 102 (hitter-friendly)",
+        "Expected runs 4.70–4.52 over 10000 sims",
+        "home: cold bats — 3.4 R/G last 15 (season baseline 4.3)",
+        "away: cold bats — 3.7 R/G last 15 (season baseline 4.5)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823753,
+      "gameDate": "2026-08-05T23:40:00Z",
+      "home": "Milwaukee Brewers",
+      "away": "Pittsburgh Pirates",
+      "pass": false,
+      "predictedWinner": "Milwaukee Brewers",
+      "predictedLoser": "Pittsburgh Pirates",
+      "winProbability": 0.604,
+      "rawWinProbability": 0.622,
+      "confidence": "A",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Milwaukee Brewers -〈0〉",
+        "coverProbability": 0.604,
+        "ev": 0.147,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.64,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.6,
+        "away": 3.75
+      },
+      "reasons": [
+        "Handicap EV +14.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "Bullpen edge: Milwaukee Brewers",
+        "Milwaukee Brewers bullpen fatigued (+0.06 R/9)",
+        "Pittsburgh Pirates bullpen fatigued (+0.26 R/9)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 4.60–3.75 over 10000 sims",
+        "away: cold bats — 3.4 R/G last 15 (season baseline 4.8)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 825052,
+      "gameDate": "2026-08-06T01:40:00Z",
+      "home": "Arizona Diamondbacks",
+      "away": "San Diego Padres",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.541,
+      "rawWinProbability": 0.548,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": null,
+        "coverProbability": 0.541,
+        "ev": 0.028,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.47,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 4.45,
+        "away": 4.8
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.1% < 55%)",
+        "Handicap EV +2.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: San Diego Padres (Casey Mize projFIP 3.59 vs 4.89)",
+        "San Diego Padres bullpen fatigued (+0.18 R/9)",
+        "Park factor 103 (hitter-friendly)",
+        "Expected runs 4.45–4.80 over 10000 sims",
+        "home: hot bats — 5.6 R/G last 15 (season baseline 4.3)",
+        "away: hot bats — 5.1 R/G last 15 (season baseline 4.2)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823106,
+      "gameDate": "2026-08-06T01:40:00Z",
+      "home": "Seattle Mariners",
+      "away": "Detroit Tigers",
+      "pass": false,
+      "predictedWinner": "Detroit Tigers",
+      "predictedLoser": "Seattle Mariners",
+      "winProbability": 0.575,
+      "rawWinProbability": 0.588,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": "0"
+        },
+        "pick": "Detroit Tigers +〈0〉",
+        "coverProbability": 0.575,
+        "ev": 0.093,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.51,
+        "pick": null,
+        "probability": null
+      },
+      "expectedRuns": {
+        "home": 3.85,
+        "away": 4.44
+      },
+      "reasons": [
+        "Handicap EV +9.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "Starter edge: Seattle Mariners (Bryan Woo projFIP 3.40 vs 3.70)",
+        "Offense edge: Detroit Tigers (wOBA 0.318 vs 0.304)",
+        "Park factor 94 (pitcher-friendly)",
+        "Expected runs 3.85–4.44 over 10000 sims",
+        "away: hot bats — 6.5 R/G last 15 (season baseline 4.6)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] away_starter_xfip_estimated",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-08-05T13:21:00.000Z",
+      "final": true
+    }
+  ]
+}
