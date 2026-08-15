@@ -1,13 +1,67 @@
 /**
  * Monte Carlo game simulator (plan Section 4.2).
  *
- * Draws each team's runs from Poisson(mu) thousands of times; ties are broken
- * by simulated extra innings (per-inning Poisson at mu/9). Seeded → the same
- * game + date always yields identical probabilities (reproducible locks).
+ * Each simulated game draws team runs from a NEGATIVE BINOMIAL (not a plain
+ * Poisson), under a shared game-environment factor; ties are broken by
+ * simulated extra innings (per-inning Poisson at the environment-adjusted
+ * mu/9). Seeded → the same game + date always yields identical probabilities
+ * (reproducible locks).
+ *
+ * ## Why not independent Poisson
+ *
+ * The first version drew each team's runs as independent Poisson(mu), and the
+ * settled record exposed both of that model's known defects at once: picks
+ * quoted at 65–70% hit 42% (n=19), while the 55–60% band ran ahead of its
+ * quote. Two things are wrong with independent Poisson for baseball:
+ *
+ *   1. UNDERDISPERSION — real team runs, even conditional on the matchup,
+ *      have variance ≈ 1.5× the mean (innings blow up; bullpens implode).
+ *      Poisson forces variance = mean.
+ *   2. INDEPENDENCE — both teams bat in the same park, weather, and umpire
+ *      zone, so their run totals are positively correlated (ρ ≈ 0.1).
+ *
+ * Both errors shrink the spread of the MARGIN, and a margin distribution
+ * that is too narrow pays out as overconfidence exactly in the tails — the
+ * favourite "wins by enough" too often in the simulation and not often
+ * enough on the field.
+ *
+ * The fix, in the standard sports-modelling form:
+ *
+ *   e      ~ Gamma(k, 1/k)            shared environment, mean 1, sd ~20%
+ *   runs_i ~ NegBin(mu_i · e, r)      per team, variance mu + mu²/r
+ *
+ * With r = 9 and sd(e) = 0.2 at mu = 4.5: team-run variance ≈ 7.5 (ratio
+ * ~1.65 vs the ~1.5–2.0 seen in MLB data) and corr(home, away) ≈ +0.11 —
+ * both inside the empirically observed ranges, and the margin's standard
+ * deviation widens from 3.0 (Poisson) to ≈ 3.6, which is what pulls the
+ * simulated tail probabilities back toward what actually happens.
  */
 
-import { mulberry32, poisson, seedFromString, type Rng } from "./rng";
+import {
+  gamma,
+  mulberry32,
+  negBinomial,
+  poisson,
+  seedFromString,
+  type Rng,
+} from "./rng";
 import { settleParts, splitLine, type WeightedLine } from "./handicap-notation";
+
+/**
+ * Negative-binomial size for one team's runs: variance = mu + mu²/r. r = 9
+ * targets the ~1.5× overdispersion of team runs conditional on the matchup
+ * (season-level run variance is higher, ~2×, but much of that is matchup
+ * heterogeneity the run model already expresses through mu itself).
+ */
+export const TEAM_RUN_DISPERSION = 9;
+
+/**
+ * Standard deviation of the shared game-environment multiplier (park, wind,
+ * temperature, umpire — everything both offenses live in together). 0.2
+ * yields corr(home runs, away runs) ≈ +0.11, matching the ~0.1 measured in
+ * MLB final scores.
+ */
+export const SHARED_ENV_SD = 0.2;
 
 export interface SimulationResult {
   sims: number;
@@ -39,6 +93,14 @@ export interface SimulationResult {
 export interface SimulateOptions {
   sims?: number;
   seed?: string | number;
+  /**
+   * Negative-binomial size for team runs (variance = mu + mu²/size).
+   * `Infinity` recovers the old independent-Poisson behaviour; exposed for
+   * tests and sensitivity checks, not for daily use.
+   */
+  dispersion?: number;
+  /** Sd of the shared game-environment multiplier; 0 disables it. */
+  envSd?: number;
 }
 
 const MAX_EXTRA_INNINGS = 30;
@@ -71,6 +133,8 @@ function playExtras(
   muA: number,
   rng: Rng,
 ): [number, number] {
+  // Callers pass the ENVIRONMENT-ADJUSTED mus, so extra innings are played in
+  // the same conditions as the regulation innings that produced the tie.
   for (let i = 0; i < MAX_EXTRA_INNINGS && h === a; i++) {
     h += poisson(muH / 9, rng);
     a += poisson(muA / 9, rng);
@@ -95,6 +159,10 @@ export function simulateGame(
       ? opts.seed
       : seedFromString(String(opts.seed ?? "handiedge"));
   const rng = mulberry32(seed);
+  const dispersion = opts.dispersion ?? TEAM_RUN_DISPERSION;
+  const envSd = opts.envSd ?? SHARED_ENV_SD;
+  // Gamma(k, 1/k) has mean 1 and sd 1/√k, so k = 1/sd².
+  const envShape = envSd > 0 ? 1 / (envSd * envSd) : null;
 
   const margins: number[] = new Array(sims);
   const totals: number[] = new Array(sims);
@@ -103,9 +171,14 @@ export function simulateGame(
   let sumA = 0;
 
   for (let i = 0; i < sims; i++) {
-    let h = poisson(homeMu, rng);
-    let a = poisson(awayMu, rng);
-    if (h === a) [h, a] = playExtras(h, a, homeMu, awayMu, rng);
+    // ONE environment draw per game, applied to BOTH teams — this shared
+    // factor is what makes the two run totals positively correlated.
+    const env = envShape === null ? 1 : gamma(envShape, rng) / envShape;
+    const muH = homeMu * env;
+    const muA = awayMu * env;
+    let h = negBinomial(muH, dispersion, rng);
+    let a = negBinomial(muA, dispersion, rng);
+    if (h === a) [h, a] = playExtras(h, a, muH, muA, rng);
     if (h > a) homeWins++;
     margins[i] = h - a;
     totals[i] = h + a;

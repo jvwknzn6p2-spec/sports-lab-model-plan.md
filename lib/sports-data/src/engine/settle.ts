@@ -9,8 +9,12 @@
  *     if underconfident, expand them. Bounded, small steps (v1 self-learning).
  */
 
-import { resolveHandicap } from "./decision";
-import type { CalibrationState, GamePrediction } from "./decision";
+import { resolveHandicap, TAIL_START } from "./decision";
+import type {
+  CalibrationState,
+  Confidence,
+  GamePrediction,
+} from "./decision";
 import {
   expectedProfit,
   oppositeParts,
@@ -27,6 +31,13 @@ export interface SettledGame {
   home: string;
   away: string;
   pass: boolean;
+  /**
+   * The pick's confidence band, kept so the cumulative report can answer
+   * "does S actually outperform B?" — the question the 2026-08 audit had to
+   * reconstruct by re-settling every prediction file. Optional because
+   * history written before this field existed lacks it.
+   */
+  confidence?: Confidence | null;
   predictedWinner: string | null;
   /** null when the final score was level — nobody won. */
   actualWinner: string | null;
@@ -48,6 +59,19 @@ export interface SettledGame {
   totalCorrect: boolean | null;
   /** Stated probability for the total pick (for learning). */
   totalProbability: number | null;
+  /**
+   * Whether each scored bet belonged to the TAIL band (raw probability ≥
+   * TAIL_START), stamped AT SETTLE TIME from the prediction's own raw
+   * probability. Banding at learn time by inverting the current calibration
+   * map would misfile near-boundary bets whenever the core shrink has
+   * drifted since the pick was made — recalibrateFromHistory replays years
+   * of picks under the latest state, so it drifts every run. Optional
+   * because history written before these fields lacks them; learning then
+   * falls back to the boundary heuristic.
+   */
+  winnerTail?: boolean | null;
+  handicapTail?: boolean | null;
+  totalTail?: boolean | null;
   marginError: number | null; // |predicted margin − actual margin|
   totalError: number | null; // |predicted total − actual total|
 }
@@ -76,26 +100,42 @@ export interface SettlementReport {
   calibrationAfter: CalibrationState;
 }
 
-/** Learning-rate and bounds for the shrink update. */
+/** Learning-rate and bounds for the core-band shrink update. */
 const LEARN_RATE = 0.25;
 const SHRINK_MIN = 0.5;
 const SHRINK_MAX = 1.0;
+/**
+ * The tail band learns faster and may shrink further. Tail bets are scarce
+ * (roughly a fifth of the book), so at the core's rate the damping term would
+ * all but freeze them; and the failure the tail guards against — quoting 66%
+ * and hitting 42% — is the expensive one, worth a stronger correction per
+ * observed bet. Still damped and clamped: one bad slate cannot crater it.
+ */
+const TAIL_LEARN_RATE = 0.5;
+const TAIL_SHRINK_MIN = 0.35;
 
 /** One scored bet: what we said would happen, and whether it did. */
 interface MarketSample {
   stated: number;
   correct: boolean;
+  /** Settle-time band stamp; null/undefined for pre-stamp history. */
+  tail?: boolean | null;
 }
 
 /**
- * Move one market's shrink toward reality.
+ * Move one band's shrink toward reality.
  *
  * Overconfident (we said 60%, we hit 50%) lowers the shrink so future edges
  * are quoted closer to 50%; underconfident raises it. Damped by sample size so
  * a single slate never swings the state, and clamped so it can never collapse
  * to "always 50%" or run away past "trust the raw model".
  */
-function learnMarket(current: number, samples: MarketSample[]): number {
+function learnBand(
+  current: number,
+  samples: MarketSample[],
+  learnRate: number,
+  min: number,
+): number {
   if (samples.length === 0) return current;
   const statedMean =
     samples.reduce((acc, s) => acc + s.stated, 0) / samples.length;
@@ -103,11 +143,38 @@ function learnMarket(current: number, samples: MarketSample[]): number {
   const gap = actualRate - statedMean;
   const damping = samples.length / (samples.length + 20);
   return (
-    Math.round(
-      clamp(current + LEARN_RATE * gap * damping, SHRINK_MIN, SHRINK_MAX) *
-        1000,
-    ) / 1000
+    Math.round(clamp(current + learnRate * gap * damping, min, SHRINK_MAX) * 1000) /
+    1000
   );
+}
+
+/**
+ * Split one market's samples at the tail boundary and learn each band from
+ * its own bets only. Learning the core from tail bets is precisely the
+ * cross-contamination that let a single linear shrink stay wrong in both
+ * directions at once.
+ *
+ * The band of record is the SETTLE-TIME STAMP (raw probability vs
+ * TAIL_START, see SettledGame.winnerTail) — the raw probability is frozen in
+ * the prediction lock, so the stamp cannot drift. Pre-stamp history falls
+ * back to the boundary in stated space, 0.5 + (TAIL_START − 0.5) ·
+ * coreShrink; that inversion uses the CURRENT core shrink where the stamp
+ * would have used the prediction-time one, so a near-boundary legacy bet can
+ * land in the wrong band — acceptable for old rows, which is why new rows
+ * are stamped instead.
+ */
+function learnMarket(
+  core: number,
+  tail: number,
+  samples: MarketSample[],
+): { core: number; tail: number } {
+  const boundary = 0.5 + (TAIL_START - 0.5) * core;
+  const isTail = (s: MarketSample) =>
+    s.tail == null ? s.stated >= boundary : s.tail;
+  return {
+    core: learnBand(core, samples.filter((s) => !isTail(s)), LEARN_RATE, SHRINK_MIN),
+    tail: learnBand(tail, samples.filter(isTail), TAIL_LEARN_RATE, TAIL_SHRINK_MIN),
+  };
 }
 
 /** Every market learns from its OWN scored bets, independently. */
@@ -123,17 +190,26 @@ export function updateCalibration(
 
   for (const s of settled) {
     if (s.winnerCorrect !== null && s.statedProbability !== null) {
-      winner.push({ stated: s.statedProbability, correct: s.winnerCorrect });
+      winner.push({
+        stated: s.statedProbability,
+        correct: s.winnerCorrect,
+        tail: s.winnerTail,
+      });
       brierSum += s.brier ?? 0;
     }
     if (s.handicapCorrect !== null && s.handicapProbability !== null) {
       handicap.push({
         stated: s.handicapProbability,
         correct: s.handicapCorrect,
+        tail: s.handicapTail,
       });
     }
     if (s.totalCorrect !== null && s.totalProbability !== null) {
-      total.push({ stated: s.totalProbability, correct: s.totalCorrect });
+      total.push({
+        stated: s.totalProbability,
+        correct: s.totalCorrect,
+        tail: s.totalTail,
+      });
     }
   }
 
@@ -141,10 +217,21 @@ export function updateCalibration(
     return state;
   }
 
+  const w = learnMarket(state.shrink, state.tailShrink, winner);
+  const h = learnMarket(
+    state.handicapShrink,
+    state.handicapTailShrink,
+    handicap,
+  );
+  const t = learnMarket(state.totalShrink, state.totalTailShrink, total);
+
   return {
-    shrink: learnMarket(state.shrink, winner),
-    handicapShrink: learnMarket(state.handicapShrink, handicap),
-    totalShrink: learnMarket(state.totalShrink, total),
+    shrink: w.core,
+    tailShrink: w.tail,
+    handicapShrink: h.core,
+    handicapTailShrink: h.tail,
+    totalShrink: t.core,
+    totalTailShrink: t.tail,
     gamesSettled: state.gamesSettled + winner.length,
     brierSum: Math.round((state.brierSum + brierSum) * 10000) / 10000,
     updatedAt: now.toISOString(),
@@ -267,6 +354,7 @@ export function settle(
       home: p.home,
       away: p.away,
       pass: p.pass,
+      confidence: p.pass ? null : p.confidence,
       predictedWinner: p.predictedWinner,
       actualWinner,
       winnerCorrect,
@@ -279,6 +367,23 @@ export function settle(
       totalPick: p.total.pick,
       totalCorrect,
       totalProbability: p.total.probability,
+      // Band stamps from the lock's own raw probabilities (see the field
+      // docs). Predictions from before the raw fields existed yield null,
+      // which learning treats as "band unknown — use the fallback".
+      winnerTail:
+        p.pass || tied ? null : p.rawWinProbability >= TAIL_START,
+      handicapTail:
+        handicapCorrect === null
+          ? null
+          : (p.handicap.rawCoverProbability ?? null) === null
+            ? null
+            : p.handicap.rawCoverProbability! >= TAIL_START,
+      totalTail:
+        totalCorrect === null
+          ? null
+          : (p.total.rawProbability ?? null) === null
+            ? null
+            : p.total.rawProbability! >= TAIL_START,
       marginError: p.pass
         ? null
         : Math.round(Math.abs(predictedMargin - actualMargin) * 100) / 100,

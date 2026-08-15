@@ -9,11 +9,25 @@
 
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import { fmtPct, fmtUnits, rankByValue } from "../engine/decision";
-import type { HistorySummary } from "../engine/report";
+import type { CalibrationBucket, HistorySummary } from "../engine/report";
 import type { SettlementReport } from "../engine/settle";
 import { pickTrackerBlock } from "./pick-tracker";
 
 const pct = (p: number) => `${(p * 100).toFixed(1)}%`;
+
+/** One calibration band, flag included — the flag is decided in report.ts. */
+function bucketLine(b: CalibrationBucket): string {
+  const flag =
+    b.flag === "overconfident"
+      ? " ⚠️ overconfident"
+      : b.flag === "underconfident"
+        ? " (underconfident)"
+        : "";
+  return (
+    `- ${pct(b.lo)}–${pct(b.hi)}: said ${pct(b.statedMean)}, ` +
+    `hit ${pct(b.actualRate)} over ${b.n} (gap ${(b.gap * 100).toFixed(1)}pt)${flag}`
+  );
+}
 
 export function predictionsToMarkdown(
   date: string,
@@ -104,8 +118,9 @@ export function predictionsToMarkdown(
 
   out.push("---");
   out.push(
-    `_Shrink: moneyline ${calibration.shrink}, handicap ` +
-      `${calibration.handicapShrink}, total ${calibration.totalShrink} · ` +
+    `_Shrink (core/tail): moneyline ${calibration.shrink}/${calibration.tailShrink}, ` +
+      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}, ` +
+      `total ${calibration.totalShrink}/${calibration.totalTailShrink} · ` +
       `${calibration.gamesSettled} games settled lifetime._`,
   );
   return out.join("\n") + "\n";
@@ -156,9 +171,12 @@ export function settlementToMarkdown(r: SettlementReport): string {
     );
   }
   out.push(
-    `- Self-learning — moneyline ${r.calibrationBefore.shrink} → ${r.calibrationAfter.shrink}, ` +
-      `handicap ${r.calibrationBefore.handicapShrink} → ${r.calibrationAfter.handicapShrink}, ` +
-      `total ${r.calibrationBefore.totalShrink} → ${r.calibrationAfter.totalShrink}`,
+    `- Self-learning — moneyline ${r.calibrationBefore.shrink} → ${r.calibrationAfter.shrink} ` +
+      `(tail ${r.calibrationBefore.tailShrink} → ${r.calibrationAfter.tailShrink}), ` +
+      `handicap ${r.calibrationBefore.handicapShrink} → ${r.calibrationAfter.handicapShrink} ` +
+      `(tail ${r.calibrationBefore.handicapTailShrink} → ${r.calibrationAfter.handicapTailShrink}), ` +
+      `total ${r.calibrationBefore.totalShrink} → ${r.calibrationAfter.totalShrink} ` +
+      `(tail ${r.calibrationBefore.totalTailShrink} → ${r.calibrationAfter.totalTailShrink})`,
   );
   if (r.gamesMissingResults > 0) {
     out.push(`- ${r.gamesMissingResults} game(s) had no result yet`);
@@ -180,7 +198,39 @@ export function summaryToMarkdown(
       `${s.gamesPassed} PASS.`,
   );
   out.push("");
-  out.push(`- Handicap: ${s.handicapRecord.wins}-${s.handicapRecord.losses}`);
+  out.push(
+    `- Handicap: ${s.handicapRecord.wins}-${s.handicapRecord.losses}` +
+      (s.handicapProfitTotal === null
+        ? ""
+        : ` · **${fmtUnits(s.handicapProfitTotal)} units** after the cut` +
+          (s.handicapRoi === null
+            ? ""
+            : ` (ROI ${fmtPct(s.handicapRoi)} per bet)`)),
+  );
+  if (s.handicapProfitAssessment) {
+    const p = s.handicapProfitAssessment;
+    // The significance claim is about the MONEY (mean realized profit vs
+    // zero), because partial 半-line stakes make a win-rate test lie. Three
+    // outcomes on purpose: "provably losing" must never render as
+    // "inconclusive".
+    out.push(
+      `- Significance (P&L): ${fmtPct(p.meanProfit)} per bet over ${p.n} stakes — ` +
+        `z ${p.z.toFixed(2)}, ` +
+        (p.verdict === "ahead"
+          ? "**statistically ahead of break-even**"
+          : p.verdict === "behind"
+            ? "**statistically BEHIND break-even — the book is losing**"
+            : "**not yet distinguishable from luck**"),
+    );
+  }
+  if (s.handicapAssessment) {
+    const a = s.handicapAssessment;
+    out.push(
+      `- Hit rate: ${pct(a.rate)} over ${a.n} bets ` +
+        `(95% CI ${pct(a.ci95.lo)}–${pct(a.ci95.hi)}) vs ${pct(a.breakEven)} ` +
+        `full-unit break-even`,
+    );
+  }
   out.push(`- Total: ${s.totalRecord.wins}-${s.totalRecord.losses}`);
   if (s.meanBrier !== null) {
     out.push(
@@ -198,14 +248,16 @@ export function summaryToMarkdown(
     const h = s.handicapCalibration;
     out.push(
       `- Handicap calibration: says ${pct(h.statedMean)}, actually ` +
-        `${pct(h.actualRate)} over ${h.n} bet${h.n === 1 ? "" : "s"}`,
+        `${pct(h.actualRate)} over ${h.n} bet${h.n === 1 ? "" : "s"} ` +
+        `(Brier ${h.meanBrier})`,
     );
   }
   if (s.totalCalibration) {
     const t = s.totalCalibration;
     out.push(
       `- Total calibration: says ${pct(t.statedMean)}, actually ` +
-        `${pct(t.actualRate)} over ${t.n} bet${t.n === 1 ? "" : "s"}`,
+        `${pct(t.actualRate)} over ${t.n} bet${t.n === 1 ? "" : "s"} ` +
+        `(Brier ${t.meanBrier})`,
     );
   }
   if (s.meanMarginError !== null) {
@@ -215,8 +267,9 @@ export function summaryToMarkdown(
     out.push(`- Mean total error: ${s.meanTotalError} runs`);
   }
   out.push(
-    `- Learned shrink — moneyline ${calibration.shrink}, handicap ` +
-      `${calibration.handicapShrink}, total ${calibration.totalShrink} ` +
+    `- Learned shrink (core/tail) — moneyline ${calibration.shrink}/${calibration.tailShrink}, ` +
+      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}, ` +
+      `total ${calibration.totalShrink}/${calibration.totalTailShrink} ` +
       `(${calibration.gamesSettled} games)`,
   );
   out.push("");
@@ -226,6 +279,43 @@ export function summaryToMarkdown(
       `> Only ${s.gamesSettled} settled pick(s) so far — far too few to judge. ` +
         `Watch the trend; wait for ~50+ before changing anything.`,
     );
+    out.push("");
+  }
+
+  if (s.handicapBuckets.length > 0) {
+    out.push("## Calibration by band (handicap)");
+    out.push("");
+    out.push(
+      "_The headline gap can sit near zero while one band runs hot and " +
+        "another collapses — this is the table that shows it._",
+    );
+    out.push("");
+    for (const b of s.handicapBuckets) out.push(bucketLine(b));
+    out.push("");
+  }
+
+  // The winner market gets its own curve only when it says something the
+  // handicap curve does not — with every line quoted at 0 the two books are
+  // the same bets, and printing the table twice would bury the signal.
+  if (
+    s.winnerBuckets.length > 0 &&
+    JSON.stringify(s.winnerBuckets) !== JSON.stringify(s.handicapBuckets)
+  ) {
+    out.push("## Calibration by band (winner)");
+    out.push("");
+    for (const b of s.winnerBuckets) out.push(bucketLine(b));
+    out.push("");
+  }
+
+  if (s.byConfidence.length > 0) {
+    out.push("## By confidence");
+    out.push("");
+    for (const c of s.byConfidence) {
+      out.push(
+        `- ${c.confidence}: ${c.wins}-${c.losses} (${pct(c.rate)}, ` +
+          `${fmtUnits(c.profit)} units, n=${c.n})`,
+      );
+    }
     out.push("");
   }
 

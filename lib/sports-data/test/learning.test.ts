@@ -85,13 +85,61 @@ test("each market learns from its own bets only", () => {
 });
 
 test("the total market learns independently too", () => {
+  // Stated 0.65 sits ABOVE the stated-space tail boundary
+  // (0.5 + 0.15 × 0.85 = 0.6275), so it is the total market's TAIL that
+  // learns; the other markets stay untouched in both bands.
   const games = Array.from({ length: 10 }, () =>
     game({ total: { stated: 0.65, correct: false } }),
   );
   const s = updateCalibration(DEFAULT_CALIBRATION, games, NOW);
-  assert.ok(s.totalShrink < DEFAULT_CALIBRATION.totalShrink);
+  assert.ok(s.totalTailShrink < DEFAULT_CALIBRATION.totalTailShrink);
+  assert.equal(s.totalShrink, DEFAULT_CALIBRATION.totalShrink);
   assert.equal(s.shrink, DEFAULT_CALIBRATION.shrink);
+  assert.equal(s.tailShrink, DEFAULT_CALIBRATION.tailShrink);
   assert.equal(s.handicapShrink, DEFAULT_CALIBRATION.handicapShrink);
+  assert.equal(
+    s.handicapTailShrink,
+    DEFAULT_CALIBRATION.handicapTailShrink,
+  );
+});
+
+test("a settle-time band stamp overrides the boundary fallback", () => {
+  // Stated 0.60 sits BELOW the stated-space boundary (0.6275), but the stamp
+  // says the bet was priced from a raw tail probability (e.g. quoted under an
+  // older, harder shrink). The stamp must win: the tail learns, the core
+  // stays put. Without stamps, calibration drift re-files near-boundary bets
+  // into whichever band the CURRENT shrink implies — the exact
+  // cross-contamination stamping exists to prevent.
+  const stamped = Array.from({ length: 10 }, () => ({
+    ...game({ winner: { stated: 0.6, correct: false } }),
+    winnerTail: true,
+  }));
+  const s = updateCalibration(DEFAULT_CALIBRATION, stamped, NOW);
+  assert.equal(s.shrink, DEFAULT_CALIBRATION.shrink);
+  assert.ok(s.tailShrink < DEFAULT_CALIBRATION.tailShrink);
+});
+
+test("core and tail bands learn from their own bets only", () => {
+  // Core bets ran ahead of their quotes (underconfident) while tail bets
+  // collapsed — the EXACT pattern of the 2026-08 settled record, which a
+  // single shrink cannot express: the core must rise while the tail falls.
+  const games = [
+    ...Array.from({ length: 12 }, () =>
+      game({ winner: { stated: 0.57, correct: true } }),
+    ),
+    ...Array.from({ length: 12 }, () =>
+      game({ winner: { stated: 0.67, correct: false } }),
+    ),
+  ];
+  const s = updateCalibration(DEFAULT_CALIBRATION, games, NOW);
+  assert.ok(
+    s.shrink > DEFAULT_CALIBRATION.shrink,
+    `core should rise, got ${s.shrink}`,
+  );
+  assert.ok(
+    s.tailShrink < DEFAULT_CALIBRATION.tailShrink,
+    `tail should fall, got ${s.tailShrink}`,
+  );
 });
 
 test("settling the same date twice does not learn from it twice", () => {
@@ -169,5 +217,13 @@ test("an older single-shrink calibration.json upgrades without losing state", ()
   assert.equal(s.handicapShrink, 0.7);
   assert.equal(s.totalShrink, 0.7);
   assert.equal(s.gamesSettled, 42);
+  // A legacy file has no tails; they start at min(core, default tail) — never
+  // ABOVE the core, and never inheriting the tail overconfidence the band
+  // exists to fix.
+  assert.equal(s.tailShrink, 0.7);
+  assert.equal(
+    normalizeCalibration({ shrink: 0.9 }).tailShrink,
+    DEFAULT_CALIBRATION.tailShrink,
+  );
   assert.deepEqual(normalizeCalibration({}), DEFAULT_CALIBRATION);
 });

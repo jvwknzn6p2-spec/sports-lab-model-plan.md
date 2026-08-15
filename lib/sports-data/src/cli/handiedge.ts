@@ -637,7 +637,8 @@ async function runSettle(payload: {
   if (report.meanTotalError !== null)
     console.log(`  Mean total err:  ${report.meanTotalError} runs`);
   console.log(
-    `  Self-learning:   shrink ${report.calibrationBefore.shrink} → ${report.calibrationAfter.shrink} ` +
+    `  Self-learning:   shrink ${report.calibrationBefore.shrink} → ${report.calibrationAfter.shrink}, ` +
+      `tail ${report.calibrationBefore.tailShrink} → ${report.calibrationAfter.tailShrink} ` +
       `(${report.calibrationAfter.gamesSettled} games settled lifetime)`,
   );
   console.log(`  History appended → ${HISTORY_PATH}`);
@@ -675,8 +676,34 @@ async function cmdReport(): Promise<void> {
       (s.winnerRate === null ? "" : `  (${(s.winnerRate * 100).toFixed(1)}%)`),
   );
   console.log(
-    `  Handicap: ${s.handicapRecord.wins}-${s.handicapRecord.losses}`,
+    `  Handicap: ${s.handicapRecord.wins}-${s.handicapRecord.losses}` +
+      (s.handicapProfitTotal === null
+        ? ""
+        : `  (${fmtUnits(s.handicapProfitTotal)} units after the cut` +
+          (s.handicapRoi === null
+            ? ")"
+            : `, ROI ${fmtPct(s.handicapRoi)} per bet)`)),
   );
+  if (s.handicapProfitAssessment) {
+    const p = s.handicapProfitAssessment;
+    console.log(
+      `  Significance (P&L): ${fmtPct(p.meanProfit)} per bet over ${p.n} stakes — ` +
+        `z ${p.z.toFixed(2)}, ` +
+        (p.verdict === "ahead"
+          ? "statistically ahead of break-even"
+          : p.verdict === "behind"
+            ? "statistically BEHIND break-even — the book is losing"
+            : "not yet distinguishable from luck"),
+    );
+  }
+  if (s.handicapAssessment) {
+    const a = s.handicapAssessment;
+    console.log(
+      `  Hit rate: ${(a.rate * 100).toFixed(1)}% over ${a.n} bets ` +
+        `(95% CI ${(a.ci95.lo * 100).toFixed(1)}–${(a.ci95.hi * 100).toFixed(1)}%) ` +
+        `vs ${(a.breakEven * 100).toFixed(1)}% full-unit break-even`,
+    );
+  }
   console.log(`  Total:    ${s.totalRecord.wins}-${s.totalRecord.losses}`);
   if (s.meanBrier !== null) {
     console.log(
@@ -701,19 +728,49 @@ async function cmdReport(): Promise<void> {
     const h = s.handicapCalibration;
     console.log(
       `  Handicap calibration: stated ${(h.statedMean * 100).toFixed(1)}% vs actual ` +
-        `${(h.actualRate * 100).toFixed(1)}%  (${h.n} bets)`,
+        `${(h.actualRate * 100).toFixed(1)}%  (${h.n} bets, Brier ${h.meanBrier})`,
     );
   }
   if (s.totalCalibration) {
     const t = s.totalCalibration;
     console.log(
       `  Total calibration:    stated ${(t.statedMean * 100).toFixed(1)}% vs actual ` +
-        `${(t.actualRate * 100).toFixed(1)}%  (${t.n} bets)`,
+        `${(t.actualRate * 100).toFixed(1)}%  (${t.n} bets, Brier ${t.meanBrier})`,
     );
   }
+  const bucketLine = (b: (typeof s.handicapBuckets)[number]) =>
+    `    ${(b.lo * 100).toFixed(0)}–${(b.hi * 100).toFixed(0)}%: ` +
+    `said ${(b.statedMean * 100).toFixed(1)}%, hit ${(b.actualRate * 100).toFixed(1)}% ` +
+    `over ${b.n}  (gap ${(b.gap * 100).toFixed(1)}pt)` +
+    (b.flag === "overconfident"
+      ? "  ⚠ overconfident band"
+      : b.flag === "underconfident"
+        ? "  (underconfident)"
+        : "");
+  if (s.handicapBuckets.length > 0) {
+    console.log("  Calibration by band (handicap):");
+    for (const b of s.handicapBuckets) console.log(bucketLine(b));
+  }
+  if (
+    s.winnerBuckets.length > 0 &&
+    JSON.stringify(s.winnerBuckets) !== JSON.stringify(s.handicapBuckets)
+  ) {
+    console.log("  Calibration by band (winner):");
+    for (const b of s.winnerBuckets) console.log(bucketLine(b));
+  }
+  if (s.byConfidence.length > 0) {
+    console.log("  By confidence:");
+    for (const c of s.byConfidence) {
+      console.log(
+        `    ${c.confidence}: ${c.wins}-${c.losses} ` +
+          `(${(c.rate * 100).toFixed(1)}%, ${fmtUnits(c.profit)} units, n=${c.n})`,
+      );
+    }
+  }
   console.log(
-    `  Learned shrink: moneyline ${calibration.shrink}, handicap ` +
-      `${calibration.handicapShrink}, total ${calibration.totalShrink} ` +
+    `  Learned shrink (core/tail): moneyline ${calibration.shrink}/${calibration.tailShrink}, ` +
+      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}, ` +
+      `total ${calibration.totalShrink}/${calibration.totalTailShrink} ` +
       `(${calibration.gamesSettled} games settled lifetime)`,
   );
   if (s.gamesSettled < 30) {
