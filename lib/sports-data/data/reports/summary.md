@@ -1,18 +1,19 @@
 # HandiEdge — running results
 
-**70-49** (58.8%) across 16 days, 99 PASS.
+**73-52** (58.4%) across 17 days, 107 PASS.
 
-- Handicap: 70-49
+- Handicap: 73-52
 - Total: 0-0
 - Mean Brier: 0.248 (0.25 = coin flip, lower is better)
-- Calibration: says 60.8%, actually 58.8% — overconfident by 2.0pt
-- Handicap calibration: says 60.8%, actually 58.8% over 119 bets
-- Mean margin error: 3.121 runs
-- Mean total error: 3.445 runs
-- Learned shrink — moneyline 0.821, handicap 0.821, total 0.85 (119 games)
+- Calibration: says 60.8%, actually 58.4% — overconfident by 2.4pt
+- Handicap calibration: says 60.8%, actually 58.4% over 125 bets
+- Mean margin error: 3.112 runs
+- Mean total error: 3.53 runs
+- Learned shrink — moneyline 0.815, handicap 0.815, total 0.85 (125 games)
 
 ## By day
 
+- 2026-08-14: 3-3 (6 picks, 8 PASS, Brier 0.255)
 - 2026-08-13: 2-5 (7 picks, 2 PASS, Brier 0.297)
 - 2026-08-12: 6-4 (10 picks, 5 PASS, Brier 0.248)
 - 2026-08-11: 4-5 (9 picks, 6 PASS, Brier 0.261)
