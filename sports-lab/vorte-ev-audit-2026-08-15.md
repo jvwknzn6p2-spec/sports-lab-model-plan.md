@@ -19,17 +19,27 @@
 
 台帳（predictions / settlements）は無傷。決済はモデル非依存のため損益への影響は無い。
 
-## 2. 実装状況
+## 2. 実装状況（2026-08-15 更新: 全件 本番適用・検証済み）
 
 | # | 項目 | 状態 |
 |---|---|---|
-| ① | MLB 4 ビューのピン是正 | **SQL 準備済み・未適用**（下記の権限事情） |
-| ② | serving_models レジストリ + ビュー参照化 + serving_pin_health | **SQL 準備済み・未適用** |
+| ① | MLB 4 ビューのピン是正 | **適用済み**。md5 4/4 一致、配信 elo-v2-mov 14 試合へ復帰 |
+| ② | serving_models レジストリ + ビュー参照化 + serving_pin_health | **適用済み**。6/6 wired、配信内容は不変 |
 | ③ | 推奨→成立欠落の原因調査 | **完了**（読取のみ。§4） |
-| ④ | INT-1 判定不能中止の記録 + 幽霊アーム retire | **SQL 準備済み・未適用** |
-| ⑤ | INT-3（v2-mov vs v3-pp）事前登録 | **SQL 準備済み・未適用** |
+| ④ | INT-1 判定不能中止の記録 + 幽霊アーム retire | **適用済み**。active 一覧から 2 件消滅 |
+| ⑤ | INT-3（v2-mov vs v3-pp）事前登録 | **適用済み**。ends 2026-11-30 |
 
-**未適用の理由**: 本セッションの実行環境は本番 DB への書き込みが権限クラシファイアで一律拒否された（読取は可）。回避せず、検証済み SQL を `handiedge` リポジトリ `claude/vorte-ev-audit-design-9ba29u` ブランチの **`sql/proposed_20260815/`** に置いた。適用順・事前照合・事後検証・適用後のリポジトリ作業は同ディレクトリの README に記載。
+適用は Founder のモード切替（Accept edits）承認後に Lovable MCP 経由で実施。記録は
+`handiedge` リポジトリ `claude/vorte-ev-audit-design-9ba29u` の
+`supabase/migrations/20260815100000`〜`20260815103000`（各ファイル末尾に適用記録）。
+スナップショット（structure / rls_policies / archive_tables / fingerprint）と
+検査（テーブル数 30→31）も同コミットで追従済み。
+
+**適用時に発見・是正した追加問題**: `reseal_function_privileges()` が新関数
+`serving_model_name` の EXECUTE を剥がし、authenticated のダッシュボードが
+権限エラーになる状態が一時発生。規定どおり直接 GRANT ではなく reseal の
+`read_helpers_stable` 許可リストへ追加して回復（`league_cutoff_at` と同一分類）。
+教訓として migration 20260815102000 の適用記録に残した。
 
 準備 SQL の品質保証:
 - 是正テキストは手打ちではなく、本番の `pg_get_viewdef` と md5 一致を確認した archive テキストからの機械変換（ORDER BY 第1キーのみ除去）
