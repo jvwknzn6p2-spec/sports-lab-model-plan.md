@@ -104,23 +104,52 @@ export function resolveHandicap(h: HandicapInput): ResolvedHandicap {
  * run-line cover probability is systematically overconfident (margin is
  * harder to predict than the winner). Learning them together would let one
  * market's error corrupt the others.
+ *
+ * Each market also gets its own TAIL shrink, applied to the part of the edge
+ * above `TAIL_START`. A single linear shrink cannot express what the settled
+ * record actually showed — quotes in the 55–60% band running BELOW reality
+ * while quotes above 65% ran far above it — because tightening the one factor
+ * to fix the tail breaks the (already accurate) core, and vice versa. Two
+ * factors, each learned only from its own band's bets, can.
  */
 export interface CalibrationState {
   /** Shrink of (p−0.5) for the moneyline: 1 = trust fully, 0.5 = halve. */
   shrink: number;
+  /** Extra shrink on the edge beyond TAIL_START (moneyline). */
+  tailShrink: number;
   /** Same, for the handicap / run-line cover probability. */
   handicapShrink: number;
+  handicapTailShrink: number;
   /** Same, for the over/under total. */
   totalShrink: number;
+  totalTailShrink: number;
   gamesSettled: number;
   brierSum: number;
   updatedAt: string | null;
 }
 
+/**
+ * Raw probability at which the tail band begins. 0.65 is where the settled
+ * record's calibration curve broke: below it the model's quotes tracked
+ * reality, above it they collapsed (stated 66%, hit 42% over 19 bets).
+ */
+export const TAIL_START = 0.65;
+
+/**
+ * Default tail shrink. Deliberately BELOW the core's 0.85: the 2026-08 audit
+ * measured heavy tail overconfidence, and a fresh state should start from
+ * that evidence rather than relearn it at live stakes. Bounded learning
+ * (settle.ts) moves it from here.
+ */
+const DEFAULT_TAIL_SHRINK = 0.7;
+
 export const DEFAULT_CALIBRATION: CalibrationState = {
   shrink: 0.85,
+  tailShrink: DEFAULT_TAIL_SHRINK,
   handicapShrink: 0.85,
+  handicapTailShrink: DEFAULT_TAIL_SHRINK,
   totalShrink: 0.85,
+  totalTailShrink: DEFAULT_TAIL_SHRINK,
   gamesSettled: 0,
   brierSum: 0,
   updatedAt: null,
@@ -128,16 +157,29 @@ export const DEFAULT_CALIBRATION: CalibrationState = {
 
 /**
  * Fill in markets missing from an older calibration.json (which only had a
- * single `shrink`), so upgrading never silently resets learned state.
+ * single `shrink`, then per-market shrinks without tails), so upgrading never
+ * silently resets learned state.
+ *
+ * A legacy file has no tail values; each market's tail starts at
+ * min(its core shrink, DEFAULT_TAIL_SHRINK) — inheriting the core alone would
+ * reproduce the exact tail overconfidence the tail band exists to fix, while
+ * a tail above the core would mean quoting the far edge MORE boldly than the
+ * near edge, which no evidence supports.
  */
 export function normalizeCalibration(
   raw: Partial<CalibrationState> & { shrink?: number },
 ): CalibrationState {
   const shrink = raw.shrink ?? DEFAULT_CALIBRATION.shrink;
+  const handicapShrink = raw.handicapShrink ?? shrink;
+  const totalShrink = raw.totalShrink ?? shrink;
+  const legacyTail = (core: number) => Math.min(core, DEFAULT_TAIL_SHRINK);
   return {
     shrink,
-    handicapShrink: raw.handicapShrink ?? shrink,
-    totalShrink: raw.totalShrink ?? shrink,
+    tailShrink: raw.tailShrink ?? legacyTail(shrink),
+    handicapShrink,
+    handicapTailShrink: raw.handicapTailShrink ?? legacyTail(handicapShrink),
+    totalShrink,
+    totalTailShrink: raw.totalTailShrink ?? legacyTail(totalShrink),
     gamesSettled: raw.gamesSettled ?? 0,
     brierSum: raw.brierSum ?? 0,
     updatedAt: raw.updatedAt ?? null,
@@ -167,6 +209,18 @@ export const DEFAULT_DECISION_CONFIG: DecisionConfig = {
   bandB: 0.55,
 };
 
+/**
+ * Above this, a quoted EV is treated as a symptom rather than a prize.
+ *
+ * The settled record's EV buckets ran 60.6% (+5–15%), 66.7% (+15–25%), then
+ * 42.1% (>+25%, n=19): when the model believes it has found a much better
+ * price than the market, the discrepancy has so far been the MODEL's error,
+ * not the market's. Such picks keep their bet (the sign of the edge is still
+ * information) but are capped at confidence B, flagged, and demoted in the
+ * recommendation order.
+ */
+export const EV_OUTLIER_THRESHOLD = 0.25;
+
 export interface GamePrediction {
   gamePk: number;
   gameDate: string | null;
@@ -182,6 +236,12 @@ export interface GamePrediction {
     input: HandicapInput | null;
     pick: string | null; // e.g. "home -1.5" or "away +1.5"
     coverProbability: number | null;
+    /**
+     * The pick's cover probability BEFORE calibration. Kept so settlement can
+     * band the bet (core vs tail) by what the simulator actually said, not by
+     * inverting a calibration map that may have drifted since the pick.
+     */
+    rawCoverProbability: number | null;
     /** Profit per unit staked after the house's cut. Negative = losing bet. */
     ev: number | null;
     /**
@@ -196,6 +256,8 @@ export interface GamePrediction {
     predicted: number;
     pick: "OVER" | "UNDER" | null;
     probability: number | null;
+    /** Uncalibrated probability of the chosen side, for banding (see above). */
+    rawProbability: number | null;
   };
   expectedRuns: { home: number; away: number };
   reasons: string[];
@@ -209,6 +271,30 @@ export interface GamePrediction {
 /** Pull a raw probability toward 50% by the market's learned shrink. */
 export function calibrate(pRaw: number, shrink: number): number {
   return 0.5 + (pRaw - 0.5) * shrink;
+}
+
+/**
+ * Banded calibration: piecewise-LINEAR and CONTINUOUS in the edge |p − 0.5|.
+ *
+ * The edge up to (TAIL_START − 0.5) is scaled by the core shrink; whatever
+ * lies beyond is scaled by the tail shrink. Gluing the segments (rather than
+ * switching wholesale at the boundary) keeps the map continuous and, for
+ * positive shrinks, strictly monotone — a raw 65.1% can never be quoted below
+ * a raw 64.9%. Symmetric around 50%, so it is side-agnostic: calibrating
+ * p(home) and 1 − p(away) agree.
+ */
+export function calibrateBanded(
+  pRaw: number,
+  coreShrink: number,
+  tailShrink: number,
+): number {
+  const edge = Math.abs(pRaw - 0.5);
+  const coreSpan = TAIL_START - 0.5;
+  const scaled =
+    edge <= coreSpan
+      ? edge * coreShrink
+      : coreSpan * coreShrink + (edge - coreSpan) * tailShrink;
+  return 0.5 + Math.sign(pRaw - 0.5) * scaled;
 }
 
 function confidenceFor(
@@ -306,7 +392,11 @@ export function decide(
   const homeName = g.home.teamName ?? "home";
   const awayName = g.away.teamName ?? "away";
 
-  const pHomeCal = calibrate(sim.pHomeWin, calibration.shrink);
+  const pHomeCal = calibrateBanded(
+    sim.pHomeWin,
+    calibration.shrink,
+    calibration.tailShrink,
+  );
   const homeFavored = pHomeCal >= 0.5;
   const pWinner = homeFavored ? pHomeCal : 1 - pHomeCal;
   const winner = homeFavored ? homeName : awayName;
@@ -319,11 +409,16 @@ export function decide(
   // what that is actually worth once the house takes its cut.
   let handicapPick: string | null = null;
   let coverProbability: number | null = null;
+  let rawCoverProbability: number | null = null;
   let handicapEv: number | null = null;
   if (handicap) {
     const r = resolveHandicap(handicap);
     const quoted = sim.asianCover(handicap.side, r.parts);
-    const pCover = calibrate(quoted.probability, calibration.handicapShrink);
+    const pCover = calibrateBanded(
+      quoted.probability,
+      calibration.handicapShrink,
+      calibration.handicapTailShrink,
+    );
     // Back whichever side the model prefers. The push share is a property of
     // the line itself, so it is the same whichever side of it you take — but
     // it is NOT the same for a 半 line as for the whole line it resembles,
@@ -334,10 +429,24 @@ export function decide(
       ? `${handicap.side === "home" ? homeName : awayName} ${r.giveLabel}`
       : `${handicap.side === "home" ? awayName : homeName} ${r.takeLabel}`;
     coverProbability = round3(chosen);
+    rawCoverProbability = round3(
+      takeQuoted ? quoted.probability : 1 - quoted.probability,
+    );
     handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
   }
 
   const pass = pWinner < cfg.passThreshold || !g.complete || hasDowngrade;
+
+  // Distrust-your-own-enthusiasm guard: an EV far beyond what a real edge
+  // over a real market looks like is more likely a modelling error than a
+  // gift (see EV_OUTLIER_THRESHOLD). Cap the confidence so the pick can never
+  // present as S/A on the strength of the very number under suspicion.
+  const evOutlier =
+    handicapEv !== null && !pass && handicapEv > EV_OUTLIER_THRESHOLD;
+  const confidenceCapped =
+    evOutlier && (confidence === "S" || confidence === "A")
+      ? "B"
+      : confidence;
 
   // A handicap quoted at a price that cannot clear the house's cut is not a
   // bet, however confident the model is about who wins: winning 60% of a
@@ -355,15 +464,28 @@ export function decide(
   // Total.
   let totalPick: "OVER" | "UNDER" | null = null;
   let totalProbability: number | null = null;
+  let rawTotalProbability: number | null = null;
   const totalLine = handicap?.total ?? null;
   if (totalLine !== null) {
     const { over } = sim.totalProb(totalLine);
-    const pOver = calibrate(over, calibration.totalShrink);
+    const pOver = calibrateBanded(
+      over,
+      calibration.totalShrink,
+      calibration.totalTailShrink,
+    );
     totalPick = pOver >= 0.5 ? "OVER" : "UNDER";
     totalProbability = round3(pOver >= 0.5 ? pOver : 1 - pOver);
+    rawTotalProbability = round3(pOver >= 0.5 ? over : 1 - over);
   }
 
   const reasons = buildReasons(g, runs, sim);
+  if (evOutlier) {
+    reasons.unshift(
+      `EV outlier: ${fmtPct(handicapEv!)} per unit is implausibly large — ` +
+        `edges this size have historically been model error, not value ` +
+        `(confidence capped at B, rank demoted)`,
+    );
+  }
   if (handicapEv !== null) {
     reasons.unshift(
       handicapUnprofitable
@@ -393,11 +515,12 @@ export function decide(
     predictedLoser: pass ? null : loser,
     winProbability: round3(pWinner),
     rawWinProbability: round3(homeFavored ? sim.pHomeWin : sim.pAwayWin),
-    confidence,
+    confidence: confidenceCapped,
     handicap: {
       input: handicap,
       pick: pass || handicapUnprofitable ? null : handicapPick,
       coverProbability,
+      rawCoverProbability,
       ev: handicapEv,
       noValue: !pass && handicapUnprofitable,
     },
@@ -406,10 +529,14 @@ export function decide(
       predicted: round2(sim.meanTotal),
       pick: pass ? null : totalPick,
       probability: totalProbability,
+      rawProbability: rawTotalProbability,
     },
     expectedRuns: { home: runs.homeMu, away: runs.awayMu },
     reasons,
-    flags: g.flags.map((f) => `[${f.severity}] ${f.code}`),
+    flags: [
+      ...g.flags.map((f) => `[${f.severity}] ${f.code}`),
+      ...(evOutlier ? ["[warn] ev_outlier"] : []),
+    ],
   };
 }
 
@@ -429,6 +556,20 @@ export const fmtPct = (v: number) =>
 export const fmtUnits = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
 
 /**
+ * EV as used for ORDERING picks: honest up to the outlier threshold, then
+ * reflected back down — an EV of +40% ranks like +10%, not like the best bet
+ * of the day.
+ *
+ * The reflection (rather than a flat cap) encodes what the settled record
+ * showed: credibility falls off monotonically past the threshold, and a cap
+ * would still put every outlier above every honest +24% pick. The bet itself
+ * is unchanged; only its place in the queue is.
+ */
+export function rankingEv(ev: number): number {
+  return ev <= EV_OUTLIER_THRESHOLD ? ev : 2 * EV_OUTLIER_THRESHOLD - ev;
+}
+
+/**
  * Recommendation order: best expected value first.
  *
  * This lives here rather than in each renderer because the order IS part of
@@ -439,14 +580,16 @@ export const fmtUnits = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
  * Sorting by win probability instead would promote a near-certain bet that
  * pays almost nothing over a genuinely profitable one, which is the mistake
  * this ordering exists to prevent. Games with no line quoted have no EV at
- * all; they sort below every real price (EV cannot fall below -1) and fall
- * back to confidence among themselves.
+ * all; they sort below every real price (a reflected outlier EV cannot fall
+ * below 2·threshold − 0.9 ≈ −0.4, and a real losing price not below −1) and
+ * fall back to confidence among themselves.
  */
 export function rankByValue(
   picks: readonly GamePrediction[],
 ): GamePrediction[] {
   const rank = { S: 0, A: 1, B: 2, C: 3 } as const;
-  const ev = (p: GamePrediction) => p.handicap.ev ?? -2;
+  const ev = (p: GamePrediction) =>
+    p.handicap.ev === null ? -2 : rankingEv(p.handicap.ev);
   return [...picks].sort(
     (a, b) =>
       ev(b) - ev(a) ||

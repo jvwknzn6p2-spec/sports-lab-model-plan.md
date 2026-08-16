@@ -10,15 +10,21 @@ import {
   type FixtureBundle,
 } from "../src/sources/fixture-source";
 import { expectedRuns } from "../src/engine/run-model";
-import { simulateGame } from "../src/engine/simulate";
+import { SHARED_ENV_SD, simulateGame } from "../src/engine/simulate";
 import {
   calibrate,
+  calibrateBanded,
   decide,
   DEFAULT_CALIBRATION,
   DEFAULT_DECISION_CONFIG,
+  EV_OUTLIER_THRESHOLD,
+  rankByValue,
+  rankingEv,
+  TAIL_START,
+  type GamePrediction,
 } from "../src/engine/decision";
 import { settle, updateCalibration } from "../src/engine/settle";
-import { mulberry32, poisson } from "../src/engine/rng";
+import { gamma, mulberry32, negBinomial, poisson } from "../src/engine/rng";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -36,6 +42,180 @@ test("poisson sampler has roughly the right mean", () => {
   const n = 20_000;
   for (let i = 0; i < n; i++) sum += poisson(4.5, rng);
   assert.ok(Math.abs(sum / n - 4.5) < 0.1, `mean=${sum / n}`);
+});
+
+test("gamma sampler matches its first two moments", () => {
+  const rng = mulberry32(7);
+  const shape = 9;
+  const n = 40_000;
+  let sum = 0;
+  let sumSq = 0;
+  for (let i = 0; i < n; i++) {
+    const x = gamma(shape, rng);
+    sum += x;
+    sumSq += x * x;
+  }
+  const mean = sum / n;
+  const variance = sumSq / n - mean * mean;
+  // Gamma(k, 1): mean k, variance k.
+  assert.ok(Math.abs(mean - shape) < 0.15, `mean=${mean}`);
+  assert.ok(Math.abs(variance - shape) < 0.6, `var=${variance}`);
+  // The shape<1 boost path must also hold its mean.
+  const rng2 = mulberry32(8);
+  let sumSmall = 0;
+  for (let i = 0; i < n; i++) sumSmall += gamma(0.5, rng2);
+  assert.ok(Math.abs(sumSmall / n - 0.5) < 0.05, `mean=${sumSmall / n}`);
+});
+
+test("negative binomial keeps the mean but is overdispersed", () => {
+  const rng = mulberry32(11);
+  const mu = 4.5;
+  const size = 9;
+  const n = 40_000;
+  let sum = 0;
+  let sumSq = 0;
+  for (let i = 0; i < n; i++) {
+    const x = negBinomial(mu, size, rng);
+    sum += x;
+    sumSq += x * x;
+  }
+  const mean = sum / n;
+  const variance = sumSq / n - mean * mean;
+  assert.ok(Math.abs(mean - mu) < 0.1, `mean=${mean}`);
+  // Var = mu + mu²/size = 4.5 + 2.25 = 6.75 — well above the Poisson's 4.5.
+  const expected = mu + (mu * mu) / size;
+  assert.ok(Math.abs(variance - expected) < 0.5, `var=${variance}`);
+  // size = ∞ must recover the plain Poisson.
+  const rng2 = mulberry32(11);
+  const rng3 = mulberry32(11);
+  assert.equal(
+    negBinomial(mu, Number.POSITIVE_INFINITY, rng2),
+    poisson(mu, rng3),
+  );
+});
+
+test("overdispersion + shared environment pull the favourite toward 50%", () => {
+  // The Poisson variant is the pre-audit engine. Its favourite probabilities
+  // ran ~24pt hot in the 65–70% band; the wider margin distribution must
+  // quote the same matchup lower.
+  const nb = simulateGame(5.2, 3.8, { sims: 40_000, seed: 21 });
+  const po = simulateGame(5.2, 3.8, {
+    sims: 40_000,
+    seed: 21,
+    dispersion: Number.POSITIVE_INFINITY,
+    envSd: 0,
+  });
+  assert.ok(
+    nb.pHomeWin < po.pHomeWin - 0.02,
+    `nb=${nb.pHomeWin} poisson=${po.pHomeWin}`,
+  );
+  // Both still favour the stronger side.
+  assert.ok(nb.pHomeWin > 0.55);
+});
+
+test("the shared environment factor correlates the two teams' runs", () => {
+  // A common multiplier moves both teams together, so its signature is in
+  // the TOTAL: more mass at extreme combined scores than independent draws
+  // can produce. Compare the same matchup with the environment on and off.
+  const withEnv = simulateGame(4.5, 4.5, {
+    sims: 30_000,
+    seed: 5,
+    envSd: SHARED_ENV_SD,
+  });
+  const without = simulateGame(4.5, 4.5, { sims: 30_000, seed: 5, envSd: 0 });
+  const hiWith = withEnv.totalProb(14.5).over;
+  const hiWithout = without.totalProb(14.5).over;
+  assert.ok(hiWith > hiWithout, `env tail ${hiWith} vs indep ${hiWithout}`);
+});
+
+test("banded calibration is continuous, monotone and symmetric", () => {
+  const core = 0.85;
+  const tail = 0.7;
+  // Continuity at the boundary.
+  const below = calibrateBanded(TAIL_START - 1e-9, core, tail);
+  const above = calibrateBanded(TAIL_START + 1e-9, core, tail);
+  assert.ok(Math.abs(below - above) < 1e-6);
+  // Monotone: a bigger raw edge can never be quoted smaller.
+  let prev = -1;
+  for (let p = 0.5; p <= 0.99; p += 0.01) {
+    const q = calibrateBanded(p, core, tail);
+    assert.ok(q > prev, `p=${p}`);
+    prev = q;
+  }
+  // Symmetric around 50%: both sides of the same game agree.
+  const up = calibrateBanded(0.72, core, tail);
+  const down = calibrateBanded(0.28, core, tail);
+  assert.ok(Math.abs(up + down - 1) < 1e-9);
+  // Inside the core band it IS the linear map.
+  assert.equal(calibrateBanded(0.6, core, tail), calibrate(0.6, core));
+  // Beyond it, the tail is shrunk harder than the core alone would.
+  assert.ok(calibrateBanded(0.75, core, tail) < calibrate(0.75, core));
+});
+
+test("an implausibly large EV is flagged, capped and demoted in rank", () => {
+  // rankingEv reflects past the threshold instead of capping: +40% must rank
+  // BELOW an honest +24%, not tie every other outlier at the cap.
+  assert.equal(rankingEv(0.2), 0.2);
+  assert.ok(rankingEv(0.4) < rankingEv(0.24));
+  assert.ok(rankingEv(0.26) < rankingEv(0.25));
+
+  const fake = (ev: number | null, confidence: "S" | "B", win: number) =>
+    ({
+      gamePk: 1,
+      gameDate: null,
+      home: "H",
+      away: "A",
+      pass: false,
+      predictedWinner: "H",
+      predictedLoser: "A",
+      winProbability: win,
+      rawWinProbability: win,
+      confidence,
+      handicap: {
+        input: null,
+        pick: ev === null ? null : "H -1.5",
+        coverProbability: ev === null ? null : win,
+        rawCoverProbability: ev === null ? null : win,
+        ev,
+        noValue: false,
+      },
+      total: {
+        line: null,
+        predicted: 9,
+        pick: null,
+        probability: null,
+        rawProbability: null,
+      },
+      expectedRuns: { home: 5, away: 4 },
+      reasons: [],
+      flags: [],
+    }) satisfies GamePrediction;
+
+  const honest = fake(0.18, "B", 0.6);
+  const outlier = fake(0.45, "S", 0.7);
+  const ranked = rankByValue([outlier, honest]);
+  assert.equal(ranked[0], honest, "the honest EV outranks the outlier");
+
+  // decide() itself: force an enormous edge so the quoted EV clears the
+  // threshold, then check the pick is flagged and demoted from S.
+  const strong = simulateGame(7.5, 2.5, { sims: 10_000, seed: 9 });
+  assert.ok(strong.pHomeWin > 0.8);
+  return loadSlateGames().then((games) => {
+    const p = decide(games[0]!, expectedRuns(games[0]!, 2024), strong, {
+      ...DEFAULT_CALIBRATION,
+    }, {
+      side: "home",
+      notation: "0",
+    });
+    assert.ok(p.handicap.ev !== null && p.handicap.ev > EV_OUTLIER_THRESHOLD);
+    assert.ok(p.flags.includes("[warn] ev_outlier"), p.flags.join(","));
+    assert.notEqual(p.confidence, "S");
+    assert.notEqual(p.confidence, "A");
+    assert.ok(
+      p.reasons.some((r) => r.startsWith("EV outlier")),
+      "the demotion explains itself",
+    );
+  });
 });
 
 test("simulation is deterministic under the same seed", () => {
@@ -151,11 +331,16 @@ test("settlement scores picks and self-learning moves shrink the right way", asy
   assert.equal(report.winnerRecord.wins, 1);
   assert.equal(report.winnerRecord.losses, 1);
   assert.ok(report.meanBrier !== null && report.meanBrier > 0);
-  // Stated ~66%, actual 50% → overconfident → shrink must go DOWN.
-  assert.ok(report.calibrationAfter.shrink < report.calibrationBefore.shrink);
+  // Stated ~65%, actual 50% → overconfident. Which BAND absorbs the lesson
+  // depends on where the stated probabilities landed, so assert on the map
+  // itself: after overconfident evidence, the same raw probability must be
+  // quoted lower than before.
+  const quote = (s: typeof report.calibrationAfter) =>
+    calibrateBanded(0.7, s.shrink, s.tailShrink);
+  assert.ok(quote(report.calibrationAfter) < quote(report.calibrationBefore));
   assert.equal(report.calibrationAfter.gamesSettled, 2);
 
-  // Underconfidence moves shrink UP (both picks win).
+  // Underconfidence moves the quote UP (both picks win).
   const up = settle(
     "2024-07-25",
     preds,
@@ -166,7 +351,7 @@ test("settlement scores picks and self-learning moves shrink the right way", asy
     DEFAULT_CALIBRATION,
     now,
   );
-  assert.ok(up.calibrationAfter.shrink > DEFAULT_CALIBRATION.shrink);
+  assert.ok(quote(up.calibrationAfter) > quote(DEFAULT_CALIBRATION));
 });
 
 test("PASS games are excluded from settlement scoring", async () => {
@@ -220,6 +405,11 @@ test("updateCalibration is bounded and damped", () => {
     one,
     new Date("2024-07-26T00:00:00Z"),
   );
-  // One catastrophic game moves shrink only slightly (damping 1/21).
-  assert.ok(s.shrink > 0.8 && s.shrink < DEFAULT_CALIBRATION.shrink);
+  // A stated 99% is a TAIL bet; one catastrophic game moves the tail only
+  // slightly (damping 1/21) and leaves the core band untouched.
+  assert.ok(
+    s.tailShrink > 0.65 && s.tailShrink < DEFAULT_CALIBRATION.tailShrink,
+    `tailShrink=${s.tailShrink}`,
+  );
+  assert.equal(s.shrink, DEFAULT_CALIBRATION.shrink);
 });

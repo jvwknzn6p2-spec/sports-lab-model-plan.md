@@ -2,14 +2,31 @@
 
 **75-58** (56.4%) across 18 days, 114 PASS.
 
-- Handicap: 75-58
+- Handicap: 75-58 · **+9.50 units** after the cut (ROI +7.1% per bet)
+- Significance (P&L): +7.1% per bet over 133 stakes — z 0.87, **not yet distinguishable from luck**
+- Hit rate: 56.4% over 133 bets (95% CI 47.9%–64.5%) vs 52.6% full-unit break-even
 - Total: 0-0
 - Mean Brier: 0.254 (0.25 = coin flip, lower is better)
 - Calibration: says 60.8%, actually 56.4% — overconfident by 4.4pt
-- Handicap calibration: says 60.8%, actually 56.4% over 133 bets
+- Handicap calibration: says 60.8%, actually 56.4% over 133 bets (Brier 0.254)
 - Mean margin error: 3.16 runs
 - Mean total error: 3.555 runs
-- Learned shrink — moneyline 0.789, handicap 0.789, total 0.85 (133 games)
+- Learned shrink (core/tail) — moneyline 0.861/0.526, handicap 0.876/0.494, total 0.85/0.7 (133 games)
+
+## Calibration by band (handicap)
+
+_The headline gap can sit near zero while one band runs hot and another collapses — this is the table that shows it._
+
+- 55.0%–60.0%: said 57.3%, hit 60.3% over 68 (gap 3.0pt)
+- 60.0%–65.0%: said 62.1%, hit 60.5% over 38 (gap -1.6pt)
+- 65.0%–70.0%: said 66.5%, hit 36.4% over 22 (gap -30.1pt) ⚠️ overconfident
+- 70.0%–100.0%: said 73.5%, hit 60.0% over 5 (gap -13.5pt)
+
+## By confidence
+
+- S: 7-11 (38.9%, -4.70 units, n=18)
+- A: 16-10 (61.5%, +4.40 units, n=26)
+- B: 52-37 (58.4%, +9.80 units, n=89)
 
 ## By day
 

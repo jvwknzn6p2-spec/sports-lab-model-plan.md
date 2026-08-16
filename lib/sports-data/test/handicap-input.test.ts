@@ -130,7 +130,10 @@ function predictWith(
 }
 
 test("a notation handicap is priced and named in the market's own terms", () => {
-  const p = predictWith({ side: "home", notation: "1半2" });
+  // A ~3-run edge: under the overdispersed simulator a 1.8-run edge no
+  // longer covers -1.5/-2 often enough to clear the commission, so the line
+  // needs a genuinely strong favourite to be a bet at all.
+  const p = predictWith({ side: "home", notation: "1半2" }, 6.4, 3.2);
   assert.ok(p.handicap.pick!.includes("〈1半2〉"), p.handicap.pick!);
   assert.ok(p.handicap.ev !== null);
   assert.ok(p.handicap.coverProbability! > 0.5);
@@ -146,7 +149,7 @@ test("〈1半2〉 is priced differently from the whole line it resembles", () =>
 });
 
 test("settlement re-settles the same basket, so 8分 is scored as 8分", () => {
-  const p = predictWith({ side: "home", notation: "1半2" });
+  const p = predictWith({ side: "home", notation: "1半2" }, 6.4, 3.2);
   assert.ok(p.handicap.pick!.startsWith("Home"), "backing the giving side");
 
   // Home by exactly two: the 1.5 portion wins, the 2.0 portion pushes.
