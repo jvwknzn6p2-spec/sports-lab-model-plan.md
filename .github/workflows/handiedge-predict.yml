@@ -5,14 +5,15 @@ name: HandiEdge — daily predictions
 # and committed back to the repo. Read the result on a phone either in the run
 # summary (Actions tab) or in data/reports/<date>.md.
 #
-# 12:37 UTC = 21:37 JST — WELL before the 22:21 JST (13:21 UTC) prediction
+# 12:37 UTC = 21:37 JST — WELL before the 22:55 JST (13:55 UTC) prediction
 # deadline, so the picks are produced and locked while they are still on
 # time. The margin is deliberately large and the minute deliberately odd:
 # GitHub fires scheduled workflows 20–26 minutes late on this repository
 # (observed on consecutive days), so the previous 13:00 cron still locked
-# at 13:22 — one minute past the deadline — and stamped the whole slate
-# predicted_after_deadline. 12:37 leaves ~44 minutes of headroom and avoids
-# the congested top of the hour, so the flag marks only genuinely late runs
+# at 13:22 — one minute past the deadline of the era (then 13:21 UTC) — and
+# stamped the whole slate predicted_after_deadline. 12:37 leaves ~78 minutes
+# of headroom and avoids the congested top of the hour, so the flag marks
+# only genuinely late runs
 # (a manual re-run, a scheduler outage). In MLB's own clock this is 08:37
 # ET on the slate date, comfortably ahead of the earliest first pitch
 # (about 13:05 ET / 17:05 UTC).

@@ -367,7 +367,7 @@ async function cmdPredict(args: {
     );
   }
 
-  // The slate's predictions freeze at 22:21 JST the evening before the games.
+  // The slate's predictions freeze at 22:55 JST the evening before the games.
   // Once that has passed, a re-run must carry the committed picks through
   // untouched rather than silently rewriting what was already decided.
   const now = new Date();
