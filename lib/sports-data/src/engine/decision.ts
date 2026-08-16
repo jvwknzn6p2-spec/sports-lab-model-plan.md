@@ -262,7 +262,7 @@ export interface GamePrediction {
   expectedRuns: { home: number; away: number };
   reasons: string[];
   flags: string[];
-  /** 22:21 JST the evening before: when this pick stopped being editable. */
+  /** 22:55 JST the evening before: when this pick stopped being editable. */
   lockDeadline?: string | null;
   /** True once the deadline has passed and the pick is frozen. */
   final?: boolean;
