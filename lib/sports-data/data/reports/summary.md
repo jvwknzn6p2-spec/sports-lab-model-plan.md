@@ -1,35 +1,37 @@
 # HandiEdge — running results
 
-**70-49** (58.8%) across 16 days, 99 PASS.
+**75-58** (56.4%) across 18 days, 114 PASS.
 
-- Handicap: 70-49 · **+14.00 units** after the cut (ROI +11.8% per bet)
-- Significance (P&L): +11.8% per bet over 119 stakes — z 1.37, **not yet distinguishable from luck**
-- Hit rate: 58.8% over 119 bets (95% CI 49.8%–67.3%) vs 52.6% full-unit break-even
+- Handicap: 75-58 · **+9.50 units** after the cut (ROI +7.1% per bet)
+- Significance (P&L): +7.1% per bet over 133 stakes — z 0.87, **not yet distinguishable from luck**
+- Hit rate: 56.4% over 133 bets (95% CI 47.9%–64.5%) vs 52.6% full-unit break-even
 - Total: 0-0
-- Mean Brier: 0.248 (0.25 = coin flip, lower is better)
-- Calibration: says 60.8%, actually 58.8% — overconfident by 2.0pt
-- Handicap calibration: says 60.8%, actually 58.8% over 119 bets (Brier 0.248)
-- Mean margin error: 3.121 runs
-- Mean total error: 3.445 runs
-- Learned shrink (core/tail) — moneyline 0.872/0.58, handicap 0.883/0.556, total 0.85/0.7 (119 games)
+- Mean Brier: 0.254 (0.25 = coin flip, lower is better)
+- Calibration: says 60.8%, actually 56.4% — overconfident by 4.4pt
+- Handicap calibration: says 60.8%, actually 56.4% over 133 bets (Brier 0.254)
+- Mean margin error: 3.16 runs
+- Mean total error: 3.555 runs
+- Learned shrink (core/tail) — moneyline 0.861/0.526, handicap 0.876/0.494, total 0.85/0.7 (133 games)
 
 ## Calibration by band (handicap)
 
 _The headline gap can sit near zero while one band runs hot and another collapses — this is the table that shows it._
 
-- 55.0%–60.0%: said 57.4%, hit 61.3% over 62 (gap 3.9pt)
-- 60.0%–65.0%: said 62.0%, hit 63.6% over 33 (gap 1.6pt)
-- 65.0%–70.0%: said 66.4%, hit 42.1% over 19 (gap -24.3pt) ⚠️ overconfident
+- 55.0%–60.0%: said 57.3%, hit 60.3% over 68 (gap 3.0pt)
+- 60.0%–65.0%: said 62.1%, hit 60.5% over 38 (gap -1.6pt)
+- 65.0%–70.0%: said 66.5%, hit 36.4% over 22 (gap -30.1pt) ⚠️ overconfident
 - 70.0%–100.0%: said 73.5%, hit 60.0% over 5 (gap -13.5pt)
 
 ## By confidence
 
-- S: 7-10 (41.2%, -3.70 units, n=17)
-- A: 14-7 (66.7%, +5.60 units, n=21)
-- B: 49-32 (60.5%, +12.10 units, n=81)
+- S: 7-11 (38.9%, -4.70 units, n=18)
+- A: 16-10 (61.5%, +4.40 units, n=26)
+- B: 52-37 (58.4%, +9.80 units, n=89)
 
 ## By day
 
+- 2026-08-15: 2-6 (8 picks, 7 PASS, Brier 0.337)
+- 2026-08-14: 3-3 (6 picks, 8 PASS, Brier 0.255)
 - 2026-08-13: 2-5 (7 picks, 2 PASS, Brier 0.297)
 - 2026-08-12: 6-4 (10 picks, 5 PASS, Brier 0.248)
 - 2026-08-11: 4-5 (9 picks, 6 PASS, Brier 0.261)
