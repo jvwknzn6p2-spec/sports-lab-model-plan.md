@@ -392,6 +392,7 @@ test("updateCalibration is bounded and damped", () => {
       brier: 0.98,
       handicapPick: null,
       handicapCorrect: null,
+      handicapProfit: null,
       handicapProbability: null,
       totalPick: null,
       totalCorrect: null,

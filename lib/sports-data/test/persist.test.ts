@@ -93,18 +93,21 @@ test("game mapper output validates against the DB insert schema", () => {
     gamePk: 745804,
     gameDate: "2024-07-25T17:10:00Z",
     status: "Scheduled",
+    abstractState: "Preview",
     venue: { id: 5, name: "Progressive Field" },
     away: {
       teamId: 116,
       teamName: "DET",
       probablePitcherId: 669373,
       probablePitcherName: "Skubal",
+      score: null,
     },
     home: {
       teamId: 114,
       teamName: "CLE",
       probablePitcherId: 676440,
       probablePitcherName: "Bibee",
+      score: null,
     },
   };
   const row = toGameRow(game, 2024, 98);
