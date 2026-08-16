@@ -7,6 +7,7 @@
  * tables that force horizontal scrolling on a narrow screen.
  */
 
+import type { AuditReport } from "../engine/audit";
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import { fmtPct, fmtUnits, rankByValue } from "../engine/decision";
 import type { CalibrationBucket, HistorySummary } from "../engine/report";
@@ -326,6 +327,110 @@ export function summaryToMarkdown(
       `- ${d.date}: ${d.winnerRecord.wins}-${d.winnerRecord.losses}` +
         ` (${d.settled} pick${d.settled === 1 ? "" : "s"}, ${d.passed} PASS` +
         (d.meanBrier === null ? ")" : `, Brier ${d.meanBrier})`),
+    );
+  }
+  return out.join("\n") + "\n";
+}
+
+export function auditToMarkdown(a: AuditReport): string {
+  const out: string[] = [];
+  out.push("# HandiEdge — standing audit");
+  out.push("");
+  out.push(`_Generated ${a.generatedAt} over ${a.daysAudited} day(s)._`);
+  out.push("");
+
+  out.push("## S-3 / B-2 — Integrity");
+  out.push("");
+  if (a.issues.length === 0) {
+    out.push(
+      "✅ No issues: independent re-score matches the official history, " +
+        "every overdue slate is settled, all handicap notations resolve, " +
+        "and the learning counters reconcile.",
+    );
+  } else {
+    for (const i of a.issues) {
+      out.push(`- ${i.severity === "error" ? "❌" : "⚠️"} \`${i.code}\` ${i.detail}`);
+    }
+  }
+  out.push("");
+
+  out.push("## S-4 — Lock discipline");
+  out.push("");
+  const withMargin = a.lockMargins.filter((m) => m.marginMinutes !== null);
+  const late = withMargin.filter((m) => m.late);
+  const onTime = withMargin.filter((m) => !m.late);
+  const minOnTime = onTime.length
+    ? Math.min(...onTime.map((m) => m.marginMinutes!))
+    : null;
+  out.push(
+    `${late.length === 0 ? "✅" : "❌"} ${late.length} of ${withMargin.length} slates locked late` +
+      ` (each judged by the deadline in force when it locked).` +
+      (minOnTime === null
+        ? ""
+        : ` Tightest on-time margin: ${minOnTime} minutes.`),
+  );
+  for (const m of late) {
+    out.push(`- ❌ ${m.date}: locked ${Math.abs(m.marginMinutes!)} min AFTER the deadline`);
+  }
+  // The five tightest ON-TIME margins show erosion before it becomes an
+  // incident — filtered before slicing so late slates cannot crowd them out.
+  const tightest = [...onTime]
+    .sort((x, y) => x.marginMinutes! - y.marginMinutes!)
+    .slice(0, 5);
+  for (const m of tightest) {
+    out.push(`- ${m.date}: +${m.marginMinutes} min`);
+  }
+  out.push("");
+
+  out.push("## A-1 — Distribution validity");
+  out.push("");
+  if (!a.distribution) {
+    out.push("_Fewer than 10 scored games — not enough to check the spread._");
+  } else {
+    const d = a.distribution;
+    const varRatio = d.empiricalMarginVariance / d.modelMarginVariance;
+    out.push(
+      `- Margin residual variance: empirical ${d.empiricalMarginVariance} vs model ${d.modelMarginVariance} ` +
+        `(ratio ${varRatio.toFixed(2)}) over ${d.n} games. ` +
+        `The residual folds in mean-estimation error on top of scoring ` +
+        `variance, so modestly above 1.0 is expected; a ratio well above ` +
+        `~1.3 says the simulator's spread is still too narrow, well below ` +
+        `1.0 says too wide.`,
+    );
+    out.push(
+      `- Same-game run correlation: empirical ${d.empiricalRunCorrelation} vs model ${d.modelRunCorrelation}`,
+    );
+    out.push(`- Mean |margin error|: ${d.meanMarginError} runs`);
+  }
+  out.push("");
+
+  out.push("## A-4 — Input-data health");
+  out.push("");
+  if (a.flagRates.length === 0) {
+    out.push("_No data-quality flags recorded._");
+  } else {
+    for (const f of a.flagRates) {
+      out.push(
+        `- \`${f.flag}\`: ${f.games} games (${(f.rate * 100).toFixed(1)}%)`,
+      );
+    }
+  }
+  out.push("");
+
+  out.push("## A-5 / A-2 — Watched cohorts");
+  out.push("");
+  out.push(
+    "_Cohorts deliberately left without their own correction; judge at n≈50 " +
+      "per cohort. Real-line rows are the A-2 readiness tripwire — the day " +
+      "they stop reading n=0, cross-check those settlements by hand._",
+  );
+  out.push("");
+  for (const c of a.cohorts) {
+    out.push(
+      `- ${c.cohort}: ` +
+        (c.n === 0
+          ? "n=0"
+          : `${c.wins}-${c.losses} (${((c.hitRate ?? 0) * 100).toFixed(1)}%, ${fmtUnits(c.profit)} units, n=${c.n})`),
     );
   }
   return out.join("\n") + "\n";

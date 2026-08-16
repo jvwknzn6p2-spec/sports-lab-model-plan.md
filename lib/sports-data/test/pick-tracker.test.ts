@@ -88,10 +88,17 @@ function prediction(over: Partial<GamePrediction> = {}): GamePrediction {
       input: { side: "home", line: -1.5 },
       pick: "Cleveland Guardians -1.5",
       coverProbability: 0.55,
+      rawCoverProbability: 0.56,
       ev: null,
       noValue: false,
     },
-    total: { line: 8.5, predicted: 7.9, pick: "UNDER", probability: 0.58 },
+    total: {
+      line: 8.5,
+      predicted: 7.9,
+      pick: "UNDER",
+      probability: 0.58,
+      rawProbability: 0.59,
+    },
     expectedRuns: { home: 4.6, away: 4.1 },
     reasons: ["Starter edge: Cleveland Guardians"],
     flags: [],
@@ -158,8 +165,21 @@ test("an all-PASS day produces no block at all", () => {
 test("a game with no handicap line still fills the field", () => {
   const text = pickTrackerBlock("2024-07-25", [
     prediction({
-      handicap: { input: null, pick: null, coverProbability: null },
-      total: { line: null, predicted: 8, pick: null, probability: null },
+      handicap: {
+        input: null,
+        pick: null,
+        coverProbability: null,
+        rawCoverProbability: null,
+        ev: null,
+        noValue: false,
+      },
+      total: {
+        line: null,
+        predicted: 8,
+        pick: null,
+        probability: null,
+        rawProbability: null,
+      },
     }),
   ])!;
   const parsed = splitBlocks(text).map(parseBlock).filter(Boolean);

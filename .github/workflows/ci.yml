@@ -1,0 +1,48 @@
+name: CI
+
+# Audit item B-3: every change to the engine must pass the type checker and
+# the full test suite BEFORE it can merge. The engine's tests are the spec
+# (deadlines, settlement rules, calibration behaviour are all asserted), so
+# an unreviewed red suite is a broken spec — PRs #7–#9 merged with zero
+# checks, which is exactly the gap this workflow closes.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Workspace-wide type check (libs via project references, then the
+      # artifacts and scripts packages).
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      # The tests are the spec, so they get type-checked too — tsx strips
+      # types without checking them, and a type error confined to a test can
+      # silently stop it asserting what it appears to assert.
+      - name: Typecheck tests
+        working-directory: lib/sports-data
+        run: pnpm run typecheck:test
+
+      - name: Test
+        working-directory: lib/sports-data
+        run: pnpm test

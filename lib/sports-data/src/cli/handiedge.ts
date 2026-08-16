@@ -59,6 +59,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+import { runAudit, type AuditDay } from "../engine/audit";
 import { assembleDate } from "../step2";
 import {
   FixtureCoreDataSource,
@@ -94,6 +95,7 @@ import {
   predictionDeadline,
 } from "../engine/deadline";
 import {
+  auditToMarkdown,
   predictionsToMarkdown,
   settlementToMarkdown,
   summaryToMarkdown,
@@ -782,6 +784,90 @@ async function cmdReport(): Promise<void> {
   console.log(`  Readable summary → ${summaryPath}`);
 }
 
+/**
+ * audit — the standing audit (checklist items S-3/S-4/A-1/A-4/A-5/B-2).
+ *
+ * Loads every slate the store knows about, runs the pure checks in
+ * engine/audit.ts, prints the findings and writes data/reports/audit.md.
+ * Exits non-zero when any error-severity issue is found, so the scheduled
+ * workflow goes red instead of quietly committing a report nobody reads.
+ */
+async function cmdAudit(): Promise<void> {
+  const { readdir } = await import("node:fs/promises");
+  const parseFailures: string[] = [];
+  const dates = new Set<string>();
+  // Slates and control towers are in the date set on purpose: a day where
+  // predict crashed leaves ONLY those files behind, and that is precisely
+  // the day the audit must not be blind to.
+  for (const dir of [PRED_DIR, RESULTS_DIR, SLATE_DIR, CT_DIR]) {
+    if (!existsSync(dir)) continue;
+    for (const f of await readdir(dir)) {
+      if (f.endsWith(".json")) dates.add(f.replace(/\.json$/, ""));
+    }
+  }
+
+  const days: AuditDay[] = [];
+  for (const date of [...dates].sort()) {
+    const read = async <T>(path: string): Promise<T | null> => {
+      if (!existsSync(path)) return null;
+      try {
+        return await readJson<T>(path);
+      } catch {
+        // A file that exists but does not parse is itself a finding.
+        parseFailures.push(path);
+        return null;
+      }
+    };
+    days.push({
+      date,
+      lock: await read<{ lockedAt: string | null; predictions: GamePrediction[] }>(
+        join(PRED_DIR, `${date}.json`),
+      ),
+      results:
+        (
+          await read<{ results: Record<string, GameResult> }>(
+            join(RESULTS_DIR, `${date}.json`),
+          )
+        )?.results ?? null,
+      controlTowerHandicaps:
+        (
+          await read<{ handicaps?: Record<string, unknown> }>(
+            join(CT_DIR, `${date}.json`),
+          )
+        )?.handicaps ?? null,
+    });
+  }
+
+  const history = existsSync(HISTORY_PATH) ? await loadHistory() : [];
+  const calibration = await loadCalibration();
+  const report = runAudit(days, history, calibration, new Date());
+  for (const path of parseFailures) {
+    report.issues.push({
+      severity: "error",
+      code: "unparseable_json",
+      detail: `${path} exists but does not parse`,
+    });
+  }
+
+  await saveMarkdown(join(REPORTS_DIR, "audit.md"), auditToMarkdown(report));
+
+  console.log("=".repeat(72));
+  console.log(
+    `HandiEdge — standing audit (${report.daysAudited} day(s), ` +
+      `${report.issues.length} issue(s))`,
+  );
+  console.log("=".repeat(72));
+  console.log(auditToMarkdown(report));
+  console.log(`Report → ${join(REPORTS_DIR, "audit.md")}`);
+
+  // Exit 2 for findings, so callers can tell "the audit worked and found
+  // problems" (report is fresh, read it) from "the audit itself crashed"
+  // (exit 1 via the main() catch — the report on disk is stale).
+  if (report.issues.some((i) => i.severity === "error")) {
+    process.exitCode = 2;
+  }
+}
+
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -804,6 +890,7 @@ async function main(): Promise<void> {
   else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
   else if (cmd === "report") await cmdReport();
+  else if (cmd === "audit") await cmdAudit();
   else {
     console.log("Usage:");
     console.log(
@@ -817,6 +904,7 @@ async function main(): Promise<void> {
     );
     console.log("  handiedge settle        --results <results.json>");
     console.log("  handiedge report");
+    console.log("  handiedge audit");
     process.exitCode = cmd ? 1 : 0;
   }
 }
