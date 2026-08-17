@@ -220,9 +220,10 @@ test("candidate sim params reach the simulator and the analytic yardstick", asyn
   const games = (await fixtureGames()).filter((g) => g.complete);
   const cfg = { ...DEFAULT_DECISION_CONFIG, passThreshold: 0.5 };
   const prod = predictSlate("2025-05-01", games, DEFAULT_CALIBRATION, 2024, 4000, cfg);
+  // A candidate distinct from the production constants (r 4.5 / envSd 0).
   const candidate = predictSlate("2025-05-01", games, DEFAULT_CALIBRATION, 2024, 4000, cfg, {
-    dispersion: 4.5,
-    envSd: 0,
+    dispersion: 12,
+    envSd: 0.3,
   });
   // Same seed, different generative process → different raw probabilities.
   assert.notDeepEqual(
@@ -233,7 +234,9 @@ test("candidate sim params reach the simulator and the analytic yardstick", asyn
   // source (env off) but far more per-team NB variance at r=4.5.
   const { analyticMarginStats } = await import("../src/engine/audit");
   const prodStats = analyticMarginStats(4.5, 4.5);
-  const candStats = analyticMarginStats(4.5, 4.5, 4.5, 0);
-  assert.ok(candStats.varMargin > prodStats.varMargin);
-  assert.equal(candStats.correlation, 0);
+  const candStats = analyticMarginStats(4.5, 4.5, 12, 0.3);
+  // Tighter per-team NB (r 12) but a shared factor added: the yardstick must
+  // follow BOTH, so the correlation it reports is the candidate's, not 0.
+  assert.equal(prodStats.correlation, 0);
+  assert.ok(candStats.correlation > 0.1, `corr=${candStats.correlation}`);
 });

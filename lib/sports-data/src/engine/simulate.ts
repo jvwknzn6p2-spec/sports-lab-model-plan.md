@@ -48,20 +48,33 @@ import {
 import { settleParts, splitLine, type WeightedLine } from "./handicap-notation";
 
 /**
- * Negative-binomial size for one team's runs: variance = mu + mu²/r. r = 9
- * targets the ~1.5× overdispersion of team runs conditional on the matchup
- * (season-level run variance is higher, ~2×, but much of that is matchup
- * heterogeneity the run model already expresses through mu itself).
+ * Negative-binomial size for one team's runs: variance = mu + mu²/r.
+ *
+ * r = 4.5 is MEASURED, not assumed. Three walk-forward backtests over the
+ * real MLB record (2,976 games: 2024-05→08, 2025-05→06, 2025-07→08) put the
+ * margin-residual variance at 1.46–1.58× what r = 9 produced. Re-running the
+ * same three periods at r = 4.5 with no shared factor closed that gap in
+ * every one of them (ratios 1.12 / 1.20 / 1.14), the calibration gap shrank
+ * in all three (1.0→0.0, 2.9→0.9, 2.4→2.2 pt) and Brier held or improved.
  */
-export const TEAM_RUN_DISPERSION = 9;
+export const TEAM_RUN_DISPERSION = 4.5;
 
 /**
  * Standard deviation of the shared game-environment multiplier (park, wind,
- * temperature, umpire — everything both offenses live in together). 0.2
- * yields corr(home runs, away runs) ≈ +0.11, matching the ~0.1 measured in
- * MLB final scores.
+ * temperature, umpire — everything both offenses live in together).
+ *
+ * ZERO, because the real record says so. The original 0.2 came from the
+ * literature's ~0.1 same-game run correlation, but the RESIDUAL correlation
+ * measured across those same 2,976 games is +0.035 / −0.007 / −0.008 —
+ * indistinguishable from zero in every period. Whatever shared conditions do
+ * to a game, the run model's park factor and matchup terms already absorb;
+ * modelling it again invented a correlation the data does not have.
+ *
+ * The mechanism stays in the simulator (and under test) behind this
+ * constant: if a future measurement finds real residual correlation, it is
+ * one number away from coming back.
  */
-export const SHARED_ENV_SD = 0.2;
+export const SHARED_ENV_SD = 0;
 
 export interface SimulationResult {
   sims: number;
