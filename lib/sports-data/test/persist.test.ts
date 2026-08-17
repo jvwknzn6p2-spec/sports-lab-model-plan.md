@@ -94,6 +94,7 @@ test("game mapper output validates against the DB insert schema", () => {
     gameDate: "2024-07-25T17:10:00Z",
     status: "Scheduled",
     abstractState: "Preview",
+    gameType: "R",
     venue: { id: 5, name: "Progressive Field" },
     away: {
       teamId: 116,

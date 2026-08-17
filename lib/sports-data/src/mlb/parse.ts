@@ -55,6 +55,8 @@ export interface NormalizedGame {
   status: string | null;
   /** "Preview" | "Live" | "Final" (null when the API omits it). */
   abstractState: string | null;
+  /** "R" regular season, "A" All-Star, "P" postseason… (null when omitted). */
+  gameType: string | null;
   venue: { id: number | null; name: string | null };
   home: NormalizedGameSide;
   away: NormalizedGameSide;
@@ -92,6 +94,7 @@ function normalizeGame(g: MlbScheduleGame): NormalizedGame {
     gameDate: g.gameDate ?? null,
     status: g.status?.detailedState ?? null,
     abstractState: g.status?.abstractGameState ?? null,
+    gameType: g.gameType ?? null,
     venue: { id: g.venue?.id ?? null, name: g.venue?.name ?? null },
     home: side(g.teams?.home),
     away: side(g.teams?.away),
