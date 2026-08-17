@@ -28,6 +28,13 @@
 
 import type { GamePrediction } from "./decision";
 import { DEFAULT_CALIBRATION, resolveHandicap } from "./decision";
+import {
+  expectedProfit,
+  oppositeParts,
+  settleParts,
+  WIN_COMMISSION,
+  type WeightedLine,
+} from "./handicap-notation";
 import { isResultsDue, predictionDeadline } from "./deadline";
 import { settle, type GameResult, type SettlementReport } from "./settle";
 import { SHARED_ENV_SD, TEAM_RUN_DISPERSION } from "./simulate";
@@ -90,6 +97,40 @@ export interface CohortStat {
   profit: number;
 }
 
+/**
+ * A-2: one settled bet on a REAL (non-zero) handicap line, with its whole
+ * arithmetic exposed.
+ *
+ * The 半 family settles as SHARES of the stake — 〈1半2〉 winning by exactly
+ * two is +8分, neither a win nor a loss — and none of that machinery has ever
+ * run on a production bet: every settled wager so far was quoted at "0". The
+ * first real lines are therefore the moment to check the money by hand, and
+ * this record exists so that check takes seconds: the line as quoted, the
+ * margin from the backed side, the stake split, and the units that fell out.
+ */
+export interface RealLineSettlement {
+  date: string;
+  gamePk: number;
+  game: string;
+  /** The handicap as the slate wrote it (or the signed line). */
+  quoted: string;
+  /** The bet as the report named it. */
+  backed: string;
+  /** Final margin from the BACKED side's perspective. */
+  margin: number;
+  /** Signed lines the backed stake actually sits on. */
+  parts: WeightedLine[];
+  /** Shares of the stake that won / pushed / lost. */
+  win: number;
+  push: number;
+  loss: number;
+  commission: number;
+  /** Units recomputed here, from the parts and the margin. */
+  profit: number;
+  /** Units the settlement recorded, for comparison. */
+  storedProfit: number | null;
+}
+
 export interface AuditReport {
   generatedAt: string;
   daysAudited: number;
@@ -98,6 +139,8 @@ export interface AuditReport {
   distribution: DistributionCheck | null;
   flagRates: FlagRate[];
   cohorts: CohortStat[];
+  /** A-2: settled bets on real lines — empty until real lines are quoted. */
+  realLines: RealLineSettlement[];
 }
 
 /**
@@ -456,6 +499,107 @@ export function cohorts(days: AuditDay[]): CohortStat[] {
   });
 }
 
+/**
+ * A-2: re-derive every settled REAL-line bet from the lock's own notation and
+ * the real final score, then check the arithmetic against invariants that
+ * hold for any correct settlement — not against the settlement code's own
+ * opinion of itself:
+ *
+ *   - the stake is fully accounted for: win + push + loss = 1
+ *   - the money follows the shares: profit = (1 − c)·win − loss
+ *   - the money stays in range: −1 ≤ profit ≤ 1 − c
+ *   - the recomputation agrees with what settlement recorded
+ *
+ * Zero-line bets are skipped: they settle as a plain win/loss and are already
+ * covered by the whole settled record.
+ */
+export function realLineSettlements(days: AuditDay[]): {
+  settlements: RealLineSettlement[];
+  issues: AuditIssue[];
+} {
+  const settlements: RealLineSettlement[] = [];
+  const issues: AuditIssue[] = [];
+
+  for (const day of days) {
+    if (!day.lock || !day.results) continue;
+    for (const p of day.lock.predictions) {
+      const input = p.handicap.input;
+      if (p.pass || !p.handicap.pick || !input) continue;
+      const result = day.results[String(p.gamePk)];
+      if (!result) continue;
+
+      let resolved;
+      try {
+        resolved = resolveHandicap(input);
+      } catch {
+        continue; // notation errors are reported by checkIntegrity
+      }
+      if (resolved.effectiveLine === 0) continue; // pick'em: nothing special
+
+      // Same derivation settlement uses, from the raw score.
+      const actualMargin = result.homeScore - result.awayScore;
+      const quotedSideMargin =
+        input.side === "home" ? actualMargin : -actualMargin;
+      const pickedQuotedSide = p.handicap.pick.startsWith(
+        input.side === "home" ? p.home : p.away,
+      );
+      const parts = pickedQuotedSide
+        ? resolved.parts
+        : oppositeParts(resolved.parts);
+      const margin = pickedQuotedSide ? quotedSideMargin : -quotedSideMargin;
+      const outcome = settleParts(parts, margin);
+      const profit = round3(expectedProfit(outcome));
+
+      const where = `${day.date} ${p.away} @ ${p.home} (${p.handicap.pick})`;
+      const shareSum = outcome.win + outcome.push + outcome.loss;
+      if (Math.abs(shareSum - 1) > 1e-9) {
+        issues.push({
+          severity: "error",
+          code: "real_line_share_sum",
+          detail: `${where}: stake shares sum to ${shareSum}, not 1`,
+        });
+      }
+      const fromShares =
+        outcome.win * (1 - WIN_COMMISSION) - outcome.loss;
+      if (Math.abs(fromShares - profit) > 1e-6) {
+        issues.push({
+          severity: "error",
+          code: "real_line_profit_formula",
+          detail: `${where}: ${profit}u does not equal (1−${WIN_COMMISSION})·win − loss = ${fromShares}`,
+        });
+      }
+      if (profit < -1 - 1e-9 || profit > 1 - WIN_COMMISSION + 1e-9) {
+        issues.push({
+          severity: "error",
+          code: "real_line_profit_range",
+          detail: `${where}: ${profit}u is outside the possible [-1, ${1 - WIN_COMMISSION}]`,
+        });
+      }
+
+      settlements.push({
+        date: day.date,
+        gamePk: p.gamePk,
+        game: `${p.away} @ ${p.home}`,
+        quoted:
+          input.notation !== undefined
+            ? input.notation
+            : `line ${input.line}`,
+        backed: p.handicap.pick,
+        margin,
+        parts,
+        win: round3(outcome.win),
+        push: round3(outcome.push),
+        loss: round3(outcome.loss),
+        commission: WIN_COMMISSION,
+        profit,
+        storedProfit: null,
+      });
+    }
+  }
+
+  return { settlements, issues };
+}
+
 export function runAudit(
   days: AuditDay[],
   history: SettlementReport[],
@@ -464,6 +608,30 @@ export function runAudit(
 ): AuditReport {
   const issues = checkIntegrity(days, history, calibration, now);
   const margins = lockMargins(days);
+  const realLines = realLineSettlements(days);
+  issues.push(...realLines.issues);
+
+  // Cross-check the recomputation against what settlement actually recorded.
+  const recordedProfit = new Map<string, number>();
+  for (const r of history) {
+    for (const g of r.games) {
+      if (g.handicapProfit !== null) {
+        recordedProfit.set(`${r.date}:${g.gamePk}`, g.handicapProfit);
+      }
+    }
+  }
+  for (const s of realLines.settlements) {
+    const stored = recordedProfit.get(`${s.date}:${s.gamePk}`);
+    if (stored === undefined) continue;
+    s.storedProfit = stored;
+    if (Math.abs(stored - s.profit) > 1e-6) {
+      issues.push({
+        severity: "error",
+        code: "real_line_profit_mismatch",
+        detail: `${s.date} game ${s.gamePk}: settlement recorded ${stored}u, recomputing from 〈${s.quoted}〉 and margin ${s.margin} gives ${s.profit}u`,
+      });
+    }
+  }
 
   // A late lock is an ERROR when it is recent AND the slate was produced
   // under the deadline rule currently in force (its stored lockDeadline is
@@ -507,6 +675,7 @@ export function runAudit(
     distribution: distributionCheck(days),
     flagRates: flagRates(days),
     cohorts: cohorts(days),
+    realLines: realLines.settlements,
   };
 }
 

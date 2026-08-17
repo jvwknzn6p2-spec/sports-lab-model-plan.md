@@ -417,6 +417,44 @@ export function auditToMarkdown(a: AuditReport): string {
   }
   out.push("");
 
+  out.push("## A-2 — Real-line settlements (hand-check these)");
+  out.push("");
+  if (a.realLines.length === 0) {
+    out.push(
+      "_No bet on a non-zero line has settled yet. The 半-line machinery " +
+        "(split stakes, partial pushes) is therefore still UNPROVEN in " +
+        "production — the first entries here are the ones to verify by hand " +
+        "against the book's own statement._",
+    );
+  } else {
+    out.push(
+      "_Each row shows the whole arithmetic: the line as quoted, the final " +
+        "margin from the backed side, how the stake split, and the units " +
+        "that fell out. Check the first ones against the book's statement; " +
+        "the audit already verifies the shares sum to 1, that " +
+        "profit = 0.9·win − loss, and that it agrees with what settlement " +
+        "recorded._",
+    );
+    out.push("");
+    for (const r of a.realLines) {
+      const parts = r.parts
+        .map((p) => `${p.line > 0 ? "+" : ""}${p.line}×${p.weight}`)
+        .join(" ");
+      out.push(
+        `- ${r.date} ${r.game} — backed **${r.backed}** (quoted 〈${r.quoted}〉), ` +
+          `margin ${r.margin > 0 ? "+" : ""}${r.margin}`,
+      );
+      out.push(
+        `  - stake on ${parts} → win ${r.win} / push ${r.push} / loss ${r.loss} ` +
+          `→ **${fmtUnits(r.profit)} units** after the ${r.commission * 100}% cut` +
+          (r.storedProfit === null
+            ? ""
+            : ` (settlement recorded ${fmtUnits(r.storedProfit)})`),
+      );
+    }
+  }
+  out.push("");
+
   out.push("## A-5 / A-2 — Watched cohorts");
   out.push("");
   out.push(

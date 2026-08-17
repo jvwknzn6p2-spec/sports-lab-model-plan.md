@@ -376,3 +376,92 @@ test("a bad control-tower notation is caught even when predict never locked", ()
   const issues = checkIntegrity([poisoned], [], { gamesSettled: 0 }, NOW);
   assert.ok(issues.some((i) => i.code === "bad_handicap_notation"));
 });
+
+test("A-2: a settled 半 line is re-derived with its arithmetic exposed", async () => {
+  const { realLineSettlements } = await import("../src/engine/audit");
+  // 〈1半2〉 on home: 80% of the stake on -1.5, 20% on -2. Home wins by
+  // exactly two → the -1.5 share wins, the -2 share pushes. That is 8分:
+  // 0.8 × 0.9 = +0.72 units, and it is neither a win nor a loss.
+  const p = prediction({
+    gamePk: 7,
+    handicap: {
+      input: { side: "home", notation: "1半2" },
+      pick: "H -〈1半2〉",
+      coverProbability: 0.6,
+      rawCoverProbability: 0.62,
+      ev: 0.1,
+      noValue: false,
+    },
+  });
+  const { settlements, issues } = realLineSettlements([
+    day("2026-08-18", [p], { "7": { homeScore: 5, awayScore: 3 } }),
+  ]);
+  assert.deepEqual(issues, [], JSON.stringify(issues));
+  assert.equal(settlements.length, 1);
+  const s = settlements[0]!;
+  assert.equal(s.margin, 2);
+  assert.equal(s.win, 0.8);
+  assert.equal(s.push, 0.2);
+  assert.equal(s.loss, 0);
+  assert.equal(s.profit, 0.72);
+  // The parts must be the signed lines the BACKED stake sits on.
+  assert.deepEqual(s.parts, [
+    { line: -1.5, weight: 0.8 },
+    { line: -2, weight: 0.2 },
+  ]);
+});
+
+test("A-2: pick'em bets are skipped, real lines are not", async () => {
+  const { realLineSettlements } = await import("../src/engine/audit");
+  const zero = prediction({ gamePk: 1 }); // notation "0"
+  const real = prediction({
+    gamePk: 2,
+    handicap: {
+      input: { side: "home", notation: "0.8" },
+      pick: "H -〈0.8〉",
+      coverProbability: 0.6,
+      rawCoverProbability: 0.6,
+      ev: 0.1,
+      noValue: false,
+    },
+  });
+  const { settlements } = realLineSettlements([
+    day("2026-08-18", [zero, real], {
+      "1": { homeScore: 5, awayScore: 3 },
+      "2": { homeScore: 5, awayScore: 3 },
+    }),
+  ]);
+  assert.deepEqual(
+    settlements.map((s) => s.gamePk),
+    [2],
+  );
+});
+
+test("A-2: a settlement that disagrees with the recomputation is an error", async () => {
+  const { runAudit } = await import("../src/engine/audit");
+  const p = prediction({
+    gamePk: 7,
+    handicap: {
+      input: { side: "home", notation: "1半2" },
+      pick: "H -〈1半2〉",
+      coverProbability: 0.6,
+      rawCoverProbability: 0.62,
+      ev: 0.1,
+      noValue: false,
+    },
+  });
+  const d = day("2026-08-18", [p], { "7": { homeScore: 5, awayScore: 3 } });
+  const official = officialReport(d);
+  // Doctor the recorded money: the real answer is +0.72.
+  const doctored = {
+    ...official,
+    games: official.games.map((g) => ({ ...g, handicapProfit: 0.9 })),
+  };
+  const report = runAudit([d], [doctored], { gamesSettled: 1 }, NOW);
+  assert.ok(
+    report.issues.some((i) => i.code === "real_line_profit_mismatch"),
+    JSON.stringify(report.issues),
+  );
+  assert.equal(report.realLines[0]!.storedProfit, 0.9);
+  assert.equal(report.realLines[0]!.profit, 0.72);
+});
