@@ -136,6 +136,65 @@ export class MlbStatsClient {
     });
   }
 
+  /**
+   * Point-in-time pitching stats: totals over [startDate, endDate]. The
+   * backtest's no-look-ahead guarantee rests on these byDateRange pulls —
+   * `stats=season` would leak the rest of the season into every "as of
+   * day D" feature.
+   */
+  pitcherRange(
+    personId: number,
+    season: number,
+    startDate: string,
+    endDate: string,
+  ): Promise<MlbStatsResponse> {
+    return this.getJson<MlbStatsResponse>(`/people/${personId}/stats`, {
+      stats: "byDateRange",
+      group: "pitching",
+      season,
+      startDate,
+      endDate,
+    });
+  }
+
+  /** Point-in-time team hitting totals over [startDate, endDate]. */
+  teamBattingRange(
+    teamId: number,
+    season: number,
+    startDate: string,
+    endDate: string,
+  ): Promise<MlbStatsResponse> {
+    return this.getJson<MlbStatsResponse>(`/teams/${teamId}/stats`, {
+      stats: "byDateRange",
+      group: "hitting",
+      season,
+      startDate,
+      endDate,
+    });
+  }
+
+  /**
+   * Point-in-time team relief-pitching totals over [startDate, endDate].
+   * sitCodes=rp mirrors teamPitchingSeason; if the live API rejects the
+   * combination the caller degrades through the missing-bullpen flag rather
+   * than inventing a number.
+   */
+  teamBullpenRange(
+    teamId: number,
+    season: number,
+    startDate: string,
+    endDate: string,
+  ): Promise<MlbStatsResponse> {
+    return this.getJson<MlbStatsResponse>(`/teams/${teamId}/stats`, {
+      stats: "byDateRange",
+      group: "pitching",
+      sitCodes: "rp",
+      season,
+      startDate,
+      endDate,
+    });
+  }
+
   /** Season pitching stats for a player (the probable starter). */
   pitcherSeason(personId: number, season: number): Promise<MlbStatsResponse> {
     return this.getJson<MlbStatsResponse>(`/people/${personId}/stats`, {
