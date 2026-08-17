@@ -297,7 +297,11 @@ export function lockMargins(days: AuditDay[]): LockMargin[] {
 }
 
 /** A-1: realized margins vs the simulator's analytic spread. */
-export function distributionCheck(days: AuditDay[]): DistributionCheck | null {
+export function distributionCheck(
+  days: AuditDay[],
+  r: number = TEAM_RUN_DISPERSION,
+  envSd: number = SHARED_ENV_SD,
+): DistributionCheck | null {
   const rows: Array<{
     muH: number;
     muA: number;
@@ -333,7 +337,7 @@ export function distributionCheck(days: AuditDay[]): DistributionCheck | null {
     rows.reduce((s, _, i) => s + (residH[i]! - mH) * (residA[i]! - mA), 0) /
     (rows.length - 1);
 
-  const analytic = rows.map((r) => analyticMarginStats(r.muH, r.muA));
+  const analytic = rows.map((g) => analyticMarginStats(g.muH, g.muA, r, envSd));
 
   return {
     n: rows.length,

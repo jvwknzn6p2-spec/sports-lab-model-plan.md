@@ -215,3 +215,25 @@ test("the All-Star break cannot crash a season replay", async () => {
   assert.equal(await src.getTeamBattingLine(159, 2024), null);
   assert.equal(await src.getBullpenLine(159, 2024), null);
 });
+
+test("candidate sim params reach the simulator and the analytic yardstick", async () => {
+  const games = (await fixtureGames()).filter((g) => g.complete);
+  const cfg = { ...DEFAULT_DECISION_CONFIG, passThreshold: 0.5 };
+  const prod = predictSlate("2025-05-01", games, DEFAULT_CALIBRATION, 2024, 4000, cfg);
+  const candidate = predictSlate("2025-05-01", games, DEFAULT_CALIBRATION, 2024, 4000, cfg, {
+    dispersion: 4.5,
+    envSd: 0,
+  });
+  // Same seed, different generative process → different raw probabilities.
+  assert.notDeepEqual(
+    prod.map((p) => p.rawWinProbability),
+    candidate.map((p) => p.rawWinProbability),
+  );
+  // The analytic check must follow the same parameters: less dispersion
+  // source (env off) but far more per-team NB variance at r=4.5.
+  const { analyticMarginStats } = await import("../src/engine/audit");
+  const prodStats = analyticMarginStats(4.5, 4.5);
+  const candStats = analyticMarginStats(4.5, 4.5, 4.5, 0);
+  assert.ok(candStats.varMargin > prodStats.varMargin);
+  assert.equal(candStats.correlation, 0);
+});

@@ -60,7 +60,11 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { distributionCheck, runAudit, type AuditDay } from "../engine/audit";
-import { walkForward, type BacktestDay } from "../engine/backtest";
+import {
+  walkForward,
+  type BacktestDay,
+  type SimParams,
+} from "../engine/backtest";
 import { BacktestDataSource } from "../sources/backtest-source";
 import { assembleDate } from "../step2";
 import {
@@ -887,12 +891,24 @@ async function cmdBacktest(args: {
   to?: string;
   season?: string;
   sims?: string;
+  dispersion?: string;
+  "env-sd"?: string;
 }): Promise<void> {
   if (!args.from || !args.to) {
     throw new Error("backtest requires --from and --to (YYYY-MM-DD)");
   }
   const season = Number(args.season ?? args.from.slice(0, 4));
   const sims = Number(args.sims ?? 10_000);
+  // Candidate simulator parameters. Omitted = the production constants, so a
+  // plain run IS the production engine; set them to trial a refit against
+  // the same real record before touching the defaults.
+  const simParams: SimParams = {};
+  if (args.dispersion !== undefined) simParams.dispersion = Number(args.dispersion);
+  if (args["env-sd"] !== undefined) simParams.envSd = Number(args["env-sd"]);
+  const paramTag =
+    simParams.dispersion === undefined && simParams.envSd === undefined
+      ? ""
+      : `_r${simParams.dispersion ?? "prod"}_e${simParams.envSd ?? "prod"}`;
   const cacheDir = join(DATA_DIR, "backtest-cache", String(season));
   const outDir = join(DATA_DIR, "backtest");
   const source = new BacktestDataSource({
@@ -929,7 +945,14 @@ async function cmdBacktest(args: {
   }
 
   console.log(`Replaying ${days.length} day(s) (${skipped} empty)…`);
-  const outcome = walkForward(days, DEFAULT_CALIBRATION, season, sims);
+  const outcome = walkForward(
+    days,
+    DEFAULT_CALIBRATION,
+    season,
+    sims,
+    DEFAULT_DECISION_CONFIG,
+    simParams,
+  );
 
   // The same aggregations the live report uses, over the replayed history.
   const summary = aggregateHistory(outcome.reports);
@@ -942,17 +965,30 @@ async function cmdBacktest(args: {
     results: day.results,
     controlTowerHandicaps: null,
   }));
-  const dist = distributionCheck(auditDays);
+  // The analytic yardstick must use the SAME parameters the replay drew
+  // with, or the distribution check compares apples to oranges.
+  const dist = distributionCheck(
+    auditDays,
+    simParams.dispersion,
+    simParams.envSd,
+  );
 
   await mkdir(outDir, { recursive: true });
-  const tag = `${args.from}_${args.to}`;
+  // Candidate-parameter runs get their own files — they must never
+  // overwrite the production-parameter baseline for the same period.
+  const tag = `${args.from}_${args.to}${paramTag}`;
   await writeFile(
     join(outDir, `${tag}.history.jsonl`),
     outcome.reports.map((r) => JSON.stringify(r)).join("\n") + "\n",
     "utf8",
   );
   const md: string[] = [];
-  md.push(`# Backtest ${args.from} → ${args.to} (season ${season})`);
+  md.push(
+    `# Backtest ${args.from} → ${args.to} (season ${season})` +
+      (paramTag
+        ? ` — candidate params dispersion=${simParams.dispersion ?? "prod"}, envSd=${simParams.envSd ?? "prod"}`
+        : ""),
+  );
   md.push("");
   md.push(
     `_Walk-forward replay of the production pipeline over the real MLB ` +
@@ -1019,6 +1055,8 @@ async function main(): Promise<void> {
       from: { type: "string" },
       to: { type: "string" },
       sims: { type: "string" },
+      dispersion: { type: "string" },
+      "env-sd": { type: "string" },
       "skip-form": { type: "boolean", default: false },
     },
   });
@@ -1045,7 +1083,7 @@ async function main(): Promise<void> {
     console.log("  handiedge report");
     console.log("  handiedge audit");
     console.log(
-      "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N]",
+      "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",
     );
     process.exitCode = cmd ? 1 : 0;
   }
