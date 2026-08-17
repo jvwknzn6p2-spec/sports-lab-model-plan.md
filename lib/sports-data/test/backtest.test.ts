@@ -172,3 +172,46 @@ test("getResults keeps only Final games with scores", async () => {
   const results = await src.getResults("2025-06-15");
   assert.deepEqual(results, { "1": { homeScore: 5, awayScore: 3 } });
 });
+
+test("the All-Star break cannot crash a season replay", async () => {
+  // Schedule: one regular game, one All-Star Game (synthetic AL/NL teams).
+  const schedule = {
+    dates: [
+      {
+        games: [
+          { gamePk: 1, gameType: "R", status: {}, teams: {} },
+          { gamePk: 2, gameType: "A", status: {}, teams: {} },
+          { gamePk: 3, status: {}, teams: {} }, // no gameType → kept
+        ],
+      },
+    ],
+  };
+  const fake: Fetcher = async (url) => {
+    if (url.includes("/schedule")) {
+      return { ok: true, status: 200, json: async () => schedule } as Awaited<
+        ReturnType<Fetcher>
+      >;
+    }
+    // Stats endpoints for unknown entities 404, like the real API does.
+    return { ok: false, status: 404, json: async () => ({}) } as Awaited<
+      ReturnType<Fetcher>
+    >;
+  };
+  const dir = mkdtempSync(join(tmpdir(), "handiedge-bt-"));
+  const src = new BacktestDataSource({
+    cacheDir: dir,
+    season: 2024,
+    seasonStart: "2024-03-01",
+    fetcher: fake,
+  });
+  const games = await src.getSchedule("2024-07-16");
+  assert.deepEqual(
+    games.map((g) => g.gamePk),
+    [1, 3],
+    "All-Star game must be filtered; unmarked games kept",
+  );
+  // A 404 on stats is missing data, not a crash.
+  assert.equal(await src.getStarterLine(999999, 2024), null);
+  assert.equal(await src.getTeamBattingLine(159, 2024), null);
+  assert.equal(await src.getBullpenLine(159, 2024), null);
+});

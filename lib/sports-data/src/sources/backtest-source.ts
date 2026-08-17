@@ -27,7 +27,7 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 
-import { MlbStatsClient, type Fetcher } from "../mlb/client";
+import { MlbApiError, MlbStatsClient, type Fetcher } from "../mlb/client";
 import {
   firstSplitStat,
   normalizeSchedule,
@@ -119,7 +119,14 @@ export class BacktestDataSource implements CoreDataSource {
 
   async getSchedule(date: string): Promise<NormalizedGame[]> {
     this.asOf = date;
-    return normalizeSchedule(await this.client.schedule(date));
+    // Regular-season games only. The All-Star Game sits in the same schedule
+    // feed with synthetic AL/NL "teams" whose stats endpoints 404, and
+    // exhibition/spring games are not what the production book predicts.
+    // Games with no gameType (old feeds, fixtures) are kept — filtering is
+    // for the marked specials, not a guess.
+    return normalizeSchedule(await this.client.schedule(date)).filter(
+      (g) => g.gameType === null || g.gameType === "R",
+    );
   }
 
   /** Final scores for settlement — Final games with a score, only. */
@@ -138,16 +145,34 @@ export class BacktestDataSource implements CoreDataSource {
     return out;
   }
 
+  /**
+   * A 404 from a stats endpoint means the API has no record for that entity
+   * over that window — which is exactly "missing data": return null and let
+   * the assembler attach its downgrade flag, instead of aborting a whole
+   * season replay on one unknowable pitcher.
+   */
+  private async orNull<T>(pull: () => Promise<T>): Promise<T | null> {
+    try {
+      return await pull();
+    } catch (err) {
+      if (err instanceof MlbApiError && err.status === 404) return null;
+      throw err;
+    }
+  }
+
   async getStarterLine(
     pitcherId: number,
     season: number,
   ): Promise<RawPitchingLine | null> {
-    const res = await this.client.pitcherRange(
-      pitcherId,
-      season,
-      this.seasonStart,
-      this.statsEnd(),
+    const res = await this.orNull(() =>
+      this.client.pitcherRange(
+        pitcherId,
+        season,
+        this.seasonStart,
+        this.statsEnd(),
+      ),
     );
+    if (!res) return null;
     const stat = firstSplitStat(res);
     return stat ? parsePitchingLine(stat, `pitcher ${pitcherId}`) : null;
   }
@@ -156,12 +181,15 @@ export class BacktestDataSource implements CoreDataSource {
     teamId: number,
     season: number,
   ): Promise<RawBattingLine | null> {
-    const res = await this.client.teamBattingRange(
-      teamId,
-      season,
-      this.seasonStart,
-      this.statsEnd(),
+    const res = await this.orNull(() =>
+      this.client.teamBattingRange(
+        teamId,
+        season,
+        this.seasonStart,
+        this.statsEnd(),
+      ),
     );
+    if (!res) return null;
     const stat = firstSplitStat(res);
     return stat ? parseBattingLine(stat, `team ${teamId} batting`) : null;
   }
@@ -170,12 +198,15 @@ export class BacktestDataSource implements CoreDataSource {
     teamId: number,
     season: number,
   ): Promise<RawPitchingLine | null> {
-    const res = await this.client.teamBullpenRange(
-      teamId,
-      season,
-      this.seasonStart,
-      this.statsEnd(),
+    const res = await this.orNull(() =>
+      this.client.teamBullpenRange(
+        teamId,
+        season,
+        this.seasonStart,
+        this.statsEnd(),
+      ),
     );
+    if (!res) return null;
     const stat = firstSplitStat(res);
     return stat ? parsePitchingLine(stat, `team ${teamId} bullpen`) : null;
   }

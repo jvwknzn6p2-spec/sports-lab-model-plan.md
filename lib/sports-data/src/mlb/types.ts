@@ -30,6 +30,8 @@ export interface MlbScheduleResponse {
 export interface MlbScheduleGame {
   gamePk: number;
   gameDate?: string;
+  /** "R" regular season, "A" All-Star, "P" postseason, "S" spring, "E" exhibition. */
+  gameType?: string;
   /** abstractGameState is "Preview" | "Live" | "Final" on the live API. */
   status?: { detailedState?: string; abstractGameState?: string };
   teams?: {
