@@ -52,3 +52,6 @@ Thumbs.db
 # COMMITTED on purpose: the scheduled GitHub Actions run is the runtime, so the
 # repo is where the daily output lives and where prediction history persists.
 # Keeping the slates too preserves exactly what the model saw, for backtesting.
+
+# Backtest raw-response cache (real API pulls, rebuilt on demand; results in data/backtest/ are committed)
+lib/sports-data/data/backtest-cache/

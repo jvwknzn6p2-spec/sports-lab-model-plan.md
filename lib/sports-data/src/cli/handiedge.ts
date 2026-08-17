@@ -59,7 +59,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import { runAudit, type AuditDay } from "../engine/audit";
+import { distributionCheck, runAudit, type AuditDay } from "../engine/audit";
+import { walkForward, type BacktestDay } from "../engine/backtest";
+import { BacktestDataSource } from "../sources/backtest-source";
 import { assembleDate } from "../step2";
 import {
   FixtureCoreDataSource,
@@ -868,6 +870,139 @@ async function cmdAudit(): Promise<void> {
   }
 }
 
+/**
+ * backtest — walk-forward replay over REAL historical seasons.
+ *
+ *   handiedge backtest --from 2025-04-01 --to 2025-09-28 --season 2025
+ *
+ * Fetches point-in-time stats from the live MLB API (cached on disk under
+ * data/backtest-cache/, git-ignored), replays the production pipeline day by
+ * day with walk-forward calibration, and writes the settled history plus a
+ * summary — bucket calibration, by-confidence, distribution check — to
+ * data/backtest/. No handicap lines are invented: every game runs at the
+ * 0-line, so results validate the model, never a market edge.
+ */
+async function cmdBacktest(args: {
+  from?: string;
+  to?: string;
+  season?: string;
+  sims?: string;
+}): Promise<void> {
+  if (!args.from || !args.to) {
+    throw new Error("backtest requires --from and --to (YYYY-MM-DD)");
+  }
+  const season = Number(args.season ?? args.from.slice(0, 4));
+  const sims = Number(args.sims ?? 10_000);
+  const cacheDir = join(DATA_DIR, "backtest-cache", String(season));
+  const outDir = join(DATA_DIR, "backtest");
+  const source = new BacktestDataSource({
+    cacheDir,
+    season,
+    // Stats windows open a wide margin before `from` so early-season days
+    // still see their real season-to-date numbers.
+    seasonStart: `${season}-03-01`,
+  });
+
+  const days: BacktestDay[] = [];
+  let skipped = 0;
+  for (
+    let d = new Date(`${args.from}T00:00:00Z`);
+    d.toISOString().slice(0, 10) <= args.to;
+    d.setUTCDate(d.getUTCDate() + 1)
+  ) {
+    const date = d.toISOString().slice(0, 10);
+    const schedule = await source.getSchedule(date);
+    if (schedule.length === 0) {
+      skipped++;
+      continue;
+    }
+    const teamIds = schedule
+      .flatMap((g) => [g.home.teamId, g.away.teamId])
+      .filter((id): id is number => id !== null);
+    await source.setDate(date, [...new Set(teamIds)]);
+    const games = await assembleDate(date, source, { season });
+    const results = await source.getResults(date);
+    days.push({ date, games, results });
+    console.log(
+      `  ${date}: ${games.length} games, ${Object.keys(results).length} finals`,
+    );
+  }
+
+  console.log(`Replaying ${days.length} day(s) (${skipped} empty)…`);
+  const outcome = walkForward(days, DEFAULT_CALIBRATION, season, sims);
+
+  // The same aggregations the live report uses, over the replayed history.
+  const summary = aggregateHistory(outcome.reports);
+  const auditDays: AuditDay[] = days.map((day) => ({
+    date: day.date,
+    lock: {
+      lockedAt: null,
+      predictions: outcome.predictions.get(day.date) ?? [],
+    },
+    results: day.results,
+    controlTowerHandicaps: null,
+  }));
+  const dist = distributionCheck(auditDays);
+
+  await mkdir(outDir, { recursive: true });
+  const tag = `${args.from}_${args.to}`;
+  await writeFile(
+    join(outDir, `${tag}.history.jsonl`),
+    outcome.reports.map((r) => JSON.stringify(r)).join("\n") + "\n",
+    "utf8",
+  );
+  const md: string[] = [];
+  md.push(`# Backtest ${args.from} → ${args.to} (season ${season})`);
+  md.push("");
+  md.push(
+    `_Walk-forward replay of the production pipeline over the real MLB ` +
+      `record. All-zero handicap lines (no historical prices exist — none ` +
+      `were invented); bullpen workloads not reconstructed (fatigue ` +
+      `penalty absent). Final calibration: moneyline ` +
+      `${outcome.calibration.shrink}/${outcome.calibration.tailShrink}, ` +
+      `handicap ${outcome.calibration.handicapShrink}/${outcome.calibration.handicapTailShrink} (core/tail)._`,
+  );
+  md.push("");
+  if (dist) {
+    md.push("## Distribution check");
+    md.push("");
+    md.push(
+      `- Margin residual variance: empirical ${dist.empiricalMarginVariance} ` +
+        `vs model ${dist.modelMarginVariance} over ${dist.n} games`,
+    );
+    md.push(
+      `- Same-game run correlation: empirical ${dist.empiricalRunCorrelation} ` +
+        `vs model ${dist.modelRunCorrelation}`,
+    );
+    md.push(`- Mean |margin error|: ${dist.meanMarginError} runs`);
+    md.push("");
+  }
+  md.push(summaryToMarkdown(summary, outcome.calibration));
+  await writeFile(join(outDir, `${tag}-summary.md`), md.join("\n"), "utf8");
+
+  console.log("=".repeat(72));
+  console.log(
+    `Backtest ${tag}: ${summary.winnerRecord.wins}-${summary.winnerRecord.losses}` +
+      (summary.winnerRate === null
+        ? ""
+        : ` (${(summary.winnerRate * 100).toFixed(1)}%)`) +
+      `, ${summary.gamesPassed} PASS`,
+  );
+  if (summary.handicapProfitAssessment) {
+    const p = summary.handicapProfitAssessment;
+    console.log(
+      `  P&L significance: ${fmtPct(p.meanProfit)}/bet over ${p.n} stakes — z ${p.z.toFixed(2)} (${p.verdict})`,
+    );
+  }
+  if (dist) {
+    console.log(
+      `  Distribution: var ${dist.empiricalMarginVariance} vs model ${dist.modelMarginVariance}, ` +
+        `corr ${dist.empiricalRunCorrelation} vs ${dist.modelRunCorrelation} (n=${dist.n})`,
+    );
+  }
+  console.log(`  Reports → ${outDir}/${tag}-summary.md`);
+}
+
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -881,6 +1016,9 @@ async function main(): Promise<void> {
       force: { type: "boolean", default: false },
       settle: { type: "boolean", default: false },
       "skip-workloads": { type: "boolean", default: false },
+      from: { type: "string" },
+      to: { type: "string" },
+      sims: { type: "string" },
       "skip-form": { type: "boolean", default: false },
     },
   });
@@ -891,6 +1029,7 @@ async function main(): Promise<void> {
   else if (cmd === "settle") await cmdSettle(values);
   else if (cmd === "report") await cmdReport();
   else if (cmd === "audit") await cmdAudit();
+  else if (cmd === "backtest") await cmdBacktest(values);
   else {
     console.log("Usage:");
     console.log(
@@ -905,6 +1044,9 @@ async function main(): Promise<void> {
     console.log("  handiedge settle        --results <results.json>");
     console.log("  handiedge report");
     console.log("  handiedge audit");
+    console.log(
+      "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N]",
+    );
     process.exitCode = cmd ? 1 : 0;
   }
 }

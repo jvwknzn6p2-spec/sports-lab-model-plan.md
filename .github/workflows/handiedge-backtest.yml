@@ -1,0 +1,82 @@
+name: HandiEdge — backtest
+
+# Walk-forward replay over the REAL historical MLB record (checklist item
+# "backtest platform"). Runs on demand: pick a season and a date range, and
+# the production pipeline replays it day by day with point-in-time byDateRange
+# stats (no look-ahead) and walk-forward calibration. The settled history and
+# summary land in data/backtest/ and are committed; the raw-response cache
+# stays on the runner (git-ignored, rebuilt per run).
+#
+# This job runs here rather than locally because statsapi.mlb.com is
+# reachable from Actions (the daily predict/settle jobs prove it every day).
+# A full season is ~2,900 stat pulls plus ~190 schedule days; with the
+# client's retry/backoff this takes a while — the timeout is generous.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "First slate date (YYYY-MM-DD)"
+        required: true
+        type: string
+      to:
+        description: "Last slate date (YYYY-MM-DD)"
+        required: true
+        type: string
+      season:
+        description: "Season (defaults to the year of `from`)"
+        required: false
+        type: string
+      sims:
+        description: "Monte Carlo draws per game (default 10000)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-data
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run backtest
+        working-directory: lib/sports-data
+        run: |
+          SEASON="${{ inputs.season }}"
+          SIMS="${{ inputs.sims }}"
+          pnpm exec tsx src/cli/handiedge.ts backtest \
+            --from "${{ inputs.from }}" --to "${{ inputs.to }}" \
+            ${SEASON:+--season "$SEASON"} ${SIMS:+--sims "$SIMS"}
+
+      - name: Publish summary
+        run: cat lib/sports-data/data/backtest/${{ inputs.from }}_${{ inputs.to }}-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit backtest results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data/backtest
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "HandiEdge: backtest ${{ inputs.from }}..${{ inputs.to }}"
+            git pull --rebase origin "${{ github.ref_name }}"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
