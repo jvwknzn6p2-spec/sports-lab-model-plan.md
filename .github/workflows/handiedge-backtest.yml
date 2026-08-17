@@ -65,6 +65,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Run backtest
+        id: backtest
         working-directory: lib/sports-data
         run: |
           SEASON="${{ inputs.season }}"
@@ -76,8 +77,12 @@ jobs:
             ${SEASON:+--season "$SEASON"} ${SIMS:+--sims "$SIMS"} \
             ${DISP:+--dispersion "$DISP"} ${ENVSD:+--env-sd "$ENVSD"}
 
+      # The CLI reports the exact file it wrote. A glob would also pick up
+      # every candidate-parameter run of the same date range and paste two
+      # different backtests into one summary.
       - name: Publish summary
-        run: cat lib/sports-data/data/backtest/${{ inputs.from }}_${{ inputs.to }}*-summary.md >> "$GITHUB_STEP_SUMMARY"
+        working-directory: lib/sports-data
+        run: cat "${{ steps.backtest.outputs.summary }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit backtest results
         run: |

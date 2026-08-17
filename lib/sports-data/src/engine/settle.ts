@@ -311,7 +311,12 @@ export function settle(
 
     let handicapCorrect: boolean | null = null;
     let handicapProfit: number | null = null;
-    if (!p.pass && p.handicap.pick && p.handicap.input) {
+    // Gated on the PICK, not on `pass`. The handicap survives a thin-winner-
+    // edge pass (decision.ts), so `pass` no longer answers "was a run-line
+    // stake placed?" — the presence of a pick does, and it already carries
+    // every gate that produced it. On history written before the markets were
+    // decoupled a passed game never had a pick, so this scores identically.
+    if (p.handicap.pick && p.handicap.input) {
       // Re-settle the exact basket of lines that was priced, against the score
       // that happened. A whole-number line landing on the margin PUSHES — the
       // stake comes back, so it is neither a win nor a loss and must not be
@@ -354,7 +359,11 @@ export function settle(
       home: p.home,
       away: p.away,
       pass: p.pass,
-      confidence: p.pass ? null : p.confidence,
+      // A handicap-only bet still belongs to a confidence band: it is real
+      // money, and `byConfidence` is the only breakdown that attributes it.
+      // Without this the P&L of every decoupled handicap would vanish from
+      // the band rows while still counting in the total.
+      confidence: p.pass && !p.handicap.pick ? null : p.confidence,
       predictedWinner: p.predictedWinner,
       actualWinner,
       winnerCorrect,

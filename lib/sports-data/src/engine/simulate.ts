@@ -174,6 +174,17 @@ export function simulateGame(
   const rng = mulberry32(seed);
   const dispersion = opts.dispersion ?? TEAM_RUN_DISPERSION;
   const envSd = opts.envSd ?? SHARED_ENV_SD;
+  // NaN is not a parameter, it is a bug upstream — and the quietest possible
+  // one: `negBinomial` reads it as "no dispersion" and answers with a plain
+  // Poisson, so the caller silently gets the PRE-REFIT engine and no error.
+  // (Infinity is allowed on purpose: it IS the Poisson limit of the negative
+  // binomial, and asking for it explicitly is how the baseline is measured.)
+  if (Number.isNaN(dispersion) || dispersion <= 0) {
+    throw new Error(`simulateGame: dispersion must be a positive number (got ${dispersion})`);
+  }
+  if (!Number.isFinite(envSd) || envSd < 0) {
+    throw new Error(`simulateGame: envSd must be a non-negative finite number (got ${envSd})`);
+  }
   // Gamma(k, 1/k) has mean 1 and sd 1/√k, so k = 1/sd².
   const envShape = envSd > 0 ? 1 / (envSd * envSd) : null;
 

@@ -465,3 +465,31 @@ test("A-2: a settlement that disagrees with the recomputation is an error", asyn
   assert.equal(report.realLines[0]!.storedProfit, 0.9);
   assert.equal(report.realLines[0]!.profit, 0.72);
 });
+
+test("integrity grades the LAST report for a date, not the first", () => {
+  // A slate settles early (west-coast games still running) and again later.
+  // The second write is the one `recalibrateFromHistory` folds, so grading
+  // the first manufactures a mismatch against a row already superseded.
+  const d = day("2026-07-05", [prediction({ gamePk: 1 })], {
+    "1": { homeScore: 6, awayScore: 2 },
+  });
+  const stale: SettlementReport = {
+    ...officialReport(d),
+    winnerRecord: { wins: 0, losses: 1 },
+    games: [],
+  };
+  const issues = checkIntegrity(
+    [d],
+    [stale, officialReport(d)],
+    { gamesSettled: 1 },
+    NOW,
+  );
+  assert.deepEqual(
+    issues.filter(
+      (i) =>
+        i.code === "resettle_mismatch" || i.code === "calibration_counter_drift",
+    ),
+    [],
+    `superseded row was graded: ${JSON.stringify(issues)}`,
+  );
+});

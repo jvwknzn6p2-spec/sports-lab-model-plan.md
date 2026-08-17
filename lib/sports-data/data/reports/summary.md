@@ -11,7 +11,7 @@
 - Handicap calibration: says 60.7%, actually 55.7% over 140 bets (Brier 0.255)
 - Mean margin error: 3.224 runs
 - Mean total error: 3.534 runs
-- Learned shrink (core/tail) — moneyline 0.851/0.526, handicap 0.866/0.494, total 0.85/0.7 (140 games)
+- Learned shrink (core/tail) — moneyline 0.851/0.676, handicap 0.866/0.644, total 0.85/0.85 (140 games)
 
 ## Calibration by band (handicap)
 

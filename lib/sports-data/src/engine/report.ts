@@ -110,7 +110,8 @@ export interface ConfidenceRecord {
   n: number;
   wins: number;
   losses: number;
-  rate: number;
+  /** null when the band holds no DECIDED winner bet (it may still hold P&L). */
+  rate: number | null;
   /** Handicap P&L of these picks, units after commission. */
   profit: number;
 }
@@ -405,8 +406,13 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
     handicapAssessment: assessRecord(handicap.wins, handicap.losses),
     winnerBuckets: bucketize(scored(winnerSamples)),
     handicapBuckets: bucketize(scored(handicapSamples)),
+    // Every band the record touched, including one whose winner market never
+    // decided: n counts DECIDED winner bets, profit counts settled handicap
+    // stakes, and a band can hold the second without the first (ties, and
+    // handicap-only picks). Dropping it on n === 0 would silently delete real
+    // money from the only breakdown that attributes it.
     byConfidence: (["S", "A", "B", "C"] as const)
-      .filter((c) => (byConf.get(c)?.n ?? 0) > 0)
+      .filter((c) => byConf.has(c))
       .map((c) => {
         const e = byConf.get(c)!;
         return {
@@ -414,7 +420,7 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
           n: e.n,
           wins: e.wins,
           losses: e.losses,
-          rate: round3(e.wins / e.n),
+          rate: e.n === 0 ? null : round3(e.wins / e.n),
           profit: round3(e.profit),
         };
       }),

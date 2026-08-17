@@ -1,6 +1,6 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-17T11:01:54.938Z over 19 day(s)._
+_Generated 2026-08-17T18:15:15.915Z over 20 day(s)._
 
 ## S-3 / B-2 — Integrity
 
@@ -8,7 +8,7 @@ _Generated 2026-08-17T11:01:54.938Z over 19 day(s)._
 
 ## S-4 — Lock discipline
 
-❌ 19 of 19 slates locked late (each judged by the deadline in force when it locked).
+❌ 19 of 20 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 30.8 minutes.
 - ❌ 2026-07-28: locked 139 min AFTER the deadline
 - ❌ 2026-07-29: locked 123.3 min AFTER the deadline
 - ❌ 2026-07-30: locked 127 min AFTER the deadline
@@ -28,6 +28,7 @@ _Generated 2026-08-17T11:01:54.938Z over 19 day(s)._
 - ❌ 2026-08-14: locked 66.9 min AFTER the deadline
 - ❌ 2026-08-15: locked 26.5 min AFTER the deadline
 - ❌ 2026-08-16: locked 1.8 min AFTER the deadline
+- 2026-08-17: +30.8 min
 
 ## A-1 — Distribution validity
 
@@ -37,14 +38,14 @@ _Generated 2026-08-17T11:01:54.938Z over 19 day(s)._
 
 ## A-4 — Input-data health
 
-- `[info] away_starter_xfip_estimated`: 248 games (94.3%)
-- `[info] home_starter_xfip_estimated`: 246 games (93.5%)
-- `[warn] home_bullpen_bullpen_heavy_usage`: 163 games (62.0%)
-- `[warn] away_bullpen_bullpen_heavy_usage`: 145 games (55.1%)
-- `[warn] away_starter_starter_low_sample`: 34 games (12.9%)
-- `[warn] home_starter_starter_low_sample`: 25 games (9.5%)
-- `[downgrade] home_no_probable_pitcher`: 14 games (5.3%)
-- `[downgrade] away_no_probable_pitcher`: 11 games (4.2%)
+- `[info] away_starter_xfip_estimated`: 257 games (93.8%)
+- `[info] home_starter_xfip_estimated`: 255 games (93.1%)
+- `[warn] home_bullpen_bullpen_heavy_usage`: 169 games (61.7%)
+- `[warn] away_bullpen_bullpen_heavy_usage`: 153 games (55.8%)
+- `[warn] away_starter_starter_low_sample`: 37 games (13.5%)
+- `[warn] home_starter_starter_low_sample`: 25 games (9.1%)
+- `[downgrade] home_no_probable_pitcher`: 16 games (5.8%)
+- `[downgrade] away_no_probable_pitcher`: 13 games (4.7%)
 - `[downgrade] away_starter_stats_missing`: 4 games (1.5%)
 - `[downgrade] home_starter_stats_missing`: 3 games (1.1%)
 
