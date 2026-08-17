@@ -31,8 +31,14 @@ import {
   type GameResult,
   type SettlementReport,
 } from "./settle";
-import { simulateGame } from "./simulate";
+import { simulateGame, type SimulateOptions } from "./simulate";
 import type { GameCoreData } from "../step2";
+
+/**
+ * Simulator overrides for parameter-candidate replays. Omitted fields use
+ * the production constants, so a plain backtest IS the production engine.
+ */
+export type SimParams = Pick<SimulateOptions, "dispersion" | "envSd">;
 
 /** Predict one slate exactly the way cmdPredict does, minus I/O. */
 export function predictSlate(
@@ -42,12 +48,14 @@ export function predictSlate(
   season: number,
   sims: number,
   cfg: DecisionConfig = DEFAULT_DECISION_CONFIG,
+  simParams: SimParams = {},
 ): GamePrediction[] {
   return games.map((g) => {
     const runs = expectedRuns(g, season);
     const sim = simulateGame(runs.homeMu, runs.awayMu, {
       sims,
       seed: `${date}:${g.gamePk}`,
+      ...simParams,
     });
     return decide(
       g,
@@ -84,13 +92,14 @@ export function walkForward(
   season: number,
   sims: number,
   cfg: DecisionConfig = DEFAULT_DECISION_CONFIG,
+  simParams: SimParams = {},
 ): BacktestOutcome {
   const reports: SettlementReport[] = [];
   const predictions = new Map<string, GamePrediction[]>();
   let calibration = base;
 
   for (const day of days) {
-    const preds = predictSlate(day.date, day.games, calibration, season, sims, cfg);
+    const preds = predictSlate(day.date, day.games, calibration, season, sims, cfg, simParams);
     predictions.set(day.date, preds);
     const report = settle(
       day.date,

@@ -30,6 +30,14 @@ on:
         description: "Monte Carlo draws per game (default 10000)"
         required: false
         type: string
+      dispersion:
+        description: "Candidate NB dispersion r (blank = production constant)"
+        required: false
+        type: string
+      env-sd:
+        description: "Candidate shared-environment sd (blank = production constant)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -61,12 +69,15 @@ jobs:
         run: |
           SEASON="${{ inputs.season }}"
           SIMS="${{ inputs.sims }}"
+          DISP="${{ inputs.dispersion }}"
+          ENVSD="${{ inputs['env-sd'] }}"
           pnpm exec tsx src/cli/handiedge.ts backtest \
             --from "${{ inputs.from }}" --to "${{ inputs.to }}" \
-            ${SEASON:+--season "$SEASON"} ${SIMS:+--sims "$SIMS"}
+            ${SEASON:+--season "$SEASON"} ${SIMS:+--sims "$SIMS"} \
+            ${DISP:+--dispersion "$DISP"} ${ENVSD:+--env-sd "$ENVSD"}
 
       - name: Publish summary
-        run: cat lib/sports-data/data/backtest/${{ inputs.from }}_${{ inputs.to }}-summary.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat lib/sports-data/data/backtest/${{ inputs.from }}_${{ inputs.to }}*-summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit backtest results
         run: |
