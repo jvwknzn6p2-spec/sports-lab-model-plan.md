@@ -86,9 +86,12 @@ test("analytic margin moments match the simulator's draws", () => {
   let sum = 0;
   let sumSq = 0;
   const rng = mulberry32(4242);
-  const k = 1 / (SHARED_ENV_SD * SHARED_ENV_SD);
+  // Production runs with no shared factor (SHARED_ENV_SD = 0), in which case
+  // the environment multiplier is a constant 1 — the same branch the
+  // simulator takes.
+  const k = SHARED_ENV_SD > 0 ? 1 / (SHARED_ENV_SD * SHARED_ENV_SD) : null;
   for (let i = 0; i < sims; i++) {
-    const e = gamma(k, rng) / k;
+    const e = k === null ? 1 : gamma(k, rng) / k;
     const m =
       negBinomial(4.8 * e, TEAM_RUN_DISPERSION, rng) -
       negBinomial(4.2 * e, TEAM_RUN_DISPERSION, rng);
@@ -100,7 +103,14 @@ test("analytic margin moments match the simulator's draws", () => {
     Math.abs(empirical - a.varMargin) / a.varMargin < 0.05,
     `analytic ${a.varMargin} vs empirical ${empirical}`,
   );
-  assert.ok(a.correlation > 0.08 && a.correlation < 0.15, `corr=${a.correlation}`);
+  // Production models no shared factor, so the analytic correlation is 0;
+  // with one switched on it must be positive and match the same formula.
+  assert.equal(a.correlation, 0);
+  const withEnv = analyticMarginStats(4.8, 4.2, TEAM_RUN_DISPERSION, 0.2);
+  assert.ok(
+    withEnv.correlation > 0.08 && withEnv.correlation < 0.2,
+    `corr=${withEnv.correlation}`,
+  );
   assert.ok(sim.pHomeWin > 0.5, "sanity: favourite favoured");
 });
 
@@ -246,7 +256,8 @@ test("distribution check compares realized spread against the model's", () => {
     check.empiricalMarginVariance < check.modelMarginVariance,
     "constructed data is far tamer than the model expects",
   );
-  assert.ok(Math.abs(check.modelRunCorrelation - 0.11) < 0.03);
+  // Production draws teams independently, so the yardstick's correlation is 0.
+  assert.equal(check.modelRunCorrelation, 0);
   // Fewer than 10 scored games → no verdict rather than a noisy one.
   assert.equal(distributionCheck([day("2026-08-18", preds.slice(0, 5), results)]), null);
 });

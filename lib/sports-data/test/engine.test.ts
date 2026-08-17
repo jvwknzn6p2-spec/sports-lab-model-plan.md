@@ -117,11 +117,10 @@ test("the shared environment factor correlates the two teams' runs", () => {
   // A common multiplier moves both teams together, so its signature is in
   // the TOTAL: more mass at extreme combined scores than independent draws
   // can produce. Compare the same matchup with the environment on and off.
-  const withEnv = simulateGame(4.5, 4.5, {
-    sims: 30_000,
-    seed: 5,
-    envSd: SHARED_ENV_SD,
-  });
+  // An explicit non-zero sd: the production default is now 0 (the real
+  // record showed no residual correlation), so the mechanism has to be
+  // switched on deliberately to be tested at all.
+  const withEnv = simulateGame(4.5, 4.5, { sims: 30_000, seed: 5, envSd: 0.2 });
   const without = simulateGame(4.5, 4.5, { sims: 30_000, seed: 5, envSd: 0 });
   const hiWith = withEnv.totalProb(14.5).over;
   const hiWithout = without.totalProb(14.5).over;
@@ -258,7 +257,10 @@ test("decision engine picks a winner with reasons, PASSes near coin-flips", asyn
   const g = games[0]!;
   const runs = expectedRuns(g, 2024);
 
-  const strong = simulateGame(5.5, 3.6, { sims: 10_000, seed: 1 });
+  // Wider (correctly calibrated) margins mean a 1.9-run edge no longer
+  // covers -1.5 profitably; this test needs a favourite big enough to make
+  // the quoted line a real bet.
+  const strong = simulateGame(6.2, 3.2, { sims: 10_000, seed: 1 });
   const pick = decide(g, runs, strong, DEFAULT_CALIBRATION, {
     side: "home",
     line: -1.5,
