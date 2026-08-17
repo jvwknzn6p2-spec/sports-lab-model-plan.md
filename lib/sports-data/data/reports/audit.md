@@ -1,6 +1,6 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-17T09:05:08.974Z over 19 day(s)._
+_Generated 2026-08-17T11:01:54.938Z over 19 day(s)._
 
 ## S-3 / B-2 — Integrity
 
@@ -31,8 +31,8 @@ _Generated 2026-08-17T09:05:08.974Z over 19 day(s)._
 
 ## A-1 — Distribution validity
 
-- Margin residual variance: empirical 18.05 vs model 13.55 (ratio 1.33) over 262 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
-- Same-game run correlation: empirical -0.013 vs model 0.105
+- Margin residual variance: empirical 18.05 vs model 17.8 (ratio 1.01) over 262 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
+- Same-game run correlation: empirical -0.013 vs model 0
 - Mean |margin error|: 3.34 runs
 
 ## A-4 — Input-data health
@@ -47,6 +47,10 @@ _Generated 2026-08-17T09:05:08.974Z over 19 day(s)._
 - `[downgrade] away_no_probable_pitcher`: 11 games (4.2%)
 - `[downgrade] away_starter_stats_missing`: 4 games (1.5%)
 - `[downgrade] home_starter_stats_missing`: 3 games (1.1%)
+
+## A-2 — Real-line settlements (hand-check these)
+
+_No bet on a non-zero line has settled yet. The 半-line machinery (split stakes, partial pushes) is therefore still UNPROVEN in production — the first entries here are the ones to verify by hand against the book's own statement._
 
 ## A-5 / A-2 — Watched cohorts
 
