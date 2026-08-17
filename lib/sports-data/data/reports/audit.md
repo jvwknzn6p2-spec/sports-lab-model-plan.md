@@ -1,6 +1,6 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-16T18:17:16.860Z over 19 day(s)._
+_Generated 2026-08-17T09:05:08.974Z over 19 day(s)._
 
 ## S-3 / B-2 — Integrity
 
@@ -31,9 +31,9 @@ _Generated 2026-08-16T18:17:16.860Z over 19 day(s)._
 
 ## A-1 — Distribution validity
 
-- Margin residual variance: empirical 17.94 vs model 13.57 (ratio 1.32) over 247 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
-- Same-game run correlation: empirical -0.011 vs model 0.105
-- Mean |margin error|: 3.31 runs
+- Margin residual variance: empirical 18.05 vs model 13.55 (ratio 1.33) over 262 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
+- Same-game run correlation: empirical -0.013 vs model 0.105
+- Mean |margin error|: 3.34 runs
 
 ## A-4 — Input-data health
 
@@ -52,8 +52,8 @@ _Generated 2026-08-16T18:17:16.860Z over 19 day(s)._
 
 _Cohorts deliberately left without their own correction; judge at n≈50 per cohort. Real-line rows are the A-2 readiness tripwire — the day they stop reading n=0, cross-check those settlements by hand._
 
-- starter+offense edges aligned: 13-19 (40.6%, -7.30 units, n=32)
-- away-team picks: 17-19 (47.2%, -3.70 units, n=36)
+- starter+offense edges aligned: 14-19 (42.4%, -6.40 units, n=33)
+- away-team picks: 19-19 (50.0%, -1.90 units, n=38)
 - ev_outlier flagged: n=0
 - real handicap line (non-zero): n=0
-- new engine (post-overhaul): n=0
+- new engine (post-overhaul): 3-4 (42.9%, -1.30 units, n=7)
