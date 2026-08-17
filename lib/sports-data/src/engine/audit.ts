@@ -249,7 +249,12 @@ export function checkIntegrity(
     // demand the official history agrees. Calibration state does not affect
     // scoring, so DEFAULT-equivalent state is irrelevant here — only the
     // records and money are compared.
-    const official = historyByDate.get(day.date)?.[0];
+    // The LAST report for the date, because that is the one that counts:
+    // `recalibrateFromHistory` folds one report per date and keeps the last
+    // write, so grading the first would raise mismatches against a row the
+    // system itself has already superseded (a re-settle picking up west-coast
+    // stragglers writes a second, correcter row for the same date).
+    const official = historyByDate.get(day.date)?.at(-1);
     if (day.results && official) {
       const fresh = settle(
         day.date,
@@ -294,7 +299,7 @@ export function checkIntegrity(
   // actually holds — drift here means the state learned from games the
   // record cannot account for (or missed some).
   const scoredInHistory = [...historyByDate.values()]
-    .flatMap((rs) => rs[0]!.games)
+    .flatMap((rs) => rs.at(-1)!.games)
     .filter((g) => g.winnerCorrect !== null && g.statedProbability !== null)
     .length;
   if (calibration.gamesSettled !== scoredInHistory) {

@@ -41,6 +41,12 @@ import { buildForms } from "./form-builder";
 import { getParkFactor } from "./park-factors";
 
 /**
+ * HTTP statuses that describe the ENTITY asked about rather than the run
+ * asking. Only these degrade to "missing data" (see `orNull`).
+ */
+const MISSING_ENTITY_STATUS = new Set([400, 404, 422]);
+
+/**
  * A fetcher that serves from an on-disk, URL-keyed store of raw responses
  * and fills it from the given transport on miss.
  */
@@ -146,16 +152,26 @@ export class BacktestDataSource implements CoreDataSource {
   }
 
   /**
-   * A 404 from a stats endpoint means the API has no record for that entity
-   * over that window — which is exactly "missing data": return null and let
-   * the assembler attach its downgrade flag, instead of aborting a whole
-   * season replay on one unknowable pitcher.
+   * A stats endpoint rejecting the request for THIS ENTITY means the API has
+   * no record for it over that window — which is exactly "missing data":
+   * return null and let the assembler attach its downgrade flag, instead of
+   * aborting a whole season replay on one unknowable pitcher.
+   *
+   * 404 is the common case, but the MLB API also answers 400 for an id it
+   * does not recognise and 422 for a window it will not serve, and both used
+   * to kill a multi-hour replay outright. Anything else — 401/403 (our
+   * credentials or our IP), 429 (we are being throttled), 5xx (their problem)
+   * — is a fault of the RUN, not a property of the entity: those still throw,
+   * because degrading them to null would fabricate a season of "missing data"
+   * out of an outage and quietly rewrite the very record we are measuring.
    */
   private async orNull<T>(pull: () => Promise<T>): Promise<T | null> {
     try {
       return await pull();
     } catch (err) {
-      if (err instanceof MlbApiError && err.status === 404) return null;
+      if (err instanceof MlbApiError && MISSING_ENTITY_STATUS.has(err.status ?? 0)) {
+        return null;
+      }
       throw err;
     }
   }

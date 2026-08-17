@@ -240,3 +240,41 @@ test("candidate sim params reach the simulator and the analytic yardstick", asyn
   assert.equal(prodStats.correlation, 0);
   assert.ok(candStats.correlation > 0.1, `corr=${candStats.correlation}`);
 });
+
+test("stats degrade on missing-entity 4xx but a real outage still aborts", async () => {
+  const status = { code: 404 };
+  const fake: Fetcher = async (url) => {
+    if (url.includes("/schedule")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ dates: [] }),
+      } as Awaited<ReturnType<Fetcher>>;
+    }
+    return { ok: false, status: status.code, json: async () => ({}) } as Awaited<
+      ReturnType<Fetcher>
+    >;
+  };
+  const dir = mkdtempSync(join(tmpdir(), "handiedge-bt-"));
+  const src = new BacktestDataSource({
+    cacheDir: dir,
+    season: 2024,
+    seasonStart: "2024-03-01",
+    fetcher: fake,
+  });
+  await src.getSchedule("2024-06-15"); // opens the stats window
+  // "This entity has no record" — a season replay must walk past it.
+  for (const code of [400, 404, 422]) {
+    status.code = code;
+    assert.equal(await src.getStarterLine(999999, 2024), null, `status ${code}`);
+  }
+  // "The run is broken" — degrading these would fabricate a season of missing
+  // data out of an outage and quietly rewrite the record being measured.
+  for (const code of [401, 403, 429, 500, 503]) {
+    status.code = code;
+    await assert.rejects(
+      () => src.getTeamBattingLine(121, 2024),
+      `status ${code} must abort, not degrade`,
+    );
+  }
+});

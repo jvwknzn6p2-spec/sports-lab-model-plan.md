@@ -322,3 +322,34 @@ test("wilson95 behaves at the edges the naive interval gets wrong", () => {
   const w1000 = wilson95(600, 1000);
   assert.ok(w1000.hi - w1000.lo < w10.hi - w10.lo);
 });
+
+test("a confidence band with money but no decided bet survives the breakdown", () => {
+  // A tied final settles its handicap stake and pushes the moneyline: the
+  // band holds P&L and zero decided winner bets. Dropping it on n === 0 used
+  // to delete that money from the only breakdown that attributes it.
+  const base = report("2026-07-01", 1, 0, 0.2, 0.6);
+  const tiedHandicapOnly: SettledGame = {
+    ...base.games[0]!,
+    gamePk: 900,
+    confidence: "S",
+    predictedWinner: null,
+    actualWinner: null,
+    winnerCorrect: null,
+    statedProbability: null,
+    brier: null,
+    handicapPick: "H -〈0〉",
+    handicapCorrect: false,
+    handicapProfit: -1,
+  };
+  base.games[0] = { ...base.games[0]!, confidence: "B" };
+  base.games.push(tiedHandicapOnly);
+  const s = aggregateHistory([base]);
+  const sRow = s.byConfidence.find((c) => c.confidence === "S");
+  assert.ok(sRow, `S band was dropped: ${JSON.stringify(s.byConfidence)}`);
+  assert.equal(sRow.n, 0);
+  assert.equal(sRow.rate, null, "no decided bet must read null, never NaN");
+  assert.equal(sRow.profit, -1);
+  // The band rows must still account for every unit in the headline total.
+  const banded = s.byConfidence.reduce((acc, c) => acc + c.profit, 0);
+  assert.equal(Math.round(banded * 1000) / 1000, s.handicapProfitTotal);
+});

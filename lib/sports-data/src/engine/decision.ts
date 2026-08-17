@@ -129,19 +129,38 @@ export interface CalibrationState {
 }
 
 /**
- * Raw probability at which the tail band begins. 0.65 is where the settled
- * record's calibration curve broke: below it the model's quotes tracked
- * reality, above it they collapsed (stated 66%, hit 42% over 19 bets).
+ * Raw probability at which the tail band begins.
+ *
+ * 0.65 is where the PRE-REFIT record's calibration curve broke: below it the
+ * quotes tracked reality, above it they collapsed (stated 66%, hit 42% over
+ * 19 bets). The refit simulator (r=4.5, no shared environment factor) removed
+ * that break — see DEFAULT_TAIL_SHRINK — but the boundary is kept where it is
+ * because nothing in the new record argues for moving it, and moving it would
+ * re-band every stored tail stamp for no measured gain.
  */
 export const TAIL_START = 0.65;
 
 /**
- * Default tail shrink. Deliberately BELOW the core's 0.85: the 2026-08 audit
- * measured heavy tail overconfidence, and a fresh state should start from
- * that evidence rather than relearn it at live stakes. Bounded learning
- * (settle.ts) moves it from here.
+ * Default tail shrink: the SAME as the core, i.e. a deliberately neutral
+ * prior.
+ *
+ * It used to be 0.7, below the core's 0.85, encoding the heavy tail
+ * overconfidence the 2026-08 audit measured. That overconfidence was a
+ * symptom of independent-Poisson variance, not a property of the tail, and
+ * the refit removed it. Over 1,501 walk-forward bets on the real 2024–2025
+ * record under the refit engine the top of the book is if anything
+ * CONSERVATIVE, not bold:
+ *
+ *   stated 0.600–0.625  n=262  hit 60.3%
+ *   stated 0.625–0.650  n=164  hit 68.9%
+ *   stated 0.650–0.675  n= 60  hit 71.7%
+ *   stated ≥0.675       n= 61  hit 72.1%
+ *
+ * Keeping a punitive prior against that evidence would systematically
+ * under-quote the model's best picks. Starting level and letting bounded
+ * learning (settle.ts) move it is what the data supports.
  */
-const DEFAULT_TAIL_SHRINK = 0.7;
+const DEFAULT_TAIL_SHRINK = 0.85;
 
 export const DEFAULT_CALIBRATION: CalibrationState = {
   shrink: 0.85,
@@ -161,10 +180,9 @@ export const DEFAULT_CALIBRATION: CalibrationState = {
  * silently resets learned state.
  *
  * A legacy file has no tail values; each market's tail starts at
- * min(its core shrink, DEFAULT_TAIL_SHRINK) — inheriting the core alone would
- * reproduce the exact tail overconfidence the tail band exists to fix, while
- * a tail above the core would mean quoting the far edge MORE boldly than the
- * near edge, which no evidence supports.
+ * min(its core shrink, DEFAULT_TAIL_SHRINK) — never above the core, because
+ * quoting the far edge MORE boldly than the near edge is a claim the record
+ * has never supported, and never above the neutral prior either.
  */
 export function normalizeCalibration(
   raw: Partial<CalibrationState> & { shrink?: number },
@@ -201,10 +219,39 @@ export interface DecisionConfig {
   bandB: number;
 }
 
+/**
+ * Bands cut where the REAL record separates, on the refit engine's scale.
+ *
+ * The old S cut of 0.65 was set on the pre-refit probability scale, which ran
+ * hot. Once the simulator was refit the quotes stopped reaching it: over
+ * 1,501 walk-forward bets across 2024-05→08, 2025-05→06 and 2025-07→08, S
+ * collected 8 picks — 0.5% of the book — so the top band carried no
+ * information and the report's headline breakdown was effectively two bands
+ * wide.
+ *
+ * Re-cut at 0.625, the same record separates cleanly and monotonically, and
+ * every band clears the 52.63% break-even of a 0.9-paying win:
+ *
+ *   S  ≥0.625        n=285  hit 70.2%   EV +0.333 / unit
+ *   A  0.600–0.625   n=262  hit 60.3%   EV +0.146 / unit
+ *   B  0.550–0.600   n=954  hit 54.9%   EV +0.044 / unit
+ *
+ * (Those are the raw band populations; the data-quality caps in
+ * `confidenceFor` demote a further share of them, which is intended — the
+ * bands describe the price, the caps describe the inputs.)
+ *
+ * `passThreshold` stays at 0.55 on the same evidence: B is the marginal band
+ * at +0.044/unit and the slice immediately above the cut (0.550–0.575, n=576)
+ * runs 53.3%, i.e. +0.013/unit — already inside the noise. Lowering the gate
+ * toward the 52.63% break-even would buy an unmeasured population that the
+ * trend says is worth nothing or less. The positive-EV handicaps this gate
+ * used to discard are recovered by decoupling the markets in `decide`, not by
+ * loosening the winner bar.
+ */
 export const DEFAULT_DECISION_CONFIG: DecisionConfig = {
   passThreshold: 0.55,
   minEv: 0,
-  bandS: 0.65,
+  bandS: 0.625,
   bandA: 0.6,
   bandB: 0.55,
 };
@@ -435,14 +482,34 @@ export function decide(
     handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
   }
 
-  const pass = pWinner < cfg.passThreshold || !g.complete || hasDowngrade;
+  // Two different reasons to sit out, and they do NOT bind the same markets.
+  //
+  // `dataPass` is a statement about the INPUTS: the game is incomplete or a
+  // downgrade flag fired, so nothing priced off it can be trusted and every
+  // market is off.
+  //
+  // `pass` adds the thin-winner-edge gate. That gate is a statement about ONE
+  // market — it says the moneyline is not worth backing — and it is applied
+  // to the moneyline and the total, which are both priced off who wins and
+  // by how much in the same direction.
+  //
+  // It is deliberately NOT applied to the handicap, for the same reason
+  // `handicapUnprofitable` is deliberately not folded into `pass` below: the
+  // run line is a separate bet at a separate price, and its value comes from
+  // the LINE, not from the size of the winner edge. A 53% favourite laid at a
+  // generous number is a real edge; discarding it because the moneyline is
+  // dull throws away the market this tool exists to price. (Measured on the
+  // 2026-08-17 slate: three of eight PASSes carried handicap EV of +2.2%,
+  // +4.6% and +1.4%, all discarded by the winner gate alone.)
+  const dataPass = !g.complete || hasDowngrade;
+  const pass = pWinner < cfg.passThreshold || dataPass;
 
   // Distrust-your-own-enthusiasm guard: an EV far beyond what a real edge
   // over a real market looks like is more likely a modelling error than a
   // gift (see EV_OUTLIER_THRESHOLD). Cap the confidence so the pick can never
   // present as S/A on the strength of the very number under suspicion.
   const evOutlier =
-    handicapEv !== null && !pass && handicapEv > EV_OUTLIER_THRESHOLD;
+    handicapEv !== null && !dataPass && handicapEv > EV_OUTLIER_THRESHOLD;
   const confidenceCapped =
     evOutlier && (confidence === "S" || confidence === "A")
       ? "B"
@@ -498,10 +565,16 @@ export function decide(
     );
   }
   if (pass) {
+    const handicapSurvives =
+      !dataPass && handicapEv !== null && !handicapUnprofitable;
     reasons.unshift(
-      !g.complete || hasDowngrade
+      dataPass
         ? "PASS: incomplete/downgraded data"
-        : `PASS: edge too small (win prob ${(pWinner * 100).toFixed(1)}% < ${(cfg.passThreshold * 100).toFixed(0)}%)`,
+        : `PASS: edge too small (win prob ${(pWinner * 100).toFixed(1)}% < ` +
+            `${(cfg.passThreshold * 100).toFixed(0)}%) — moneyline and total only` +
+            (handicapSurvives
+              ? `; the handicap below is priced on its own line and still stands`
+              : ""),
     );
   }
 
@@ -518,11 +591,11 @@ export function decide(
     confidence: confidenceCapped,
     handicap: {
       input: handicap,
-      pick: pass || handicapUnprofitable ? null : handicapPick,
+      pick: dataPass || handicapUnprofitable ? null : handicapPick,
       coverProbability,
       rawCoverProbability,
       ev: handicapEv,
-      noValue: !pass && handicapUnprofitable,
+      noValue: !dataPass && handicapUnprofitable,
     },
     total: {
       line: totalLine,

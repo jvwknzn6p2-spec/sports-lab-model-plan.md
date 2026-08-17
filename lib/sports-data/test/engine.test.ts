@@ -416,3 +416,77 @@ test("updateCalibration is bounded and damped", () => {
   );
   assert.equal(s.shrink, DEFAULT_CALIBRATION.shrink);
 });
+
+test("a thin winner edge PASSes the moneyline but keeps a priced handicap", async () => {
+  const games = await loadSlateGames();
+  const g = games[0]!;
+  const runs = expectedRuns(g, 2024);
+  const strong = simulateGame(6.2, 3.2, { sims: 10_000, seed: 1 });
+  const line = { side: "home" as const, line: -1.5, total: 8.5 };
+
+  // Force the winner gate to reject while the inputs stay clean, so the only
+  // thing under test is whether a dull moneyline drags the run line down
+  // with it. It must not: the handicap is a separate bet at a separate price.
+  const thin = decide(g, runs, strong, DEFAULT_CALIBRATION, line, {
+    ...DEFAULT_DECISION_CONFIG,
+    passThreshold: 0.99,
+  });
+  assert.equal(thin.pass, true);
+  assert.equal(thin.predictedWinner, null, "the moneyline is off");
+  assert.equal(thin.total.pick, null, "the total is off");
+  assert.ok(thin.handicap.pick !== null, "the handicap must survive");
+  assert.ok(thin.handicap.ev !== null && thin.handicap.ev > 0);
+  assert.ok(thin.reasons[0]!.startsWith("PASS:"));
+
+  // Bad INPUTS are different: nothing priced off them can be trusted.
+  const dirty = decide(
+    { ...g, complete: false },
+    runs,
+    strong,
+    DEFAULT_CALIBRATION,
+    line,
+  );
+  assert.equal(dirty.pass, true);
+  assert.equal(dirty.handicap.pick, null, "incomplete data kills every market");
+  assert.equal(dirty.handicap.noValue, false);
+
+  // And the settler must score the surviving stake — money that is placed and
+  // never settled is money the record cannot see.
+  const rep = settle(
+    "2026-08-20",
+    [thin],
+    { [String(thin.gamePk)]: { homeScore: 7, awayScore: 2 } },
+    DEFAULT_CALIBRATION,
+    new Date("2026-08-21T12:00:00Z"),
+  );
+  const scored = rep.games[0]!;
+  assert.equal(scored.pass, true);
+  assert.equal(scored.winnerCorrect, null, "no moneyline bet to score");
+  assert.equal(scored.handicapCorrect, true);
+  assert.ok(scored.handicapProfit !== null && scored.handicapProfit > 0);
+  assert.equal(rep.handicapProfit, scored.handicapProfit);
+  assert.equal(
+    scored.confidence,
+    thin.confidence,
+    "a handicap-only bet still belongs to a confidence band",
+  );
+});
+
+test("simulateGame refuses a NaN dispersion instead of falling back to Poisson", () => {
+  assert.throws(
+    () => simulateGame(4.5, 4.5, { sims: 10, seed: 1, dispersion: Number.NaN }),
+    /dispersion must be a positive number/,
+  );
+  assert.throws(
+    () => simulateGame(4.5, 4.5, { sims: 10, seed: 1, envSd: Number.NaN }),
+    /envSd must be a non-negative finite number/,
+  );
+  // Infinity is the Poisson limit and stays a legal, deliberate request.
+  assert.ok(
+    simulateGame(4.5, 4.5, {
+      sims: 100,
+      seed: 1,
+      dispersion: Number.POSITIVE_INFINITY,
+    }).pHomeWin > 0,
+  );
+});

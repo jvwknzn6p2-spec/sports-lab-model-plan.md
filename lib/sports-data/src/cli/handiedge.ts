@@ -53,7 +53,7 @@
  * numbers reproducible bit-for-bit.
  */
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -130,7 +130,16 @@ interface ControlTower {
 }
 
 interface PredictionLock {
+  /**
+   * When this slate was FIRST committed — the timestamp the deadline audit
+   * (S-4) grades. A re-run that carries the frozen picks through must not
+   * move it: the picks were decided when they were decided, and restamping
+   * would turn an on-time slate into a late one on the strength of a
+   * housekeeping run that changed no pick.
+   */
   lockedAt: string;
+  /** When the file was last written, whether or not any pick changed. */
+  updatedAt?: string;
   controlTower: ControlTower;
   calibration: CalibrationState;
   predictions: GamePrediction[];
@@ -425,7 +434,13 @@ async function cmdPredict(args: {
   }
 
   const lock: PredictionLock = {
-    lockedAt: new Date().toISOString(),
+    // Carrying even one frozen pick means this run is republishing a slate
+    // that was already committed, so the commit time is the earlier one.
+    lockedAt:
+      carried > 0 && previous?.lockedAt
+        ? previous.lockedAt
+        : now.toISOString(),
+    updatedAt: now.toISOString(),
     controlTower: ct,
     calibration,
     predictions,
@@ -771,7 +786,8 @@ async function cmdReport(): Promise<void> {
     for (const c of s.byConfidence) {
       console.log(
         `    ${c.confidence}: ${c.wins}-${c.losses} ` +
-          `(${(c.rate * 100).toFixed(1)}%, ${fmtUnits(c.profit)} units, n=${c.n})`,
+          `(${c.rate === null ? "no decided bet" : `${(c.rate * 100).toFixed(1)}%`}, ` +
+          `${fmtUnits(c.profit)} units, n=${c.n})`,
       );
     }
   }
@@ -886,6 +902,42 @@ async function cmdAudit(): Promise<void> {
  * data/backtest/. No handicap lines are invented: every game runs at the
  * 0-line, so results validate the model, never a market edge.
  */
+/**
+ * Parse a numeric flag, refusing anything that is not a finite number.
+ *
+ * `Number("4.5x")` is NaN and `Number("")` is 0 — both flow into the engine
+ * as if they were parameters, and NaN in particular changes which generative
+ * model runs without changing anything visible in the output. A flag the user
+ * typed and the tool then ignored is a lie about what was measured, so a bad
+ * value stops the run.
+ */
+function numericArg(
+  flag: string,
+  raw: string | undefined,
+  fallback: number | string,
+  bounds?: { min?: number; exclusiveMin?: boolean; allowInfinite?: boolean },
+): number {
+  const source = raw ?? fallback;
+  // `Number("")` is 0 — an empty flag value is a mistake, not a zero.
+  if (source === "") throw new Error(`${flag} was given an empty value`);
+  const value = Number(source);
+  if (Number.isNaN(value)) {
+    throw new Error(`${flag} must be a number (got ${JSON.stringify(raw)})`);
+  }
+  if (!Number.isFinite(value) && !bounds?.allowInfinite) {
+    throw new Error(`${flag} must be finite (got ${value})`);
+  }
+  if (bounds?.min !== undefined) {
+    const bad = bounds.exclusiveMin ? value <= bounds.min : value < bounds.min;
+    if (bad) {
+      throw new Error(
+        `${flag} must be ${bounds.exclusiveMin ? ">" : ">="} ${bounds.min} (got ${value})`,
+      );
+    }
+  }
+  return value;
+}
+
 async function cmdBacktest(args: {
   from?: string;
   to?: string;
@@ -897,14 +949,31 @@ async function cmdBacktest(args: {
   if (!args.from || !args.to) {
     throw new Error("backtest requires --from and --to (YYYY-MM-DD)");
   }
-  const season = Number(args.season ?? args.from.slice(0, 4));
-  const sims = Number(args.sims ?? 10_000);
+  const season = numericArg("--season", args.season, args.from.slice(0, 4));
+  const sims = numericArg("--sims", args.sims, 10_000);
   // Candidate simulator parameters. Omitted = the production constants, so a
   // plain run IS the production engine; set them to trial a refit against
   // the same real record before touching the defaults.
+  //
+  // Parsed through `numericArg` rather than bare `Number()`: a typo used to
+  // yield NaN, which `negBinomial` treats as "no dispersion" and answers with
+  // a plain Poisson — the PRE-REFIT engine — while the output files are still
+  // tagged as a candidate run. A multi-hour replay that silently measures the
+  // wrong model is worse than one that refuses to start.
   const simParams: SimParams = {};
-  if (args.dispersion !== undefined) simParams.dispersion = Number(args.dispersion);
-  if (args["env-sd"] !== undefined) simParams.envSd = Number(args["env-sd"]);
+  if (args.dispersion !== undefined) {
+    // `Infinity` is a legitimate request: it is the Poisson limit of the
+    // negative binomial, i.e. the pre-refit baseline, and typing it out is
+    // the only way to reach it.
+    simParams.dispersion = numericArg("--dispersion", args.dispersion, NaN, {
+      min: 0,
+      exclusiveMin: true,
+      allowInfinite: true,
+    });
+  }
+  if (args["env-sd"] !== undefined) {
+    simParams.envSd = numericArg("--env-sd", args["env-sd"], NaN, { min: 0 });
+  }
   const paramTag =
     simParams.dispersion === undefined && simParams.envSd === undefined
       ? ""
@@ -1014,7 +1083,15 @@ async function cmdBacktest(args: {
     md.push("");
   }
   md.push(summaryToMarkdown(summary, outcome.calibration));
-  await writeFile(join(outDir, `${tag}-summary.md`), md.join("\n"), "utf8");
+  const summaryFile = join(outDir, `${tag}-summary.md`);
+  await writeFile(summaryFile, md.join("\n"), "utf8");
+  // Hand the EXACT file back to the workflow. A glob on from_to also matches
+  // every candidate-parameter run of the same period, so the job summary used
+  // to concatenate two different backtests into one page and present them as
+  // a single result. Only this run knows which file this run wrote.
+  if (process.env.GITHUB_OUTPUT) {
+    await appendFile(process.env.GITHUB_OUTPUT, `summary=${summaryFile}\n`, "utf8");
+  }
 
   console.log("=".repeat(72));
   console.log(
