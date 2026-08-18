@@ -5,7 +5,7 @@
 - Handicap: 81-62 · **+10.90 units** after the cut (ROI +7.6% per bet)
 - Significance (P&L): +7.6% per bet over 143 stakes — z 0.96, **not yet distinguishable from luck**
 - Hit rate: 56.6% over 143 bets (95% CI 48.5%–64.5%) vs 52.6% full-unit break-even
-- Total: 0-0
+- Total: never quoted — no control tower has carried a total line
 - Mean Brier: 0.253 (0.25 = coin flip, lower is better)
 - Calibration: says 60.6%, actually 56.6% — overconfident by 4.0pt
 - Handicap calibration: says 60.6%, actually 56.6% over 143 bets (Brier 0.253)

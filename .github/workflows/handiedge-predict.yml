@@ -5,23 +5,28 @@ name: HandiEdge — daily predictions
 # and committed back to the repo. Read the result on a phone either in the run
 # summary (Actions tab) or in data/reports/<date>.md.
 #
-# 12:37 UTC = 21:37 JST — WELL before the 22:55 JST (13:55 UTC) prediction
+# 12:10 UTC = 21:10 JST — WELL before the 22:55 JST (13:55 UTC) prediction
 # deadline, so the picks are produced and locked while they are still on
-# time. The margin is deliberately large and the minute deliberately odd:
-# GitHub fires scheduled workflows 20–26 minutes late on this repository
-# (observed on consecutive days), so the previous 13:00 cron still locked
-# at 13:22 — one minute past the deadline of the era (then 13:21 UTC) — and
-# stamped the whole slate predicted_after_deadline. 12:37 leaves ~78 minutes
-# of headroom and avoids the congested top of the hour, so the flag marks
-# only genuinely late runs
-# (a manual re-run, a scheduler outage). In MLB's own clock this is 08:37
-# ET on the slate date, comfortably ahead of the earliest first pitch
-# (about 13:05 ET / 17:05 UTC).
+# time. The margin is deliberately large and the minute deliberately odd,
+# because the only thing that has ever made this slate late is GitHub's
+# scheduler queue:
+#
+#   cron 13:00 → fired 13:22   (deadline of that era 13:21 — missed by 1 min)
+#   cron 12:37 → fired 13:23:54, 13:26:19 on consecutive days
+#
+# So the real delay on this repository is 46–50 minutes, roughly double the
+# 20–26 minutes the 12:37 move was sized against, and it has reached 117
+# minutes (2026-08-13). At 12:37 the surviving headroom was only ~28 minutes
+# — one bad queue away from stamping a whole slate predicted_after_deadline
+# again. 12:10 restores ~55 minutes of real headroom at the observed delay,
+# so the flag marks only genuinely late runs (a manual re-run, an outage).
+# In MLB's own clock this is 08:10 ET on the slate date, comfortably ahead of
+# the earliest first pitch (about 13:05 ET / 17:05 UTC).
 #
 # The slate date is MLB's game date, which is the UTC date this job runs on.
 on:
   schedule:
-    - cron: "37 12 * * *"
+    - cron: "10 12 * * *"
   workflow_dispatch:
     inputs:
       date:

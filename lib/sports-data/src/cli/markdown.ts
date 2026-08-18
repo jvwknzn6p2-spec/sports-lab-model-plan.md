@@ -10,7 +10,12 @@
 import type { AuditReport } from "../engine/audit";
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import { fmtPct, fmtUnits, rankByValue } from "../engine/decision";
-import type { CalibrationBucket, HistorySummary } from "../engine/report";
+import {
+  marketRecordLabel,
+  TOTAL_MARKET_NEVER_QUOTED,
+  type CalibrationBucket,
+  type HistorySummary,
+} from "../engine/report";
 import type { SettlementReport } from "../engine/settle";
 import { pickTrackerBlock } from "./pick-tracker";
 
@@ -232,7 +237,9 @@ export function summaryToMarkdown(
         `full-unit break-even`,
     );
   }
-  out.push(`- Total: ${s.totalRecord.wins}-${s.totalRecord.losses}`);
+  out.push(
+    `- Total: ${marketRecordLabel(s.totalRecord, TOTAL_MARKET_NEVER_QUOTED)}`,
+  );
   if (s.meanBrier !== null) {
     out.push(
       `- Mean Brier: ${s.meanBrier} (0.25 = coin flip, lower is better)`,

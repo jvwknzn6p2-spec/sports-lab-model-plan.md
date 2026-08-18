@@ -200,11 +200,13 @@ test("an implausibly large EV is flagged, capped and demoted in rank", () => {
   const strong = simulateGame(7.5, 2.5, { sims: 10_000, seed: 9 });
   assert.ok(strong.pHomeWin > 0.8);
   return loadSlateGames().then((games) => {
+    // A REAL line: the guard measures disagreement with a quoted price, so a
+    // pick'em — which has no price to disagree with — is out of its scope.
     const p = decide(games[0]!, expectedRuns(games[0]!, 2024), strong, {
       ...DEFAULT_CALIBRATION,
     }, {
       side: "home",
-      notation: "0",
+      line: -1.5,
     });
     assert.ok(p.handicap.ev !== null && p.handicap.ev > EV_OUTLIER_THRESHOLD);
     assert.ok(p.flags.includes("[warn] ev_outlier"), p.flags.join(","));
@@ -489,4 +491,80 @@ test("simulateGame refuses a NaN dispersion instead of falling back to Poisson",
       dispersion: Number.POSITIVE_INFINITY,
     }).pHomeWin > 0,
   );
+});
+
+test("a pick'em handicap is the moneyline and answers to the same gate", async () => {
+  const games = await loadSlateGames();
+  const g = games[0]!;
+  const runs = expectedRuns(g, 2024);
+  const strong = simulateGame(6.2, 3.2, { sims: 10_000, seed: 1 });
+  const thin = { ...DEFAULT_DECISION_CONFIG, passThreshold: 0.99 };
+
+  // A 0 line returns the stake on a level score and is otherwise the winner
+  // market restated — 143 of 143 settled pick'ems produced the identical
+  // result to the winner pick. Letting it through a thin-edge PASS would
+  // re-enter the exact proposition the winner gate just rejected.
+  const pickem = decide(
+    g,
+    runs,
+    strong,
+    DEFAULT_CALIBRATION,
+    { side: "home", notation: "0" },
+    thin,
+  );
+  assert.equal(pickem.pass, true);
+  assert.equal(pickem.handicap.pick, null, "a pick'em must follow the winner gate");
+  assert.equal(pickem.handicap.noValue, false, "suppressed is not 'no value'");
+
+  // A REAL line is a separate bet at a separate price and still survives.
+  const real = decide(
+    g,
+    runs,
+    strong,
+    DEFAULT_CALIBRATION,
+    { side: "home", line: -1.5 },
+    thin,
+  );
+  assert.equal(real.pass, true);
+  assert.ok(real.handicap.pick !== null, "a real line stays decoupled");
+
+  // Clearing the winner gate puts the pick'em back on the book.
+  const clear = decide(g, runs, strong, DEFAULT_CALIBRATION, {
+    side: "home",
+    notation: "0",
+  });
+  assert.equal(clear.pass, false);
+  assert.ok(clear.handicap.pick !== null);
+});
+
+test("the EV-outlier guard stays out of the pick'em market", async () => {
+  const games = await loadSlateGames();
+  const g = games[0]!;
+  const runs = expectedRuns(g, 2024);
+  // A blowout favourite: at a 0 line EV is a monotone restatement of the win
+  // probability, so EV > 0.25 is just "cover > 65.8%" and the guard would
+  // demote the model's BEST picks — a 66% pick ranking below a 63% one.
+  const huge = simulateGame(7.5, 2.6, { sims: 10_000, seed: 7 });
+  const pickem = decide(g, runs, huge, DEFAULT_CALIBRATION, {
+    side: "home",
+    notation: "0",
+  });
+  assert.ok(
+    pickem.handicap.ev !== null && pickem.handicap.ev > EV_OUTLIER_THRESHOLD,
+    `needs an EV past the threshold to be a real test (${pickem.handicap.ev})`,
+  );
+  assert.ok(
+    !pickem.flags.includes("[warn] ev_outlier"),
+    `pick'em must not trip the market-disagreement guard: ${pickem.flags}`,
+  );
+  assert.equal(pickem.confidence, "S", "the best pick must stay the best pick");
+
+  // At a real line the guard is meaningful and still fires.
+  const real = decide(g, runs, huge, DEFAULT_CALIBRATION, {
+    side: "home",
+    line: -1.5,
+  });
+  assert.ok(real.handicap.ev !== null && real.handicap.ev > EV_OUTLIER_THRESHOLD);
+  assert.ok(real.flags.includes("[warn] ev_outlier"), real.flags.join(","));
+  assert.equal(real.confidence, "B", "capped by the guard");
 });
