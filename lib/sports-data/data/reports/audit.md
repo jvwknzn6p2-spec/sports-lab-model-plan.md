@@ -1,6 +1,6 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-18T15:59:54.003Z over 21 day(s)._
+_Generated 2026-08-18T16:37:45.678Z over 21 day(s)._
 
 ## S-3 / B-2 — Integrity
 

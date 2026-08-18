@@ -1,9 +1,15 @@
 name: HandiEdge — daily predictions
 
-# Runs unattended so the tool is usable without a computer: the slate, the
-# bullpen/park/form context, and the locked predictions are all produced here
-# and committed back to the repo. Read the result on a phone either in the run
-# summary (Actions tab) or in data/reports/<date>.md.
+# Runs unattended so the tool is usable without a computer. Read the result on
+# a phone either in the run summary (Actions tab) or in data/reports/<date>.md.
+#
+# Second half of a two-stage day. handiedge-slate.yml fetches the slate at
+# 06:07 UTC (15:07 JST) and commits the control tower so the day's handicap
+# lines can be typed into it; this job refreshes the same slate, reads whatever
+# lines were entered, and freezes the picks. See that file for why the two are
+# separate — briefly: when they ran in one job there was no moment at which a
+# human could enter a line, so every slate in the tool's history was predicted
+# at ハンデなし.
 #
 # 12:10 UTC = 21:10 JST — WELL before the 22:55 JST (13:55 UTC) prediction
 # deadline, so the picks are produced and locked while they are still on
@@ -34,7 +40,7 @@ on:
         required: false
         type: string
       force:
-        description: "Overwrite an existing slate/lock (use after editing handicap lines)."
+        description: "Re-lock a slate that is already locked (use after editing handicap lines)."
         required: false
         default: false
         type: boolean
@@ -71,12 +77,18 @@ jobs:
           if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch slate (schedule, stats, bullpen usage, park factors, form)
+      # ALWAYS --force. The morning slate job (handiedge-slate.yml) has
+      # normally already written today's slate, and `fetch-slate` refuses to
+      # run over an existing one without it — so without --force this step
+      # would fail every single day the morning job succeeded.
+      #
+      # Refetching is also what we want: probables and season stats move
+      # during the day, and this is the last read before the picks are frozen.
+      # It is safe for the lines you entered, because `fetch-slate` never
+      # overwrites an existing control tower — not even with --force.
+      - name: Refresh slate (schedule, stats, bullpen usage, park factors, form)
         working-directory: lib/sports-data
-        run: |
-          FORCE=""
-          if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
-          pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" $FORCE
+        run: pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" --force
 
       # No games scheduled (off day, offseason) is normal, not a failure.
       - name: Check the slate has games
@@ -100,6 +112,30 @@ jobs:
           if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
           pnpm run handiedge predict \
             --control "data/control-towers/${{ steps.d.outputs.date }}.json" $FORCE
+
+      # Say plainly whether the day's lines actually arrived. A control tower
+      # left at all-zero silently reduces the handicap to the moneyline, and
+      # that failure is invisible in the picks themselves — it just looks like
+      # a quiet day.
+      - name: Report how many real lines were used
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          node -e '
+            const ct = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const all = Object.values(ct.handicaps ?? {});
+            const real = all.filter((h) => String(h.notation ?? h.line) !== "0");
+            const totals = all.filter((h) => h.total != null);
+            console.log(
+              real.length === 0
+                ? `> ⚠️ **No handicap lines were entered** — all ${all.length} games ran at ` +
+                  "`0` (ハンデなし), which makes every handicap identical to the moneyline. " +
+                  "Edit the control tower after the morning slate job and commit before 21:10 JST."
+                : `> **${real.length} of ${all.length} games** carried a real handicap line` +
+                  (totals.length ? `, ${totals.length} with a total.` : "."),
+            );
+            console.log("");
+          ' "lib/sports-data/data/control-towers/${{ steps.d.outputs.date }}.json" \
+            >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish to run summary
         if: steps.guard.outputs.run == 'true'

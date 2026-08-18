@@ -1,0 +1,134 @@
+name: HandiEdge — morning slate
+
+# Opens the window in which real handicap lines can be entered.
+#
+# This job exists because of an operational dead end: `fetch-slate` builds the
+# control tower (the file the day's handicap lines go into) and `predict`
+# consumes it, and until now both ran back to back in the SAME job, seconds
+# apart. There was no moment at which a human could edit the file, so every
+# slate in the tool's history was predicted against `notation: "0"` — ハンデ
+# なし — on all 15 games. A 0 line is a pick'em, i.e. the moneyline restated,
+# which is why the lifetime winner and handicap records are the same number
+# (81-62) and 143 of 143 settled handicaps matched their winner pick exactly.
+# The handicap engine this project is built around has therefore never
+# actually been exercised on a real line.
+#
+# Splitting the fetch out gives roughly six hours to paste the day's lines in:
+#
+#   06:07 UTC (15:07 JST)  this job   → slate + control-tower skeleton, committed
+#   ~15:10–21:00 JST       you        → edit `handicaps` in the control tower, commit
+#   12:10 UTC (21:10 JST)  predict    → locks the picks USING those lines
+#
+# `fetch-slate` never overwrites an existing control tower (not even with
+# --force), so the evening job can refresh probables and season stats without
+# touching a single line that was entered during the day.
+#
+# The minute is deliberately odd and off the hour: GitHub's scheduler queue on
+# this repository runs 46–50 minutes late, so a top-of-hour cron would land
+# even later. At 06:07 the real fire time is around 06:55 UTC / 15:55 JST,
+# still more than five hours before predict.
+#
+# The slate date is MLB's game date, which is the UTC date this job runs on.
+on:
+  schedule:
+    - cron: "7 6 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD). Blank = today (UTC)."
+        required: false
+        type: string
+      force:
+        description: "Refetch a slate that already exists. Never touches your handicap lines."
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+# Never let slate, predict and settle push at the same time.
+concurrency:
+  group: handiedge-data
+  cancel-in-progress: false
+
+jobs:
+  slate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch slate (schedule, stats, bullpen usage, park factors, form)
+        working-directory: lib/sports-data
+        run: |
+          FORCE=""
+          if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
+          pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" $FORCE
+
+      - name: Show what to fill in
+        run: |
+          CT="lib/sports-data/data/control-towers/${{ steps.d.outputs.date }}.json"
+          SLATE="lib/sports-data/data/slates/${{ steps.d.outputs.date }}.json"
+          if [ ! -f "$CT" ]; then
+            echo "No control tower for ${{ steps.d.outputs.date }} (no games?)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "# Handicap lines for ${{ steps.d.outputs.date }}"
+            echo
+            echo "Edit \`$CT\` and commit before **21:10 JST**, when the picks lock."
+            echo
+            echo "\`side\` is the team that GIVES the handicap. \`notation\` takes the"
+            echo "slate's own wording — \`0.5\`…\`1.9\`, or the half family \`1半\`…\`1半9\`."
+            echo "\`\"0\"\` means ハンデなし and makes the bet identical to the moneyline."
+            echo "\`total\` is optional; supplying it switches the over/under market on"
+            echo "for the first time."
+            echo
+            echo '| gamePk | matchup | line now |'
+            echo '| --- | --- | --- |'
+          } >> "$GITHUB_STEP_SUMMARY"
+          node -e '
+            const fs = require("fs");
+            const ct = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            const slate = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+            const name = new Map(slate.games.map((g) => [
+              String(g.gamePk),
+              `${g.away.teamName ?? "?"} @ ${g.home.teamName ?? "?"}`,
+            ]));
+            for (const [pk, h] of Object.entries(ct.handicaps ?? {})) {
+              const line = h.notation ?? h.line;
+              const shown = String(line) === "0" ? "`0` (なし — 未入力)" : `\`${line}\``;
+              console.log(`| ${pk} | ${name.get(pk) ?? "?"} | ${shown} |`);
+            }
+          ' "$CT" "$SLATE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the slate and the control tower
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge: slate and control tower for ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
