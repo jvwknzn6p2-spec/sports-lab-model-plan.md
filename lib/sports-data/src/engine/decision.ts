@@ -458,8 +458,19 @@ export function decide(
   let coverProbability: number | null = null;
   let rawCoverProbability: number | null = null;
   let handicapEv: number | null = null;
+  /**
+   * True when every part of the quoted line sits on 0 — a pick'em, which is
+   * not a handicap at all: it is the moneyline with the stake returned on a
+   * level score. Measured on the live record, 143 of 143 settled handicaps at
+   * a 0 line produced the identical result to the winner pick, and the two
+   * lifetime records are the same number (81-62 / 81-62). Everything below
+   * that treats the handicap as an INDEPENDENT market has to know this,
+   * because at a 0 line it is not one.
+   */
+  let handicapIsPickem = false;
   if (handicap) {
     const r = resolveHandicap(handicap);
+    handicapIsPickem = r.parts.every((p) => p.line === 0);
     const quoted = sim.asianCover(handicap.side, r.parts);
     const pCover = calibrateBanded(
       quoted.probability,
@@ -493,23 +504,52 @@ export function decide(
   // to the moneyline and the total, which are both priced off who wins and
   // by how much in the same direction.
   //
-  // It is deliberately NOT applied to the handicap, for the same reason
-  // `handicapUnprofitable` is deliberately not folded into `pass` below: the
-  // run line is a separate bet at a separate price, and its value comes from
-  // the LINE, not from the size of the winner edge. A 53% favourite laid at a
-  // generous number is a real edge; discarding it because the moneyline is
-  // dull throws away the market this tool exists to price. (Measured on the
-  // 2026-08-17 slate: three of eight PASSes carried handicap EV of +2.2%,
-  // +4.6% and +1.4%, all discarded by the winner gate alone.)
+  // It is NOT applied to a handicap quoted at a REAL line, for the same
+  // reason `handicapUnprofitable` is deliberately not folded into `pass`
+  // below: the run line is a separate bet at a separate price, and its value
+  // comes from the LINE, not from the size of the winner edge. A 53%
+  // favourite laid at a generous number is a real edge; discarding it because
+  // the moneyline is dull throws away the market this tool exists to price.
+  // (Measured on the 2026-08-17 slate: three of eight PASSes carried handicap
+  // EV of +2.2%, +4.6% and +1.4%, all discarded by the winner gate alone.)
+  //
+  // At a PICK'EM it is applied, because there is then no separate bet to
+  // protect — see `handicapSuppressed`.
   const dataPass = !g.complete || hasDowngrade;
   const pass = pWinner < cfg.passThreshold || dataPass;
+
+  /**
+   * Which gate the handicap answers to.
+   *
+   * A real line is its own bet and only bad INPUTS can kill it. A pick'em is
+   * the moneyline wearing a different name, so exempting it from the winner
+   * gate does not recover a separate edge — it re-enters the exact
+   * proposition the winner gate just rejected, through the back door, at a
+   * probability the record says is worth nothing. (On 2026-08-18 that put
+   * three stakes on the book at 54.2%, 53.4% and 53.7%, all below the 55%
+   * bar the same slate had just applied to those same games, and tripled the
+   * day's exposure from 3 stakes to 10.) So: a pick'em is gated exactly like
+   * the moneyline, and the market decoupling switches itself back on the
+   * moment a real line is quoted.
+   */
+  const handicapSuppressed = dataPass || (handicapIsPickem && pass);
 
   // Distrust-your-own-enthusiasm guard: an EV far beyond what a real edge
   // over a real market looks like is more likely a modelling error than a
   // gift (see EV_OUTLIER_THRESHOLD). Cap the confidence so the pick can never
   // present as S/A on the strength of the very number under suspicion.
+  //
+  // It cannot say anything at a pick'em, where there is no market price to
+  // disagree with: EV is then a monotone restatement of the win probability
+  // (p·0.9 − (1−p)), so the 0.25 threshold silently becomes "cover > 65.8%"
+  // and demotes the model's BEST picks — inverting the confidence ladder
+  // right at the top of the book, where a 66% pick would rank below a 63%
+  // one. Overconfidence at a pick'em is the tail band's job, not this one's.
   const evOutlier =
-    handicapEv !== null && !dataPass && handicapEv > EV_OUTLIER_THRESHOLD;
+    handicapEv !== null &&
+    !handicapSuppressed &&
+    !handicapIsPickem &&
+    handicapEv > EV_OUTLIER_THRESHOLD;
   const confidenceCapped =
     evOutlier && (confidence === "S" || confidence === "A")
       ? "B"
@@ -566,7 +606,7 @@ export function decide(
   }
   if (pass) {
     const handicapSurvives =
-      !dataPass && handicapEv !== null && !handicapUnprofitable;
+      !handicapSuppressed && handicapEv !== null && !handicapUnprofitable;
     reasons.unshift(
       dataPass
         ? "PASS: incomplete/downgraded data"
@@ -591,11 +631,11 @@ export function decide(
     confidence: confidenceCapped,
     handicap: {
       input: handicap,
-      pick: dataPass || handicapUnprofitable ? null : handicapPick,
+      pick: handicapSuppressed || handicapUnprofitable ? null : handicapPick,
       coverProbability,
       rawCoverProbability,
       ev: handicapEv,
-      noValue: !dataPass && handicapUnprofitable,
+      noValue: !handicapSuppressed && handicapUnprofitable,
     },
     total: {
       line: totalLine,

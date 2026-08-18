@@ -1,6 +1,6 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-17T18:15:15.915Z over 20 day(s)._
+_Generated 2026-08-18T16:37:45.678Z over 21 day(s)._
 
 ## S-3 / B-2 — Integrity
 
@@ -8,7 +8,7 @@ _Generated 2026-08-17T18:15:15.915Z over 20 day(s)._
 
 ## S-4 — Lock discipline
 
-❌ 19 of 20 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 30.8 minutes.
+❌ 19 of 21 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 28.2 minutes.
 - ❌ 2026-07-28: locked 139 min AFTER the deadline
 - ❌ 2026-07-29: locked 123.3 min AFTER the deadline
 - ❌ 2026-07-30: locked 127 min AFTER the deadline
@@ -28,26 +28,27 @@ _Generated 2026-08-17T18:15:15.915Z over 20 day(s)._
 - ❌ 2026-08-14: locked 66.9 min AFTER the deadline
 - ❌ 2026-08-15: locked 26.5 min AFTER the deadline
 - ❌ 2026-08-16: locked 1.8 min AFTER the deadline
+- 2026-08-18: +28.2 min
 - 2026-08-17: +30.8 min
 
 ## A-1 — Distribution validity
 
-- Margin residual variance: empirical 18.05 vs model 17.8 (ratio 1.01) over 262 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
-- Same-game run correlation: empirical -0.013 vs model 0
-- Mean |margin error|: 3.34 runs
+- Margin residual variance: empirical 17.86 vs model 17.86 (ratio 1.00) over 273 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
+- Same-game run correlation: empirical -0.009 vs model 0
+- Mean |margin error|: 3.31 runs
 
 ## A-4 — Input-data health
 
-- `[info] away_starter_xfip_estimated`: 257 games (93.8%)
-- `[info] home_starter_xfip_estimated`: 255 games (93.1%)
-- `[warn] home_bullpen_bullpen_heavy_usage`: 169 games (61.7%)
-- `[warn] away_bullpen_bullpen_heavy_usage`: 153 games (55.8%)
-- `[warn] away_starter_starter_low_sample`: 37 games (13.5%)
-- `[warn] home_starter_starter_low_sample`: 25 games (9.1%)
-- `[downgrade] home_no_probable_pitcher`: 16 games (5.8%)
-- `[downgrade] away_no_probable_pitcher`: 13 games (4.7%)
-- `[downgrade] away_starter_stats_missing`: 4 games (1.5%)
-- `[downgrade] home_starter_stats_missing`: 3 games (1.1%)
+- `[info] away_starter_xfip_estimated`: 271 games (93.8%)
+- `[info] home_starter_xfip_estimated`: 269 games (93.1%)
+- `[warn] home_bullpen_bullpen_heavy_usage`: 178 games (61.6%)
+- `[warn] away_bullpen_bullpen_heavy_usage`: 163 games (56.4%)
+- `[warn] away_starter_starter_low_sample`: 41 games (14.2%)
+- `[warn] home_starter_starter_low_sample`: 26 games (9.0%)
+- `[downgrade] home_no_probable_pitcher`: 17 games (5.9%)
+- `[downgrade] away_no_probable_pitcher`: 14 games (4.8%)
+- `[downgrade] away_starter_stats_missing`: 4 games (1.4%)
+- `[downgrade] home_starter_stats_missing`: 3 games (1.0%)
 
 ## A-2 — Real-line settlements (hand-check these)
 
@@ -61,4 +62,4 @@ _Cohorts deliberately left without their own correction; judge at n≈50 per coh
 - away-team picks: 19-19 (50.0%, -1.90 units, n=38)
 - ev_outlier flagged: n=0
 - real handicap line (non-zero): n=0
-- new engine (post-overhaul): 3-4 (42.9%, -1.30 units, n=7)
+- new engine (post-overhaul): 6-4 (60.0%, +1.40 units, n=10)

@@ -94,7 +94,11 @@ import { buildSlate } from "../sources/slate-builder";
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
-import { aggregateHistory } from "../engine/report";
+import {
+  aggregateHistory,
+  marketRecordLabel,
+  TOTAL_MARKET_NEVER_QUOTED,
+} from "../engine/report";
 import {
   isPredictionLocked,
   minutesUntilPredictionLock,
@@ -727,7 +731,9 @@ async function cmdReport(): Promise<void> {
         `vs ${(a.breakEven * 100).toFixed(1)}% full-unit break-even`,
     );
   }
-  console.log(`  Total:    ${s.totalRecord.wins}-${s.totalRecord.losses}`);
+  console.log(
+    `  Total:    ${marketRecordLabel(s.totalRecord, TOTAL_MARKET_NEVER_QUOTED)}`,
+  );
   if (s.meanBrier !== null) {
     console.log(
       `  Mean Brier: ${s.meanBrier}  (0.25 = coin flip; lower is better)`,

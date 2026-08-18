@@ -105,6 +105,27 @@ export interface CalibrationBucket {
   flag: "overconfident" | "underconfident" | null;
 }
 
+/**
+ * A market's lifetime record, or the reason there isn't one.
+ *
+ * `0-0` reads as "this market ran and broke even" when what it actually means
+ * is "this market has never run". The over/under has settled 0 bets in the
+ * tool's entire history because no total line has ever been entered in a
+ * control tower, so its learned shrink still sits untouched at its default —
+ * a fact worth stating rather than disguising as a record.
+ */
+export function marketRecordLabel(
+  record: { wins: number; losses: number },
+  whyEmpty: string,
+): string {
+  return record.wins + record.losses === 0
+    ? whyEmpty
+    : `${record.wins}-${record.losses}`;
+}
+
+export const TOTAL_MARKET_NEVER_QUOTED =
+  "never quoted — no control tower has carried a total line";
+
 export interface ConfidenceRecord {
   confidence: Confidence;
   n: number;
