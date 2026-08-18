@@ -44,20 +44,20 @@ function cronMinuteOfDay(yaml: string): number {
   return Number(m[2]) * 60 + Number(m[1]);
 }
 
-test("predict refreshes the slate with --force, or it fails every day", () => {
-  const yaml = read("handiedge-predict.yml");
-  const step = /pnpm run handiedge fetch-slate[^\n]*/.exec(yaml);
-  assert.ok(step, "predict must still refresh the slate before locking");
-  assert.match(
-    step[0],
-    /--force/,
-    "fetch-slate throws on an existing slate without --force, and the morning " +
-      "job writes one every day: " +
-      step[0],
-  );
-  // Conditional forcing is the bug this replaced — the flag has to be
-  // unconditional, not spliced in from an input.
-  assert.doesNotMatch(step[0], /\$FORCE/, step[0]);
+test("both slate fetches force unconditionally, or a re-run is a hard failure", () => {
+  // `fetch-slate` throws on an existing slate without --force. For predict
+  // that means failing every day the morning job succeeded; for the morning
+  // job itself it means any second run of the same date fails — a retry after
+  // a flaky MLB call, or a manual dispatch to prepare tomorrow early. Neither
+  // can hurt: an existing control tower is never overwritten, --force or not.
+  for (const f of ["handiedge-slate.yml", "handiedge-predict.yml"]) {
+    const step = /pnpm run handiedge fetch-slate[^\n]*/.exec(read(f));
+    assert.ok(step, `${f} must fetch the slate`);
+    assert.match(step[0], /--force/, `${f}: ${step[0]}`);
+    // Conditional forcing is the bug this replaced — the flag has to be
+    // unconditional, not spliced in from an input.
+    assert.doesNotMatch(step[0], /\$FORCE/, `${f}: ${step[0]}`);
+  }
 });
 
 test("the morning slate lands early enough to leave an editing window", () => {

@@ -38,11 +38,8 @@ on:
         description: "Slate date (YYYY-MM-DD). Blank = today (UTC)."
         required: false
         type: string
-      force:
-        description: "Refetch a slate that already exists. Never touches your handicap lines."
-        required: false
-        default: false
-        type: boolean
+      # No `force` input: this job always refetches (see the fetch step), so a
+      # flag to ask for it would be a lie about having a choice.
 
 permissions:
   contents: write
@@ -76,12 +73,17 @@ jobs:
           if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
+      # ALWAYS --force, so this job is idempotent. `fetch-slate` throws on an
+      # existing slate without it, which would turn any re-run into a hard
+      # failure: a retry after a flaky MLB API call, a manual dispatch to
+      # produce tomorrow's control tower early, or simply the cron firing on a
+      # date this job already covered. None of those should fail, and none of
+      # them can hurt — `fetch-slate` never overwrites an existing control
+      # tower even with --force, so a re-run refreshes the stats and leaves
+      # every handicap line you entered exactly where it was.
       - name: Fetch slate (schedule, stats, bullpen usage, park factors, form)
         working-directory: lib/sports-data
-        run: |
-          FORCE=""
-          if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
-          pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" $FORCE
+        run: pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" --force
 
       - name: Show what to fill in
         run: |
