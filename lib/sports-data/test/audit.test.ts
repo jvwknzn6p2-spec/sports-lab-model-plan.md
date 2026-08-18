@@ -186,9 +186,65 @@ test("lock margins measure distance to the deadline and flag late locks", () => 
   // Deadline is 13:55 UTC; 13:00 lock → +55 min, 14:00 lock → 5 min late.
   const onTime = day("2026-08-18", [], null, "2026-08-18T13:00:00.000Z");
   const late = day("2026-08-19", [], null, "2026-08-19T14:00:00.000Z");
-  const margins = lockMargins([onTime, late]);
-  assert.deepEqual(margins[0], { date: "2026-08-18", marginMinutes: 55, late: false });
-  assert.deepEqual(margins[1], { date: "2026-08-19", marginMinutes: -5, late: true });
+  const margins = lockMargins([onTime, late], NOW);
+  assert.deepEqual(margins[0], {
+    date: "2026-08-18",
+    marginMinutes: 55,
+    late: false,
+    recent: true,
+    currentRule: true,
+    tight: false,
+  });
+  assert.deepEqual(margins[1], {
+    date: "2026-08-19",
+    marginMinutes: -5,
+    late: true,
+    recent: true,
+    currentRule: true,
+    tight: false,
+  });
+});
+
+test("an on-time lock with too little headroom is a warning, not silence", async () => {
+  const { runAudit, LOCK_MARGIN_WARN_MINUTES } = await import(
+    "../src/engine/audit"
+  );
+  // 13:40 against a 13:55 deadline: 15 minutes, on time — and less headroom
+  // than the scheduler queue has repeatedly eaten.
+  const tight = day(
+    "2026-08-18",
+    [prediction({ gamePk: 1, lockDeadline: "2026-08-18T13:55:00.000Z" })],
+    { "1": { homeScore: 5, awayScore: 3 } },
+    "2026-08-18T13:40:00.000Z",
+  );
+  const [m] = lockMargins([tight], NOW);
+  assert.equal(m!.late, false);
+  assert.equal(m!.tight, true);
+  assert.ok(m!.marginMinutes! < LOCK_MARGIN_WARN_MINUTES);
+
+  const report = runAudit([tight], [officialReport(tight)], { gamesSettled: 1 }, NOW);
+  const warn = report.issues.filter((i) => i.code === "tight_lock_margin");
+  assert.equal(warn.length, 1, JSON.stringify(report.issues));
+  assert.equal(warn[0]!.severity, "warn", "an on-time slate must not gate red");
+  assert.equal(
+    report.issues.filter((i) => i.severity === "error").length,
+    0,
+    "the tripwire fires BEFORE the incident, so nothing is an error yet",
+  );
+
+  // A comfortable margin says nothing at all.
+  const roomy = day(
+    "2026-08-18",
+    [prediction({ gamePk: 1, lockDeadline: "2026-08-18T13:55:00.000Z" })],
+    { "1": { homeScore: 5, awayScore: 3 } },
+    "2026-08-18T12:20:00.000Z",
+  );
+  assert.equal(
+    runAudit([roomy], [officialReport(roomy)], { gamesSettled: 1 }, NOW).issues.filter(
+      (i) => i.code === "tight_lock_margin",
+    ).length,
+    0,
+  );
 });
 
 test("only recent late locks that are late under the CURRENT rule too become errors", async () => {
@@ -237,8 +293,14 @@ test("a slate is judged by the deadline that was in force when it locked", () =>
     null,
     "2026-07-30T13:00:00.000Z",
   );
-  const [m] = lockMargins([eraSlate]);
-  assert.deepEqual(m, { date: "2026-07-30", marginMinutes: 21, late: false });
+  const [m] = lockMargins([eraSlate], NOW);
+  assert.equal(m!.marginMinutes, 21);
+  assert.equal(m!.late, false);
+  // Judged by its own era's rule, outside the window, and not the rule in
+  // force today — so the report can file it as history rather than as a
+  // failure this week could fix.
+  assert.equal(m!.currentRule, false);
+  assert.equal(m!.recent, false);
 });
 
 test("distribution check compares realized spread against the model's", () => {

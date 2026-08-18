@@ -27,6 +27,7 @@ value), not batting average or raw runs.
 | `src/sources/` | `CoreDataSource` adapters: `MlbCoreDataSource` (live/cached) and `FixtureCoreDataSource` (offline). |
 | `src/step2.ts` | Orchestrator: assembles per-game core data for a whole date. |
 | `src/persist/` | Pure mappers from features → `@workspace/db` insert rows. |
+| `src/engine/line-proof.ts` | A-2: offline proof that the real-line (半 / split-stake) settlement machinery is correct, across the whole quotable line space. |
 | `fixtures/` | Offline demo slate (real-shaped 2024 lines) that doubles as test data. |
 
 ## Run
@@ -87,8 +88,19 @@ Stats API, and commit every slate, lock, result, and report back to this repo.
 
 | Workflow | When | What it does |
 |---|---|---|
-| `handiedge-predict.yml` | 15:00 UTC (00:00 JST / 11:00 ET) | fetch-slate → predict → lock + `data/reports/<date>.md` |
+| `handiedge-slate.yml` | 06:07 UTC (15:07 JST) | fetch-slate → commit the control tower, opening the window to type the day's handicap lines |
+| `handiedge-predict.yml` | 12:10 UTC (21:10 JST) | refresh the slate → predict → lock + `data/reports/<date>.md` |
 | `handiedge-settle.yml` | 07:00 UTC (16:00 JST) | fetch-results (yesterday) → settle → self-learning → `data/reports/summary.md` |
+| `handiedge-audit.yml` | Mondays 08:23 UTC | standing audit (S-3/S-4/A-1/A-2/A-4/A-5/B-2) → `data/reports/audit.md` |
+
+The day is split in two on purpose: `fetch-slate` writes the control tower in
+the morning and `predict` consumes it in the evening, so there are ~6 hours in
+between in which a human can actually enter the lines. Predict runs 105 minutes
+before the 22:55 JST deadline because GitHub's scheduler has fired this
+repository's crons 46–50 minutes late routinely and 117 minutes late once. If a
+lock ever does land after the deadline, the picks are still committed (the day
+is not lost) and the run then goes **red** — lateness is a scheduling incident
+to fix that morning, not a line in the next weekly audit.
 
 Settlement runs once, at 16:00 JST, by which point every game is final — the
 latest possible MLB start is 22:10 ET (02:10 UTC), so even a long extra-innings
@@ -115,7 +127,21 @@ with `force` checked.
 pnpm --filter @workspace/sports-data run step2:report   # offline FIP-forward report
 pnpm --filter @workspace/sports-data run test            # unit + integration tests
 pnpm --filter @workspace/sports-data run typecheck
+pnpm --filter @workspace/sports-data run handiedge verify-lines   # A-2 line proof
 ```
+
+`verify-lines` settles **every line the control tower can quote** — 0.1–2.9 and
+the whole 半 family, from both sides, backed either way, against every plausible
+margin — through the production `decide()` → `settle()` path, and checks the
+money against the notation alone (shares sum to 1, profit = 0.9·win − loss,
+backing the other side mirrors it, a better margin never pays less, the 分
+ladder matches). Every settled bet so far was quoted at `0`, where a sign error
+is invisible because both sides of a pick'em are the same line; this is what
+proves the split-stake machinery before real money rides on it. Run it after
+touching `handicap-notation.ts`, `decision.ts` or `settle.ts` — the standing
+audit runs it weekly and the test suite runs it on every PR. What it cannot
+prove is that the **book** settles the same way; that still needs a hand-check
+of the first real settled line, which the audit prints for exactly that.
 
 The report runs entirely offline against `fixtures/2024-slate.json`. With a
 reachable MLB Stats API, swap `FixtureCoreDataSource` for

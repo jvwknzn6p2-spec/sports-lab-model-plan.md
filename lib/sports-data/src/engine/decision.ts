@@ -282,6 +282,20 @@ export interface GamePrediction {
   handicap: {
     input: HandicapInput | null;
     pick: string | null; // e.g. "home -1.5" or "away +1.5"
+    /**
+     * Which side of the game the stake is on, as a SIDE rather than a name.
+     *
+     * Settlement has to know whether the bet holds the quoted side's lines or
+     * their mirror image, and until this field existed it recovered that by
+     * asking whether `pick` — a human-facing label built for the report —
+     * starts with the quoted side's team name. On a pick'em that mistake is
+     * invisible (both sides settle at 0), but on a REAL line reading the side
+     * wrongly flips the sign of the whole bet: 〈1半2〉 losing by two would be
+     * booked as +0.72 units instead of −1. The choice is made here, so it is
+     * recorded here. Optional because locks written before this field exists
+     * do not carry it; settlement falls back to the label for those.
+     */
+    backed?: "home" | "away" | null;
     coverProbability: number | null;
     /**
      * The pick's cover probability BEFORE calibration. Kept so settlement can
@@ -313,6 +327,28 @@ export interface GamePrediction {
   lockDeadline?: string | null;
   /** True once the deadline has passed and the pick is frozen. */
   final?: boolean;
+}
+
+/**
+ * Which side of the game a prediction's handicap stake sits on.
+ *
+ * One place decides this for settlement, the audit and the line proof, so
+ * they cannot disagree about whose margin the bet is scored against.
+ *
+ * Locks written since `handicap.backed` exists answer it outright. Older ones
+ * carry the side only inside the report label, so it is recovered the way it
+ * always was: the label starts with the quoted side's team name when the bet
+ * took that side. That fallback is exact for MLB's names (no club's name is a
+ * prefix of another's) but it is a string match on a display string, which is
+ * why new locks record the side instead of spelling it.
+ */
+export function backedSide(p: GamePrediction): "home" | "away" | null {
+  const input = p.handicap.input;
+  if (!input || !p.handicap.pick) return null;
+  if (p.handicap.backed) return p.handicap.backed;
+  const quotedName = input.side === "home" ? p.home : p.away;
+  const other = input.side === "home" ? "away" : "home";
+  return p.handicap.pick.startsWith(quotedName) ? input.side : other;
 }
 
 /** Pull a raw probability toward 50% by the market's learned shrink. */
@@ -455,6 +491,7 @@ export function decide(
   // Handicap: probability the QUOTED side covers its line (calibrated), and
   // what that is actually worth once the house takes its cut.
   let handicapPick: string | null = null;
+  let handicapBacked: "home" | "away" | null = null;
   let coverProbability: number | null = null;
   let rawCoverProbability: number | null = null;
   let handicapEv: number | null = null;
@@ -483,6 +520,13 @@ export function decide(
     // which is exactly why the parts are priced rather than the number.
     const takeQuoted = pCover >= 0.5;
     const chosen = takeQuoted ? pCover : 1 - pCover;
+    // The side is recorded, not just spelled into the label: settlement reads
+    // `backed` and never has to infer the side from the label's wording.
+    handicapBacked = takeQuoted
+      ? handicap.side
+      : handicap.side === "home"
+        ? "away"
+        : "home";
     handicapPick = takeQuoted
       ? `${handicap.side === "home" ? homeName : awayName} ${r.giveLabel}`
       : `${handicap.side === "home" ? awayName : homeName} ${r.takeLabel}`;
@@ -632,6 +676,7 @@ export function decide(
     handicap: {
       input: handicap,
       pick: handicapSuppressed || handicapUnprofitable ? null : handicapPick,
+      backed: handicapSuppressed || handicapUnprofitable ? null : handicapBacked,
       coverProbability,
       rawCoverProbability,
       ev: handicapEv,

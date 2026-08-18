@@ -8,6 +8,10 @@
  */
 
 import type { AuditReport } from "../engine/audit";
+import {
+  LOCK_MARGIN_WARN_MINUTES,
+  LOCK_WINDOW_DAYS,
+} from "../engine/audit";
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import { fmtPct, fmtUnits, rankByValue } from "../engine/decision";
 import {
@@ -348,14 +352,19 @@ export function auditToMarkdown(a: AuditReport): string {
 
   out.push("## S-3 / B-2 — Integrity");
   out.push("");
-  if (a.issues.length === 0) {
+  // Lock findings have their own section, with the margins that explain them;
+  // repeating them here said the same thing twice and made a lock problem
+  // read as an integrity problem.
+  const elsewhere = new Set(["late_lock", "tight_lock_margin"]);
+  const findings = a.issues.filter((i) => !elsewhere.has(i.code));
+  if (findings.length === 0) {
     out.push(
       "✅ No issues: independent re-score matches the official history, " +
         "every overdue slate is settled, all handicap notations resolve, " +
         "and the learning counters reconcile.",
     );
   } else {
-    for (const i of a.issues) {
+    for (const i of findings) {
       out.push(`- ${i.severity === "error" ? "❌" : "⚠️"} \`${i.code}\` ${i.detail}`);
     }
   }
@@ -364,13 +373,20 @@ export function auditToMarkdown(a: AuditReport): string {
   out.push("## S-4 — Lock discipline");
   out.push("");
   const withMargin = a.lockMargins.filter((m) => m.marginMinutes !== null);
-  const late = withMargin.filter((m) => m.late);
-  const onTime = withMargin.filter((m) => !m.late);
+  // "Actionable" is the same test the exit code applies: recent, and judged
+  // by the deadline rule now in force. Grading the headline on ALL history
+  // instead kept this section permanently ❌ over July slates that cannot
+  // recur while the job itself passed — a red the reader learns to skip.
+  const actionable = withMargin.filter((m) => m.recent && m.currentRule);
+  const late = actionable.filter((m) => m.late);
+  const tight = actionable.filter((m) => m.tight);
+  const onTime = actionable.filter((m) => !m.late);
   const minOnTime = onTime.length
     ? Math.min(...onTime.map((m) => m.marginMinutes!))
     : null;
   out.push(
-    `${late.length === 0 ? "✅" : "❌"} ${late.length} of ${withMargin.length} slates locked late` +
+    `${late.length === 0 ? (tight.length === 0 ? "✅" : "⚠️") : "❌"} ` +
+      `${late.length} of ${actionable.length} slates in the last ${LOCK_WINDOW_DAYS} days locked late` +
       ` (each judged by the deadline in force when it locked).` +
       (minOnTime === null
         ? ""
@@ -379,13 +395,32 @@ export function auditToMarkdown(a: AuditReport): string {
   for (const m of late) {
     out.push(`- ❌ ${m.date}: locked ${Math.abs(m.marginMinutes!)} min AFTER the deadline`);
   }
-  // The five tightest ON-TIME margins show erosion before it becomes an
-  // incident — filtered before slicing so late slates cannot crowd them out.
+  // Erosion, before it becomes an incident: anything inside the warning
+  // threshold is called out as such rather than shown as a bare number.
+  for (const m of tight) {
+    out.push(
+      `- ⚠️ ${m.date}: only +${m.marginMinutes} min of headroom (under ${LOCK_MARGIN_WARN_MINUTES})`,
+    );
+  }
+  // The five tightest remaining ON-TIME margins, so the trend is visible even
+  // in a clean week.
   const tightest = [...onTime]
+    .filter((m) => !m.tight)
     .sort((x, y) => x.marginMinutes! - y.marginMinutes!)
     .slice(0, 5);
   for (const m of tightest) {
     out.push(`- ${m.date}: +${m.marginMinutes} min`);
+  }
+  // Everything else stays on the record — it just does not pretend to be
+  // something this week can fix.
+  const archived = withMargin.filter((m) => m.late && !actionable.includes(m));
+  if (archived.length > 0) {
+    out.push(
+      `- 🗄️ ${archived.length} older or superseded-rule slate(s) locked late, kept for the record: ` +
+        archived
+          .map((m) => `${m.date} (${Math.abs(m.marginMinutes!)} min)`)
+          .join(", "),
+    );
   }
   out.push("");
 
@@ -424,13 +459,63 @@ export function auditToMarkdown(a: AuditReport): string {
   }
   out.push("");
 
+  out.push("## A-2 — Real-line machinery (offline proof)");
+  out.push("");
+  const lp = a.lineProof;
+  if (lp.failures.length === 0) {
+    out.push(
+      `✅ Every quotable line settles correctly: ${lp.notations.length} notations ` +
+        `(0.1–2.9 and 0半–2半9) × both quoted sides × margins ` +
+        `${lp.margins[0]}…${lp.margins[lp.margins.length - 1]} = ${lp.cases} settled cases ` +
+        `(${lp.backed.home} backing home, ${lp.backed.away} backing away), ` +
+        `${lp.checks} property checks, all passing.`,
+    );
+    out.push("");
+    out.push(
+      "_Each case goes through the production path — `decide()` prices the " +
+        "line, `settle()` books it — and is checked against the notation " +
+        "alone: shares sum to 1, profit = 0.9·win − loss inside [−1, 0.9], " +
+        "backing the other side mirrors it exactly, a better margin never " +
+        "pays less, the 分 ladder matches, and the pick's label names the " +
+        "side the money actually followed._",
+    );
+  } else {
+    out.push(
+      `❌ ${lp.failures.length} of ${lp.checks} property checks FAILED across ` +
+        `${lp.cases} settled cases — the split-stake machinery is wrong, and ` +
+        `every finding is listed under S-3 above.`,
+    );
+  }
+  // Every whole number's ladder is the same ladder shifted, so one family is
+  // shown and all of them are proved.
+  const shownLadder = lp.ladder.filter((r) => r.notation.startsWith("1半"));
+  if (shownLadder.length > 0) {
+    out.push("");
+    out.push(
+      "The 分 ladder, as this build settles it — the giving side winning by " +
+        "exactly the whole number, which is the only margin where a 半 line " +
+        "splits. The 0半 and 2半 families are the same ladder one run over, " +
+        "and are proved with it:",
+    );
+    out.push("");
+    out.push("| line | margin | win share | push share | units |");
+    out.push("| --- | --- | --- | --- | --- |");
+    for (const row of shownLadder) {
+      out.push(
+        `| 〈${row.notation}〉 | +${row.margin} | ${row.win} | ${row.push} | ${fmtUnits(row.profit)} |`,
+      );
+    }
+  }
+  out.push("");
+
   out.push("## A-2 — Real-line settlements (hand-check these)");
   out.push("");
   if (a.realLines.length === 0) {
     out.push(
-      "_No bet on a non-zero line has settled yet. The 半-line machinery " +
-        "(split stakes, partial pushes) is therefore still UNPROVEN in " +
-        "production — the first entries here are the ones to verify by hand " +
+      "_No bet on a non-zero line has settled yet. Our own arithmetic is " +
+        "proved above; what a real settlement still adds is the BOOK's — " +
+        "that it splits stakes and pays part-pushes the way this build " +
+        "assumes. The first entries here are the ones to verify by hand " +
         "against the book's own statement._",
     );
   } else {

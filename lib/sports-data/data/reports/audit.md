@@ -1,6 +1,6 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-18T16:37:45.678Z over 21 day(s)._
+_Generated 2026-08-18T23:15:47.129Z over 22 day(s)._
 
 ## S-3 / B-2 — Integrity
 
@@ -8,28 +8,10 @@ _Generated 2026-08-18T16:37:45.678Z over 21 day(s)._
 
 ## S-4 — Lock discipline
 
-❌ 19 of 21 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 28.2 minutes.
-- ❌ 2026-07-28: locked 139 min AFTER the deadline
-- ❌ 2026-07-29: locked 123.3 min AFTER the deadline
-- ❌ 2026-07-30: locked 127 min AFTER the deadline
-- ❌ 2026-07-31: locked 132.3 min AFTER the deadline
-- ❌ 2026-08-01: locked 81.3 min AFTER the deadline
-- ❌ 2026-08-02: locked 83.8 min AFTER the deadline
-- ❌ 2026-08-03: locked 157.7 min AFTER the deadline
-- ❌ 2026-08-04: locked 140.2 min AFTER the deadline
-- ❌ 2026-08-05: locked 132.1 min AFTER the deadline
-- ❌ 2026-08-07: locked 67.6 min AFTER the deadline
-- ❌ 2026-08-08: locked 41 min AFTER the deadline
-- ❌ 2026-08-09: locked 42.9 min AFTER the deadline
-- ❌ 2026-08-10: locked 72.8 min AFTER the deadline
-- ❌ 2026-08-11: locked 72.5 min AFTER the deadline
-- ❌ 2026-08-12: locked 72.8 min AFTER the deadline
-- ❌ 2026-08-13: locked 73.9 min AFTER the deadline
-- ❌ 2026-08-14: locked 66.9 min AFTER the deadline
-- ❌ 2026-08-15: locked 26.5 min AFTER the deadline
-- ❌ 2026-08-16: locked 1.8 min AFTER the deadline
-- 2026-08-18: +28.2 min
+⚠️ 0 of 2 slates in the last 14 days locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 28.2 minutes.
+- ⚠️ 2026-08-18: only +28.2 min of headroom (under 30)
 - 2026-08-17: +30.8 min
+- 🗄️ 19 older or superseded-rule slate(s) locked late, kept for the record: 2026-07-28 (139 min), 2026-07-29 (123.3 min), 2026-07-30 (127 min), 2026-07-31 (132.3 min), 2026-08-01 (81.3 min), 2026-08-02 (83.8 min), 2026-08-03 (157.7 min), 2026-08-04 (140.2 min), 2026-08-05 (132.1 min), 2026-08-07 (67.6 min), 2026-08-08 (41 min), 2026-08-09 (42.9 min), 2026-08-10 (72.8 min), 2026-08-11 (72.5 min), 2026-08-12 (72.8 min), 2026-08-13 (73.9 min), 2026-08-14 (66.9 min), 2026-08-15 (26.5 min), 2026-08-16 (1.8 min)
 
 ## A-1 — Distribution validity
 
@@ -50,9 +32,30 @@ _Generated 2026-08-18T16:37:45.678Z over 21 day(s)._
 - `[downgrade] away_starter_stats_missing`: 4 games (1.4%)
 - `[downgrade] home_starter_stats_missing`: 3 games (1.0%)
 
+## A-2 — Real-line machinery (offline proof)
+
+✅ Every quotable line settles correctly: 59 notations (0.1–2.9 and 0半–2半9) × both quoted sides × margins -8…8 = 4012 settled cases (1802 backing home, 2210 backing away), 28352 property checks, all passing.
+
+_Each case goes through the production path — `decide()` prices the line, `settle()` books it — and is checked against the notation alone: shares sum to 1, profit = 0.9·win − loss inside [−1, 0.9], backing the other side mirrors it exactly, a better margin never pays less, the 分 ladder matches, and the pick's label names the side the money actually followed._
+
+The 分 ladder, as this build settles it — the giving side winning by exactly the whole number, which is the only margin where a 半 line splits. The 0半 and 2半 families are the same ladder one run over, and are proved with it:
+
+| line | margin | win share | push share | units |
+| --- | --- | --- | --- | --- |
+| 〈1半〉 | +2 | 1 | 0 | +0.90 |
+| 〈1半1〉 | +2 | 0.9 | 0.1 | +0.81 |
+| 〈1半2〉 | +2 | 0.8 | 0.2 | +0.72 |
+| 〈1半3〉 | +2 | 0.7 | 0.3 | +0.63 |
+| 〈1半4〉 | +2 | 0.6 | 0.4 | +0.54 |
+| 〈1半5〉 | +2 | 0.5 | 0.5 | +0.45 |
+| 〈1半6〉 | +2 | 0.4 | 0.6 | +0.36 |
+| 〈1半7〉 | +2 | 0.3 | 0.7 | +0.27 |
+| 〈1半8〉 | +2 | 0.2 | 0.8 | +0.18 |
+| 〈1半9〉 | +2 | 0.1 | 0.9 | +0.09 |
+
 ## A-2 — Real-line settlements (hand-check these)
 
-_No bet on a non-zero line has settled yet. The 半-line machinery (split stakes, partial pushes) is therefore still UNPROVEN in production — the first entries here are the ones to verify by hand against the book's own statement._
+_No bet on a non-zero line has settled yet. Our own arithmetic is proved above; what a real settlement still adds is the BOOK's — that it splits stakes and pays part-pushes the way this build assumes. The first entries here are the ones to verify by hand against the book's own statement._
 
 ## A-5 / A-2 — Watched cohorts
 

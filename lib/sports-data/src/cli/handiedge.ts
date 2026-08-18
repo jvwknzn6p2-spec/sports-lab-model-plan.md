@@ -59,7 +59,13 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import { distributionCheck, runAudit, type AuditDay } from "../engine/audit";
+import {
+  distributionCheck,
+  LOCK_MARGIN_WARN_MINUTES,
+  runAudit,
+  type AuditDay,
+} from "../engine/audit";
+import { verifyLineSettlement } from "../engine/line-proof";
 import {
   walkForward,
   type BacktestDay,
@@ -475,10 +481,36 @@ async function cmdPredict(args: {
       `${carried} game(s) were already final and were carried through unchanged.`,
     );
   }
-  if (lateCount > 0) {
+  // S-4: how much headroom this run actually had, said out loud on every run.
+  // The margin is the number that erodes — the weekly audit sees it a week
+  // later, and the operator reading the morning summary sees it now.
+  const headroom = Math.round(
+    (predictionDeadline(ct.date).getTime() - new Date(lock.lockedAt).getTime()) /
+      60_000,
+  );
+  if (lateCount === 0) {
     console.log(
-      `WARNING: ${lateCount} game(s) were predicted after their lock deadline.`,
+      `Locked ${headroom} minute(s) before the ${ct.date} deadline.` +
+        (headroom < LOCK_MARGIN_WARN_MINUTES
+          ? ` WARNING: under ${LOCK_MARGIN_WARN_MINUTES} minutes of headroom — this slate is one bad scheduler queue from being late.`
+          : ""),
     );
+  } else {
+    // Exit 2 ("ran fine, found a problem" — same convention as `audit`) so a
+    // late slate is an incident the same morning rather than a flag nobody
+    // reads until the weekly audit. Carried-through picks do not count: a
+    // deliberate post-deadline re-publish changed no pick and is not late.
+    //
+    // Measured from NOW, not from `lockedAt`: on a run that carries frozen
+    // picks through, `lockedAt` is the ORIGINAL (on-time) commit, and the
+    // lateness being reported belongs to the picks computed in this run.
+    const lateBy = Math.round(
+      (now.getTime() - predictionDeadline(ct.date).getTime()) / 60_000,
+    );
+    console.log(
+      `WARNING: ${lateCount} game(s) were predicted ${lateBy} minute(s) AFTER their lock deadline.`,
+    );
+    process.exitCode = 2;
   }
   const upcoming = predictions
     .filter((p) => !p.final && p.lockDeadline)
@@ -897,6 +929,44 @@ async function cmdAudit(): Promise<void> {
 }
 
 /**
+ * verify-lines — the A-2 proof on demand.
+ *
+ * The standing audit runs this every week, but it is also the thing to run
+ * the moment anything under `handicap-notation.ts`, `decision.ts` or
+ * `settle.ts` is touched: it settles every line the control tower can quote,
+ * both sides, against every plausible margin, and says so in one line.
+ */
+async function cmdVerifyLines(): Promise<void> {
+  const proof = verifyLineSettlement();
+  console.log("=".repeat(72));
+  console.log(
+    `HandiEdge — real-line settlement proof: ${proof.notations.length} notations, ` +
+      `${proof.cases} settled cases, ${proof.checks} checks`,
+  );
+  console.log("=".repeat(72));
+  console.log(
+    `Margins ${proof.margins[0]}…${proof.margins[proof.margins.length - 1]}; ` +
+      `${proof.backed.home} cases backed home, ${proof.backed.away} backed away.`,
+  );
+  for (const row of proof.ladder) {
+    console.log(
+      `  〈${row.notation}〉 winning by exactly ${row.margin}: ` +
+        `win ${row.win} / push ${row.push} / loss ${row.loss} → ${row.profit >= 0 ? "+" : ""}${row.profit}u`,
+    );
+  }
+  if (proof.failures.length === 0) {
+    console.log("All properties hold.");
+    return;
+  }
+  for (const f of proof.failures) {
+    console.log(`FAIL 〈${f.notation}〉 ${f.code}: ${f.detail}`);
+  }
+  console.log(`${proof.failures.length} failing check(s).`);
+  // Same convention as `audit`: 2 means "ran fine, found problems".
+  process.exitCode = 2;
+}
+
+/**
  * backtest — walk-forward replay over REAL historical seasons.
  *
  *   handiedge backtest --from 2025-04-01 --to 2025-09-28 --season 2025
@@ -1150,6 +1220,7 @@ async function main(): Promise<void> {
   else if (cmd === "settle") await cmdSettle(values);
   else if (cmd === "report") await cmdReport();
   else if (cmd === "audit") await cmdAudit();
+  else if (cmd === "verify-lines") await cmdVerifyLines();
   else if (cmd === "backtest") await cmdBacktest(values);
   else {
     console.log("Usage:");
@@ -1165,6 +1236,7 @@ async function main(): Promise<void> {
     console.log("  handiedge settle        --results <results.json>");
     console.log("  handiedge report");
     console.log("  handiedge audit");
+    console.log("  handiedge verify-lines");
     console.log(
       "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",
     );

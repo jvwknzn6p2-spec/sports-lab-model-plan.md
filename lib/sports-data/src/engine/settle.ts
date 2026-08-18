@@ -9,7 +9,7 @@
  *     if underconfident, expand them. Bounded, small steps (v1 self-learning).
  */
 
-import { resolveHandicap, TAIL_START } from "./decision";
+import { backedSide, resolveHandicap, TAIL_START } from "./decision";
 import type {
   CalibrationState,
   Confidence,
@@ -327,9 +327,10 @@ export function settle(
       const r = resolveHandicap(p.handicap.input);
       const quotedSideMargin =
         p.handicap.input.side === "home" ? actualMargin : -actualMargin;
-      const pickedQuotedSide = p.handicap.pick.startsWith(
-        p.handicap.input.side === "home" ? p.home : p.away,
-      );
+      // Whose lines the stake holds — read from the pick, not re-derived from
+      // its wording (see `backedSide`). At a real line this single boolean is
+      // the sign of the entire settlement.
+      const pickedQuotedSide = backedSide(p) === p.handicap.input.side;
       const settled = settleParts(
         pickedQuotedSide ? r.parts : oppositeParts(r.parts),
         pickedQuotedSide ? quotedSideMargin : -quotedSideMargin,

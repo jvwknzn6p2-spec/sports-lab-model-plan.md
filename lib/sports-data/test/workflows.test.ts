@@ -90,6 +90,31 @@ test("the picks still lock well before the deadline, at the OBSERVED delay", () 
   );
 });
 
+test("a late lock commits the picks and then fails the run", () => {
+  const yaml = read("handiedge-predict.yml");
+  // The CLI exits 2 when it froze picks after the deadline. Two properties
+  // have to hold together, and they pull in opposite directions: the slate
+  // must still be committed (so the day is not lost), and the run must still
+  // go red (so lateness is seen the same morning instead of surfacing in the
+  // weekly S-4 audit, days after the money was down).
+  assert.match(
+    yaml,
+    /echo "exit=\$CODE" >> "\$GITHUB_OUTPUT"/,
+    "the predict step must capture its exit code instead of dying on it",
+  );
+  assert.match(
+    yaml,
+    /if \[ "\$CODE" -ne 0 \] && \[ "\$CODE" -ne 2 \]; then exit "\$CODE"; fi/,
+    "any code other than 0/2 is a real crash and must stop the job",
+  );
+  const gate = /steps\.predict\.outputs\.exit == '2'/.exec(yaml);
+  assert.ok(gate, "a late lock must be gated on somewhere");
+  assert.ok(
+    yaml.indexOf("git push origin") < gate.index,
+    "the failure gate has to come AFTER the commit, or a late slate is lost",
+  );
+});
+
 test("nothing that writes data can push at the same time as anything else", () => {
   for (const f of [
     "handiedge-slate.yml",

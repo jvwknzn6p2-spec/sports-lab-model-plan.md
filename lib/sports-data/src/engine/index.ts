@@ -6,4 +6,5 @@ export * from "./simulate";
 export * from "./ev";
 export * from "./decision";
 export * from "./settle";
+export * from "./line-proof";
 export * from "./report";

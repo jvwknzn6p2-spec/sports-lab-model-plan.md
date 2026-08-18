@@ -11,6 +11,10 @@
  *   S-4  lock discipline — every slate locked before its deadline, with the
  *        margin tracked so scheduler-delay erosion is visible BEFORE it
  *        becomes another past-deadline incident.
+ *   A-2  real lines — every settled non-zero line re-derived and shown for a
+ *        hand-check, PLUS an offline proof (engine/line-proof.ts) that the
+ *        split-stake machinery settles correctly across the whole quotable
+ *        line space, so the answer does not wait on a real bet.
  *   A-1  distribution validity — the simulator's variance/correlation
  *        assumptions (negative binomial r, shared-environment sd) checked
  *        against what actually happened, analytically, per game.
@@ -27,7 +31,7 @@
  */
 
 import type { GamePrediction } from "./decision";
-import { DEFAULT_CALIBRATION, resolveHandicap } from "./decision";
+import { backedSide, DEFAULT_CALIBRATION, resolveHandicap } from "./decision";
 import {
   expectedProfit,
   oppositeParts,
@@ -36,6 +40,7 @@ import {
   type WeightedLine,
 } from "./handicap-notation";
 import { isResultsDue, predictionDeadline } from "./deadline";
+import { verifyLineSettlement, type LineProofReport } from "./line-proof";
 import { settle, type GameResult, type SettlementReport } from "./settle";
 import { SHARED_ENV_SD, TEAM_RUN_DISPERSION } from "./simulate";
 
@@ -65,7 +70,43 @@ export interface LockMargin {
   /** Minutes between lock and deadline; negative = locked late. */
   marginMinutes: number | null;
   late: boolean;
+  /**
+   * Locked inside the audit's action window (see LOCK_WINDOW_DAYS). Older
+   * slates are history: nothing done today can change them.
+   */
+  recent: boolean;
+  /**
+   * Judged against the deadline rule CURRENTLY in force. False for a slate
+   * produced under a superseded rule — its lateness cannot recur, so it is
+   * reported but never gates the run.
+   */
+  currentRule: boolean;
+  /**
+   * Locked on time but with less headroom than LOCK_MARGIN_WARN_MINUTES —
+   * the erosion tripwire, which fires BEFORE a slate is actually late.
+   */
+  tight: boolean;
 }
+
+/**
+ * How long a lock stays actionable: 14 days, two weekly audit cycles, so one
+ * failed or skipped run cannot silently age a late lock out of range.
+ */
+export const LOCK_WINDOW_DAYS = 14;
+
+/**
+ * Headroom below which an on-time lock is still a warning.
+ *
+ * The only thing that has ever made this slate late is GitHub's scheduler
+ * queue, and on this repository that queue has run 46–50 minutes late
+ * routinely and 117 minutes late once. A lock landing with less than half an
+ * hour to spare is therefore not "fine" — it is one ordinary bad queue away
+ * from stamping a whole slate `predicted_after_deadline`, and the S-4
+ * checklist item exists to catch that BEFORE it happens rather than to
+ * record it afterwards. Warn severity: visible in the report, but it does not
+ * turn the weekly run red for a slate that did lock in time.
+ */
+export const LOCK_MARGIN_WARN_MINUTES = 30;
 
 export interface DistributionCheck {
   /** Games with both a result and expected runs. */
@@ -141,6 +182,11 @@ export interface AuditReport {
   cohorts: CohortStat[];
   /** A-2: settled bets on real lines — empty until real lines are quoted. */
   realLines: RealLineSettlement[];
+  /**
+   * A-2: the offline proof that the real-line machinery settles correctly,
+   * run every audit so the answer never depends on a real bet arriving.
+   */
+  lineProof: LineProofReport;
 }
 
 /**
@@ -323,23 +369,40 @@ export function checkIntegrity(
  * happened (or absolve lateness that did). Slates from before the field
  * existed fall back to the current rule.
  */
-export function lockMargins(days: AuditDay[]): LockMargin[] {
+export function lockMargins(days: AuditDay[], now: Date): LockMargin[] {
+  const windowStart = now.getTime() - LOCK_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   return days
     .filter((d) => d.lock)
     .map((d) => {
       const lockedAt = d.lock!.lockedAt ? new Date(d.lock!.lockedAt) : null;
       if (!lockedAt || Number.isNaN(lockedAt.getTime())) {
-        return { date: d.date, marginMinutes: null, late: false };
+        return {
+          date: d.date,
+          marginMinutes: null,
+          late: false,
+          recent: false,
+          currentRule: true,
+          tight: false,
+        };
       }
       const stored = d.lock!.predictions.find(
         (p) => p.lockDeadline != null,
       )?.lockDeadline;
       const deadline = stored ? new Date(stored) : predictionDeadline(d.date);
       const margin = (deadline.getTime() - lockedAt.getTime()) / 60_000;
+      // Slates from before the raw field existed count as current-rule: there
+      // is nothing to say they were judged by anything else.
+      const currentRule =
+        !stored ||
+        new Date(stored).getTime() === predictionDeadline(d.date).getTime();
+      const recent = lockedAt.getTime() >= windowStart;
       return {
         date: d.date,
         marginMinutes: Math.round(margin * 10) / 10,
         late: margin < 0,
+        recent,
+        currentRule,
+        tight: margin >= 0 && margin < LOCK_MARGIN_WARN_MINUTES,
       };
     });
 }
@@ -545,9 +608,7 @@ export function realLineSettlements(days: AuditDay[]): {
       const actualMargin = result.homeScore - result.awayScore;
       const quotedSideMargin =
         input.side === "home" ? actualMargin : -actualMargin;
-      const pickedQuotedSide = p.handicap.pick.startsWith(
-        input.side === "home" ? p.home : p.away,
-      );
+      const pickedQuotedSide = backedSide(p) === input.side;
       const parts = pickedQuotedSide
         ? resolved.parts
         : oppositeParts(resolved.parts);
@@ -612,7 +673,7 @@ export function runAudit(
   now: Date,
 ): AuditReport {
   const issues = checkIntegrity(days, history, calibration, now);
-  const margins = lockMargins(days);
+  const margins = lockMargins(days, now);
   const realLines = realLineSettlements(days);
   issues.push(...realLines.issues);
 
@@ -639,9 +700,7 @@ export function runAudit(
   }
 
   // A late lock is an ERROR when it is recent AND the slate was produced
-  // under the deadline rule currently in force (its stored lockDeadline is
-  // the instant the current rule yields for that date; slates from before
-  // the raw field existed count as current-rule). Two deliberate edges:
+  // under the deadline rule currently in force. Two deliberate edges:
   //
   //   - Late locks from a superseded rule era never gate the run red — the
   //     transition weeks after a deadline change would otherwise stay red
@@ -649,27 +708,38 @@ export function runAudit(
   //     They remain fully visible in the S-4 section; only the exit code
   //     forgives them. Accepted cost: a rule change also amnesties a late
   //     lock made JUST before it — rare, still displayed, judged worth it.
-  //   - The window is 14 days — two weekly cycles — so one failed or
-  //     skipped audit run cannot silently age a late lock out of range.
-  const windowStart = now.getTime() - 14 * 24 * 60 * 60 * 1000;
+  //   - Outside the window the lateness is history; see LOCK_WINDOW_DAYS.
+  //
+  // An on-time lock with almost no headroom raises a WARNING instead. That is
+  // the tripwire this checklist item is for: by the time a slate is actually
+  // late the picks are already stamped, and the erosion that got it there was
+  // visible for days beforehand.
   for (const m of margins) {
-    if (!m.late || m.marginMinutes === null) continue;
-    const d = days.find((x) => x.date === m.date);
-    const lockedAt = d?.lock?.lockedAt ? new Date(d.lock.lockedAt) : null;
-    if (lockedAt === null || lockedAt.getTime() < windowStart) continue;
-    const stored = d?.lock?.predictions.find(
-      (p) => p.lockDeadline != null,
-    )?.lockDeadline;
-    const producedUnderCurrentRule =
-      !stored ||
-      new Date(stored).getTime() === predictionDeadline(m.date).getTime();
-    if (producedUnderCurrentRule) {
+    if (m.marginMinutes === null || !m.recent || !m.currentRule) continue;
+    if (m.late) {
       issues.push({
         severity: "error",
         code: "late_lock",
         detail: `${m.date}: locked ${Math.abs(m.marginMinutes)} min after the deadline`,
       });
+    } else if (m.tight) {
+      issues.push({
+        severity: "warn",
+        code: "tight_lock_margin",
+        detail: `${m.date}: locked with only ${m.marginMinutes} min to spare (under ${LOCK_MARGIN_WARN_MINUTES}) — one bad scheduler queue from a late slate`,
+      });
     }
+  }
+
+  // A-2: prove the real-line machinery on every line the tower can quote,
+  // rather than waiting for a real bet to settle before anything is checked.
+  const lineProof = verifyLineSettlement();
+  for (const f of lineProof.failures) {
+    issues.push({
+      severity: "error",
+      code: "line_proof_failure",
+      detail: `〈${f.notation}〉 ${f.code}: ${f.detail}`,
+    });
   }
 
   return {
@@ -681,6 +751,7 @@ export function runAudit(
     flagRates: flagRates(days),
     cohorts: cohorts(days),
     realLines: realLines.settlements,
+    lineProof,
   };
 }
 

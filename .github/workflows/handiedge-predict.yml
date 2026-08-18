@@ -104,14 +104,28 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Exit 2 means "the picks were produced, but after the deadline". Those
+      # picks are real, committed and settled like any others — what is wrong
+      # is the RUN, so the job must not die here (that would leave the slate
+      # uncommitted) and must not pass either (S-4 lateness was invisible
+      # until the weekly audit, a week after the money was already down). It
+      # therefore continues to the commit and fails at the end. Any other
+      # non-zero code is a genuine crash with nothing to commit, so it stops
+      # the job immediately. tsx is invoked directly so the exit code survives
+      # the script runner.
       - name: Predict and lock
+        id: predict
         if: steps.guard.outputs.run == 'true'
         working-directory: lib/sports-data
         run: |
+          set +e
           FORCE=""
           if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
-          pnpm run handiedge predict \
+          pnpm exec tsx src/cli/handiedge.ts predict \
             --control "data/control-towers/${{ steps.d.outputs.date }}.json" $FORCE
+          CODE=$?
+          echo "exit=$CODE" >> "$GITHUB_OUTPUT"
+          if [ "$CODE" -ne 0 ] && [ "$CODE" -ne 2 ]; then exit "$CODE"; fi
 
       # Say plainly whether the day's lines actually arrived. A control tower
       # left at all-zero silently reduces the handicap to the moneyline, and
@@ -153,3 +167,18 @@ jobs:
           git commit -m "HandiEdge: predictions for ${{ steps.d.outputs.date }}"
           git pull --rebase origin "${{ github.ref_name }}"
           git push origin "HEAD:${{ github.ref_name }}"
+
+      # The slate is safely committed by here, so this is the right place to
+      # go red: a late lock is a scheduling incident to fix TODAY (move the
+      # cron earlier, or dispatch by hand), not a line in next Monday's audit.
+      - name: Fail on a late lock
+        if: steps.predict.outputs.exit == '2'
+        run: |
+          {
+            echo "> ❌ **This slate locked AFTER its 22:55 JST deadline.** The picks are"
+            echo "> committed and stamped \`predicted_after_deadline\`, but they were frozen"
+            echo "> late — check the scheduler delay on this run and move the cron earlier"
+            echo "> if it has grown again."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Prediction lock for ${{ steps.d.outputs.date }} landed after the deadline (S-4)."
+          exit 1
