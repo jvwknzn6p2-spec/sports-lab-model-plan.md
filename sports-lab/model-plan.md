@@ -266,7 +266,19 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   40-man roster is scanned for D-coded (IL) players, surfaced as an [info]
   flag naming them and fed to the review layer — informational only, since
   who replaces an injured player is not in any feed and an invented penalty
-  would fabricate an input. Per-game lineups remain ❌.
+  would fabricate an input. Per-game lineups — ✅ since 2026-08-21:
+  `fetch-slate` hydrates posted batting orders from the schedule
+  (`hydrate=lineups`), bulk-fetches each posted bat's season line (one
+  `/people` call per ~100 ids), and the assembler re-bases that side's
+  offense on the slot-share-weighted, per-player-regressed wOBA of the
+  actual nine (`src/features/lineup.ts`, `[info] lineup_applied`). Honesty
+  rules: no post (typical at the morning fetch — clubs publish a few hours
+  before first pitch, so the pre-deadline refresh is where most lineups
+  land) or a partial nine → the team-season baseline stays, flagged
+  `lineup_not_posted`; a posted bat without a season line is filled at
+  league-average wOBA with zero sample and flagged, never guessed. A
+  quarter-Kelly stake suggestion (display-only; settlement still scores
+  flat 1-unit stakes) now rides every handicap pick (`src/engine/ev.ts`).
 - **Step 9 (AI multi-agent review) — ✅ implemented** as
   `handiedge review` (`src/engine/ai-review.ts`): a Data Auditor, Matchup
   Analyst and Risk Reviewer (Claude, via the Anthropic SDK) each read the

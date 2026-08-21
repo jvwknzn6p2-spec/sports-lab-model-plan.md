@@ -39,6 +39,16 @@ export interface MlbScheduleGame {
     away?: MlbScheduleGameSide;
   };
   venue?: { id?: number; name?: string };
+  /**
+   * Posted batting orders (hydrate=lineups). Present only once a club has
+   * actually published its lineup — typically a few hours before first
+   * pitch, i.e. often AFTER the morning slate fetch and sometimes only by
+   * the pre-deadline refresh.
+   */
+  lineups?: {
+    homePlayers?: MlbPersonRef[];
+    awayPlayers?: MlbPersonRef[];
+  };
 }
 
 export interface MlbScheduleGameSide {
@@ -83,6 +93,15 @@ export interface MlbStatsResponse {
       player?: MlbPersonRef;
       stat?: Record<string, unknown>;
     }>;
+  }>;
+}
+
+/** /people?personIds=… with hitting stats hydrated (posted-lineup bats). */
+export interface MlbPeopleResponse {
+  people?: Array<{
+    id?: number;
+    fullName?: string;
+    stats?: MlbStatsResponse["stats"];
   }>;
 }
 

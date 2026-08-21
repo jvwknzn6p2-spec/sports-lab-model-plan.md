@@ -5,6 +5,10 @@
  * prediction instead of silently becoming zero.
  */
 
+import type {
+  GameLineups,
+  LineupSlot,
+} from "../features/lineup";
 import type { RawBattingLine } from "../sabermetrics/batting";
 import type { RawPitchingLine } from "../sabermetrics/pitching";
 import type {
@@ -12,6 +16,7 @@ import type {
   MlbScheduleGameSide,
   MlbScheduleResponse,
   MlbStatsResponse,
+  MlbPersonRef,
 } from "./types";
 
 export class MlbParseError extends Error {
@@ -148,4 +153,40 @@ export function parseBattingLine(
     stolenBases: n(stat["stolenBases"]),
     caughtStealing: n(stat["caughtStealing"]),
   };
+}
+
+/**
+ * Posted batting orders from a lineups-hydrated schedule, keyed by
+ * stringified gamePk. Only full nines are kept: a partially published order
+ * cannot be weighted honestly (see features/lineup.ts), so it is treated as
+ * not posted. Extra entries beyond nine (a DH slot duplicated by some feeds)
+ * are trimmed to the first nine, which is the batting order.
+ */
+export function parseScheduleLineups(
+  res: MlbScheduleResponse,
+): Record<string, GameLineups> {
+  const out: Record<string, GameLineups> = {};
+  for (const date of res.dates ?? []) {
+    for (const g of date.games ?? []) {
+      const side = (players?: MlbPersonRef[]): LineupSlot[] | null => {
+        const nine = (players ?? [])
+          .filter((p): p is MlbPersonRef & { id: number } => typeof p.id === "number")
+          .slice(0, 9)
+          .map((p) => ({ playerId: p.id, name: p.fullName ?? null }));
+        return nine.length === 9 ? nine : null;
+      };
+      const home = side(g.lineups?.homePlayers);
+      const away = side(g.lineups?.awayPlayers);
+      if (home && away) out[String(g.gamePk)] = { home, away };
+      else if (home || away) {
+        // One side posted, one not: keep what exists — the assembler applies
+        // lineups per side, so a half-posted game still upgrades one team.
+        out[String(g.gamePk)] = {
+          home: home ?? [],
+          away: away ?? [],
+        };
+      }
+    }
+  }
+  return out;
 }

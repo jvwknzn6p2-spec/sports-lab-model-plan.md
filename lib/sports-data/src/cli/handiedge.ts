@@ -367,7 +367,9 @@ async function cmdFetchSlate(args: {
   }
   console.log(
     `  Starters ${report.startersFetched}/${report.startersExpected}, ` +
-      `teams ${report.teamsFetched}/${report.teamsExpected} (batting+bullpen).`,
+      `teams ${report.teamsFetched}/${report.teamsExpected} (batting+bullpen), ` +
+      `lineups posted ${report.lineupsPosted}/${report.games} ` +
+      `(${report.lineupBatsFetched} bats fetched).`,
   );
   if (report.warnings.length) {
     console.log("  Warnings:");

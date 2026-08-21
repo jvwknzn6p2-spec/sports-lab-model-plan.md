@@ -17,6 +17,7 @@
 
 import type {
   MlbBoxscoreResponse,
+  MlbPeopleResponse,
   MlbRosterResponse,
   MlbScheduleResponse,
   MlbStatsResponse,
@@ -114,12 +115,28 @@ export class MlbStatsClient {
     );
   }
 
-  /** Games on a date, with probable starters hydrated. */
+  /** Games on a date, with probable starters and posted lineups hydrated. */
   schedule(date: string): Promise<MlbScheduleResponse> {
     return this.getJson<MlbScheduleResponse>("/schedule", {
       sportId: 1,
       date,
-      hydrate: "probablePitcher,team,venue",
+      hydrate: "probablePitcher,team,venue,lineups",
+    });
+  }
+
+  /**
+   * Season hitting lines for a batch of players in ONE call — the posted
+   * lineups are ~9 players × up to 15 games a slate, and a request per player
+   * would turn the slate fetch into hundreds of pulls. The API accepts ~100
+   * ids per request; the caller chunks.
+   */
+  peopleHitting(
+    personIds: number[],
+    season: number,
+  ): Promise<MlbPeopleResponse> {
+    return this.getJson<MlbPeopleResponse>("/people", {
+      personIds: personIds.join(","),
+      hydrate: `stats(group=[hitting],type=[season],season=${season})`,
     });
   }
 

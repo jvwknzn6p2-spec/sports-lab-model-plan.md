@@ -72,6 +72,9 @@ export function predictionsToMarkdown(
     if (p.handicap.pick) {
       out.push(
         `- Handicap: **${p.handicap.pick}** (${pct(p.handicap.coverProbability!)})` +
+          (p.handicap.recommendedStake != null
+            ? ` · stake ${p.handicap.recommendedStake}u (¼-Kelly)`
+            : "") +
           (p.handicap.ev === null
             ? ""
             : ` · EV **${fmtPct(p.handicap.ev)}** per unit`),

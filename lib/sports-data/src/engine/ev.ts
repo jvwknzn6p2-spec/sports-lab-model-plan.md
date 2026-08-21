@@ -59,3 +59,39 @@ export function expectedValueFromProbability(
 export function breakEvenProbability(commission = WIN_COMMISSION): number {
   return 1 / (2 - commission);
 }
+
+/**
+ * Kelly fraction actually recommended. Full Kelly assumes the stated edge is
+ * exact; this book's own record says its edges arrive with error (that is
+ * what the whole calibration layer corrects), and overbetting a misjudged
+ * edge costs more than underbetting a real one. A quarter is the
+ * conventional, deliberately timid choice.
+ */
+export const KELLY_FRACTION = 0.25;
+/** Never recommend more than one unit, however loud the edge. */
+export const KELLY_STAKE_CAP = 1;
+
+/**
+ * Recommended stake in units for a bet with this per-unit EV, as a fraction
+ * of the one-unit bankroll quantum the record is kept in. DISPLAY-ONLY
+ * decision support: settlement still scores every pick at a flat 1 unit, so
+ * the P&L record stays comparable across days and with its own history.
+ *
+ * Two-outcome Kelly at win payout b = 1 − commission is f* = EV / b. A 半
+ * line's push share is already inside EV (a pushed share neither wins nor
+ * loses), which makes this the at-risk-scaled Kelly — slightly conservative
+ * for split-stake lines, which is the right direction to be wrong in.
+ * Null when there is no bet to size; 0 when the bet is not worth staking.
+ */
+export function recommendedStake(
+  ev: number | null,
+  commission = WIN_COMMISSION,
+): number | null {
+  if (ev === null) return null;
+  if (ev <= 0) return 0;
+  const fullKelly = ev / (1 - commission);
+  return Math.min(
+    KELLY_STAKE_CAP,
+    Math.round(fullKelly * KELLY_FRACTION * 100) / 100,
+  );
+}

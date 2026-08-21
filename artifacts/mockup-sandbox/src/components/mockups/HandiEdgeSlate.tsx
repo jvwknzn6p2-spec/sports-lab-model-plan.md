@@ -35,6 +35,7 @@ interface Prediction {
     coverProbability: number | null;
     ev: number | null;
     marketProbability?: number | null;
+    recommendedStake?: number | null;
     noValue?: boolean;
   };
   total?: {
@@ -120,6 +121,8 @@ function GameCard({ p }: { p: Prediction }) {
                     ` / EV ${(p.handicap.ev * 100).toFixed(1)}%`}
                   {p.handicap.marketProbability != null &&
                     ` / 市場 ${pct(p.handicap.marketProbability)}`}
+                  {p.handicap.recommendedStake != null &&
+                    ` / 推奨 ${p.handicap.recommendedStake}u`}
                 </span>
               </>
             ) : (

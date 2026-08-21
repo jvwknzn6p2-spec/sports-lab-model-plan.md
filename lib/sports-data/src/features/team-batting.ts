@@ -20,6 +20,7 @@ import {
   type RawBattingLine,
 } from "../sabermetrics";
 import { reliabilityWeight, type DataQualityFlag } from "./types";
+import type { LineupBattingFeatures } from "./lineup";
 
 /** PA-of-prior used to regress a lineup's wOBA toward league average. */
 export const TEAM_WOBA_PRIOR_PA = 600;
@@ -97,6 +98,42 @@ export function buildTeamBattingFeatures(
     paPerGame: round1(paPerGame),
     reliability: round2(reliability),
     flags,
+  };
+}
+
+/**
+ * Replace the team-season offense with the POSTED LINEUP's, keeping the
+ * team's own PA/game (how often a lineup bats is a team property; how well
+ * it bats tonight is the lineup's). The wOBA→runs conversion is the same
+ * formula as above, so the two estimates are directly comparable — the note
+ * downstream shows exactly how far tonight's nine sit from the season line.
+ */
+export function applyLineupToTeamBatting(
+  team: TeamBattingFeatures,
+  lineup: LineupBattingFeatures,
+  season: number,
+): TeamBattingFeatures {
+  const c = getLeagueConstants(season);
+  const runsPerPA =
+    (lineup.projectedWoba - c.wOBA) / c.wOBAScale + c.runsPerPA;
+  const expectedRunsPerGame = Math.max(0, runsPerPA * team.paPerGame);
+  return {
+    ...team,
+    projectedWoba: round3(lineup.projectedWoba),
+    expectedRunsPerGame: round2(expectedRunsPerGame),
+    reliability: round2(lineup.reliability),
+    flags: [
+      ...team.flags,
+      ...lineup.flags,
+      {
+        code: "lineup_applied",
+        severity: "info",
+        message:
+          `Posted lineup used: wOBA ${lineup.projectedWoba.toFixed(3)} ` +
+          `(team season ${team.projectedWoba.toFixed(3)}), ` +
+          `${lineup.playersWithData}/9 bats with season stats.`,
+      },
+    ],
   };
 }
 

@@ -12,7 +12,11 @@
 import type { GameCoreData } from "../step2";
 import type { RunExpectation } from "./run-model";
 import type { SimulationResult } from "./simulate";
-import { breakEvenProbability, expectedValueFromProbability } from "./ev";
+import {
+  breakEvenProbability,
+  expectedValueFromProbability,
+  recommendedStake,
+} from "./ev";
 import {
   HandicapNotationError,
   oppositeParts,
@@ -367,6 +371,11 @@ export interface GamePrediction {
      * judged against — not a payout.
      */
     marketProbability?: number | null;
+    /**
+     * Quarter-Kelly stake suggestion in units (see ev.ts). Display-only:
+     * settlement scores a flat 1 unit regardless. Null when no bet stands.
+     */
+    recommendedStake?: number | null;
     /**
      * A line was quoted, the model has an opinion about it, and that opinion
      * is not worth backing at this price. Distinct from `pass`: the game is
@@ -835,6 +844,10 @@ export function decide(
       rawCoverProbability,
       ev: handicapEv,
       marketProbability: handicapMarketProb,
+      recommendedStake:
+        handicapSuppressed || handicapUnprofitable
+          ? null
+          : recommendedStake(handicapEv),
       noValue: !handicapSuppressed && handicapUnprofitable,
     },
     total: {
