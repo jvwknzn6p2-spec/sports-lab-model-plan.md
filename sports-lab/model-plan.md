@@ -236,13 +236,26 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   and totals from The Odds API consensus when the `ODDS_API_KEY` secret is
   set (`src/sources/odds-source.ts`). An unentered line is stored as
   `notation: null` and quotes NO handicap market — it is never conflated
-  with a deliberate `"0"` pick'em quote. No real-line bet has settled yet;
-  the A-2 audit section watches for the first.
+  with a deliberate `"0"` pick'em quote. Since 2026-08-21 the fill also
+  devigs both sides' PRICES at the exact median point into a consensus
+  probability (`marketHomeCover` / `marketOver` on the entry): decide()
+  reports the model-vs-market gap per pick, and a gap ≥12pt flags
+  `[warn] market_disagreement` and caps confidence at B — the EV-outlier
+  lesson measured directly. EV itself still prices the fixed-0.9 book the
+  pipeline actually bets; the market probability is a benchmark, not a
+  payout. No real-line bet has settled yet; the A-2 audit section watches
+  for the first.
 - **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
   per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
   temperature multiplier adjusts the run environment at open-air parks,
-  domes and unknown-state retractable roofs are never adjusted, and high
-  wind raises a warn flag only (no orientation data → no invented number).
+  domes and unknown-state retractable roofs are never adjusted. Wind is
+  direction-aware since 2026-08-21: the park's home→center-field bearing
+  comes from the MLB Stats API's own venue record (`location.azimuthAngle`,
+  sanity-checked against the SSE–NW band no MLB park points toward), the
+  wind vector is projected onto it, and the out/in-blowing component becomes
+  a bounded multiplier (±5% max; ~+3% at 16 km/h straight out). No azimuth,
+  no direction, or an implausible value → no adjustment, exactly as before;
+  high wind keeps its warn flag regardless (variance, not just mean).
   IL detection is in (`src/sources/injuries-builder.ts`): each slate team's
   40-man roster is scanned for D-coded (IL) players, surfaced as an [info]
   flag naming them and fed to the review layer — informational only, since

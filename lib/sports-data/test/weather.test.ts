@@ -16,6 +16,13 @@ import {
   type GameWeather,
   type OpenMeteoHourly,
 } from "../src/sources/weather";
+import {
+  fetchVenueAzimuths,
+  isPlausibleCfBearing,
+  WIND_MULT_MAX,
+  WIND_RUNS_PER_KMH_OUT,
+  windRunMultiplier,
+} from "../src/sources/weather";
 import { expectedRuns } from "../src/engine/run-model";
 import { assembleGameCoreData } from "../src/step2";
 import { FixtureCoreDataSource } from "../src/sources/fixture-source";
@@ -87,9 +94,21 @@ const gameAt = (gamePk: number, venueId: number | null): NormalizedGame => ({
 });
 
 test("buildWeather: one call per venue, domes skip the fetch, failures warn", async () => {
-  const calls: string[] = [];
+  const forecastCalls: string[] = [];
+  const venueCalls: string[] = [];
   const fetchImpl = (async (url: string | URL | Request) => {
-    calls.push(String(url));
+    const u = String(url);
+    if (u.includes("statsapi.mlb.com")) {
+      venueCalls.push(u);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          venues: [{ id: 3, location: { azimuthAngle: 52 } }],
+        }),
+      };
+    }
+    forecastCalls.push(u);
     return {
       ok: true,
       status: 200,
@@ -104,8 +123,10 @@ test("buildWeather: one call per venue, domes skip the fetch, failures warn", as
     gameAt(4, 999), // unknown venue — warned, skipped
   ];
   const r = await buildWeather({ date: "2026-08-21", games, fetchImpl });
-  assert.equal(calls.length, 1, "one fetch per unique outdoor venue");
+  assert.equal(forecastCalls.length, 1, "one fetch per unique outdoor venue");
+  assert.equal(venueCalls.length, 1, "one venues call for the whole slate");
   assert.equal(r.weather["1"]!.temperatureC, 30);
+  assert.equal(r.weather["1"]!.cfBearingDeg, 52);
   assert.equal(r.weather["2"]!.temperatureC, 30);
   assert.deepEqual(r.weather["3"], {
     temperatureC: null,
@@ -183,4 +204,80 @@ test("high wind at an open park raises a warn flag; missing weather an info flag
       (f) => f.code === "weather_missing" && f.severity === "info",
     ),
   );
+});
+
+// ---- Wind: direction × park orientation → a signed, bounded run effect ----
+
+test("windRunMultiplier: out blows up runs, in blows them down, crosswind is neutral", () => {
+  const base = {
+    temperatureC: 21,
+    windSpeedKmh: 16,
+    cfBearingDeg: 45,
+    roof: "outdoor" as const,
+  };
+  // Wind FROM 225° at a 45° park = blowing straight OUT to center.
+  const out = windRunMultiplier(wx({ ...base, windDirectionDeg: 225 }));
+  // Wind FROM 45° = coming from center field, blowing IN.
+  const inn = windRunMultiplier(wx({ ...base, windDirectionDeg: 45 }));
+  // Wind FROM 135° = pure crosswind.
+  const cross = windRunMultiplier(wx({ ...base, windDirectionDeg: 135 }));
+  assert.ok(out > 1, `out=${out}`);
+  assert.ok(inn < 1, `in=${inn}`);
+  assert.ok(Math.abs(cross - 1) < 1e-9, `cross=${cross}`);
+  assert.ok(Math.abs(out - (1 + 16 * WIND_RUNS_PER_KMH_OUT)) < 1e-9);
+});
+
+test("windRunMultiplier is clamped and refuses dishonest inputs", () => {
+  const gale = wx({
+    windSpeedKmh: 60,
+    windDirectionDeg: 225,
+    cfBearingDeg: 45,
+    roof: "outdoor",
+  });
+  assert.equal(windRunMultiplier(gale), WIND_MULT_MAX);
+  // No bearing / no direction / not outdoor / implausible bearing → 1.0.
+  assert.equal(
+    windRunMultiplier(wx({ windSpeedKmh: 30, windDirectionDeg: 225, roof: "outdoor" })),
+    1,
+  );
+  assert.equal(
+    windRunMultiplier(wx({ windSpeedKmh: 30, cfBearingDeg: 45, roof: "outdoor" })),
+    1,
+  );
+  assert.equal(
+    windRunMultiplier(
+      wx({ windSpeedKmh: 30, windDirectionDeg: 225, cfBearingDeg: 45, roof: "retractable" }),
+    ),
+    1,
+  );
+  // 200° sits in the SSE–NW band no MLB park points toward: a feed problem,
+  // not a park — refuse the number.
+  assert.equal(
+    windRunMultiplier(
+      wx({ windSpeedKmh: 30, windDirectionDeg: 20, cfBearingDeg: 200, roof: "outdoor" }),
+    ),
+    1,
+  );
+  assert.ok(isPlausibleCfBearing(45));
+  assert.ok(!isPlausibleCfBearing(200));
+});
+
+test("fetchVenueAzimuths keeps plausible azimuths, drops the rest with a warning", async () => {
+  const fetchImpl = (async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      venues: [
+        { id: 3, location: { azimuthAngle: 52 } },
+        { id: 17, location: { azimuthAngle: 200 } }, // implausible → dropped
+        { id: 19, location: {} }, // absent → simply missing
+      ],
+    }),
+  })) as unknown as typeof fetch;
+  const r = await fetchVenueAzimuths({ venueIds: [3, 17, 19], fetchImpl });
+  assert.equal(r.byVenue.get(3), 52);
+  assert.equal(r.byVenue.get(17), undefined);
+  assert.equal(r.byVenue.get(19), undefined);
+  assert.equal(r.warnings.length, 1);
+  assert.match(r.warnings[0]!, /azimuthAngle 200/);
 });

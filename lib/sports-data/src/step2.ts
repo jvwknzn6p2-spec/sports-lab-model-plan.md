@@ -123,9 +123,11 @@ export async function assembleGameCoreData(
     weather.windSpeedKmh !== null &&
     weather.windSpeedKmh >= HIGH_WIND_KMH
   ) {
-    // Direction-blind by design: without park orientation data a wind speed
-    // cannot honestly become a run adjustment, but it can and should mark
-    // the total as less certain than the simulator's spread claims.
+    // The MEAN effect of a known wind is handled in the run model (see
+    // windRunMultiplier) when the park's orientation is available; this flag
+    // stays regardless, because a 30 km/h wind also widens the VARIANCE of a
+    // total beyond what the simulator's spread claims — an adjusted mean does
+    // not make the day's total a normal one.
     flags.push({
       code: "weather_high_wind",
       severity: "warn",
