@@ -12,7 +12,11 @@
 import type { GameCoreData } from "../step2";
 import type { RunExpectation } from "./run-model";
 import type { SimulationResult } from "./simulate";
-import { breakEvenProbability, expectedValueFromProbability } from "./ev";
+import {
+  breakEvenProbability,
+  expectedValueFromProbability,
+  recommendedStake,
+} from "./ev";
 import {
   HandicapNotationError,
   oppositeParts,
@@ -42,6 +46,16 @@ export interface HandicapInput {
   line?: number | null;
   notation?: string | null;
   total?: number | null; // over/under line, optional
+  /**
+   * Devigged market-consensus probability that the HOME side covers `line`,
+   * attached by the odds fill only when the market priced this EXACT point
+   * (see odds-source.ts). This is the market's opinion, used as an external
+   * benchmark for the model's cover probability — it is NOT a payout: EV
+   * still prices the fixed-0.9 book the pipeline actually bets.
+   */
+  marketHomeCover?: number | null;
+  /** Same, for the OVER at `total`. */
+  marketOver?: number | null;
 }
 
 /**
@@ -132,12 +146,16 @@ export interface CalibrationState {
   shrink: number;
   /** Extra shrink on the edge beyond TAIL_START (moneyline). */
   tailShrink: number;
+  /** Extra shrink on the edge beyond FAR_TAIL_START (moneyline). */
+  farTailShrink: number;
   /** Same, for the handicap / run-line cover probability. */
   handicapShrink: number;
   handicapTailShrink: number;
+  handicapFarTailShrink: number;
   /** Same, for the over/under total. */
   totalShrink: number;
   totalTailShrink: number;
+  totalFarTailShrink: number;
   gamesSettled: number;
   brierSum: number;
   updatedAt: string | null;
@@ -154,6 +172,20 @@ export interface CalibrationState {
  * re-band every stored tail stamp for no measured gain.
  */
 export const TAIL_START = 0.65;
+
+/**
+ * Raw probability at which the FAR tail begins — the tail's own tail.
+ *
+ * A single tail band averages two populations the live record separates. By
+ * 2026-08-21 the learned tail shrink (0.663/0.632) meant a STATED 65% was a
+ * RAW ~74% claim, and the stated 65–70% band — fed almost entirely by those
+ * raw ≥0.70 quotes — hit 37.5% over 24 bets (gap −28.9pt) while the bands
+ * below it tracked reality within ±2.5pt. Learning one shrink for the whole
+ * raw ≥0.65 region let the far tail's collapse be diluted by the near tail's
+ * adequacy, so the correction crawled. Splitting at 0.70 lets the region the
+ * record actually indicts learn at its own speed, from its own bets only.
+ */
+export const FAR_TAIL_START = 0.7;
 
 /**
  * Default tail shrink: the SAME as the core, i.e. a deliberately neutral
@@ -180,10 +212,13 @@ const DEFAULT_TAIL_SHRINK = 0.85;
 export const DEFAULT_CALIBRATION: CalibrationState = {
   shrink: 0.85,
   tailShrink: DEFAULT_TAIL_SHRINK,
+  farTailShrink: DEFAULT_TAIL_SHRINK,
   handicapShrink: 0.85,
   handicapTailShrink: DEFAULT_TAIL_SHRINK,
+  handicapFarTailShrink: DEFAULT_TAIL_SHRINK,
   totalShrink: 0.85,
   totalTailShrink: DEFAULT_TAIL_SHRINK,
+  totalFarTailShrink: DEFAULT_TAIL_SHRINK,
   gamesSettled: 0,
   brierSum: 0,
   updatedAt: null,
@@ -206,13 +241,23 @@ export function normalizeCalibration(
   const handicapShrink = raw.handicapShrink ?? shrink;
   const totalShrink = raw.totalShrink ?? shrink;
   const legacyTail = (core: number) => Math.min(core, DEFAULT_TAIL_SHRINK);
+  const tailShrink = raw.tailShrink ?? legacyTail(shrink);
+  const handicapTailShrink =
+    raw.handicapTailShrink ?? legacyTail(handicapShrink);
+  const totalTailShrink = raw.totalTailShrink ?? legacyTail(totalShrink);
+  // A file from before the far-tail split carries one learned tail; the far
+  // band starts from it (never above — the far tail is the part of the tail
+  // the record trusted LEAST) and diverges as its own bets settle.
   return {
     shrink,
-    tailShrink: raw.tailShrink ?? legacyTail(shrink),
+    tailShrink,
+    farTailShrink: raw.farTailShrink ?? tailShrink,
     handicapShrink,
-    handicapTailShrink: raw.handicapTailShrink ?? legacyTail(handicapShrink),
+    handicapTailShrink,
+    handicapFarTailShrink: raw.handicapFarTailShrink ?? handicapTailShrink,
     totalShrink,
-    totalTailShrink: raw.totalTailShrink ?? legacyTail(totalShrink),
+    totalTailShrink,
+    totalFarTailShrink: raw.totalFarTailShrink ?? totalTailShrink,
     gamesSettled: raw.gamesSettled ?? 0,
     brierSum: raw.brierSum ?? 0,
     updatedAt: raw.updatedAt ?? null,
@@ -283,6 +328,20 @@ export const DEFAULT_DECISION_CONFIG: DecisionConfig = {
  */
 export const EV_OUTLIER_THRESHOLD = 0.25;
 
+/**
+ * How far the model may disagree with the devigged market consensus before
+ * the disagreement itself becomes the story.
+ *
+ * Sportsbook consensus is sharp: when the model's calibrated cover
+ * probability sits 12+ points from what the market charges for the same
+ * line, the likelier explanation is a model error than a market one — the
+ * same lesson EV_OUTLIER_THRESHOLD encodes, measured directly against the
+ * market's stated probability instead of through the EV proxy. The bet keeps
+ * its sign (disagreement IS the source of every edge), but the pick is
+ * flagged and its confidence capped at B, exactly like an EV outlier.
+ */
+export const MARKET_DISAGREEMENT_THRESHOLD = 0.12;
+
 export interface GamePrediction {
   gamePk: number;
   gameDate: string | null;
@@ -307,6 +366,17 @@ export interface GamePrediction {
     /** Profit per unit staked after the house's cut. Negative = losing bet. */
     ev: number | null;
     /**
+     * Devigged market-consensus probability of the PICKED side covering, when
+     * the market priced this exact line. The benchmark the model's number is
+     * judged against — not a payout.
+     */
+    marketProbability?: number | null;
+    /**
+     * Quarter-Kelly stake suggestion in units (see ev.ts). Display-only:
+     * settlement scores a flat 1 unit regardless. Null when no bet stands.
+     */
+    recommendedStake?: number | null;
+    /**
      * A line was quoted, the model has an opinion about it, and that opinion
      * is not worth backing at this price. Distinct from `pass`: the game is
      * still predicted and still scored — only this one market is skipped.
@@ -320,6 +390,8 @@ export interface GamePrediction {
     probability: number | null;
     /** Uncalibrated probability of the chosen side, for banding (see above). */
     rawProbability: number | null;
+    /** Market-consensus probability of the picked side (see handicap). */
+    marketProbability?: number | null;
   };
   expectedRuns: { home: number; away: number };
   reasons: string[];
@@ -338,24 +410,37 @@ export function calibrate(pRaw: number, shrink: number): number {
 /**
  * Banded calibration: piecewise-LINEAR and CONTINUOUS in the edge |p − 0.5|.
  *
- * The edge up to (TAIL_START − 0.5) is scaled by the core shrink; whatever
- * lies beyond is scaled by the tail shrink. Gluing the segments (rather than
- * switching wholesale at the boundary) keeps the map continuous and, for
+ * The edge up to (TAIL_START − 0.5) is scaled by the core shrink, the slice
+ * between TAIL_START and FAR_TAIL_START by the tail shrink, and whatever lies
+ * beyond FAR_TAIL_START by the far-tail shrink. Gluing the segments (rather
+ * than switching wholesale at a boundary) keeps the map continuous and, for
  * positive shrinks, strictly monotone — a raw 65.1% can never be quoted below
  * a raw 64.9%. Symmetric around 50%, so it is side-agnostic: calibrating
  * p(home) and 1 − p(away) agree.
+ *
+ * `farTailShrink` defaults to `tailShrink`, which reproduces the two-band map
+ * exactly — callers that have not learned a separate far tail lose nothing.
  */
 export function calibrateBanded(
   pRaw: number,
   coreShrink: number,
   tailShrink: number,
+  farTailShrink: number = tailShrink,
 ): number {
   const edge = Math.abs(pRaw - 0.5);
   const coreSpan = TAIL_START - 0.5;
-  const scaled =
-    edge <= coreSpan
-      ? edge * coreShrink
-      : coreSpan * coreShrink + (edge - coreSpan) * tailShrink;
+  const tailSpan = FAR_TAIL_START - TAIL_START;
+  let scaled: number;
+  if (edge <= coreSpan) {
+    scaled = edge * coreShrink;
+  } else if (edge <= coreSpan + tailSpan) {
+    scaled = coreSpan * coreShrink + (edge - coreSpan) * tailShrink;
+  } else {
+    scaled =
+      coreSpan * coreShrink +
+      tailSpan * tailShrink +
+      (edge - coreSpan - tailSpan) * farTailShrink;
+  }
   return 0.5 + Math.sign(pRaw - 0.5) * scaled;
 }
 
@@ -381,7 +466,10 @@ function confidenceFor(
 ): Confidence {
   let c: Confidence =
     p >= cfg.bandS ? "S" : p >= cfg.bandA ? "A" : p >= cfg.bandB ? "B" : "C";
-  if (c === "S" && calibration.tailShrink < TAIL_TRUST_FLOOR) c = "A";
+  // Either tail band running below the floor indicts the top of the book —
+  // an S quote lives in the raw ≥0.65 region, which the two bands share.
+  const tailTrust = Math.min(calibration.tailShrink, calibration.farTailShrink);
+  if (c === "S" && tailTrust < TAIL_TRUST_FLOOR) c = "A";
   // Data quality caps: incomplete or downgraded games can never be S/A.
   const hasDowngrade = g.flags.some((f) => f.severity === "downgrade");
   if (!g.complete || hasDowngrade) return "C";
@@ -474,6 +562,7 @@ export function decide(
     sim.pHomeWin,
     calibration.shrink,
     calibration.tailShrink,
+    calibration.farTailShrink,
   );
   const homeFavored = pHomeCal >= 0.5;
   const pWinner = homeFavored ? pHomeCal : 1 - pHomeCal;
@@ -489,6 +578,8 @@ export function decide(
   let coverProbability: number | null = null;
   let rawCoverProbability: number | null = null;
   let handicapEv: number | null = null;
+  /** Market-consensus probability of the PICKED side, when priced. */
+  let handicapMarketProb: number | null = null;
   /**
    * True when every part of the quoted line sits on 0 — a pick'em, which is
    * not a handicap at all: it is the moneyline with the stake returned on a
@@ -510,6 +601,7 @@ export function decide(
       quoted.probability,
       calibration.handicapShrink,
       calibration.handicapTailShrink,
+      calibration.handicapFarTailShrink,
     );
     // Back whichever side the model prefers. The push share is a property of
     // the line itself, so it is the same whichever side of it you take — but
@@ -525,6 +617,14 @@ export function decide(
       takeQuoted ? quoted.probability : 1 - quoted.probability,
     );
     handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
+    // The market probability is attached only to home-side `line` entries at
+    // the exact priced point (odds-source.ts), so flipping it to the picked
+    // side is a plain complement.
+    const marketQuoted =
+      handicap.side === "home" ? (handicap.marketHomeCover ?? null) : null;
+    if (marketQuoted !== null) {
+      handicapMarketProb = round3(takeQuoted ? marketQuoted : 1 - marketQuoted);
+    }
   }
 
   // Two different reasons to sit out, and they do NOT bind the same markets.
@@ -548,7 +648,11 @@ export function decide(
   // EV of +2.2%, +4.6% and +1.4%, all discarded by the winner gate alone.)
   //
   // At a PICK'EM it is applied, because there is then no separate bet to
-  // protect — see `handicapSuppressed`.
+  // protect — see `handicapSuppressed`. And a confidence-C game stakes no
+  // market at all (also `handicapSuppressed`): under a config whose
+  // passThreshold equals the C boundary, that C gate re-binds the real-line
+  // handicap to the winner gate after all — the spec's "C is informational
+  // only" outranks the decoupling.
   const dataPass = !g.complete || hasDowngrade;
   const pass = pWinner < cfg.passThreshold || dataPass;
 
@@ -565,8 +669,19 @@ export function decide(
    * day's exposure from 3 stakes to 10.) So: a pick'em is gated exactly like
    * the moneyline, and the market decoupling switches itself back on the
    * moment a real line is quoted.
+   *
+   * A confidence-C game stakes NOTHING, real line included. C is the spec's
+   * "informational only" band (model-plan §2) — near coin-flip or noisy data
+   * — and every C stake the live record ever held lost (0-3, −3.00 units).
+   * This deliberately narrows the market decoupling above: a real-line
+   * handicap survives the thin-winner-edge pass only when the game still
+   * rates at least B, i.e. when `passThreshold` sits above the C boundary.
+   * The cover probability and EV are still computed and shown —
+   * informational is the point — but the pick is withheld and no stake goes
+   * on the book (settlement stakes only games with a pick).
    */
-  const handicapSuppressed = dataPass || (handicapIsPickem && pass);
+  const handicapSuppressed =
+    dataPass || (handicapIsPickem && pass) || confidence === "C";
 
   // Distrust-your-own-enthusiasm guard: an EV far beyond what a real edge
   // over a real market looks like is more likely a modelling error than a
@@ -584,8 +699,19 @@ export function decide(
     !handicapSuppressed &&
     !handicapIsPickem &&
     handicapEv > EV_OUTLIER_THRESHOLD;
+  // The same guard, measured directly: when the market priced this exact
+  // line, the distance between the model's calibrated cover probability and
+  // the market's devigged one needs no EV proxy.
+  const marketDivergence =
+    handicapMarketProb !== null && coverProbability !== null
+      ? Math.abs(coverProbability - handicapMarketProb)
+      : null;
+  const marketOutlier =
+    marketDivergence !== null &&
+    !handicapSuppressed &&
+    marketDivergence >= MARKET_DISAGREEMENT_THRESHOLD;
   const confidenceCapped =
-    evOutlier && (confidence === "S" || confidence === "A")
+    (evOutlier || marketOutlier) && (confidence === "S" || confidence === "A")
       ? "B"
       : confidence;
 
@@ -613,13 +739,44 @@ export function decide(
       over,
       calibration.totalShrink,
       calibration.totalTailShrink,
+      calibration.totalFarTailShrink,
     );
     totalPick = pOver >= 0.5 ? "OVER" : "UNDER";
     totalProbability = round3(pOver >= 0.5 ? pOver : 1 - pOver);
     rawTotalProbability = round3(pOver >= 0.5 ? over : 1 - over);
   }
+  const totalMarketProb =
+    totalLine !== null && totalPick !== null && handicap?.marketOver != null
+      ? round3(
+          totalPick === "OVER"
+            ? handicap.marketOver
+            : 1 - handicap.marketOver,
+        )
+      : null;
 
   const reasons = buildReasons(g, runs, sim);
+  if (totalMarketProb !== null && totalProbability !== null) {
+    reasons.unshift(
+      `Market consensus on the total: ${(totalMarketProb * 100).toFixed(1)}% ` +
+        `for the ${totalPick} — model ${(totalProbability * 100).toFixed(1)}% ` +
+        `(${fmtPct(totalProbability - totalMarketProb)} vs market)`,
+    );
+  }
+  if (marketDivergence !== null && coverProbability !== null) {
+    reasons.unshift(
+      `Market consensus on the handicap: ${(handicapMarketProb! * 100).toFixed(1)}% ` +
+        `for this side — model ${(coverProbability * 100).toFixed(1)}% ` +
+        `(${fmtPct(coverProbability - handicapMarketProb!)} vs market)`,
+    );
+  }
+  if (marketOutlier) {
+    reasons.unshift(
+      `Market disagreement: the model sits ${fmtPct(marketDivergence!)} from ` +
+        `the devigged consensus at this exact line — disagreement this large ` +
+        `has historically been model error, not market error ` +
+        `(confidence capped at B)`,
+    );
+  }
   if (evOutlier) {
     reasons.unshift(
       `EV outlier: ${fmtPct(handicapEv!)} per unit is implausibly large — ` +
@@ -641,6 +798,18 @@ export function decide(
         : `Handicap EV ${fmtPct(handicapEv)} per unit ` +
             `(needs ${(breakEvenProbability() * 100).toFixed(1)}% to break even ` +
             `after the ${WIN_COMMISSION * 100}% cut)`,
+    );
+  }
+  if (
+    confidence === "C" &&
+    !dataPass &&
+    handicap &&
+    hasQuotedLine(handicap) &&
+    !handicapIsPickem
+  ) {
+    reasons.unshift(
+      "Confidence C is informational-only: the quoted handicap is priced " +
+        "above but not staked",
     );
   }
   if (pass) {
@@ -674,6 +843,11 @@ export function decide(
       coverProbability,
       rawCoverProbability,
       ev: handicapEv,
+      marketProbability: handicapMarketProb,
+      recommendedStake:
+        handicapSuppressed || handicapUnprofitable
+          ? null
+          : recommendedStake(handicapEv),
       noValue: !handicapSuppressed && handicapUnprofitable,
     },
     total: {
@@ -682,12 +856,14 @@ export function decide(
       pick: pass ? null : totalPick,
       probability: totalProbability,
       rawProbability: rawTotalProbability,
+      marketProbability: totalMarketProb,
     },
     expectedRuns: { home: runs.homeMu, away: runs.awayMu },
     reasons,
     flags: [
       ...g.flags.map((f) => `[${f.severity}] ${f.code}`),
       ...(evOutlier ? ["[warn] ev_outlier"] : []),
+      ...(marketOutlier ? ["[warn] market_disagreement"] : []),
     ],
   };
 }

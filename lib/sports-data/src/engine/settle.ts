@@ -9,7 +9,7 @@
  *     if underconfident, expand them. Bounded, small steps (v1 self-learning).
  */
 
-import { resolveHandicap, TAIL_START } from "./decision";
+import { FAR_TAIL_START, resolveHandicap, TAIL_START } from "./decision";
 import type {
   CalibrationState,
   Confidence,
@@ -72,6 +72,15 @@ export interface SettledGame {
   winnerTail?: boolean | null;
   handicapTail?: boolean | null;
   totalTail?: boolean | null;
+  /**
+   * Whether each scored bet belonged to the FAR-tail band (raw probability ≥
+   * FAR_TAIL_START), stamped the same way. Rows written before the far-tail
+   * split lack these; learning then splits the tail by the stated-space
+   * boundary heuristic.
+   */
+  winnerFarTail?: boolean | null;
+  handicapFarTail?: boolean | null;
+  totalFarTail?: boolean | null;
   marginError: number | null; // |predicted margin − actual margin|
   totalError: number | null; // |predicted total − actual total|
 }
@@ -118,8 +127,9 @@ const TAIL_SHRINK_MIN = 0.35;
 interface MarketSample {
   stated: number;
   correct: boolean;
-  /** Settle-time band stamp; null/undefined for pre-stamp history. */
+  /** Settle-time band stamps; null/undefined for pre-stamp history. */
   tail?: boolean | null;
+  farTail?: boolean | null;
 }
 
 /**
@@ -166,14 +176,43 @@ function learnBand(
 function learnMarket(
   core: number,
   tail: number,
+  farTail: number,
   samples: MarketSample[],
-): { core: number; tail: number } {
+): { core: number; tail: number; farTail: number } {
   const boundary = 0.5 + (TAIL_START - 0.5) * core;
   const isTail = (s: MarketSample) =>
     s.tail == null ? s.stated >= boundary : s.tail;
+  const tailSamples = samples.filter(isTail);
+  // Only a settle-time FAR stamp can split the tail. A legacy row (no far
+  // stamp) was quoted under the single-tail regime and its stated value
+  // cannot recover which side of FAR_TAIL_START its raw probability sat on —
+  // the stated space compresses as shrinks fall, so a fixed stated boundary
+  // files the later, most-compressed (and worst) far-tail bets into the near
+  // band. Legacy tail bets therefore teach BOTH tail bands, which reproduces
+  // the exact single-tail state they were learned into before the split;
+  // stamped rows, whose band is frozen at settle time, learn their own band
+  // only.
+  const nearOrLegacy = tailSamples.filter((s) => s.farTail !== true);
+  const farOrLegacy = tailSamples.filter((s) => s.farTail !== false);
+  const learnedTail = learnBand(
+    tail,
+    nearOrLegacy,
+    TAIL_LEARN_RATE,
+    TAIL_SHRINK_MIN,
+  );
+  const learnedFar = learnBand(
+    farTail,
+    farOrLegacy,
+    TAIL_LEARN_RATE,
+    TAIL_SHRINK_MIN,
+  );
   return {
     core: learnBand(core, samples.filter((s) => !isTail(s)), LEARN_RATE, SHRINK_MIN),
-    tail: learnBand(tail, samples.filter(isTail), TAIL_LEARN_RATE, TAIL_SHRINK_MIN),
+    tail: learnedTail,
+    // Monotone trust: confidence must not RISE with distance from 50%. The
+    // record has never supported quoting the far tail more boldly than the
+    // near tail, so the far band is capped at the near band's level.
+    farTail: Math.min(learnedFar, learnedTail),
   };
 }
 
@@ -194,6 +233,7 @@ export function updateCalibration(
         stated: s.statedProbability,
         correct: s.winnerCorrect,
         tail: s.winnerTail,
+        farTail: s.winnerFarTail,
       });
       brierSum += s.brier ?? 0;
     }
@@ -202,6 +242,7 @@ export function updateCalibration(
         stated: s.handicapProbability,
         correct: s.handicapCorrect,
         tail: s.handicapTail,
+        farTail: s.handicapFarTail,
       });
     }
     if (s.totalCorrect !== null && s.totalProbability !== null) {
@@ -209,6 +250,7 @@ export function updateCalibration(
         stated: s.totalProbability,
         correct: s.totalCorrect,
         tail: s.totalTail,
+        farTail: s.totalFarTail,
       });
     }
   }
@@ -217,21 +259,35 @@ export function updateCalibration(
     return state;
   }
 
-  const w = learnMarket(state.shrink, state.tailShrink, winner);
+  const w = learnMarket(
+    state.shrink,
+    state.tailShrink,
+    state.farTailShrink,
+    winner,
+  );
   const h = learnMarket(
     state.handicapShrink,
     state.handicapTailShrink,
+    state.handicapFarTailShrink,
     handicap,
   );
-  const t = learnMarket(state.totalShrink, state.totalTailShrink, total);
+  const t = learnMarket(
+    state.totalShrink,
+    state.totalTailShrink,
+    state.totalFarTailShrink,
+    total,
+  );
 
   return {
     shrink: w.core,
     tailShrink: w.tail,
+    farTailShrink: w.farTail,
     handicapShrink: h.core,
     handicapTailShrink: h.tail,
+    handicapFarTailShrink: h.farTail,
     totalShrink: t.core,
     totalTailShrink: t.tail,
+    totalFarTailShrink: t.farTail,
     gamesSettled: state.gamesSettled + winner.length,
     brierSum: Math.round((state.brierSum + brierSum) * 10000) / 10000,
     updatedAt: now.toISOString(),
@@ -393,6 +449,20 @@ export function settle(
           : (p.total.rawProbability ?? null) === null
             ? null
             : p.total.rawProbability! >= TAIL_START,
+      winnerFarTail:
+        p.pass || tied ? null : p.rawWinProbability >= FAR_TAIL_START,
+      handicapFarTail:
+        handicapCorrect === null
+          ? null
+          : (p.handicap.rawCoverProbability ?? null) === null
+            ? null
+            : p.handicap.rawCoverProbability! >= FAR_TAIL_START,
+      totalFarTail:
+        totalCorrect === null
+          ? null
+          : (p.total.rawProbability ?? null) === null
+            ? null
+            : p.total.rawProbability! >= FAR_TAIL_START,
       marginError: p.pass
         ? null
         : Math.round(Math.abs(predictedMargin - actualMargin) * 100) / 100,

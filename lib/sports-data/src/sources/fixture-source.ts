@@ -12,6 +12,7 @@ import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
 import type { CoreDataSource, TeamRecentForm } from "../step2";
 import type { GameWeather } from "./weather";
 import type { IlPlayer } from "./injuries-builder";
+import type { GameLineups } from "../features/lineup";
 
 export interface FixtureBundle {
   date: string;
@@ -35,6 +36,10 @@ export interface FixtureBundle {
   weather?: Record<string, GameWeather>;
   /** Keyed by stringified teamId (optional): players on the IL. */
   injuries?: Record<string, IlPlayer[]>;
+  /** Keyed by stringified gamePk (optional): posted batting orders. */
+  lineups?: Record<string, GameLineups>;
+  /** Keyed by stringified playerId (optional): lineup bats' season lines. */
+  lineupBatting?: Record<string, RawBattingLine>;
 }
 
 export class FixtureCoreDataSource implements CoreDataSource {
@@ -78,5 +83,13 @@ export class FixtureCoreDataSource implements CoreDataSource {
 
   async getInjuries(teamId: number): Promise<IlPlayer[] | undefined> {
     return this.bundle.injuries?.[String(teamId)];
+  }
+
+  async getLineup(gamePk: number): Promise<GameLineups | undefined> {
+    return this.bundle.lineups?.[String(gamePk)];
+  }
+
+  async getPlayerBattingLine(playerId: number): Promise<RawBattingLine | null> {
+    return this.bundle.lineupBatting?.[String(playerId)] ?? null;
   }
 }

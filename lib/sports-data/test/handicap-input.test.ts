@@ -104,6 +104,7 @@ function coreGame(): GameCoreData {
     batting: null,
     bullpen: null,
     ilPlayers: null,
+    lineup: null,
     form: null,
   };
   return {

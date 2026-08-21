@@ -12,10 +12,16 @@
  *   - RETRACTABLE roofs: no adjustment — whether the roof is open is not in
  *     any feed we pull, and guessing it would fabricate an input. The
  *     temperature is still recorded for the audit trail.
- *   - High wind at an outdoor park raises a warn flag only. Without park
- *     orientation data, wind direction cannot be translated into a run
- *     effect honestly; a flag says "totals are less certain today" without
- *     inventing a number.
+ *   - WIND, when the park's orientation is known: the wind vector is
+ *     projected onto the home-plate→center-field bearing and the out-blowing
+ *     component becomes a bounded run multiplier (out = more runs, in =
+ *     fewer). The bearing comes from the MLB Stats API's own venue record
+ *     (`hydrate=location` → `azimuthAngle`) — the same feed the rest of the
+ *     pipeline trusts — never from a hand-typed table. No azimuth for a
+ *     venue → no wind adjustment there, exactly as before.
+ *   - High wind at an outdoor park still raises a warn flag: even a
+ *     correctly signed mean adjustment says nothing about the extra VARIANCE
+ *     a 30 km/h wind adds to a total.
  *
  * Failure policy: fail-soft per venue. A fetch error leaves that game's
  * weather null (an `[info] weather_missing` flag downstream), never a guess.
@@ -30,6 +36,17 @@ export interface GameWeather {
   temperatureC: number | null;
   /** Wind speed (km/h, 10m) at the hour nearest first pitch. */
   windSpeedKmh: number | null;
+  /**
+   * Meteorological wind direction (degrees the wind blows FROM) at the hour
+   * nearest first pitch. Null on older slates and failed fetches.
+   */
+  windDirectionDeg?: number | null;
+  /**
+   * Compass bearing from home plate toward center field, from the MLB Stats
+   * API venue record (`location.azimuthAngle`). Null when the feed does not
+   * carry it — the wind then stays a warn flag, never a number.
+   */
+  cfBearingDeg?: number | null;
   roof: RoofType;
   fetchedAt?: string;
 }
@@ -94,8 +111,54 @@ export const TEMP_RUNS_PER_DEG_C = 0.007;
 /** Hard clamp on the multiplier — weather nudges, never dominates. */
 export const TEMP_MULT_MIN = 0.94;
 export const TEMP_MULT_MAX = 1.06;
-/** Outdoor wind at/above this speed flags the game (no numeric adjustment). */
+/** Outdoor wind at/above this speed flags the game (extra totals variance). */
 export const HIGH_WIND_KMH = 30;
+
+/**
+ * Run-environment change per km/h of the wind's OUT-blowing component (the
+ * projection of the wind vector onto the home→center-field bearing).
+ * Published carry/scoring studies put a 10 mph (16 km/h) straight-out wind
+ * around +3% runs at an average park; 0.2%/km/h reproduces that and stays
+ * deliberately conservative.
+ */
+export const WIND_RUNS_PER_KMH_OUT = 0.002;
+/** Hard clamp on the wind multiplier — same philosophy as temperature. */
+export const WIND_MULT_MIN = 0.95;
+export const WIND_MULT_MAX = 1.05;
+
+/**
+ * MLB rule 1.04 recommends east-northeast, and no big-league park points
+ * anywhere between SSE (150°) and NW (315°) — sun in the batter's eyes.
+ * An azimuth inside that band therefore signals a units/semantics problem
+ * in the feed, and the honest response is to refuse the adjustment, not to
+ * apply a number that cannot describe a real MLB park.
+ */
+export function isPlausibleCfBearing(deg: number): boolean {
+  return Number.isFinite(deg) && deg >= 0 && deg <= 360 && !(deg > 150 && deg < 315);
+}
+
+/**
+ * Wind multiplier on expected runs. 1.0 whenever an honest number is
+ * impossible: indoors/unknown roof state, no wind reading, no direction, or
+ * no park bearing. `windDirectionDeg` is where the wind comes FROM, so wind
+ * FROM the center-field side blows IN (negative out-component).
+ */
+export function windRunMultiplier(w: GameWeather | null): number {
+  if (
+    !w ||
+    w.roof !== "outdoor" ||
+    w.windSpeedKmh === null ||
+    w.windDirectionDeg == null ||
+    w.cfBearingDeg == null ||
+    !isPlausibleCfBearing(w.cfBearingDeg)
+  ) {
+    return 1;
+  }
+  const rad = ((w.windDirectionDeg - w.cfBearingDeg) * Math.PI) / 180;
+  const outComponentKmh = -Math.cos(rad) * w.windSpeedKmh;
+  const raw = 1 + outComponentKmh * WIND_RUNS_PER_KMH_OUT;
+  return Math.min(WIND_MULT_MAX, Math.max(WIND_MULT_MIN, raw));
+}
 
 /**
  * Temperature multiplier on expected runs. 1.0 whenever an honest number is
@@ -113,6 +176,7 @@ export interface OpenMeteoHourly {
     time: string[];
     temperature_2m: Array<number | null>;
     wind_speed_10m: Array<number | null>;
+    wind_direction_10m?: Array<number | null>;
   };
 }
 
@@ -140,8 +204,64 @@ export function weatherAtFirstPitch(
   return {
     temperatureC: best >= 0 ? (payload.hourly.temperature_2m[best] ?? null) : null,
     windSpeedKmh: best >= 0 ? (payload.hourly.wind_speed_10m[best] ?? null) : null,
+    windDirectionDeg:
+      best >= 0 ? (payload.hourly.wind_direction_10m?.[best] ?? null) : null,
     roof,
   };
+}
+
+/** The subset of the MLB venues payload this module reads. */
+interface MlbVenuesPayload {
+  venues?: Array<{
+    id?: number;
+    location?: { azimuthAngle?: number };
+  }>;
+}
+
+/**
+ * Home→center-field azimuths for a set of venues, from the MLB Stats API.
+ * One call for the whole slate; fail-soft to an empty map (every game then
+ * keeps the direction-blind behavior). Implausible azimuths (see
+ * isPlausibleCfBearing) are dropped with a warning rather than applied.
+ */
+export async function fetchVenueAzimuths(opts: {
+  venueIds: number[];
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}): Promise<{ byVenue: Map<number, number>; warnings: string[] }> {
+  const byVenue = new Map<number, number>();
+  const warnings: string[] = [];
+  if (opts.venueIds.length === 0) return { byVenue, warnings };
+  const doFetch = opts.fetchImpl ?? fetch;
+  const url =
+    "https://statsapi.mlb.com/api/v1/venues" +
+    `?venueIds=${opts.venueIds.join(",")}&hydrate=location`;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 10_000);
+  try {
+    const res = await doFetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = (await res.json()) as MlbVenuesPayload;
+    for (const v of payload.venues ?? []) {
+      const az = v.location?.azimuthAngle;
+      if (typeof v.id !== "number" || typeof az !== "number") continue;
+      if (!isPlausibleCfBearing(az)) {
+        warnings.push(
+          `venue ${v.id}: azimuthAngle ${az} is not a plausible MLB ` +
+            `orientation — wind stays direction-blind there`,
+        );
+        continue;
+      }
+      byVenue.set(v.id, az);
+    }
+  } catch (err) {
+    warnings.push(
+      `venue azimuths fetch failed (${err instanceof Error ? err.message : String(err)}) — wind stays direction-blind`,
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+  return { byVenue, warnings };
 }
 
 export interface WeatherBuildReport {
@@ -165,6 +285,23 @@ export async function buildWeather(opts: {
   const weather: Record<string, GameWeather> = {};
   const byVenue = new Map<number, OpenMeteoHourly | null>();
 
+  // Park orientations for the slate's outdoor venues, so the wind direction
+  // can become a signed run effect (see windRunMultiplier). Fail-soft.
+  const outdoorVenueIds = [
+    ...new Set(
+      opts.games
+        .map((g) => getVenueSite(g.venue.id))
+        .filter((s): s is VenueSite => s !== undefined && s.roof === "outdoor")
+        .map((s) => s.venueId),
+    ),
+  ];
+  const azimuths = await fetchVenueAzimuths({
+    venueIds: outdoorVenueIds,
+    fetchImpl: opts.fetchImpl,
+    timeoutMs: opts.timeoutMs,
+  });
+  warnings.push(...azimuths.warnings);
+
   for (const g of opts.games) {
     const site = getVenueSite(g.venue.id);
     if (!site) {
@@ -186,7 +323,7 @@ export async function buildWeather(opts: {
       const url =
         "https://api.open-meteo.com/v1/forecast" +
         `?latitude=${site.lat}&longitude=${site.lon}` +
-        "&hourly=temperature_2m,wind_speed_10m" +
+        "&hourly=temperature_2m,wind_speed_10m,wind_direction_10m" +
         `&start_date=${opts.date}&end_date=${opts.date}&timezone=UTC`;
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 10_000);
@@ -207,6 +344,7 @@ export async function buildWeather(opts: {
     if (!payload || !g.gameDate) continue;
     weather[String(g.gamePk)] = {
       ...weatherAtFirstPitch(payload, g.gameDate, site.roof),
+      cfBearingDeg: azimuths.byVenue.get(site.venueId) ?? null,
       fetchedAt: new Date().toISOString(),
     };
   }

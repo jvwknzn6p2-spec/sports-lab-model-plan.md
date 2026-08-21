@@ -22,8 +22,10 @@ import {
   normalizeSchedule,
   parseBattingLine,
   parsePitchingLine,
+  parseScheduleLineups,
   type NormalizedGame,
 } from "../mlb/parse";
+import type { GameLineups } from "../features/lineup";
 import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
 import type { BullpenWorkload } from "../features";
 import type { FixtureBundle } from "./fixture-source";
@@ -49,6 +51,10 @@ export interface SlateBuildReport {
   startersExpected: number;
   teamsFetched: number;
   teamsExpected: number;
+  /** Games with at least one full nine posted at fetch time. */
+  lineupsPosted: number;
+  /** Posted-lineup bats whose season line was fetched. */
+  lineupBatsFetched: number;
   warnings: string[];
 }
 
@@ -76,9 +82,11 @@ export async function buildSlate(
   const warnings: string[] = [];
 
   // Schedule is the backbone — let a failure here throw loudly.
-  const games: NormalizedGame[] = normalizeSchedule(
-    await client.schedule(date),
-  );
+  const scheduleRes = await client.schedule(date);
+  const games: NormalizedGame[] = normalizeSchedule(scheduleRes);
+  // Posted batting orders ride the same schedule response (hydrate=lineups).
+  const lineups: Record<string, GameLineups> =
+    parseScheduleLineups(scheduleRes);
 
   const starterIds = new Set<number>();
   const teamIds = new Set<number>();
@@ -123,6 +131,36 @@ export async function buildSlate(
     if (pen) bullpens[String(id)] = pen;
   }
 
+  // Season hitting lines for every posted-lineup bat, fetched in bulk (the
+  // /people endpoint takes ~100 ids per call). Fail-soft: a failed batch
+  // leaves its players without lines, and the feature layer fills each such
+  // bat with league-average wOBA at zero sample, flagged.
+  const lineupBatting: Record<string, RawBattingLine> = {};
+  const lineupPlayerIds = [
+    ...new Set(
+      Object.values(lineups).flatMap((l) =>
+        [...l.home, ...l.away].map((p) => p.playerId),
+      ),
+    ),
+  ];
+  for (let i = 0; i < lineupPlayerIds.length; i += 100) {
+    const chunk = lineupPlayerIds.slice(i, i + 100);
+    await tryFetch(`lineup bats ${i / 100 + 1}`, warnings, async () => {
+      const res = await client.peopleHitting(chunk, season);
+      for (const person of res.people ?? []) {
+        if (typeof person.id !== "number") continue;
+        const stat = person.stats?.[0]?.splits?.[0]?.stat;
+        if (stat && typeof stat === "object") {
+          lineupBatting[String(person.id)] = parseBattingLine(
+            stat as Record<string, unknown>,
+            `player ${person.id} hitting`,
+          );
+        }
+      }
+      return res.people?.length ? res : null;
+    });
+  }
+
   // Park factors: built-in table per venue, with caller overrides winning.
   // Unknown venues stay absent (predict treats them as neutral 100) — warned,
   // never silently guessed.
@@ -149,6 +187,8 @@ export async function buildSlate(
     bullpens,
     workloads: opts.workloads ?? {},
     parkFactors,
+    lineups,
+    lineupBatting,
   };
 
   const teamsFetched = Object.keys(batting).filter(
@@ -162,6 +202,10 @@ export async function buildSlate(
     startersExpected: starterIds.size,
     teamsFetched,
     teamsExpected: teamIds.size,
+    lineupsPosted: Object.values(lineups).filter(
+      (l) => l.home.length === 9 || l.away.length === 9,
+    ).length,
+    lineupBatsFetched: Object.keys(lineupBatting).length,
     warnings,
   };
 }

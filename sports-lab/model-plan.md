@@ -219,8 +219,19 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
 
 - **Steps 1–5, 7, 8, 10, 11 — ✅ running.** Schedule + stats fetch
   (`fetch-slate`), park factors, recent form, bullpen workloads; run model +
-  Monte Carlo (`src/engine/`); confidence S/A/B/C with learned banded
-  calibration; settlement + self-learning (`settle`); cumulative reporting
+  Monte Carlo (`src/engine/`); confidence S/A/B/C with learned THREE-band
+  calibration (core / tail raw ≥0.65 / far tail raw ≥0.70 — the far tail
+  split off 2026-08-21 after the stated 65–70% band hit 37.5% over 24 bets
+  while lower bands tracked within ±2.5pt; legacy history rows teach both
+  tail bands until stamped rows accumulate, and the far band is capped at
+  the near band's level so trust can never rise with distance from 50%.
+  Validated by walk-forward replay over 2025-07-01→08-15 [r4.5/e0, same
+  seeds as the two-band baseline]: identical headline record 154-117 /
+  +21.60u / Brier 0.243, band calibration stays within noise, and the
+  near tail — no longer dragged down by far-tail bets — quotes the top of
+  the book with more resolution: S went from 1 pick to 16 at 68.8%
+  [+4.90u], A 25 at 72.0%);
+  settlement + self-learning (`settle`); cumulative reporting
   and a weekly standing audit; GitHub Actions crons run the day (slate
   06:07 UTC; predict as a TWO-STAGE lock — 12:10 UTC safety lock plus a
   12:45 UTC refresh re-lock against the 22:59 JST deadline, the market
@@ -231,18 +242,43 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   and totals from The Odds API consensus when the `ODDS_API_KEY` secret is
   set (`src/sources/odds-source.ts`). An unentered line is stored as
   `notation: null` and quotes NO handicap market — it is never conflated
-  with a deliberate `"0"` pick'em quote. No real-line bet has settled yet;
-  the A-2 audit section watches for the first.
+  with a deliberate `"0"` pick'em quote. Since 2026-08-21 the fill also
+  devigs both sides' PRICES at the exact median point into a consensus
+  probability (`marketHomeCover` / `marketOver` on the entry): decide()
+  reports the model-vs-market gap per pick, and a gap ≥12pt flags
+  `[warn] market_disagreement` and caps confidence at B — the EV-outlier
+  lesson measured directly. EV itself still prices the fixed-0.9 book the
+  pipeline actually bets; the market probability is a benchmark, not a
+  payout. No real-line bet has settled yet; the A-2 audit section watches
+  for the first.
 - **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
   per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
   temperature multiplier adjusts the run environment at open-air parks,
-  domes and unknown-state retractable roofs are never adjusted, and high
-  wind raises a warn flag only (no orientation data → no invented number).
+  domes and unknown-state retractable roofs are never adjusted. Wind is
+  direction-aware since 2026-08-21: the park's home→center-field bearing
+  comes from the MLB Stats API's own venue record (`location.azimuthAngle`,
+  sanity-checked against the SSE–NW band no MLB park points toward), the
+  wind vector is projected onto it, and the out/in-blowing component becomes
+  a bounded multiplier (±5% max; ~+3% at 16 km/h straight out). No azimuth,
+  no direction, or an implausible value → no adjustment, exactly as before;
+  high wind keeps its warn flag regardless (variance, not just mean).
   IL detection is in (`src/sources/injuries-builder.ts`): each slate team's
   40-man roster is scanned for D-coded (IL) players, surfaced as an [info]
   flag naming them and fed to the review layer — informational only, since
   who replaces an injured player is not in any feed and an invented penalty
-  would fabricate an input. Per-game lineups remain ❌.
+  would fabricate an input. Per-game lineups — ✅ since 2026-08-21:
+  `fetch-slate` hydrates posted batting orders from the schedule
+  (`hydrate=lineups`), bulk-fetches each posted bat's season line (one
+  `/people` call per ~100 ids), and the assembler re-bases that side's
+  offense on the slot-share-weighted, per-player-regressed wOBA of the
+  actual nine (`src/features/lineup.ts`, `[info] lineup_applied`). Honesty
+  rules: no post (typical at the morning fetch — clubs publish a few hours
+  before first pitch, so the pre-deadline refresh is where most lineups
+  land) or a partial nine → the team-season baseline stays, flagged
+  `lineup_not_posted`; a posted bat without a season line is filled at
+  league-average wOBA with zero sample and flagged, never guessed. A
+  quarter-Kelly stake suggestion (display-only; settlement still scores
+  flat 1-unit stakes) now rides every handicap pick (`src/engine/ev.ts`).
 - **Step 9 (AI multi-agent review) — ✅ implemented** as
   `handiedge review` (`src/engine/ai-review.ts`): a Data Auditor, Matchup
   Analyst and Risk Reviewer (Claude, via the Anthropic SDK) each read the
@@ -256,9 +292,18 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
 - **Frontend/API surface — ◑ started.** Read-only endpoints
   (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
   the committed locks and cumulative record from `artifacts/api-server`;
-  a first slate-viewer screen lives at
-  `artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`
-  (vite proxies `/api` to the Express server).
+  the slate viewer
+  (`artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`) and
+  a cumulative-record screen (`HandiEdgeReport.tsx`: P&L significance,
+  calibration by band, confidence ladder, learned shrinks, per-day history)
+  render over it (vite proxies `/api` to the Express server).
+- **Confidence C stakes nothing (2026-08-21).** Section 2 defines C as
+  "informational only"; the decision engine now enforces it. A C-rated game
+  still shows its handicap price and EV, but the pick is withheld so
+  settlement never stakes it — real line included. Every C stake the live
+  record ever held lost (0-3, −3.00 units, the 2026-08-18 pick'em leak).
+  This narrows the market decoupling: a real-line handicap survives the
+  thin-winner-edge PASS only while the game still rates at least B.
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

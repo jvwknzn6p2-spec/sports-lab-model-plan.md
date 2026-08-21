@@ -410,12 +410,15 @@ test("updateCalibration is bounded and damped", () => {
     one,
     new Date("2024-07-26T00:00:00Z"),
   );
-  // A stated 99% is a TAIL bet; one catastrophic game moves the tail only
-  // slightly (damping 1/21) and leaves the core band untouched.
+  // A stated 99% is a TAIL bet. This row carries no far-tail stamp, so it is
+  // legacy to the far-tail split and teaches both tail bands identically; one
+  // catastrophic game moves them only slightly (damping 1/21) and leaves the
+  // core band untouched.
   assert.ok(
     s.tailShrink > 0.65 && s.tailShrink < DEFAULT_CALIBRATION.tailShrink,
     `tailShrink=${s.tailShrink}`,
   );
+  assert.equal(s.farTailShrink, s.tailShrink);
   assert.equal(s.shrink, DEFAULT_CALIBRATION.shrink);
 });
 

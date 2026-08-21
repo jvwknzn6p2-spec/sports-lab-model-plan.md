@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   breakEvenProbability,
   expectedValueFromProbability,
+  recommendedStake,
 } from "../src/engine/ev";
 import {
   expectedProfit,
@@ -171,6 +172,7 @@ function coreGame(): GameCoreData {
     batting: null,
     bullpen: null,
     ilPlayers: null,
+    lineup: null,
     form: null,
   };
   return {
@@ -274,4 +276,16 @@ test("minEv can demand a margin above bare break-even", () => {
   });
   assert.ok(lenient.handicap.pick !== null);
   assert.equal(strict.handicap.pick, null, "a high bar withdraws the same bet");
+});
+
+test("recommended stake is quarter-Kelly on the fixed payout, capped and floored", () => {
+  // f* = EV / 0.9, quartered: +9% EV → 0.025 units per 1-unit quantum.
+  assert.equal(recommendedStake(0.09), 0.03);
+  assert.equal(recommendedStake(0.36), 0.1);
+  // Negative or break-even edge stakes nothing; no bet sizes nothing.
+  assert.equal(recommendedStake(0), 0);
+  assert.equal(recommendedStake(-0.05), 0);
+  assert.equal(recommendedStake(null), null);
+  // The cap holds however absurd the stated edge.
+  assert.equal(recommendedStake(9), 1);
 });

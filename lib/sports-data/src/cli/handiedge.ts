@@ -367,7 +367,9 @@ async function cmdFetchSlate(args: {
   }
   console.log(
     `  Starters ${report.startersFetched}/${report.startersExpected}, ` +
-      `teams ${report.teamsFetched}/${report.teamsExpected} (batting+bullpen).`,
+      `teams ${report.teamsFetched}/${report.teamsExpected} (batting+bullpen), ` +
+      `lineups posted ${report.lineupsPosted}/${report.games} ` +
+      `(${report.lineupBatsFetched} bats fetched).`,
   );
   if (report.warnings.length) {
     console.log("  Warnings:");
@@ -767,7 +769,8 @@ async function runSettle(payload: {
     console.log(`  Mean total err:  ${report.meanTotalError} runs`);
   console.log(
     `  Self-learning:   shrink ${report.calibrationBefore.shrink} → ${report.calibrationAfter.shrink}, ` +
-      `tail ${report.calibrationBefore.tailShrink} → ${report.calibrationAfter.tailShrink} ` +
+      `tail ${report.calibrationBefore.tailShrink} → ${report.calibrationAfter.tailShrink}, ` +
+      `far tail ${report.calibrationBefore.farTailShrink} → ${report.calibrationAfter.farTailShrink} ` +
       `(${report.calibrationAfter.gamesSettled} games settled lifetime)`,
   );
   console.log(`  History appended → ${HISTORY_PATH}`);
@@ -946,9 +949,9 @@ async function cmdReport(): Promise<void> {
     }
   }
   console.log(
-    `  Learned shrink (core/tail): moneyline ${calibration.shrink}/${calibration.tailShrink}, ` +
-      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}, ` +
-      `total ${calibration.totalShrink}/${calibration.totalTailShrink} ` +
+    `  Learned shrink (core/tail/far): moneyline ${calibration.shrink}/${calibration.tailShrink}/${calibration.farTailShrink}, ` +
+      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}/${calibration.handicapFarTailShrink}, ` +
+      `total ${calibration.totalShrink}/${calibration.totalTailShrink}/${calibration.totalFarTailShrink} ` +
       `(${calibration.gamesSettled} games settled lifetime)`,
   );
   if (s.gamesSettled < 30) {
@@ -1218,8 +1221,8 @@ async function cmdBacktest(args: {
       `record. All-zero handicap lines (no historical prices exist — none ` +
       `were invented); bullpen workloads not reconstructed (fatigue ` +
       `penalty absent). Final calibration: moneyline ` +
-      `${outcome.calibration.shrink}/${outcome.calibration.tailShrink}, ` +
-      `handicap ${outcome.calibration.handicapShrink}/${outcome.calibration.handicapTailShrink} (core/tail)._`,
+      `${outcome.calibration.shrink}/${outcome.calibration.tailShrink}/${outcome.calibration.farTailShrink}, ` +
+      `handicap ${outcome.calibration.handicapShrink}/${outcome.calibration.handicapTailShrink}/${outcome.calibration.handicapFarTailShrink} (core/tail/far)._`,
   );
   md.push("");
   if (dist) {

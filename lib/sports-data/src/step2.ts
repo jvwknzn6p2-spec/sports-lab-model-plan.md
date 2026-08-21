@@ -14,12 +14,17 @@
  */
 
 import {
+  applyLineupToTeamBatting,
   buildBullpenFeatures,
+  buildLineupBattingFeatures,
   buildStartingPitcherFeatures,
   buildTeamBattingFeatures,
   type BullpenFeatures,
   type BullpenWorkload,
   type DataQualityFlag,
+  type GameLineups,
+  type LineupBattingFeatures,
+  type LineupSlot,
   type StartingPitcherFeatures,
   type TeamBattingFeatures,
 } from "./features";
@@ -53,6 +58,13 @@ export interface CoreDataSource {
   getWeather?(gamePk: number): Promise<GameWeather | undefined>;
   /** Optional IL list per team; undefined when untracked. */
   getInjuries?(teamId: number): Promise<IlPlayer[] | undefined>;
+  /** Optional posted batting orders; undefined when not (yet) posted. */
+  getLineup?(gamePk: number): Promise<GameLineups | undefined>;
+  /** Optional season hitting line for one posted-lineup bat. */
+  getPlayerBattingLine?(
+    playerId: number,
+    season: number,
+  ): Promise<RawBattingLine | null>;
 }
 
 /** A team's scoring over its most recent games (Final games only). */
@@ -76,6 +88,12 @@ export interface TeamCoreData {
    * them is unknown, so no numeric adjustment is ever derived from this.
    */
   ilPlayers: IlPlayer[] | null;
+  /**
+   * The posted nine's offense, when the lineup is published and its bats'
+   * season lines are on hand; null otherwise. When present, `batting` above
+   * has already been re-based onto it (see applyLineupToTeamBatting).
+   */
+  lineup: LineupBattingFeatures | null;
 }
 
 export interface GameCoreData {
@@ -123,9 +141,11 @@ export async function assembleGameCoreData(
     weather.windSpeedKmh !== null &&
     weather.windSpeedKmh >= HIGH_WIND_KMH
   ) {
-    // Direction-blind by design: without park orientation data a wind speed
-    // cannot honestly become a run adjustment, but it can and should mark
-    // the total as less certain than the simulator's spread claims.
+    // The MEAN effect of a known wind is handled in the run model (see
+    // windRunMultiplier) when the park's orientation is available; this flag
+    // stays regardless, because a 30 km/h wind also widens the VARIANCE of a
+    // total beyond what the simulator's spread claims — an adjusted mean does
+    // not make the day's total a normal one.
     flags.push({
       code: "weather_high_wind",
       severity: "warn",
@@ -133,13 +153,21 @@ export async function assembleGameCoreData(
     });
   }
 
+  // Posted batting orders for this game, when the source tracks them.
+  const postedLineups = source.getLineup
+    ? ((await source.getLineup(game.gamePk)) ?? null)
+    : null;
+
   const buildSide = async (
     side: NormalizedGame["home"],
     label: "home" | "away",
   ): Promise<TeamCoreData> => {
+    const postedNine: LineupSlot[] =
+      postedLineups?.[label]?.length === 9 ? postedLineups[label] : [];
     let starter: StartingPitcherFeatures | null = null;
     let batting: TeamBattingFeatures | null = null;
     let bullpen: BullpenFeatures | null = null;
+    let lineup: LineupBattingFeatures | null = null;
 
     // Starter.
     if (side.probablePitcherId === null) {
@@ -185,6 +213,44 @@ export async function assembleGameCoreData(
           line,
         });
         promoteFlags(batting.flags, `${label}_batting`, flags);
+      }
+
+      // Posted lineup: once the actual nine is published, re-base the
+      // offense on the players who will bat tonight (lineup.ts). No post —
+      // or no per-player stats source — leaves the season baseline exactly
+      // as it was, with an info flag when a post could have existed.
+      if (
+        batting &&
+        postedNine.length === 9 &&
+        source.getPlayerBattingLine
+      ) {
+        const players = [];
+        for (const slot of postedNine) {
+          players.push({
+            playerId: slot.playerId,
+            name: slot.name,
+            line: await source.getPlayerBattingLine(slot.playerId, season),
+          });
+        }
+        lineup = buildLineupBattingFeatures({ season, players });
+        if (lineup) {
+          batting = applyLineupToTeamBatting(batting, lineup, season);
+          promoteFlags(
+            batting.flags.filter(
+              (f) =>
+                f.code === "lineup_applied" ||
+                f.code === "lineup_bats_missing_stats",
+            ),
+            `${label}`,
+            flags,
+          );
+        }
+      } else if (batting && source.getLineup && postedNine.length !== 9) {
+        flags.push({
+          code: `${label}_lineup_not_posted`,
+          severity: "info",
+          message: `${label} lineup not posted yet — team-season offense used.`,
+        });
       }
 
       // Bullpen.
@@ -240,6 +306,7 @@ export async function assembleGameCoreData(
       bullpen,
       form,
       ilPlayers,
+      lineup,
     };
   };
 

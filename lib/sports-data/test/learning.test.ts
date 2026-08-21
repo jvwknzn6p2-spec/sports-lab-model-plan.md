@@ -121,17 +121,25 @@ test("a settle-time band stamp overrides the boundary fallback", () => {
   assert.ok(s.tailShrink < DEFAULT_CALIBRATION.tailShrink);
 });
 
-test("core and tail bands learn from their own bets only", () => {
-  // Core bets ran ahead of their quotes (underconfident) while tail bets
-  // collapsed — the EXACT pattern of the 2026-08 settled record, which a
-  // single shrink cannot express: the core must rise while the tail falls.
+test("core, tail and far-tail bands learn from their own bets only", () => {
+  // Core bets ran ahead of their quotes (underconfident), near-tail bets ran
+  // a touch cold, and far-tail bets collapsed — the pattern of the 2026-08
+  // settled record, which a single shrink cannot express: each band must
+  // move off its own bets only. Bands are given by settle-time stamps.
   const games = [
     ...Array.from({ length: 12 }, () =>
       game({ winner: { stated: 0.57, correct: true } }),
     ),
-    ...Array.from({ length: 12 }, () =>
-      game({ winner: { stated: 0.67, correct: false } }),
-    ),
+    ...Array.from({ length: 12 }, (_, i) => ({
+      ...game({ winner: { stated: 0.65, correct: i < 7 } }),
+      winnerTail: true,
+      winnerFarTail: false,
+    })),
+    ...Array.from({ length: 12 }, () => ({
+      ...game({ winner: { stated: 0.72, correct: false } }),
+      winnerTail: true,
+      winnerFarTail: true,
+    })),
   ];
   const s = updateCalibration(DEFAULT_CALIBRATION, games, NOW);
   assert.ok(
@@ -141,6 +149,11 @@ test("core and tail bands learn from their own bets only", () => {
   assert.ok(
     s.tailShrink < DEFAULT_CALIBRATION.tailShrink,
     `tail should fall, got ${s.tailShrink}`,
+  );
+  assert.ok(
+    s.farTailShrink < s.tailShrink,
+    `the far tail lost every bet and must fall past the near tail, got ` +
+      `far=${s.farTailShrink} near=${s.tailShrink}`,
   );
 });
 

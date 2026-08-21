@@ -18,7 +18,10 @@
 
 import { RUNS_PER_EARNED_RUN } from "../features";
 import { getLeagueConstants } from "../sabermetrics";
-import { temperatureRunMultiplier } from "../sources/weather";
+import {
+  temperatureRunMultiplier,
+  windRunMultiplier,
+} from "../sources/weather";
 import type { GameCoreData, TeamCoreData, TeamRecentForm } from "../step2";
 
 /** Innings expected from a modern starter (league average is ~5.2–5.8). */
@@ -127,16 +130,28 @@ export function expectedRuns(g: GameCoreData, season: number): RunExpectation {
     FORM_DEFENSE_PRIOR_GAMES,
   );
 
-  // 6. Weather: a symmetric temperature nudge at open-air parks (see
-  // sources/weather.ts for the constants and the honesty rules — domes and
-  // unknown-state retractable roofs stay at 1.0).
-  const wxMult = temperatureRunMultiplier(g.weather ?? null);
-  if (wxMult !== 1 && g.weather?.temperatureC != null) {
+  // 6. Weather: a symmetric temperature nudge at open-air parks, plus the
+  // wind's out/in-blowing component where the park's orientation is known
+  // (see sources/weather.ts for the constants and the honesty rules — domes
+  // and unknown-state retractable roofs stay at 1.0, as does any game
+  // missing a reading, a direction, or a believable bearing).
+  const tempMult = temperatureRunMultiplier(g.weather ?? null);
+  if (tempMult !== 1 && g.weather?.temperatureC != null) {
     notes.push(
       `Weather: ${g.weather.temperatureC.toFixed(0)}°C at first pitch — ` +
-        `run environment ×${wxMult.toFixed(3)}`,
+        `run environment ×${tempMult.toFixed(3)}`,
     );
   }
+  const windMult = windRunMultiplier(g.weather ?? null);
+  if (windMult !== 1 && g.weather?.windSpeedKmh != null) {
+    notes.push(
+      `Wind: ${g.weather.windSpeedKmh.toFixed(0)} km/h from ` +
+        `${g.weather.windDirectionDeg!.toFixed(0)}° vs CF bearing ` +
+        `${g.weather.cfBearingDeg!.toFixed(0)}° — blowing ` +
+        `${windMult > 1 ? "out" : "in"}, run environment ×${windMult.toFixed(3)}`,
+    );
+  }
+  const wxMult = tempMult * windMult;
 
   const clamp = (v: number) => Math.min(MU_MAX, Math.max(MU_MIN, v));
   const homeMu = clamp(

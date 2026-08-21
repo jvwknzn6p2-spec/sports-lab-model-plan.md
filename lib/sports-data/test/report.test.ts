@@ -12,10 +12,13 @@ import type { SettledGame, SettlementReport } from "../src/engine/settle";
 const CAL = {
   shrink: 0.85,
   tailShrink: 0.7,
+  farTailShrink: 0.7,
   handicapShrink: 0.85,
   handicapTailShrink: 0.7,
+  handicapFarTailShrink: 0.7,
   totalShrink: 0.85,
   totalTailShrink: 0.7,
+  totalFarTailShrink: 0.7,
   gamesSettled: 0,
   brierSum: 0,
   updatedAt: null,
