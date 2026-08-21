@@ -17,7 +17,8 @@ name: HandiEdge — morning slate
 #
 #   06:07 UTC (15:07 JST)  this job   → slate + control-tower skeleton, committed
 #   ~15:10–21:00 JST       you        → edit `handicaps` in the control tower, commit
-#   12:10 UTC (21:10 JST)  predict    → locks the picks USING those lines
+#   12:10 UTC (21:10 JST)  predict    → safety-locks the picks USING those lines
+#   12:45 UTC (21:45 JST)  predict    → refresh re-lock (~22:33 JST) on fresher data
 #
 # `fetch-slate` never overwrites an existing control tower (not even with
 # --force), so the evening job can refresh probables and season stats without
@@ -101,7 +102,7 @@ jobs:
           {
             echo "# Handicap lines for ${{ steps.d.outputs.date }}"
             echo
-            echo "Edit \`$CT\` and commit before **21:10 JST**, when the picks lock."
+            echo "Edit \`$CT\` and commit before **22:30 JST** (final refresh lock; deadline 22:59 JST)."
             echo
             echo "\`side\` is the team that GIVES the handicap. \`notation\` takes the"
             echo "slate's own wording — \`0.5\`…\`1.9\`, or the half family \`1半\`…\`1半9\`."

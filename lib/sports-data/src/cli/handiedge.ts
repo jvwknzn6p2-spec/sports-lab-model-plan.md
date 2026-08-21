@@ -14,7 +14,7 @@
  *     Control Tower → run model → Monte Carlo → decision engine → calibration
  *     → prediction LOCK (data/predictions/<date>.json) + console report.
  *
- *   fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]
+ *   fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle] [--poll]
  *     Pull final scores from the live MLB Stats API (linescore hydrate) and
  *     write data/results/<date>.json. Only Final games are included; live or
  *     postponed games are listed as pending — rerun later with --force.
@@ -479,7 +479,7 @@ async function cmdPredict(args: {
     );
   }
 
-  // The slate's predictions freeze at 22:55 JST the evening before the games.
+  // The slate's predictions freeze at 22:59 JST the evening before the games.
   // Once that has passed, a re-run must carry the committed picks through
   // untouched rather than silently rewriting what was already decided.
   const now = new Date();
@@ -589,6 +589,7 @@ async function cmdFetchResults(args: {
   out?: string;
   force?: boolean;
   settle?: boolean;
+  poll?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -628,6 +629,16 @@ async function cmdFetchResults(args: {
     console.log(`  ${p.gamePk}: ${p.matchup} — PENDING (${p.reason})`);
   }
   if (report.finals === 0) {
+    // Polling mode: the settle job now sweeps the finish window every two
+    // hours, and an early sweep finding nothing final yet is the normal
+    // case, not a failure.
+    if (args.poll) {
+      console.log(
+        `No final games for ${date} yet (${report.pending.length} pending) — ` +
+          `nothing written; the next poll will pick them up.`,
+      );
+      return;
+    }
     throw new Error(
       `No final games for ${date} yet (${report.pending.length} pending). ` +
         `Nothing written — rerun after the games finish.`,
@@ -1271,6 +1282,7 @@ async function main(): Promise<void> {
       out: { type: "string" },
       force: { type: "boolean", default: false },
       settle: { type: "boolean", default: false },
+      poll: { type: "boolean", default: false },
       "skip-workloads": { type: "boolean", default: false },
       from: { type: "string" },
       to: { type: "string" },

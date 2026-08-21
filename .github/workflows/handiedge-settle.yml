@@ -1,21 +1,29 @@
 name: HandiEdge — settle and score
 
-# Fetches final scores for YESTERDAY's slate, settles every locked pick, runs
-# the self-learning calibration update, and refreshes the running-results
-# summary. Read it on a phone in the run summary or data/reports/summary.md.
+# Fetches final scores, settles every locked pick, runs the self-learning
+# calibration update, and refreshes the running-results summary. Read it on a
+# phone in the run summary or data/reports/summary.md.
 #
-# 07:00 UTC = 16:00 JST — the fixed results deadline, on the day the games
-# finish. One pass is enough at this hour: the latest possible MLB start is
-# 22:10 ET (02:10 UTC), so even a long extra-innings game is final well before
-# it. The slate being settled is YESTERDAY's UTC date, which is the MLB game
-# date those results belong to.
+# SETTLES AS GAMES FINISH, not at a fixed hour: the job sweeps the finish
+# window every two hours, and each sweep settles whatever has gone Final
+# since the last one (early day games land within ~2h of ending instead of
+# waiting for 16:00 JST). The 16:00 JST deadline in deadline.ts remains the
+# LATEST acceptable time — the audit still grades overdue slates against it.
 #
-# Re-settling the same date is still safe by construction — history keeps one
-# report per date and the calibration is recomputed from the whole history, so
-# a manual re-run never learns from the same games twice.
+#   20:00, 22:00 UTC   → sweeps TODAY's UTC date (day games end 19:30–23:00)
+#   00–08:00 UTC (2h)  → sweeps YESTERDAY's UTC date (night games end
+#                        02:00–06:30; the 08:00 pass is the final backstop —
+#                        the latest MLB start is 22:10 ET / 02:10 UTC)
+#
+# This is safe by construction, not by care: fetch-results --poll exits
+# cleanly when nothing is Final yet, a partial settle records only Final
+# games and the next sweep REPLACES it (history keeps one report per date,
+# last wins), and the calibration is recomputed from the whole history each
+# time — so no sweep ever learns from the same game twice.
 on:
   schedule:
-    - cron: "0 7 * * *"
+    - cron: "0 20,22 * * *"
+    - cron: "0 0,2,4,6,8 * * *"
   workflow_dispatch:
     inputs:
       date:
@@ -47,11 +55,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Which slate a sweep belongs to depends on when it runs: an evening-UTC
+      # sweep is catching TODAY's day games; a morning-UTC sweep is catching
+      # the night games of YESTERDAY's date, which spill past UTC midnight.
       - name: Resolve date
         id: d
         run: |
           DATE="${{ inputs.date }}"
-          if [ -z "$DATE" ]; then DATE=$(date -u -d 'yesterday' +%F); fi
+          if [ -z "$DATE" ]; then
+            if [ "$(date -u +%H)" -ge 12 ]; then
+              DATE=$(date -u +%F)
+            else
+              DATE=$(date -u -d 'yesterday' +%F)
+            fi
+          fi
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
       # Runs when there is a locked slate AND something is still unsettled, so
@@ -80,23 +97,34 @@ jobs:
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
-      # --force lets a re-run pick up anything unfinished last time.
+      # --force lets a re-run pick up anything unfinished last time; --poll
+      # makes "nothing Final yet" a clean exit instead of a red run, which an
+      # early sweep hits routinely.
       - name: Fetch final scores and settle
         if: steps.guard.outputs.run == 'true'
         working-directory: lib/sports-data
-        run: pnpm run handiedge fetch-results --date "${{ steps.d.outputs.date }}" --force --settle
+        run: pnpm run handiedge fetch-results --date "${{ steps.d.outputs.date }}" --force --settle --poll
 
       - name: Refresh running results
         if: steps.guard.outputs.run == 'true'
         working-directory: lib/sports-data
         run: pnpm run handiedge report
 
+      # A sweep that found nothing Final yet has no -settled.md — that is the
+      # normal early-poll case, not an error.
       - name: Publish to run summary
         if: steps.guard.outputs.run == 'true'
         run: |
-          cat "lib/sports-data/data/reports/${{ steps.d.outputs.date }}-settled.md" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          cat lib/sports-data/data/reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+          SETTLED="lib/sports-data/data/reports/${{ steps.d.outputs.date }}-settled.md"
+          if [ -f "$SETTLED" ]; then
+            cat "$SETTLED" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Nothing Final yet for ${{ steps.d.outputs.date }} — next sweep will settle it." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f lib/sports-data/data/reports/summary.md ]; then
+            cat lib/sports-data/data/reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Commit results and updated calibration
         if: steps.guard.outputs.run == 'true'

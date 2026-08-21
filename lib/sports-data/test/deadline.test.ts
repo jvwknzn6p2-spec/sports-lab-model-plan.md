@@ -22,12 +22,12 @@ import {
  */
 const SLATE = "2024-07-25";
 
-test("predictions freeze at 22:55 JST on the slate date", () => {
-  assert.deepEqual(PREDICTION_DEADLINE_JST, { hour: 22, minute: 55 });
-  // 22:55 JST = 13:55 UTC the same calendar day.
+test("predictions freeze at 22:59 JST on the slate date", () => {
+  assert.deepEqual(PREDICTION_DEADLINE_JST, { hour: 22, minute: 59 });
+  // 22:59 JST = 13:59 UTC the same calendar day.
   assert.equal(
     predictionDeadline(SLATE).toISOString(),
-    "2024-07-25T13:55:00.000Z",
+    "2024-07-25T13:59:00.000Z",
   );
 });
 
@@ -62,8 +62,8 @@ test("the two deadlines are ordered and about 17 hours apart", () => {
   const gap =
     resultsDeadline(SLATE).getTime() - predictionDeadline(SLATE).getTime();
   assert.ok(gap > 0, "predict before settle");
-  // 13:55 UTC → 07:00 UTC next day = 17 h 05 min.
-  assert.equal(gap / 60_000, 17 * 60 + 5);
+  // 13:59 UTC → 07:00 UTC next day = 17 h 01 min.
+  assert.equal(gap / 60_000, 17 * 60 + 1);
 });
 
 test("locking flips exactly at the deadline", () => {
