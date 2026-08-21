@@ -18,6 +18,7 @@
 
 import { RUNS_PER_EARNED_RUN } from "../features";
 import { getLeagueConstants } from "../sabermetrics";
+import { temperatureRunMultiplier } from "../sources/weather";
 import type { GameCoreData, TeamCoreData, TeamRecentForm } from "../step2";
 
 /** Innings expected from a modern starter (league average is ~5.2–5.8). */
@@ -126,9 +127,24 @@ export function expectedRuns(g: GameCoreData, season: number): RunExpectation {
     FORM_DEFENSE_PRIOR_GAMES,
   );
 
+  // 6. Weather: a symmetric temperature nudge at open-air parks (see
+  // sources/weather.ts for the constants and the honesty rules — domes and
+  // unknown-state retractable roofs stay at 1.0).
+  const wxMult = temperatureRunMultiplier(g.weather ?? null);
+  if (wxMult !== 1 && g.weather?.temperatureC != null) {
+    notes.push(
+      `Weather: ${g.weather.temperatureC.toFixed(0)}°C at first pitch — ` +
+        `run environment ×${wxMult.toFixed(3)}`,
+    );
+  }
+
   const clamp = (v: number) => Math.min(MU_MAX, Math.max(MU_MIN, v));
-  const homeMu = clamp(((homeOff * awayDef) / leagueRPG) * HOME_RUN_BOOST);
-  const awayMu = clamp(((awayOff * homeDef) / leagueRPG) * AWAY_RUN_CUT);
+  const homeMu = clamp(
+    ((homeOff * awayDef) / leagueRPG) * HOME_RUN_BOOST * wxMult,
+  );
+  const awayMu = clamp(
+    ((awayOff * homeDef) / leagueRPG) * AWAY_RUN_CUT * wxMult,
+  );
 
   return {
     homeMu: round2(homeMu),

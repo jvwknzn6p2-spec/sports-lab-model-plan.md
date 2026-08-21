@@ -102,6 +102,7 @@ import {
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
+import { buildWeather } from "../sources/weather";
 import {
   aggregateHistory,
   marketRecordLabel,
@@ -242,6 +243,7 @@ async function cmdFetchSlate(args: {
   force?: boolean;
   "skip-workloads"?: boolean;
   "skip-form"?: boolean;
+  "skip-weather"?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -302,6 +304,20 @@ async function cmdFetchSlate(args: {
     );
   } else {
     workloadSummary.push("  Recent-form scan skipped (--skip-form).");
+  }
+
+  // First-pitch weather (Open-Meteo, keyless). Fail-soft per venue; a
+  // weatherless game just runs unadjusted with an [info] flag.
+  if (!args["skip-weather"]) {
+    console.log("Fetching first-pitch weather (Open-Meteo)…");
+    const wx = await buildWeather({ date, games: bundle.games });
+    bundle.weather = wx.weather;
+    workloadSummary.push(
+      `  Weather: ${Object.keys(wx.weather).length}/${bundle.games.length} game(s) covered.`,
+      ...wx.warnings.map((w) => `    - weather: ${w}`),
+    );
+  } else {
+    workloadSummary.push("  Weather fetch skipped (--skip-weather).");
   }
 
   await saveJson(outPath, bundle);
@@ -1185,6 +1201,7 @@ async function main(): Promise<void> {
       dispersion: { type: "string" },
       "env-sd": { type: "string" },
       "skip-form": { type: "boolean", default: false },
+      "skip-weather": { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];

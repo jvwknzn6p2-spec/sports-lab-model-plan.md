@@ -230,13 +230,20 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   `notation: null` and quotes NO handicap market — it is never conflated
   with a deliberate `"0"` pick'em quote. No real-line bet has settled yet;
   the A-2 audit section watches for the first.
-- **Step 3 (weather, injuries) — ❌ not started** beyond park factors and
-  recent form. **Step 9 (AI multi-agent review) — ❌ not started**; the
-  deterministic standing audit (`src/engine/audit.ts`) covers the Data
-  Auditor's ground.
-- **Frontend/API surface — ❌ not started.** Output is CLI reports,
-  committed markdown under `lib/sports-data/data/reports/`, and Actions run
-  summaries.
+- **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
+  per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
+  temperature multiplier adjusts the run environment at open-air parks,
+  domes and unknown-state retractable roofs are never adjusted, and high
+  wind raises a warn flag only (no orientation data → no invented number).
+  Injuries/lineups remain ❌. **Step 9 (AI multi-agent review) — ❌ not
+  started**; the deterministic standing audit (`src/engine/audit.ts`) covers
+  the Data Auditor's ground.
+- **Frontend/API surface — ◑ started.** Read-only endpoints
+  (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
+  the committed locks and cumulative record from `artifacts/api-server`;
+  a first slate-viewer screen lives at
+  `artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`
+  (vite proxies `/api` to the Express server).
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

@@ -110,6 +110,7 @@ function coreGame(): GameCoreData {
     gameDate: "2024-07-25T23:00:00Z",
     venue: { id: null, name: null },
     parkFactor: 100,
+    weather: null,
     home: { ...side },
     away: { ...side, teamId: 2, teamName: "Away" },
     flags: [],

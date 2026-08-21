@@ -62,6 +62,14 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Forward API calls to the Express server so mockups can fetch real
+    // committed data (run it with: pnpm --filter @workspace/api-server dev).
+    proxy: {
+      "/api": {
+        target: `http://localhost:${process.env.API_PORT ?? 5000}`,
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,
