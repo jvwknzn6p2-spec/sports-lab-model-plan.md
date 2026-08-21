@@ -81,8 +81,13 @@ jobs:
       # them can hurt — `fetch-slate` never overwrites an existing control
       # tower even with --force, so a re-run refreshes the stats and leaves
       # every handicap line you entered exactly where it was.
+      # ODDS_API_KEY (repo secret, https://the-odds-api.com) lets fetch-slate
+      # fill unentered handicap/total lines from market consensus. Without it
+      # the tower stays unentered and no handicap market is quoted that day.
       - name: Fetch slate (schedule, stats, bullpen usage, park factors, form)
         working-directory: lib/sports-data
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: pnpm run handiedge fetch-slate --date "${{ steps.d.outputs.date }}" --force
 
       - name: Show what to fill in
@@ -100,9 +105,10 @@ jobs:
             echo
             echo "\`side\` is the team that GIVES the handicap. \`notation\` takes the"
             echo "slate's own wording — \`0.5\`…\`1.9\`, or the half family \`1半\`…\`1半9\`."
-            echo "\`\"0\"\` means ハンデなし and makes the bet identical to the moneyline."
-            echo "\`total\` is optional; supplying it switches the over/under market on"
-            echo "for the first time."
+            echo "\`null\` means 未入力: the handicap market is NOT quoted for that game"
+            echo "(moneyline and total only). \`\"0\"\` is different — a deliberate pick'em"
+            echo "quote, identical to the moneyline. \`total\` is optional; supplying it"
+            echo "switches the over/under market on."
             echo
             echo '| gamePk | matchup | line now |'
             echo '| --- | --- | --- |'
@@ -117,7 +123,12 @@ jobs:
             ]));
             for (const [pk, h] of Object.entries(ct.handicaps ?? {})) {
               const line = h.notation ?? h.line;
-              const shown = String(line) === "0" ? "`0` (なし — 未入力)" : `\`${line}\``;
+              const shown =
+                line == null
+                  ? "— (未入力 — 市場なし)"
+                  : String(line) === "0"
+                    ? "`0` (ハンデなし)"
+                    : `\`${line}\``;
               console.log(`| ${pk} | ${name.get(pk) ?? "?"} | ${shown} |`);
             }
           ' "$CT" "$SLATE" >> "$GITHUB_STEP_SUMMARY"

@@ -46,7 +46,19 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- **Control-tower lines: `null` ≠ `"0"`.** `notation: null` (the skeleton
+  default) means "no line entered — quote NO handicap market"; `"0"` is a
+  deliberate pick'em quote that settles like the moneyline. Never write `"0"`
+  as a placeholder.
+- **`ODDS_API_KEY`** (env / repo secret, from the-odds-api.com) lets
+  `fetch-slate` auto-fill unentered handicap/total lines from market
+  consensus. Entered lines are never overwritten. Without the key, unentered
+  games run moneyline + total only.
+- **S confidence is capped at A** while the winner tail shrink in
+  `data/calibration.json` sits below `TAIL_TRUST_FLOOR` (0.75) — the live
+  record showed the top band inverted (S 40.9% under B's 58.2%).
+- Predictions are LOCKED per date; re-running `predict` needs `--force` and
+  must not restamp `lockedAt`.
 
 ## Pointers
 

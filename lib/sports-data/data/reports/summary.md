@@ -32,10 +32,10 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 ## By confidence
 
-- S: 9-13 (40.9%, -4.90 units, n=22)
-- A: 17-10 (63.0%, +5.30 units, n=27)
-- B: 64-46 (58.2%, +11.60 units, n=110)
-- C: 0-0 (no decided bet, -3.00 units, n=0)
+- S: 9-13 (40.9%, -4.90 units over 22 stake(s), n=22 decided)
+- A: 17-10 (63.0%, +5.30 units over 27 stake(s), n=27 decided)
+- B: 64-46 (58.2%, +11.60 units over 110 stake(s), n=110 decided)
+- C: 0-0 (no decided winner bet, -3.00 units over 3 stake(s), n=0 decided)
 
 ## By day
 

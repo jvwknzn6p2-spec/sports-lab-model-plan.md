@@ -41,7 +41,11 @@
  *       // slate. This is the normal form: "0", "0.8", "1半", "1半2".
  *       "<gamePk>": { "side": "home", "notation": "1半2", "total": 8.5 },
  *       // Or a signed sportsbook run line, if that is what you have.
- *       "<gamePk>": { "side": "home", "line": -1.5 }
+ *       "<gamePk>": { "side": "home", "line": -1.5 },
+ *       // null (the skeleton default) = no line entered yet: the handicap
+ *       // market is NOT quoted for this game — moneyline and total only.
+ *       // Distinct from "0", which is a deliberate pick'em quote.
+ *       "<gamePk>": { "side": "home", "notation": null }
  *     }
  *   }
  *
@@ -91,6 +95,10 @@ import {
 } from "../engine/settle";
 import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
+import {
+  fetchMlbOdds,
+  fillControlTowerFromOdds,
+} from "../sources/odds-source";
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
@@ -326,10 +334,13 @@ async function cmdFetchSlate(args: {
   if (!existsSync(ctPath)) {
     const handicaps: Record<string, HandicapInput> = {};
     for (const g of bundle.games) {
-      // "0" = ハンデなし: a placeholder that is honest about knowing nothing,
-      // rather than a -1.5 run line the user never quoted. Replace each with
-      // the slate's real handicap, then re-run predict --force.
-      handicaps[String(g.gamePk)] = { side: "home", notation: "0" };
+      // null = 未入力: no line has been entered yet, so predict quotes NO
+      // handicap market for the game (moneyline and total only). This is
+      // deliberately not "0" — "0" is a real pick'em quote, and writing it
+      // as the placeholder let 24 straight unedited control towers run the
+      // moneyline twice under two names. Replace each null with the slate's
+      // real handicap, then re-run predict --force.
+      handicaps[String(g.gamePk)] = { side: "home", notation: null };
     }
     await saveJson(ctPath, {
       date,
@@ -344,6 +355,39 @@ async function cmdFetchSlate(args: {
     );
   } else {
     console.log(`  Control tower exists → ${ctPath}  (kept your edits)`);
+  }
+
+  // Market lines: fill any still-unentered handicap/total from The Odds API
+  // consensus. Entered lines are never touched, and a fetch failure leaves
+  // the tower as it is — the day then simply quotes no handicap market.
+  const oddsKey = process.env.ODDS_API_KEY;
+  if (oddsKey) {
+    try {
+      const events = await fetchMlbOdds({ apiKey: oddsKey });
+      const ct = await readJson<ControlTower>(ctPath);
+      const fill = fillControlTowerFromOdds(
+        ct.handicaps ?? {},
+        bundle.games,
+        events,
+      );
+      await saveJson(ctPath, ct);
+      console.log(
+        `  Odds: filled ${fill.linesFilled} line(s) and ${fill.totalsFilled} ` +
+          `total(s) from market consensus` +
+          (fill.kept ? `; kept ${fill.kept} entered line(s)` : ""),
+      );
+      for (const w of fill.warnings) console.log(`    - ${w}`);
+    } catch (err) {
+      console.log(
+        `  Odds fetch FAILED — lines stay unentered (no handicap market): ` +
+          `${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  } else {
+    console.log(
+      "  Odds: ODDS_API_KEY not set — enter lines by hand or export a key " +
+        "(https://the-odds-api.com) to fill them automatically.",
+    );
   }
   console.log("");
   console.log(`Next: pnpm run handiedge predict --control ${ctPath}`);
@@ -792,8 +836,8 @@ async function cmdReport(): Promise<void> {
     for (const c of s.byConfidence) {
       console.log(
         `    ${c.confidence}: ${c.wins}-${c.losses} ` +
-          `(${c.rate === null ? "no decided bet" : `${(c.rate * 100).toFixed(1)}%`}, ` +
-          `${fmtUnits(c.profit)} units, n=${c.n})`,
+          `(${c.rate === null ? "no decided winner bet" : `${(c.rate * 100).toFixed(1)}%`}, ` +
+          `${fmtUnits(c.profit)} units over ${c.staked} stake(s), n=${c.n} decided)`,
       );
     }
   }

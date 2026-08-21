@@ -135,6 +135,13 @@ export interface ConfidenceRecord {
   rate: number | null;
   /** Handicap P&L of these picks, units after commission. */
   profit: number;
+  /**
+   * Settled handicap STAKES in the band — the row `profit` is made of.
+   * Distinct from `n` (decided winner bets): a tie decides no winner but
+   * still settles its stake, so a band can read "0-0, −3.00 units" and the
+   * money must be attributable to something countable.
+   */
+  staked: number;
 }
 
 /**
@@ -339,7 +346,7 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
   const allProfits: number[] = [];
   const byConf = new Map<
     Confidence,
-    { n: number; wins: number; losses: number; profit: number }
+    { n: number; wins: number; losses: number; profit: number; staked: number }
   >();
 
   for (const r of finals) {
@@ -388,6 +395,7 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
           wins: 0,
           losses: 0,
           profit: 0,
+          staked: 0,
         };
         // The record needs a decided winner market; the MONEY does not — a
         // tied final still settles its handicap stake, and dropping that
@@ -398,7 +406,10 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
           if (g.winnerCorrect) e.wins++;
           else e.losses++;
         }
-        if (g.handicapProfit !== null) e.profit += g.handicapProfit;
+        if (g.handicapProfit !== null) {
+          e.profit += g.handicapProfit;
+          e.staked++;
+        }
         byConf.set(g.confidence, e);
       }
     }
@@ -443,6 +454,7 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
           losses: e.losses,
           rate: e.n === 0 ? null : round3(e.wins / e.n),
           profit: round3(e.profit),
+          staked: e.staked,
         };
       }),
     perDate: finals.map((r) => ({

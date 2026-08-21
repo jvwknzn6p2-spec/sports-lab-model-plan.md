@@ -39,9 +39,24 @@ export type Confidence = "S" | "A" | "B" | "C";
  */
 export interface HandicapInput {
   side: "home" | "away";
-  line?: number;
-  notation?: string;
-  total?: number; // over/under line, optional
+  line?: number | null;
+  notation?: string | null;
+  total?: number | null; // over/under line, optional
+}
+
+/**
+ * True when the input actually carries a line.
+ *
+ * A control-tower skeleton writes `notation: null` — "no line has been
+ * entered yet" — and that is NOT the same claim as `"0"`, which is a
+ * deliberate pick'em quote. An unentered line means there is no handicap
+ * market to price for this game: quoting it as 0 would silently re-run the
+ * moneyline under the handicap's name, which is exactly what 24 straight
+ * all-zero control towers in the live record did (every "handicap" bet on
+ * the book through 2026-08-20 settled identically to the winner pick).
+ */
+export function hasQuotedLine(h: HandicapInput | null | undefined): boolean {
+  return h != null && (h.notation != null || h.line != null);
 }
 
 /** A handicap reduced to the weighted lines it settles as. */
@@ -66,13 +81,13 @@ export interface ResolvedHandicap {
  * plain one.
  */
 export function resolveHandicap(h: HandicapInput): ResolvedHandicap {
-  if (h.notation !== undefined && h.line !== undefined) {
+  if (h.notation != null && h.line != null) {
     throw new HandicapNotationError(
       h.notation,
       "give either `notation` or `line`, not both — they can disagree",
     );
   }
-  if (h.notation !== undefined) {
+  if (h.notation != null) {
     const p = parseHandicapNotation(h.notation);
     // The notation says what the side GIVES, so its own lines are negative.
     return {
@@ -82,7 +97,7 @@ export function resolveHandicap(h: HandicapInput): ResolvedHandicap {
       effectiveLine: -p.effectiveLine,
     };
   }
-  if (h.line !== undefined) {
+  if (h.line != null) {
     return {
       parts: splitLine(h.line),
       giveLabel: fmtLine(h.line),
@@ -344,13 +359,29 @@ export function calibrateBanded(
   return 0.5 + Math.sign(pRaw - 0.5) * scaled;
 }
 
+/**
+ * The tail band must EARN the S label.
+ *
+ * `tailShrink` is the system's own running measurement of its top-band
+ * quotes: bounded learning (settle.ts) drives it this far below the neutral
+ * 0.85 prior only after those quotes have repeatedly overstated reality.
+ * While that is the case, an S badge is a claim the record just contradicted
+ * — on the live 2026-08 book S ran 9-13 (40.9%, −4.90 units) UNDER A's 63.0%
+ * and B's 58.2%, and the stated 65–70% band hit 37.5% over 24 bets. So S is
+ * capped at A until the winner tail learns its way back above this floor;
+ * the ladder can then be trusted to rank again.
+ */
+export const TAIL_TRUST_FLOOR = 0.75;
+
 function confidenceFor(
   p: number,
   g: GameCoreData,
   cfg: DecisionConfig,
+  calibration: CalibrationState,
 ): Confidence {
   let c: Confidence =
     p >= cfg.bandS ? "S" : p >= cfg.bandA ? "A" : p >= cfg.bandB ? "B" : "C";
+  if (c === "S" && calibration.tailShrink < TAIL_TRUST_FLOOR) c = "A";
   // Data quality caps: incomplete or downgraded games can never be S/A.
   const hasDowngrade = g.flags.some((f) => f.severity === "downgrade");
   if (!g.complete || hasDowngrade) return "C";
@@ -449,7 +480,7 @@ export function decide(
   const winner = homeFavored ? homeName : awayName;
   const loser = homeFavored ? awayName : homeName;
 
-  const confidence = confidenceFor(pWinner, g, cfg);
+  const confidence = confidenceFor(pWinner, g, cfg, calibration);
   const hasDowngrade = g.flags.some((f) => f.severity === "downgrade");
 
   // Handicap: probability the QUOTED side covers its line (calibrated), and
@@ -468,7 +499,10 @@ export function decide(
    * because at a 0 line it is not one.
    */
   let handicapIsPickem = false;
-  if (handicap) {
+  // An input with no line entered (skeleton `notation: null`) quotes NO
+  // handicap market at all — see `hasQuotedLine`. Its `total`, if any, still
+  // counts below.
+  if (handicap && hasQuotedLine(handicap)) {
     const r = resolveHandicap(handicap);
     handicapIsPickem = r.parts.every((p) => p.line === 0);
     const quoted = sim.asianCover(handicap.side, r.parts);
@@ -591,6 +625,11 @@ export function decide(
       `EV outlier: ${fmtPct(handicapEv!)} per unit is implausibly large — ` +
         `edges this size have historically been model error, not value ` +
         `(confidence capped at B, rank demoted)`,
+    );
+  }
+  if (handicap && !hasQuotedLine(handicap)) {
+    reasons.unshift(
+      "No handicap line entered — run line not quoted (moneyline and total only)",
     );
   }
   if (handicapEv !== null) {

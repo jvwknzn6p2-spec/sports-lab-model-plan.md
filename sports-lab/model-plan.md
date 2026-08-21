@@ -213,6 +213,31 @@ A suggested build order, from foundation to full pipeline. Each step is small en
 
 ## 9. Implementation Status
 
+### Where the build actually stands (2026-08-21)
+
+Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
+
+- **Steps 1–5, 7, 8, 10, 11 — ✅ running.** Schedule + stats fetch
+  (`fetch-slate`), park factors, recent form, bullpen workloads; run model +
+  Monte Carlo (`src/engine/`); confidence S/A/B/C with learned banded
+  calibration; settlement + self-learning (`settle`); cumulative reporting
+  and a weekly standing audit; five GitHub Actions crons (slate 06:07 UTC,
+  predict 12:10 UTC, settle 07:00 UTC, backtest, Monday audit).
+- **Step 6 (odds/EV) — ◑ partial.** EV math and 半-notation settlement are
+  implemented and tested, and `fetch-slate` now auto-fills market run lines
+  and totals from The Odds API consensus when the `ODDS_API_KEY` secret is
+  set (`src/sources/odds-source.ts`). An unentered line is stored as
+  `notation: null` and quotes NO handicap market — it is never conflated
+  with a deliberate `"0"` pick'em quote. No real-line bet has settled yet;
+  the A-2 audit section watches for the first.
+- **Step 3 (weather, injuries) — ❌ not started** beyond park factors and
+  recent form. **Step 9 (AI multi-agent review) — ❌ not started**; the
+  deterministic standing audit (`src/engine/audit.ts`) covers the Data
+  Auditor's ground.
+- **Frontend/API surface — ❌ not started.** Output is CLI reports,
+  committed markdown under `lib/sports-data/data/reports/`, and Actions run
+  summaries.
+
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 
 Built as the `@workspace/sports-data` package (`lib/sports-data`).
