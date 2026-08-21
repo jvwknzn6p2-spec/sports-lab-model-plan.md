@@ -17,6 +17,7 @@
     "handiedge": "tsx src/cli/handiedge.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "@workspace/db": "workspace:*"
   },
   "devDependencies": {

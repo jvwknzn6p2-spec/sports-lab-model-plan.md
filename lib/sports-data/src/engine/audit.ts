@@ -27,7 +27,11 @@
  */
 
 import type { GamePrediction } from "./decision";
-import { DEFAULT_CALIBRATION, resolveHandicap } from "./decision";
+import {
+  DEFAULT_CALIBRATION,
+  hasQuotedLine,
+  resolveHandicap,
+} from "./decision";
 import {
   expectedProfit,
   oppositeParts,
@@ -206,7 +210,10 @@ export function checkIntegrity(
       day.controlTowerHandicaps ?? {},
     )) {
       try {
-        resolveHandicap(h as Parameters<typeof resolveHandicap>[0]);
+        // An unentered line (`notation: null`) is a legitimate state — no
+        // market is quoted — not a typo.
+        const input = h as Parameters<typeof resolveHandicap>[0];
+        if (hasQuotedLine(input)) resolveHandicap(input);
       } catch (err) {
         issues.push({
           severity: "error",
@@ -475,7 +482,8 @@ export function cohorts(days: AuditDay[]): CohortStat[] {
       // "0.0" and full-width zeros all mean the same no-handicap line as
       // "0", and none of them may trip the A-2 real-line wire.
       (s) => {
-        if (!s.p.handicap.input) return false;
+        if (!s.p.handicap.input || !hasQuotedLine(s.p.handicap.input))
+          return false;
         try {
           return resolveHandicap(s.p.handicap.input).effectiveLine !== 0;
         } catch {
@@ -586,9 +594,7 @@ export function realLineSettlements(days: AuditDay[]): {
         gamePk: p.gamePk,
         game: `${p.away} @ ${p.home}`,
         quoted:
-          input.notation !== undefined
-            ? input.notation
-            : `line ${input.line}`,
+          input.notation != null ? input.notation : `line ${input.line}`,
         backed: p.handicap.pick,
         margin,
         parts,

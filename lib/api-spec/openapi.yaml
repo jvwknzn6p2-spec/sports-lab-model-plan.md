@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: predictions
+    description: Locked daily predictions and cumulative results
 paths:
   /healthz:
     get:
@@ -24,6 +26,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /predictions:
+    get:
+      operationId: listPredictionDates
+      tags: [predictions]
+      summary: List dates with a locked prediction slate
+      responses:
+        "200":
+          description: Dates, newest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDates"
+  /predictions/{date}:
+    get:
+      operationId: getPredictionDay
+      tags: [predictions]
+      summary: The locked predictions for one date
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: The prediction lock, exactly as committed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDay"
+        "404":
+          description: No lock exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /report:
+    get:
+      operationId: getReportSummary
+      tags: [predictions]
+      summary: Cumulative record across all settled dates
+      responses:
+        "200":
+          description: Aggregated history plus the current learning state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +84,86 @@ components:
           type: string
       required:
         - status
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    PredictionDates:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: string
+      required:
+        - dates
+    GamePrediction:
+      type: object
+      description: >-
+        One game's locked prediction. Only the fields the UI keys on are
+        typed; the full engine payload (handicap, total, expectedRuns,
+        reasons, flags) passes through untouched.
+      properties:
+        gamePk:
+          type: number
+        gameDate:
+          type: [string, "null"]
+        home:
+          type: string
+        away:
+          type: string
+        pass:
+          type: boolean
+        predictedWinner:
+          type: [string, "null"]
+        winProbability:
+          type: number
+        confidence:
+          type: string
+          enum: [S, A, B, C]
+      required:
+        - gamePk
+        - home
+        - away
+        - pass
+        - predictedWinner
+        - winProbability
+        - confidence
+      additionalProperties: true
+    PredictionDay:
+      type: object
+      properties:
+        date:
+          type: string
+        lockedAt:
+          type: string
+        final:
+          type: boolean
+        predictions:
+          type: array
+          items:
+            $ref: "#/components/schemas/GamePrediction"
+      required:
+        - date
+        - lockedAt
+        - predictions
+      additionalProperties: true
+    ReportSummary:
+      type: object
+      description: >-
+        aggregateHistory() output plus the learned calibration state. The
+        shape is owned by @workspace/sports-data; the API passes it through.
+      properties:
+        summary:
+          type: object
+          additionalProperties: true
+        calibration:
+          type: object
+          additionalProperties: true
+      required:
+        - summary
+        - calibration
 

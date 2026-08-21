@@ -213,6 +213,50 @@ A suggested build order, from foundation to full pipeline. Each step is small en
 
 ## 9. Implementation Status
 
+### Where the build actually stands (2026-08-21)
+
+Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
+
+- **Steps 1–5, 7, 8, 10, 11 — ✅ running.** Schedule + stats fetch
+  (`fetch-slate`), park factors, recent form, bullpen workloads; run model +
+  Monte Carlo (`src/engine/`); confidence S/A/B/C with learned banded
+  calibration; settlement + self-learning (`settle`); cumulative reporting
+  and a weekly standing audit; five GitHub Actions crons (slate 06:07 UTC,
+  predict 12:10 UTC, settle 07:00 UTC, backtest, Monday audit).
+- **Step 6 (odds/EV) — ◑ partial.** EV math and 半-notation settlement are
+  implemented and tested, and `fetch-slate` now auto-fills market run lines
+  and totals from The Odds API consensus when the `ODDS_API_KEY` secret is
+  set (`src/sources/odds-source.ts`). An unentered line is stored as
+  `notation: null` and quotes NO handicap market — it is never conflated
+  with a deliberate `"0"` pick'em quote. No real-line bet has settled yet;
+  the A-2 audit section watches for the first.
+- **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
+  per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
+  temperature multiplier adjusts the run environment at open-air parks,
+  domes and unknown-state retractable roofs are never adjusted, and high
+  wind raises a warn flag only (no orientation data → no invented number).
+  IL detection is in (`src/sources/injuries-builder.ts`): each slate team's
+  40-man roster is scanned for D-coded (IL) players, surfaced as an [info]
+  flag naming them and fed to the review layer — informational only, since
+  who replaces an injured player is not in any feed and an invented penalty
+  would fabricate an input. Per-game lineups remain ❌.
+- **Step 9 (AI multi-agent review) — ✅ implemented** as
+  `handiedge review` (`src/engine/ai-review.ts`): a Data Auditor, Matchup
+  Analyst and Risk Reviewer (Claude, via the Anthropic SDK) each read the
+  LOCKED slate payload — picks, flags, IL lists, weather, calibration state
+  — and write an advisory briefing to `data/reviews/<date>.md`. Advisory
+  only: review runs after the lock and changes nothing. Prompts forbid
+  outside facts (payload-only reasoning). Runs in the predict workflow when
+  the `ANTHROPIC_API_KEY` secret is set; skips cleanly otherwise. The
+  deterministic standing audit (`src/engine/audit.ts`) still covers
+  integrity re-scoring.
+- **Frontend/API surface — ◑ started.** Read-only endpoints
+  (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
+  the committed locks and cumulative record from `artifacts/api-server`;
+  a first slate-viewer screen lives at
+  `artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`
+  (vite proxies `/api` to the Express server).
+
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 
 Built as the `@workspace/sports-data` package (`lib/sports-data`).

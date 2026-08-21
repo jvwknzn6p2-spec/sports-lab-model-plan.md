@@ -25,6 +25,8 @@ import {
 } from "./features";
 import type { RawBattingLine, RawPitchingLine } from "./sabermetrics";
 import type { NormalizedGame } from "./mlb/parse";
+import { HIGH_WIND_KMH, type GameWeather } from "./sources/weather";
+import type { IlPlayer } from "./sources/injuries-builder";
 
 /** Everything the orchestrator needs, behind one injectable interface. */
 export interface CoreDataSource {
@@ -47,6 +49,10 @@ export interface CoreDataSource {
   getParkFactor?(venueId: number | null): Promise<number | undefined>;
   /** Optional recent form (last-N-games scoring); undefined when untracked. */
   getRecentForm?(teamId: number): Promise<TeamRecentForm | undefined>;
+  /** Optional first-pitch weather; undefined when untracked. */
+  getWeather?(gamePk: number): Promise<GameWeather | undefined>;
+  /** Optional IL list per team; undefined when untracked. */
+  getInjuries?(teamId: number): Promise<IlPlayer[] | undefined>;
 }
 
 /** A team's scoring over its most recent games (Final games only). */
@@ -65,6 +71,11 @@ export interface TeamCoreData {
   bullpen: BullpenFeatures | null;
   /** Recent form; null = untracked, and the run model applies no adjustment. */
   form: TeamRecentForm | null;
+  /**
+   * Players on the IL; null = untracked. Informational only — who replaces
+   * them is unknown, so no numeric adjustment is ever derived from this.
+   */
+  ilPlayers: IlPlayer[] | null;
 }
 
 export interface GameCoreData {
@@ -72,6 +83,8 @@ export interface GameCoreData {
   gameDate: string | null;
   venue: { id: number | null; name: string | null };
   parkFactor: number;
+  /** First-pitch weather; null = untracked, and no adjustment is applied. */
+  weather: GameWeather | null;
   home: TeamCoreData;
   away: TeamCoreData;
   flags: DataQualityFlag[];
@@ -95,6 +108,30 @@ export async function assembleGameCoreData(
       : undefined) ?? 100;
 
   const flags: DataQualityFlag[] = [];
+
+  const weather =
+    (source.getWeather ? await source.getWeather(game.gamePk) : undefined) ??
+    null;
+  if (!weather) {
+    flags.push({
+      code: "weather_missing",
+      severity: "info",
+      message: "No first-pitch weather — run environment not adjusted.",
+    });
+  } else if (
+    weather.roof === "outdoor" &&
+    weather.windSpeedKmh !== null &&
+    weather.windSpeedKmh >= HIGH_WIND_KMH
+  ) {
+    // Direction-blind by design: without park orientation data a wind speed
+    // cannot honestly become a run adjustment, but it can and should mark
+    // the total as less certain than the simulator's spread claims.
+    flags.push({
+      code: "weather_high_wind",
+      severity: "warn",
+      message: `Wind ${weather.windSpeedKmh.toFixed(0)} km/h at an open park — totals less reliable.`,
+    });
+  }
 
   const buildSide = async (
     side: NormalizedGame["home"],
@@ -179,6 +216,22 @@ export async function assembleGameCoreData(
         ? ((await source.getRecentForm(side.teamId)) ?? null)
         : null;
 
+    const ilPlayers =
+      side.teamId !== null && source.getInjuries
+        ? ((await source.getInjuries(side.teamId)) ?? null)
+        : null;
+    if (ilPlayers && ilPlayers.length > 0) {
+      flags.push({
+        code: `${label}_players_on_il`,
+        severity: "info",
+        message:
+          `${label} team has ${ilPlayers.length} player(s) on the IL: ` +
+          ilPlayers
+            .map((p) => `${p.name}${p.position ? ` (${p.position})` : ""}`)
+            .join(", "),
+      });
+    }
+
     return {
       teamId: side.teamId,
       teamName: side.teamName,
@@ -186,6 +239,7 @@ export async function assembleGameCoreData(
       batting,
       bullpen,
       form,
+      ilPlayers,
     };
   };
 
@@ -205,6 +259,7 @@ export async function assembleGameCoreData(
     gameDate: game.gameDate,
     venue: game.venue,
     parkFactor,
+    weather,
     home,
     away,
     flags,

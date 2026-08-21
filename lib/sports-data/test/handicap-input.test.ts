@@ -13,7 +13,9 @@ import assert from "node:assert/strict";
 import {
   decide,
   DEFAULT_CALIBRATION,
+  hasQuotedLine,
   resolveHandicap,
+  TAIL_TRUST_FLOOR,
   type GamePrediction,
   type HandicapInput,
 } from "../src/engine/decision";
@@ -101,6 +103,7 @@ function coreGame(): GameCoreData {
     starter: null,
     batting: null,
     bullpen: null,
+    ilPlayers: null,
     form: null,
   };
   return {
@@ -108,6 +111,7 @@ function coreGame(): GameCoreData {
     gameDate: "2024-07-25T23:00:00Z",
     venue: { id: null, name: null },
     parkFactor: 100,
+    weather: null,
     home: { ...side },
     away: { ...side, teamId: 2, teamName: "Away" },
     flags: [],
@@ -201,4 +205,69 @@ test("the quoted price and the realized result cannot disagree about a push", ()
   for (let margin = -3; margin <= 3; margin++) {
     assert.equal(settleParts(r.parts, margin).push, 0);
   }
+});
+
+test("an unentered line (notation: null) quotes no handicap market at all", () => {
+  assert.equal(hasQuotedLine(null), false);
+  assert.equal(hasQuotedLine({ side: "home", notation: null }), false);
+  assert.equal(hasQuotedLine({ side: "home", line: null }), false);
+  assert.equal(hasQuotedLine({ side: "home", notation: "0" }), true);
+  assert.equal(hasQuotedLine({ side: "home", line: -1.5 }), true);
+
+  // Strong favourite, so the game itself is a pick — but with no line
+  // entered there is nothing to back on the run line.
+  const p = predictWith({ side: "home", notation: null }, 6.4, 3.2);
+  assert.equal(p.pass, false);
+  assert.ok(p.predictedWinner, "the moneyline still runs");
+  assert.equal(p.handicap.pick, null, "no handicap market is quoted");
+  assert.equal(p.handicap.ev, null);
+  assert.equal(p.handicap.coverProbability, null);
+  assert.ok(
+    p.reasons.some((r) => r.includes("No handicap line entered")),
+    p.reasons.join("; "),
+  );
+});
+
+test("null is not '0': a deliberate pick'em still quotes, unentered does not", () => {
+  const pickem = predictWith({ side: "home", notation: "0" }, 6.4, 3.2);
+  const unentered = predictWith({ side: "home", notation: null }, 6.4, 3.2);
+  assert.ok(pickem.handicap.pick !== null, "an entered 0 is a real quote");
+  assert.equal(unentered.handicap.pick, null);
+});
+
+test("a total on an unentered line still runs the over/under", () => {
+  const p = predictWith({ side: "home", notation: null, total: 8.5 }, 6.4, 3.2);
+  assert.equal(p.handicap.pick, null);
+  assert.equal(p.total.line, 8.5);
+  assert.ok(p.total.pick !== null, "the total is its own market");
+});
+
+test("S is capped at A while the winner tail shrink sits below the trust floor", () => {
+  // Reliable inputs, so only the tail-trust cap can move the badge (a
+  // reliability below 0.5 would demote S/A to B on its own).
+  const reliableGame = (): GameCoreData => {
+    const g = coreGame();
+    const reliable = { reliability: 0.9 } as unknown;
+    for (const s of [g.home, g.away]) {
+      s.starter = reliable as (typeof g)["home"]["starter"];
+      s.batting = reliable as (typeof g)["home"]["batting"];
+    }
+    return g;
+  };
+  const strong = (calibration: typeof DEFAULT_CALIBRATION) =>
+    decide(
+      reliableGame(),
+      { homeMu: 6.4, awayMu: 3.2, leagueRunsPerGame: 4.4, notes: [] },
+      simulateGame(6.4, 3.2, { sims: 20_000, seed: "tail-trust" }),
+      calibration,
+      null,
+    );
+  const trusted = strong(DEFAULT_CALIBRATION);
+  assert.equal(trusted.confidence, "S", "sanity: this edge earns S");
+  const distrusted = strong({
+    ...DEFAULT_CALIBRATION,
+    tailShrink: TAIL_TRUST_FLOOR - 0.05,
+  });
+  assert.ok(distrusted.winProbability >= 0.625, "still stated in the S band");
+  assert.equal(distrusted.confidence, "A", "but the badge is withheld");
 });

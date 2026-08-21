@@ -41,7 +41,11 @@
  *       // slate. This is the normal form: "0", "0.8", "1半", "1半2".
  *       "<gamePk>": { "side": "home", "notation": "1半2", "total": 8.5 },
  *       // Or a signed sportsbook run line, if that is what you have.
- *       "<gamePk>": { "side": "home", "line": -1.5 }
+ *       "<gamePk>": { "side": "home", "line": -1.5 },
+ *       // null (the skeleton default) = no line entered yet: the handicap
+ *       // market is NOT quoted for this game — moneyline and total only.
+ *       // Distinct from "0", which is a deliberate pick'em quote.
+ *       "<gamePk>": { "side": "home", "notation": null }
  *     }
  *   }
  *
@@ -89,11 +93,25 @@ import {
   recalibrateFromHistory,
   type GameResult,
 } from "../engine/settle";
+import {
+  anthropicReviewModel,
+  buildReviewPayload,
+  REVIEW_MODEL_ID,
+  REVIEWER_ROLES,
+  reviewToMarkdown,
+  runAiReview,
+} from "../engine/ai-review";
 import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
+import {
+  fetchMlbOdds,
+  fillControlTowerFromOdds,
+} from "../sources/odds-source";
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
+import { buildWeather } from "../sources/weather";
+import { buildInjuries } from "../sources/injuries-builder";
 import {
   aggregateHistory,
   marketRecordLabel,
@@ -234,6 +252,8 @@ async function cmdFetchSlate(args: {
   force?: boolean;
   "skip-workloads"?: boolean;
   "skip-form"?: boolean;
+  "skip-weather"?: boolean;
+  "skip-injuries"?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -296,6 +316,41 @@ async function cmdFetchSlate(args: {
     workloadSummary.push("  Recent-form scan skipped (--skip-form).");
   }
 
+  // IL lists from the 40-man rosters (fail-soft per team; informational —
+  // no numeric adjustment is derived, see injuries-builder.ts).
+  if (!args["skip-injuries"]) {
+    console.log("Fetching 40-man rosters for IL detection…");
+    const teamIds = bundle.games
+      .flatMap((g) => [g.home.teamId, g.away.teamId])
+      .filter((id): id is number => id !== null);
+    const inj = await buildInjuries({ client, teamIds, season });
+    bundle.injuries = inj.injuries;
+    const ilCount = Object.values(inj.injuries).reduce(
+      (n, l) => n + l.length,
+      0,
+    );
+    workloadSummary.push(
+      `  IL: ${ilCount} player(s) on the IL across ${Object.keys(inj.injuries).length} team(s).`,
+      ...inj.warnings.map((w) => `    - injuries: ${w}`),
+    );
+  } else {
+    workloadSummary.push("  IL roster scan skipped (--skip-injuries).");
+  }
+
+  // First-pitch weather (Open-Meteo, keyless). Fail-soft per venue; a
+  // weatherless game just runs unadjusted with an [info] flag.
+  if (!args["skip-weather"]) {
+    console.log("Fetching first-pitch weather (Open-Meteo)…");
+    const wx = await buildWeather({ date, games: bundle.games });
+    bundle.weather = wx.weather;
+    workloadSummary.push(
+      `  Weather: ${Object.keys(wx.weather).length}/${bundle.games.length} game(s) covered.`,
+      ...wx.warnings.map((w) => `    - weather: ${w}`),
+    );
+  } else {
+    workloadSummary.push("  Weather fetch skipped (--skip-weather).");
+  }
+
   await saveJson(outPath, bundle);
 
   console.log("=".repeat(72));
@@ -326,10 +381,13 @@ async function cmdFetchSlate(args: {
   if (!existsSync(ctPath)) {
     const handicaps: Record<string, HandicapInput> = {};
     for (const g of bundle.games) {
-      // "0" = ハンデなし: a placeholder that is honest about knowing nothing,
-      // rather than a -1.5 run line the user never quoted. Replace each with
-      // the slate's real handicap, then re-run predict --force.
-      handicaps[String(g.gamePk)] = { side: "home", notation: "0" };
+      // null = 未入力: no line has been entered yet, so predict quotes NO
+      // handicap market for the game (moneyline and total only). This is
+      // deliberately not "0" — "0" is a real pick'em quote, and writing it
+      // as the placeholder let 24 straight unedited control towers run the
+      // moneyline twice under two names. Replace each null with the slate's
+      // real handicap, then re-run predict --force.
+      handicaps[String(g.gamePk)] = { side: "home", notation: null };
     }
     await saveJson(ctPath, {
       date,
@@ -344,6 +402,39 @@ async function cmdFetchSlate(args: {
     );
   } else {
     console.log(`  Control tower exists → ${ctPath}  (kept your edits)`);
+  }
+
+  // Market lines: fill any still-unentered handicap/total from The Odds API
+  // consensus. Entered lines are never touched, and a fetch failure leaves
+  // the tower as it is — the day then simply quotes no handicap market.
+  const oddsKey = process.env.ODDS_API_KEY;
+  if (oddsKey) {
+    try {
+      const events = await fetchMlbOdds({ apiKey: oddsKey });
+      const ct = await readJson<ControlTower>(ctPath);
+      const fill = fillControlTowerFromOdds(
+        ct.handicaps ?? {},
+        bundle.games,
+        events,
+      );
+      await saveJson(ctPath, ct);
+      console.log(
+        `  Odds: filled ${fill.linesFilled} line(s) and ${fill.totalsFilled} ` +
+          `total(s) from market consensus` +
+          (fill.kept ? `; kept ${fill.kept} entered line(s)` : ""),
+      );
+      for (const w of fill.warnings) console.log(`    - ${w}`);
+    } catch (err) {
+      console.log(
+        `  Odds fetch FAILED — lines stay unentered (no handicap market): ` +
+          `${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  } else {
+    console.log(
+      "  Odds: ODDS_API_KEY not set — enter lines by hand or export a key " +
+        "(https://the-odds-api.com) to fill them automatically.",
+    );
   }
   console.log("");
   console.log(`Next: pnpm run handiedge predict --control ${ctPath}`);
@@ -671,6 +762,52 @@ async function runSettle(payload: {
   console.log(`  History appended → ${HISTORY_PATH}`);
 }
 
+/**
+ * Step 9 — run the AI reviewer panel over a LOCKED slate and save the
+ * briefing to data/reviews/<date>.md. Advisory only: nothing about the lock
+ * changes. Skips (exit 0) when no Anthropic credential is available, so the
+ * daily pipeline works with or without the ANTHROPIC_API_KEY secret.
+ */
+async function cmdReview(args: { date?: string }): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
+    console.log(
+      "AI review skipped: no ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN set. " +
+        "Add the secret to run the reviewer panel.",
+    );
+    return;
+  }
+  const lockPath = join(PRED_DIR, `${date}.json`);
+  if (!existsSync(lockPath)) {
+    throw new Error(`No prediction lock for ${date} (${lockPath}) — run predict first.`);
+  }
+  const lock = await readJson<PredictionLock>(lockPath);
+  const slatePath = join(SLATE_DIR, `${date}.json`);
+  const bundle = existsSync(slatePath)
+    ? await readJson<FixtureBundle>(slatePath)
+    : null;
+
+  console.log(
+    `Running the AI reviewer panel (${REVIEWER_ROLES.length} roles, ${REVIEW_MODEL_ID}) for ${date}…`,
+  );
+  const payload = buildReviewPayload({
+    date,
+    predictions: lock.predictions,
+    calibration: lock.calibration,
+    bundle,
+  });
+  const result = await runAiReview(payload, anthropicReviewModel());
+  const outPath = join(DATA_DIR, "reviews", `${date}.md`);
+  await saveMarkdown(outPath, reviewToMarkdown(date, result));
+  console.log(`AI review → ${outPath}`);
+  for (const s of result.sections) {
+    console.log(`  ${s.role.title}: ${s.findings.split("\n")[0] ?? ""}`);
+  }
+}
+
 async function cmdReport(): Promise<void> {
   if (!existsSync(HISTORY_PATH)) {
     console.log(
@@ -792,8 +929,8 @@ async function cmdReport(): Promise<void> {
     for (const c of s.byConfidence) {
       console.log(
         `    ${c.confidence}: ${c.wins}-${c.losses} ` +
-          `(${c.rate === null ? "no decided bet" : `${(c.rate * 100).toFixed(1)}%`}, ` +
-          `${fmtUnits(c.profit)} units, n=${c.n})`,
+          `(${c.rate === null ? "no decided winner bet" : `${(c.rate * 100).toFixed(1)}%`}, ` +
+          `${fmtUnits(c.profit)} units over ${c.staked} stake(s), n=${c.n} decided)`,
       );
     }
   }
@@ -1141,6 +1278,8 @@ async function main(): Promise<void> {
       dispersion: { type: "string" },
       "env-sd": { type: "string" },
       "skip-form": { type: "boolean", default: false },
+      "skip-weather": { type: "boolean", default: false },
+      "skip-injuries": { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];
@@ -1149,6 +1288,7 @@ async function main(): Promise<void> {
   else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
   else if (cmd === "report") await cmdReport();
+  else if (cmd === "review") await cmdReview(values);
   else if (cmd === "audit") await cmdAudit();
   else if (cmd === "backtest") await cmdBacktest(values);
   else {
@@ -1164,6 +1304,9 @@ async function main(): Promise<void> {
     );
     console.log("  handiedge settle        --results <results.json>");
     console.log("  handiedge report");
+    console.log(
+      "  handiedge review        [--date YYYY-MM-DD]   (needs ANTHROPIC_API_KEY)",
+    );
     console.log("  handiedge audit");
     console.log(
       "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",

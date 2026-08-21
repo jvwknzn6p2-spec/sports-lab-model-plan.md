@@ -10,6 +10,8 @@ import type { BullpenWorkload } from "../features";
 import type { NormalizedGame } from "../mlb/parse";
 import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
 import type { CoreDataSource, TeamRecentForm } from "../step2";
+import type { GameWeather } from "./weather";
+import type { IlPlayer } from "./injuries-builder";
 
 export interface FixtureBundle {
   date: string;
@@ -29,6 +31,10 @@ export interface FixtureBundle {
   parkFactors?: Record<string, number>;
   /** Keyed by stringified teamId (optional): last-N-games scoring. */
   forms?: Record<string, TeamRecentForm>;
+  /** Keyed by stringified gamePk (optional): first-pitch weather. */
+  weather?: Record<string, GameWeather>;
+  /** Keyed by stringified teamId (optional): players on the IL. */
+  injuries?: Record<string, IlPlayer[]>;
 }
 
 export class FixtureCoreDataSource implements CoreDataSource {
@@ -64,5 +70,13 @@ export class FixtureCoreDataSource implements CoreDataSource {
 
   async getRecentForm(teamId: number): Promise<TeamRecentForm | undefined> {
     return this.bundle.forms?.[String(teamId)];
+  }
+
+  async getWeather(gamePk: number): Promise<GameWeather | undefined> {
+    return this.bundle.weather?.[String(gamePk)];
+  }
+
+  async getInjuries(teamId: number): Promise<IlPlayer[] | undefined> {
+    return this.bundle.injuries?.[String(teamId)];
   }
 }

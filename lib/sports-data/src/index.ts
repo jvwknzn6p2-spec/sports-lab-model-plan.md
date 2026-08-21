@@ -20,5 +20,8 @@ export * from "./sources/results-builder";
 export * from "./sources/workload-builder";
 export * from "./sources/park-factors";
 export * from "./sources/form-builder";
+export * from "./sources/weather";
+export * from "./sources/injuries-builder";
+export * from "./sources/odds-source";
 export * from "./persist";
 export * from "./engine";

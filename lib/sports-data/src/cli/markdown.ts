@@ -320,8 +320,8 @@ export function summaryToMarkdown(
     out.push("");
     for (const c of s.byConfidence) {
       out.push(
-        `- ${c.confidence}: ${c.wins}-${c.losses} (${c.rate === null ? "no decided bet" : pct(c.rate)}, ` +
-          `${fmtUnits(c.profit)} units, n=${c.n})`,
+        `- ${c.confidence}: ${c.wins}-${c.losses} (${c.rate === null ? "no decided winner bet" : pct(c.rate)}, ` +
+          `${fmtUnits(c.profit)} units over ${c.staked} stake(s), n=${c.n} decided)`,
       );
     }
     out.push("");
