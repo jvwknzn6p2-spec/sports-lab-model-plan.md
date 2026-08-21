@@ -1,0 +1,76 @@
+name: HandiEdge — AI review (on demand)
+
+# Run (or re-run) the Step-9 AI reviewer panel over an already-LOCKED slate,
+# outside the daily predict job. Useful to review a past date, to retry after
+# a transient API failure, or to verify the ANTHROPIC_API_KEY secret.
+#
+# Advisory only, by construction: `handiedge review` reads the lock and never
+# writes to it — the only output is data/reviews/<date>.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD) with an existing prediction lock. Blank = today (UTC)."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+# Share the data lock with slate/predict/settle so pushes never collide.
+concurrency:
+  group: handiedge-data
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Run the reviewer panel
+        working-directory: lib/sports-data
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: pnpm run handiedge review --date "${{ steps.d.outputs.date }}"
+
+      - name: Publish to run summary
+        run: |
+          REVIEW="lib/sports-data/data/reviews/${{ steps.d.outputs.date }}.md"
+          if [ -f "$REVIEW" ]; then
+            cat "$REVIEW" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No review was produced (is ANTHROPIC_API_KEY set?)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Commit the review
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data/reviews
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge: AI review for ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
