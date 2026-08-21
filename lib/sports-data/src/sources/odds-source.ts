@@ -35,7 +35,7 @@ export interface OddsApiEvent {
     key: string;
     markets: Array<{
       key: string; // "spreads" | "totals" | ...
-      outcomes: Array<{ name: string; point?: number }>;
+      outcomes: Array<{ name: string; point?: number; price?: number }>;
     }>;
   }>;
 }
@@ -49,6 +49,17 @@ export interface MarketLine {
   homeLine: number | null;
   /** Median over/under total, null if unquoted. */
   total: number | null;
+  /**
+   * Devigged consensus probability that the HOME side covers `homeLine`
+   * (median across the books pricing exactly that point, vig removed
+   * proportionally). This is the market's OPINION, not the payout of the
+   * fixed-0.9 book the pipeline bets — EV keeps its own commission math; the
+   * probability is stored as an external benchmark for the model's number.
+   * Null when no book priced both sides of the median point.
+   */
+  homeCoverProb: number | null;
+  /** Same, for the OVER at `total`. */
+  overProb: number | null;
   /** Bookmakers contributing to the medians. */
   books: number;
 }
@@ -59,6 +70,24 @@ const median = (xs: number[]): number | null => {
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
 };
+
+/** American odds → the implied probability the price charges for. */
+export function americanImpliedProbability(price: number): number {
+  return price < 0 ? -price / (-price + 100) : 100 / (price + 100);
+}
+
+/**
+ * Remove the vig from a two-way price pair proportionally: the two implied
+ * probabilities overround past 1 by the book's margin, and each side keeps
+ * its share. Returns the first side's fair probability.
+ */
+export function devigPair(priceA: number, priceB: number): number {
+  const qa = americanImpliedProbability(priceA);
+  const qb = americanImpliedProbability(priceB);
+  return qa / (qa + qb);
+}
+
+const round3 = (v: number) => Math.round(v * 1000) / 1000;
 
 /** Reduce one event's bookmakers to consensus home spread + total. */
 export function consensusLine(ev: OddsApiEvent): MarketLine {
@@ -75,12 +104,51 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
       }
     }
   }
+  const homeLine = median(spreads);
+  const total = median(totals);
+
+  // Prices are only comparable at the SAME point: a home -1.5 at one book and
+  // a home -2 at another price different propositions, and pooling them would
+  // manufacture a probability no market stated. So the consensus probability
+  // is built only from books quoting both sides of the exact median point.
+  const coverProbs: number[] = [];
+  const overProbs: number[] = [];
+  for (const b of ev.bookmakers ?? []) {
+    for (const m of b.markets ?? []) {
+      if (m.key === "spreads" && homeLine !== null) {
+        const home = m.outcomes.find(
+          (o) => o.name === ev.home_team && o.point === homeLine,
+        );
+        const away = m.outcomes.find(
+          (o) => o.name === ev.away_team && o.point === -homeLine,
+        );
+        if (typeof home?.price === "number" && typeof away?.price === "number") {
+          coverProbs.push(devigPair(home.price, away.price));
+        }
+      } else if (m.key === "totals" && total !== null) {
+        const over = m.outcomes.find(
+          (o) => o.name === "Over" && o.point === total,
+        );
+        const under = m.outcomes.find(
+          (o) => o.name === "Under" && o.point === total,
+        );
+        if (typeof over?.price === "number" && typeof under?.price === "number") {
+          overProbs.push(devigPair(over.price, under.price));
+        }
+      }
+    }
+  }
+  const homeCoverProb = median(coverProbs);
+  const overProb = median(overProbs);
+
   return {
     homeTeam: ev.home_team,
     awayTeam: ev.away_team,
     commenceTime: ev.commence_time,
-    homeLine: median(spreads),
-    total: median(totals),
+    homeLine,
+    total,
+    homeCoverProb: homeCoverProb === null ? null : round3(homeCoverProb),
+    overProb: overProb === null ? null : round3(overProb),
     books: (ev.bookmakers ?? []).length,
   };
 }
@@ -132,6 +200,13 @@ export interface OddsFillReport {
 /**
  * Fill unentered control-tower entries from matched market lines, in place.
  * A quoted line or an existing total is never overwritten.
+ *
+ * Market probabilities piggyback on the same pass, under a stricter rule:
+ * they are attached only where the entry's line/total is the EXACT point the
+ * market priced (which is always true for a line this fill wrote, and true
+ * for an entered line only when it happens to match the consensus point).
+ * A probability priced at a different line than the one being bet is not a
+ * benchmark, it is a category error — better absent than wrong.
  */
 export function fillControlTowerFromOdds(
   handicaps: Record<string, HandicapInput>,
@@ -160,6 +235,16 @@ export function fillControlTowerFromOdds(
     if (entry.total == null && line.total !== null) {
       entry.total = line.total;
       totalsFilled++;
+    }
+    if (
+      line.homeCoverProb !== null &&
+      entry.side === "home" &&
+      entry.line === line.homeLine
+    ) {
+      entry.marketHomeCover = line.homeCoverProb;
+    }
+    if (line.overProb !== null && entry.total === line.total) {
+      entry.marketOver = line.overProb;
     }
   }
   return { linesFilled, totalsFilled, kept, warnings };

@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 
 import {
   consensusLine,
+  devigPair,
   fillControlTowerFromOdds,
   matchGameLines,
   type OddsApiEvent,
@@ -139,4 +140,107 @@ test("fill writes only unentered entries and never touches a human's line", () =
   assert.equal(handicaps["2"]!.notation, "1半2", "the entered line survives");
   assert.equal(handicaps["2"]!.total, 9.5, "but its missing total is added");
   assert.equal(r.totalsFilled, 2);
+});
+
+// ---- Market-implied probabilities (devigged prices) ----
+
+const pricedEvent = (
+  home: string,
+  away: string,
+  books: Array<{
+    spread?: { point: number; home: number; away: number };
+    total?: { point: number; over: number; under: number };
+  }>,
+): OddsApiEvent => ({
+  commence_time: "2026-08-21T17:05:00Z",
+  home_team: home,
+  away_team: away,
+  bookmakers: books.map((b, i) => ({
+    key: `book${i}`,
+    markets: [
+      ...(b.spread
+        ? [
+            {
+              key: "spreads",
+              outcomes: [
+                { name: home, point: b.spread.point, price: b.spread.home },
+                { name: away, point: -b.spread.point, price: b.spread.away },
+              ],
+            },
+          ]
+        : []),
+      ...(b.total
+        ? [
+            {
+              key: "totals",
+              outcomes: [
+                { name: "Over", point: b.total.point, price: b.total.over },
+                { name: "Under", point: b.total.point, price: b.total.under },
+              ],
+            },
+          ]
+        : []),
+    ],
+  })),
+});
+
+test("devig removes the vig proportionally and is side-symmetric", () => {
+  // -110/-110 is the canonical balanced market: both sides imply 52.4% and
+  // the fair probability is exactly 50%.
+  assert.ok(Math.abs(devigPair(-110, -110) - 0.5) < 1e-9);
+  assert.ok(Math.abs(devigPair(-150, 130) + devigPair(130, -150) - 1) < 1e-9);
+  assert.ok(devigPair(-150, 130) > 0.5);
+});
+
+test("consensus probability uses only books pricing the exact median point", () => {
+  const l = consensusLine(
+    pricedEvent("H", "A", [
+      { spread: { point: -1.5, home: 100, away: -120 } },
+      { spread: { point: -1.5, home: 105, away: -125 } },
+      // Different point: a -2 price is a different proposition and must not
+      // pollute the -1.5 consensus.
+      { spread: { point: -2, home: 150, away: -170 } },
+    ]),
+  );
+  assert.equal(l.homeLine, -1.5);
+  assert.ok(l.homeCoverProb !== null);
+  // Both -1.5 books price home as a slight underdog on the spread.
+  assert.ok(l.homeCoverProb! < 0.5, `got ${l.homeCoverProb}`);
+});
+
+test("prices absent → probability null, line still filled", () => {
+  const l = consensusLine(
+    event("New York Yankees", "Boston Red Sox", [-1.5], [8.5]),
+  );
+  assert.equal(l.homeLine, -1.5);
+  assert.equal(l.homeCoverProb, null);
+  assert.equal(l.overProb, null);
+});
+
+test("the odds fill attaches market probabilities at the exact point only", () => {
+  const games = [game(1, "H", "A"), game(2, "H2", "A2")];
+  const events = [
+    pricedEvent("H", "A", [
+      {
+        spread: { point: -1.5, home: -110, away: -110 },
+        total: { point: 8.5, over: -105, under: -115 },
+      },
+    ]),
+    pricedEvent("H2", "A2", [
+      { spread: { point: -1.5, home: -110, away: -110 } },
+    ]),
+  ];
+  const handicaps: Record<string, HandicapInput> = {
+    "1": { side: "home", notation: null },
+    // An entered line at a DIFFERENT point than the market's: the line is
+    // kept and no market probability may be attached to it.
+    "2": { side: "home", line: -2.5 },
+  };
+  const fill = fillControlTowerFromOdds(handicaps, games, events);
+  assert.equal(fill.linesFilled, 1);
+  assert.equal(handicaps["1"]!.line, -1.5);
+  assert.ok(Math.abs(handicaps["1"]!.marketHomeCover! - 0.5) < 1e-9);
+  assert.ok(handicaps["1"]!.marketOver! < 0.5); // under carries the juice (-115)
+  assert.equal(handicaps["2"]!.marketHomeCover, undefined);
+  assert.equal(handicaps["2"]!.line, -2.5);
 });

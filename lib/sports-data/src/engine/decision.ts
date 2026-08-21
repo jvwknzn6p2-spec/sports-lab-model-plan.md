@@ -42,6 +42,16 @@ export interface HandicapInput {
   line?: number | null;
   notation?: string | null;
   total?: number | null; // over/under line, optional
+  /**
+   * Devigged market-consensus probability that the HOME side covers `line`,
+   * attached by the odds fill only when the market priced this EXACT point
+   * (see odds-source.ts). This is the market's opinion, used as an external
+   * benchmark for the model's cover probability — it is NOT a payout: EV
+   * still prices the fixed-0.9 book the pipeline actually bets.
+   */
+  marketHomeCover?: number | null;
+  /** Same, for the OVER at `total`. */
+  marketOver?: number | null;
 }
 
 /**
@@ -314,6 +324,20 @@ export const DEFAULT_DECISION_CONFIG: DecisionConfig = {
  */
 export const EV_OUTLIER_THRESHOLD = 0.25;
 
+/**
+ * How far the model may disagree with the devigged market consensus before
+ * the disagreement itself becomes the story.
+ *
+ * Sportsbook consensus is sharp: when the model's calibrated cover
+ * probability sits 12+ points from what the market charges for the same
+ * line, the likelier explanation is a model error than a market one — the
+ * same lesson EV_OUTLIER_THRESHOLD encodes, measured directly against the
+ * market's stated probability instead of through the EV proxy. The bet keeps
+ * its sign (disagreement IS the source of every edge), but the pick is
+ * flagged and its confidence capped at B, exactly like an EV outlier.
+ */
+export const MARKET_DISAGREEMENT_THRESHOLD = 0.12;
+
 export interface GamePrediction {
   gamePk: number;
   gameDate: string | null;
@@ -338,6 +362,12 @@ export interface GamePrediction {
     /** Profit per unit staked after the house's cut. Negative = losing bet. */
     ev: number | null;
     /**
+     * Devigged market-consensus probability of the PICKED side covering, when
+     * the market priced this exact line. The benchmark the model's number is
+     * judged against — not a payout.
+     */
+    marketProbability?: number | null;
+    /**
      * A line was quoted, the model has an opinion about it, and that opinion
      * is not worth backing at this price. Distinct from `pass`: the game is
      * still predicted and still scored — only this one market is skipped.
@@ -351,6 +381,8 @@ export interface GamePrediction {
     probability: number | null;
     /** Uncalibrated probability of the chosen side, for banding (see above). */
     rawProbability: number | null;
+    /** Market-consensus probability of the picked side (see handicap). */
+    marketProbability?: number | null;
   };
   expectedRuns: { home: number; away: number };
   reasons: string[];
@@ -537,6 +569,8 @@ export function decide(
   let coverProbability: number | null = null;
   let rawCoverProbability: number | null = null;
   let handicapEv: number | null = null;
+  /** Market-consensus probability of the PICKED side, when priced. */
+  let handicapMarketProb: number | null = null;
   /**
    * True when every part of the quoted line sits on 0 — a pick'em, which is
    * not a handicap at all: it is the moneyline with the stake returned on a
@@ -574,6 +608,14 @@ export function decide(
       takeQuoted ? quoted.probability : 1 - quoted.probability,
     );
     handicapEv = round3(expectedValueFromProbability(chosen, quoted.push));
+    // The market probability is attached only to home-side `line` entries at
+    // the exact priced point (odds-source.ts), so flipping it to the picked
+    // side is a plain complement.
+    const marketQuoted =
+      handicap.side === "home" ? (handicap.marketHomeCover ?? null) : null;
+    if (marketQuoted !== null) {
+      handicapMarketProb = round3(takeQuoted ? marketQuoted : 1 - marketQuoted);
+    }
   }
 
   // Two different reasons to sit out, and they do NOT bind the same markets.
@@ -648,8 +690,19 @@ export function decide(
     !handicapSuppressed &&
     !handicapIsPickem &&
     handicapEv > EV_OUTLIER_THRESHOLD;
+  // The same guard, measured directly: when the market priced this exact
+  // line, the distance between the model's calibrated cover probability and
+  // the market's devigged one needs no EV proxy.
+  const marketDivergence =
+    handicapMarketProb !== null && coverProbability !== null
+      ? Math.abs(coverProbability - handicapMarketProb)
+      : null;
+  const marketOutlier =
+    marketDivergence !== null &&
+    !handicapSuppressed &&
+    marketDivergence >= MARKET_DISAGREEMENT_THRESHOLD;
   const confidenceCapped =
-    evOutlier && (confidence === "S" || confidence === "A")
+    (evOutlier || marketOutlier) && (confidence === "S" || confidence === "A")
       ? "B"
       : confidence;
 
@@ -683,8 +736,38 @@ export function decide(
     totalProbability = round3(pOver >= 0.5 ? pOver : 1 - pOver);
     rawTotalProbability = round3(pOver >= 0.5 ? over : 1 - over);
   }
+  const totalMarketProb =
+    totalLine !== null && totalPick !== null && handicap?.marketOver != null
+      ? round3(
+          totalPick === "OVER"
+            ? handicap.marketOver
+            : 1 - handicap.marketOver,
+        )
+      : null;
 
   const reasons = buildReasons(g, runs, sim);
+  if (totalMarketProb !== null && totalProbability !== null) {
+    reasons.unshift(
+      `Market consensus on the total: ${(totalMarketProb * 100).toFixed(1)}% ` +
+        `for the ${totalPick} — model ${(totalProbability * 100).toFixed(1)}% ` +
+        `(${fmtPct(totalProbability - totalMarketProb)} vs market)`,
+    );
+  }
+  if (marketDivergence !== null && coverProbability !== null) {
+    reasons.unshift(
+      `Market consensus on the handicap: ${(handicapMarketProb! * 100).toFixed(1)}% ` +
+        `for this side — model ${(coverProbability * 100).toFixed(1)}% ` +
+        `(${fmtPct(coverProbability - handicapMarketProb!)} vs market)`,
+    );
+  }
+  if (marketOutlier) {
+    reasons.unshift(
+      `Market disagreement: the model sits ${fmtPct(marketDivergence!)} from ` +
+        `the devigged consensus at this exact line — disagreement this large ` +
+        `has historically been model error, not market error ` +
+        `(confidence capped at B)`,
+    );
+  }
   if (evOutlier) {
     reasons.unshift(
       `EV outlier: ${fmtPct(handicapEv!)} per unit is implausibly large — ` +
@@ -751,6 +834,7 @@ export function decide(
       coverProbability,
       rawCoverProbability,
       ev: handicapEv,
+      marketProbability: handicapMarketProb,
       noValue: !handicapSuppressed && handicapUnprofitable,
     },
     total: {
@@ -759,12 +843,14 @@ export function decide(
       pick: pass ? null : totalPick,
       probability: totalProbability,
       rawProbability: rawTotalProbability,
+      marketProbability: totalMarketProb,
     },
     expectedRuns: { home: runs.homeMu, away: runs.awayMu },
     reasons,
     flags: [
       ...g.flags.map((f) => `[${f.severity}] ${f.code}`),
       ...(evOutlier ? ["[warn] ev_outlier"] : []),
+      ...(marketOutlier ? ["[warn] market_disagreement"] : []),
     ],
   };
 }

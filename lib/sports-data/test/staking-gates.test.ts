@@ -88,3 +88,58 @@ test("the C gate does not bind B+ games: a thin-pass config keeps the handicap",
   assert.notEqual(p.confidence, "C");
   assert.ok(p.handicap.pick !== null, "B+ handicap must survive the pass");
 });
+
+test("market disagreement caps confidence; agreement leaves it alone", async () => {
+  const games = await loadSlateGames();
+  const g = games[0]!;
+  const runs = expectedRuns(g, 2024);
+  const strong = simulateGame(6.2, 3.2, { sims: 10_000, seed: 1 });
+
+  // The model prices the home cover far above what the market charges for
+  // the exact same line: the disagreement itself is the warning.
+  const disagree = decide(g, runs, strong, DEFAULT_CALIBRATION, {
+    side: "home",
+    line: -1.5,
+    marketHomeCover: 0.4,
+  });
+  assert.ok(disagree.handicap.coverProbability! - 0.4 >= 0.12);
+  assert.ok(disagree.flags.includes("[warn] market_disagreement"));
+  assert.ok(["B", "C"].includes(disagree.confidence));
+  assert.equal(disagree.handicap.marketProbability, 0.4);
+  assert.ok(
+    disagree.reasons.some((r) => r.includes("Market disagreement")),
+    disagree.reasons.join(" | "),
+  );
+
+  // Same pick with the market roughly agreeing: no flag, no cap.
+  const agree = decide(g, runs, strong, DEFAULT_CALIBRATION, {
+    side: "home",
+    line: -1.5,
+    marketHomeCover: disagree.handicap.coverProbability!,
+  });
+  assert.ok(!agree.flags.includes("[warn] market_disagreement"));
+  assert.ok(
+    agree.reasons.some((r) => r.includes("Market consensus on the handicap")),
+  );
+});
+
+test("the total's market probability is reported for the picked side", async () => {
+  const games = await loadSlateGames();
+  const g = games[0]!;
+  const runs = expectedRuns(g, 2024);
+  const sim = simulateGame(6.2, 3.2, { sims: 10_000, seed: 1 });
+  const p = decide(g, runs, sim, DEFAULT_CALIBRATION, {
+    side: "home",
+    line: -1.5,
+    total: 8.5,
+    marketOver: 0.55,
+  });
+  assert.ok(p.total.pick !== null);
+  assert.equal(
+    p.total.marketProbability,
+    p.total.pick === "OVER" ? 0.55 : 0.45,
+  );
+  assert.ok(
+    p.reasons.some((r) => r.includes("Market consensus on the total")),
+  );
+});
