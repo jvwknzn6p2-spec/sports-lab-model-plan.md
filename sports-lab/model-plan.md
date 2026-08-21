@@ -224,7 +224,13 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   split off 2026-08-21 after the stated 65–70% band hit 37.5% over 24 bets
   while lower bands tracked within ±2.5pt; legacy history rows teach both
   tail bands until stamped rows accumulate, and the far band is capped at
-  the near band's level so trust can never rise with distance from 50%);
+  the near band's level so trust can never rise with distance from 50%.
+  Validated by walk-forward replay over 2025-07-01→08-15 [r4.5/e0, same
+  seeds as the two-band baseline]: identical headline record 154-117 /
+  +21.60u / Brier 0.243, band calibration stays within noise, and the
+  near tail — no longer dragged down by far-tail bets — quotes the top of
+  the book with more resolution: S went from 1 pick to 16 at 68.8%
+  [+4.90u], A 25 at 72.0%);
   settlement + self-learning (`settle`); cumulative reporting
   and a weekly standing audit; GitHub Actions crons run the day (slate
   06:07 UTC; predict as a TWO-STAGE lock — 12:10 UTC safety lock plus a
