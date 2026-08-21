@@ -170,6 +170,7 @@ function coreGame(): GameCoreData {
     starter: null,
     batting: null,
     bullpen: null,
+    ilPlayers: null,
     form: null,
   };
   return {

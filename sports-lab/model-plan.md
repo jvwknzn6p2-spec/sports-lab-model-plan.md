@@ -235,9 +235,21 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   temperature multiplier adjusts the run environment at open-air parks,
   domes and unknown-state retractable roofs are never adjusted, and high
   wind raises a warn flag only (no orientation data → no invented number).
-  Injuries/lineups remain ❌. **Step 9 (AI multi-agent review) — ❌ not
-  started**; the deterministic standing audit (`src/engine/audit.ts`) covers
-  the Data Auditor's ground.
+  IL detection is in (`src/sources/injuries-builder.ts`): each slate team's
+  40-man roster is scanned for D-coded (IL) players, surfaced as an [info]
+  flag naming them and fed to the review layer — informational only, since
+  who replaces an injured player is not in any feed and an invented penalty
+  would fabricate an input. Per-game lineups remain ❌.
+- **Step 9 (AI multi-agent review) — ✅ implemented** as
+  `handiedge review` (`src/engine/ai-review.ts`): a Data Auditor, Matchup
+  Analyst and Risk Reviewer (Claude, via the Anthropic SDK) each read the
+  LOCKED slate payload — picks, flags, IL lists, weather, calibration state
+  — and write an advisory briefing to `data/reviews/<date>.md`. Advisory
+  only: review runs after the lock and changes nothing. Prompts forbid
+  outside facts (payload-only reasoning). Runs in the predict workflow when
+  the `ANTHROPIC_API_KEY` secret is set; skips cleanly otherwise. The
+  deterministic standing audit (`src/engine/audit.ts`) still covers
+  integrity re-scoring.
 - **Frontend/API surface — ◑ started.** Read-only endpoints
   (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
   the committed locks and cumulative record from `artifacts/api-server`;

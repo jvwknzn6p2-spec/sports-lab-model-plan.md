@@ -143,9 +143,24 @@ jobs:
           ' "lib/sports-data/data/control-towers/${{ steps.d.outputs.date }}.json" \
             >> "$GITHUB_STEP_SUMMARY"
 
+      # Step 9 — AI reviewer panel over the LOCKED slate (advisory only;
+      # changes no pick). Runs only when the ANTHROPIC_API_KEY secret is set;
+      # the command itself also skips cleanly without one. continue-on-error:
+      # a briefing failure must never block the day's predictions landing.
+      - name: AI review (advisory)
+        if: steps.guard.outputs.run == 'true'
+        continue-on-error: true
+        working-directory: lib/sports-data
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: pnpm run handiedge review --date "${{ steps.d.outputs.date }}"
+
       - name: Publish to run summary
         if: steps.guard.outputs.run == 'true'
-        run: cat "lib/sports-data/data/reports/${{ steps.d.outputs.date }}.md" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          cat "lib/sports-data/data/reports/${{ steps.d.outputs.date }}.md" >> "$GITHUB_STEP_SUMMARY"
+          REVIEW="lib/sports-data/data/reviews/${{ steps.d.outputs.date }}.md"
+          if [ -f "$REVIEW" ]; then cat "$REVIEW" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Commit today's slate and predictions
         run: |

@@ -59,6 +59,9 @@ _Populate as you build — explicit user instructions worth remembering across s
   record showed the top band inverted (S 40.9% under B's 58.2%).
 - Predictions are LOCKED per date; re-running `predict` needs `--force` and
   must not restamp `lockedAt`.
+- **`ANTHROPIC_API_KEY`** (repo secret) enables the Step-9 AI reviewer panel
+  (`handiedge review`) — advisory briefings in `data/reviews/`, never a pick
+  change. Without the key the step skips cleanly.
 
 ## Pointers
 

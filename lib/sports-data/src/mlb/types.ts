@@ -85,3 +85,12 @@ export interface MlbStatsResponse {
     }>;
   }>;
 }
+
+/** 40-man roster envelope — player status codes drive IL detection. */
+export interface MlbRosterResponse {
+  roster?: Array<{
+    person?: MlbPersonRef;
+    position?: { abbreviation?: string };
+    status?: { code?: string; description?: string };
+  }>;
+}

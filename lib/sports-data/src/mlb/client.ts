@@ -17,6 +17,7 @@
 
 import type {
   MlbBoxscoreResponse,
+  MlbRosterResponse,
   MlbScheduleResponse,
   MlbStatsResponse,
 } from "./types";
@@ -200,6 +201,14 @@ export class MlbStatsClient {
     return this.getJson<MlbStatsResponse>(`/people/${personId}/stats`, {
       stats: "season",
       group: "pitching",
+      season,
+    });
+  }
+
+  /** 40-man roster with player status — IL (injured list) detection. */
+  teamRoster(teamId: number, season: number): Promise<MlbRosterResponse> {
+    return this.getJson<MlbRosterResponse>(`/teams/${teamId}/roster`, {
+      rosterType: "40Man",
       season,
     });
   }

@@ -93,6 +93,14 @@ import {
   recalibrateFromHistory,
   type GameResult,
 } from "../engine/settle";
+import {
+  anthropicReviewModel,
+  buildReviewPayload,
+  REVIEW_MODEL_ID,
+  REVIEWER_ROLES,
+  reviewToMarkdown,
+  runAiReview,
+} from "../engine/ai-review";
 import { MlbStatsClient } from "../mlb/client";
 import { buildSlate } from "../sources/slate-builder";
 import {
@@ -103,6 +111,7 @@ import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
 import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
 import { buildWeather } from "../sources/weather";
+import { buildInjuries } from "../sources/injuries-builder";
 import {
   aggregateHistory,
   marketRecordLabel,
@@ -244,6 +253,7 @@ async function cmdFetchSlate(args: {
   "skip-workloads"?: boolean;
   "skip-form"?: boolean;
   "skip-weather"?: boolean;
+  "skip-injuries"?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -304,6 +314,27 @@ async function cmdFetchSlate(args: {
     );
   } else {
     workloadSummary.push("  Recent-form scan skipped (--skip-form).");
+  }
+
+  // IL lists from the 40-man rosters (fail-soft per team; informational —
+  // no numeric adjustment is derived, see injuries-builder.ts).
+  if (!args["skip-injuries"]) {
+    console.log("Fetching 40-man rosters for IL detection…");
+    const teamIds = bundle.games
+      .flatMap((g) => [g.home.teamId, g.away.teamId])
+      .filter((id): id is number => id !== null);
+    const inj = await buildInjuries({ client, teamIds, season });
+    bundle.injuries = inj.injuries;
+    const ilCount = Object.values(inj.injuries).reduce(
+      (n, l) => n + l.length,
+      0,
+    );
+    workloadSummary.push(
+      `  IL: ${ilCount} player(s) on the IL across ${Object.keys(inj.injuries).length} team(s).`,
+      ...inj.warnings.map((w) => `    - injuries: ${w}`),
+    );
+  } else {
+    workloadSummary.push("  IL roster scan skipped (--skip-injuries).");
   }
 
   // First-pitch weather (Open-Meteo, keyless). Fail-soft per venue; a
@@ -729,6 +760,52 @@ async function runSettle(payload: {
       `(${report.calibrationAfter.gamesSettled} games settled lifetime)`,
   );
   console.log(`  History appended → ${HISTORY_PATH}`);
+}
+
+/**
+ * Step 9 — run the AI reviewer panel over a LOCKED slate and save the
+ * briefing to data/reviews/<date>.md. Advisory only: nothing about the lock
+ * changes. Skips (exit 0) when no Anthropic credential is available, so the
+ * daily pipeline works with or without the ANTHROPIC_API_KEY secret.
+ */
+async function cmdReview(args: { date?: string }): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
+    console.log(
+      "AI review skipped: no ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN set. " +
+        "Add the secret to run the reviewer panel.",
+    );
+    return;
+  }
+  const lockPath = join(PRED_DIR, `${date}.json`);
+  if (!existsSync(lockPath)) {
+    throw new Error(`No prediction lock for ${date} (${lockPath}) — run predict first.`);
+  }
+  const lock = await readJson<PredictionLock>(lockPath);
+  const slatePath = join(SLATE_DIR, `${date}.json`);
+  const bundle = existsSync(slatePath)
+    ? await readJson<FixtureBundle>(slatePath)
+    : null;
+
+  console.log(
+    `Running the AI reviewer panel (${REVIEWER_ROLES.length} roles, ${REVIEW_MODEL_ID}) for ${date}…`,
+  );
+  const payload = buildReviewPayload({
+    date,
+    predictions: lock.predictions,
+    calibration: lock.calibration,
+    bundle,
+  });
+  const result = await runAiReview(payload, anthropicReviewModel());
+  const outPath = join(DATA_DIR, "reviews", `${date}.md`);
+  await saveMarkdown(outPath, reviewToMarkdown(date, result));
+  console.log(`AI review → ${outPath}`);
+  for (const s of result.sections) {
+    console.log(`  ${s.role.title}: ${s.findings.split("\n")[0] ?? ""}`);
+  }
 }
 
 async function cmdReport(): Promise<void> {
@@ -1202,6 +1279,7 @@ async function main(): Promise<void> {
       "env-sd": { type: "string" },
       "skip-form": { type: "boolean", default: false },
       "skip-weather": { type: "boolean", default: false },
+      "skip-injuries": { type: "boolean", default: false },
     },
   });
   const cmd = positionals[0];
@@ -1210,6 +1288,7 @@ async function main(): Promise<void> {
   else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
   else if (cmd === "report") await cmdReport();
+  else if (cmd === "review") await cmdReview(values);
   else if (cmd === "audit") await cmdAudit();
   else if (cmd === "backtest") await cmdBacktest(values);
   else {
@@ -1225,6 +1304,9 @@ async function main(): Promise<void> {
     );
     console.log("  handiedge settle        --results <results.json>");
     console.log("  handiedge report");
+    console.log(
+      "  handiedge review        [--date YYYY-MM-DD]   (needs ANTHROPIC_API_KEY)",
+    );
     console.log("  handiedge audit");
     console.log(
       "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",

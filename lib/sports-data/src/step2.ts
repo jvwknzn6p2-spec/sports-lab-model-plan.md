@@ -26,6 +26,7 @@ import {
 import type { RawBattingLine, RawPitchingLine } from "./sabermetrics";
 import type { NormalizedGame } from "./mlb/parse";
 import { HIGH_WIND_KMH, type GameWeather } from "./sources/weather";
+import type { IlPlayer } from "./sources/injuries-builder";
 
 /** Everything the orchestrator needs, behind one injectable interface. */
 export interface CoreDataSource {
@@ -50,6 +51,8 @@ export interface CoreDataSource {
   getRecentForm?(teamId: number): Promise<TeamRecentForm | undefined>;
   /** Optional first-pitch weather; undefined when untracked. */
   getWeather?(gamePk: number): Promise<GameWeather | undefined>;
+  /** Optional IL list per team; undefined when untracked. */
+  getInjuries?(teamId: number): Promise<IlPlayer[] | undefined>;
 }
 
 /** A team's scoring over its most recent games (Final games only). */
@@ -68,6 +71,11 @@ export interface TeamCoreData {
   bullpen: BullpenFeatures | null;
   /** Recent form; null = untracked, and the run model applies no adjustment. */
   form: TeamRecentForm | null;
+  /**
+   * Players on the IL; null = untracked. Informational only — who replaces
+   * them is unknown, so no numeric adjustment is ever derived from this.
+   */
+  ilPlayers: IlPlayer[] | null;
 }
 
 export interface GameCoreData {
@@ -208,6 +216,22 @@ export async function assembleGameCoreData(
         ? ((await source.getRecentForm(side.teamId)) ?? null)
         : null;
 
+    const ilPlayers =
+      side.teamId !== null && source.getInjuries
+        ? ((await source.getInjuries(side.teamId)) ?? null)
+        : null;
+    if (ilPlayers && ilPlayers.length > 0) {
+      flags.push({
+        code: `${label}_players_on_il`,
+        severity: "info",
+        message:
+          `${label} team has ${ilPlayers.length} player(s) on the IL: ` +
+          ilPlayers
+            .map((p) => `${p.name}${p.position ? ` (${p.position})` : ""}`)
+            .join(", "),
+      });
+    }
+
     return {
       teamId: side.teamId,
       teamName: side.teamName,
@@ -215,6 +239,7 @@ export async function assembleGameCoreData(
       batting,
       bullpen,
       form,
+      ilPlayers,
     };
   };
 
