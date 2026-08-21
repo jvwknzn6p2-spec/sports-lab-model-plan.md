@@ -124,9 +124,9 @@ export function predictionsToMarkdown(
 
   out.push("---");
   out.push(
-    `_Shrink (core/tail): moneyline ${calibration.shrink}/${calibration.tailShrink}, ` +
-      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}, ` +
-      `total ${calibration.totalShrink}/${calibration.totalTailShrink} · ` +
+    `_Shrink (core/tail/far): moneyline ${calibration.shrink}/${calibration.tailShrink}/${calibration.farTailShrink}, ` +
+      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}/${calibration.handicapFarTailShrink}, ` +
+      `total ${calibration.totalShrink}/${calibration.totalTailShrink}/${calibration.totalFarTailShrink} · ` +
       `${calibration.gamesSettled} games settled lifetime._`,
   );
   return out.join("\n") + "\n";
@@ -178,11 +178,14 @@ export function settlementToMarkdown(r: SettlementReport): string {
   }
   out.push(
     `- Self-learning — moneyline ${r.calibrationBefore.shrink} → ${r.calibrationAfter.shrink} ` +
-      `(tail ${r.calibrationBefore.tailShrink} → ${r.calibrationAfter.tailShrink}), ` +
+      `(tail ${r.calibrationBefore.tailShrink} → ${r.calibrationAfter.tailShrink}, ` +
+      `far ${r.calibrationBefore.farTailShrink} → ${r.calibrationAfter.farTailShrink}), ` +
       `handicap ${r.calibrationBefore.handicapShrink} → ${r.calibrationAfter.handicapShrink} ` +
-      `(tail ${r.calibrationBefore.handicapTailShrink} → ${r.calibrationAfter.handicapTailShrink}), ` +
+      `(tail ${r.calibrationBefore.handicapTailShrink} → ${r.calibrationAfter.handicapTailShrink}, ` +
+      `far ${r.calibrationBefore.handicapFarTailShrink} → ${r.calibrationAfter.handicapFarTailShrink}), ` +
       `total ${r.calibrationBefore.totalShrink} → ${r.calibrationAfter.totalShrink} ` +
-      `(tail ${r.calibrationBefore.totalTailShrink} → ${r.calibrationAfter.totalTailShrink})`,
+      `(tail ${r.calibrationBefore.totalTailShrink} → ${r.calibrationAfter.totalTailShrink}, ` +
+      `far ${r.calibrationBefore.totalFarTailShrink} → ${r.calibrationAfter.totalFarTailShrink})`,
   );
   if (r.gamesMissingResults > 0) {
     out.push(`- ${r.gamesMissingResults} game(s) had no result yet`);
@@ -275,9 +278,9 @@ export function summaryToMarkdown(
     out.push(`- Mean total error: ${s.meanTotalError} runs`);
   }
   out.push(
-    `- Learned shrink (core/tail) — moneyline ${calibration.shrink}/${calibration.tailShrink}, ` +
-      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}, ` +
-      `total ${calibration.totalShrink}/${calibration.totalTailShrink} ` +
+    `- Learned shrink (core/tail/far) — moneyline ${calibration.shrink}/${calibration.tailShrink}/${calibration.farTailShrink}, ` +
+      `handicap ${calibration.handicapShrink}/${calibration.handicapTailShrink}/${calibration.handicapFarTailShrink}, ` +
+      `total ${calibration.totalShrink}/${calibration.totalTailShrink}/${calibration.totalFarTailShrink} ` +
       `(${calibration.gamesSettled} games)`,
   );
   out.push("");

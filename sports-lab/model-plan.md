@@ -219,8 +219,13 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
 
 - **Steps 1–5, 7, 8, 10, 11 — ✅ running.** Schedule + stats fetch
   (`fetch-slate`), park factors, recent form, bullpen workloads; run model +
-  Monte Carlo (`src/engine/`); confidence S/A/B/C with learned banded
-  calibration; settlement + self-learning (`settle`); cumulative reporting
+  Monte Carlo (`src/engine/`); confidence S/A/B/C with learned THREE-band
+  calibration (core / tail raw ≥0.65 / far tail raw ≥0.70 — the far tail
+  split off 2026-08-21 after the stated 65–70% band hit 37.5% over 24 bets
+  while lower bands tracked within ±2.5pt; legacy history rows teach both
+  tail bands until stamped rows accumulate, and the far band is capped at
+  the near band's level so trust can never rise with distance from 50%);
+  settlement + self-learning (`settle`); cumulative reporting
   and a weekly standing audit; GitHub Actions crons run the day (slate
   06:07 UTC; predict as a TWO-STAGE lock — 12:10 UTC safety lock plus a
   12:45 UTC refresh re-lock against the 22:59 JST deadline, the market
@@ -256,9 +261,18 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
 - **Frontend/API surface — ◑ started.** Read-only endpoints
   (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
   the committed locks and cumulative record from `artifacts/api-server`;
-  a first slate-viewer screen lives at
-  `artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`
-  (vite proxies `/api` to the Express server).
+  the slate viewer
+  (`artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`) and
+  a cumulative-record screen (`HandiEdgeReport.tsx`: P&L significance,
+  calibration by band, confidence ladder, learned shrinks, per-day history)
+  render over it (vite proxies `/api` to the Express server).
+- **Confidence C stakes nothing (2026-08-21).** Section 2 defines C as
+  "informational only"; the decision engine now enforces it. A C-rated game
+  still shows its handicap price and EV, but the pick is withheld so
+  settlement never stakes it — real line included. Every C stake the live
+  record ever held lost (0-3, −3.00 units, the 2026-08-18 pick'em leak).
+  This narrows the market decoupling: a real-line handicap survives the
+  thin-winner-edge PASS only while the game still rates at least B.
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

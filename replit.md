@@ -54,9 +54,19 @@ _Populate as you build — explicit user instructions worth remembering across s
   `fetch-slate` auto-fill unentered handicap/total lines from market
   consensus. Entered lines are never overwritten. Without the key, unentered
   games run moneyline + total only.
-- **S confidence is capped at A** while the winner tail shrink in
-  `data/calibration.json` sits below `TAIL_TRUST_FLOOR` (0.75) — the live
-  record showed the top band inverted (S 40.9% under B's 58.2%).
+- **S confidence is capped at A** while either winner tail shrink
+  (`tailShrink` / `farTailShrink`) in `data/calibration.json` sits below
+  `TAIL_TRUST_FLOOR` (0.75) — the live record showed the top band inverted
+  (S 40.9% under B's 58.2%).
+- **Calibration is THREE-band** (core / tail raw ≥0.65 / far tail raw ≥0.70)
+  since 2026-08-21. History rows without far-tail stamps teach both tail
+  bands (they were quoted under the single-tail regime); the far band is
+  capped at the near band. Don't "fix" the legacy fallback to split by
+  stated probability — stated space compresses as shrinks fall and misfiles
+  the worst far-tail bets into the near band.
+- **Confidence C never stakes** (model-plan §2: informational only). A
+  C-rated game shows its handicap price/EV but `handicap.pick` is null, so
+  settle puts no money on it.
 - Predictions are LOCKED per date against a **22:59 JST deadline** (market
   closes 23:00 JST). The daily cycle is a two-stage lock: 12:10 UTC safety
   lock + 12:45 UTC refresh re-lock; after the deadline `predict --force`
