@@ -183,12 +183,12 @@ test("duplicate history dates, counter drift and bad notations are flagged", () 
 });
 
 test("lock margins measure distance to the deadline and flag late locks", () => {
-  // Deadline is 13:55 UTC; 13:00 lock → +55 min, 14:00 lock → 5 min late.
+  // Deadline is 13:59 UTC; 13:00 lock → +59 min, 14:00 lock → 1 min late.
   const onTime = day("2026-08-18", [], null, "2026-08-18T13:00:00.000Z");
   const late = day("2026-08-19", [], null, "2026-08-19T14:00:00.000Z");
   const margins = lockMargins([onTime, late]);
-  assert.deepEqual(margins[0], { date: "2026-08-18", marginMinutes: 55, late: false });
-  assert.deepEqual(margins[1], { date: "2026-08-19", marginMinutes: -5, late: true });
+  assert.deepEqual(margins[0], { date: "2026-08-18", marginMinutes: 59, late: false });
+  assert.deepEqual(margins[1], { date: "2026-08-19", marginMinutes: -1, late: true });
 });
 
 test("only recent late locks that are late under the CURRENT rule too become errors", async () => {
@@ -211,7 +211,7 @@ test("only recent late locks that are late under the CURRENT rule too become err
   // Recent slate produced under the CURRENT rule and locked after it: error.
   const freshLate = day(
     "2026-08-18",
-    [prediction({ gamePk: 3, lockDeadline: "2026-08-18T13:55:00.000Z" })],
+    [prediction({ gamePk: 3, lockDeadline: "2026-08-18T13:59:00.000Z" })],
     { "3": { homeScore: 5, awayScore: 3 } },
     "2026-08-18T14:10:00.000Z",
   );

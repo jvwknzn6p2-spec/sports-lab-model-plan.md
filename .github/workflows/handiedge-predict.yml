@@ -11,28 +11,32 @@ name: HandiEdge — daily predictions
 # human could enter a line, so every slate in the tool's history was predicted
 # at ハンデなし.
 #
-# 12:10 UTC = 21:10 JST — WELL before the 22:55 JST (13:55 UTC) prediction
-# deadline, so the picks are produced and locked while they are still on
-# time. The margin is deliberately large and the minute deliberately odd,
-# because the only thing that has ever made this slate late is GitHub's
-# scheduler queue:
+# TWO-STAGE LOCK against a 22:59 JST (13:59 UTC) deadline — the market
+# itself closes at 23:00 JST.
+#
+#   12:10 UTC cron — the SAFETY lock. Fires ~12:56–13:00 at the observed
+#     scheduler delay (46–50 min on this repository, spikes to 117 min),
+#     locking ~22:00 JST with ~an hour of headroom. Whatever happens later,
+#     the day has an on-time slate.
+#   12:45 UTC cron — the REFRESH lock. Fires ~13:31–13:35 (≈22:31–35 JST),
+#     re-locking on ~35 minutes' fresher data: confirmed probables, moved
+#     market lines, updated weather. If the queue spikes past the deadline,
+#     `predict --force` freezes and carries the existing picks through
+#     UNCHANGED (see cmdPredict) — the refresh degrades to a no-op instead
+#     of a late slate. A pre-deadline re-lock honestly restamps lockedAt.
+#
+# Why not one cron aimed at 22:59 exactly: the scheduler jitter above is
+# larger than the margin, and a late fire would miss the market close
+# entirely — no bets at all beats slightly stale data never.
 #
 #   cron 13:00 → fired 13:22   (deadline of that era 13:21 — missed by 1 min)
 #   cron 12:37 → fired 13:23:54, 13:26:19 on consecutive days
-#
-# So the real delay on this repository is 46–50 minutes, roughly double the
-# 20–26 minutes the 12:37 move was sized against, and it has reached 117
-# minutes (2026-08-13). At 12:37 the surviving headroom was only ~28 minutes
-# — one bad queue away from stamping a whole slate predicted_after_deadline
-# again. 12:10 restores ~55 minutes of real headroom at the observed delay,
-# so the flag marks only genuinely late runs (a manual re-run, an outage).
-# In MLB's own clock this is 08:10 ET on the slate date, comfortably ahead of
-# the earliest first pitch (about 13:05 ET / 17:05 UTC).
 #
 # The slate date is MLB's game date, which is the UTC date this job runs on.
 on:
   schedule:
     - cron: "10 12 * * *"
+    - cron: "45 12 * * *"
   workflow_dispatch:
     inputs:
       date:
@@ -113,7 +117,10 @@ jobs:
         working-directory: lib/sports-data
         run: |
           FORCE=""
-          if [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
+          # Scheduled runs always --force: the refresh cron re-locks over the
+          # safety lock (safe — after the deadline cmdPredict carries frozen
+          # picks through unchanged). Manual dispatch keeps the explicit flag.
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.force }}" = "true" ]; then FORCE="--force"; fi
           pnpm run handiedge predict \
             --control "data/control-towers/${{ steps.d.outputs.date }}.json" $FORCE
 
@@ -135,7 +142,7 @@ jobs:
                 ? `> ⚠️ **No handicap lines were entered** — the handicap market was not ` +
                   `quoted for any of the ${all.length} games (moneyline and totals only). ` +
                   "Set the ODDS_API_KEY repo secret for automatic market lines, or edit " +
-                  "the control tower after the morning slate job and commit before 21:10 JST."
+                  "the control tower after the morning slate job and commit before 22:30 JST."
                 : `> **${real.length} of ${all.length} games** carried a real handicap line ` +
                   `(${entered.length} entered${totals.length ? `, ${totals.length} with a total` : ""}).`,
             );

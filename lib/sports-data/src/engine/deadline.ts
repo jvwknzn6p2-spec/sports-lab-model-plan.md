@@ -1,29 +1,34 @@
 /**
  * The two fixed cut-offs of the daily MLB routine, both stated in JST.
  *
- *   PREDICTION — 22:55 JST the evening before the games.
- *   RESULTS    — 16:00 JST on the day the games finish.
+ *   PREDICTION — 22:59 JST the evening before the games (the market itself
+ *                closes at 23:00 JST; one minute of margin is kept).
+ *   RESULTS    — 16:00 JST on the day the games finish. This is the LATEST
+ *                acceptable time, not a schedule: settlement now polls and
+ *                lands within ~2h of each game finishing (see
+ *                handiedge-settle.yml), and this deadline is what the audit
+ *                grades overdue slates against.
  *
  * ## Why "the evening before" is the slate's own date
  *
  * A slate is keyed by MLB's own calendar date (what statsapi calls the game
  * date). Those games begin around 17:00 UTC and run overnight, so in JST they
  * fall on the FOLLOWING morning: a 2024-07-25 slate is watched in Japan on the
- * 26th. The evening before them is therefore 22:55 JST on the 25th — the slate
+ * 26th. The evening before them is therefore 22:59 JST on the 25th — the slate
  * date itself — and they are all final by 16:00 JST on the 26th, the day after.
  *
  * Concretely, for the 2024-07-25 slate:
- *   prediction  22:55 JST 07-25 = 13:55 UTC — earliest first pitch is 17:05 UTC
+ *   prediction  22:59 JST 07-25 = 13:59 UTC — earliest first pitch is 17:05 UTC
  *   results     16:00 JST 07-26 = 07:00 UTC — the last game ends around 06:00 UTC
  *
  * Both conversions are built from UTC arithmetic rather than the host's local
  * timezone, which is UTC on GitHub Actions and something else on a laptop. A
  * naive local-date comparison puts these deadlines a day out for anyone in JST,
- * because 22:55 and 16:00 JST both sit on a different UTC date than they read.
+ * because 22:59 and 16:00 JST both sit on a different UTC date than they read.
  */
 
 /** Predictions are fixed at this JST time on the evening before the games. */
-export const PREDICTION_DEADLINE_JST = { hour: 22, minute: 55 } as const;
+export const PREDICTION_DEADLINE_JST = { hour: 22, minute: 59 } as const;
 
 /** Results, analysis, learning and saving are due at this JST time. */
 export const RESULTS_DEADLINE_JST = { hour: 16, minute: 0 } as const;
@@ -61,7 +66,7 @@ export function jstDateOf(instant: Date): string {
 }
 
 /**
- * When the slate's predictions stop being editable: 22:55 JST on the slate
+ * When the slate's predictions stop being editable: 22:59 JST on the slate
  * date, which is the evening before those games are played.
  */
 export function predictionDeadline(slateDate: string): Date {

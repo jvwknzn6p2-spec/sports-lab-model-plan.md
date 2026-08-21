@@ -57,8 +57,12 @@ _Populate as you build — explicit user instructions worth remembering across s
 - **S confidence is capped at A** while the winner tail shrink in
   `data/calibration.json` sits below `TAIL_TRUST_FLOOR` (0.75) — the live
   record showed the top band inverted (S 40.9% under B's 58.2%).
-- Predictions are LOCKED per date; re-running `predict` needs `--force` and
-  must not restamp `lockedAt`.
+- Predictions are LOCKED per date against a **22:59 JST deadline** (market
+  closes 23:00 JST). The daily cycle is a two-stage lock: 12:10 UTC safety
+  lock + 12:45 UTC refresh re-lock; after the deadline `predict --force`
+  carries the frozen picks through unchanged. Settlement sweeps the finish
+  window every 2 hours (`fetch-results --poll` exits cleanly when nothing is
+  Final yet; partial settles are replaced last-wins).
 - **`ANTHROPIC_API_KEY`** (repo secret) enables the Step-9 AI reviewer panel
   (`handiedge review`) — advisory briefings in `data/reviews/`, never a pick
   change. Without the key the step skips cleanly.

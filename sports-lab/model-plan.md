@@ -221,8 +221,11 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   (`fetch-slate`), park factors, recent form, bullpen workloads; run model +
   Monte Carlo (`src/engine/`); confidence S/A/B/C with learned banded
   calibration; settlement + self-learning (`settle`); cumulative reporting
-  and a weekly standing audit; five GitHub Actions crons (slate 06:07 UTC,
-  predict 12:10 UTC, settle 07:00 UTC, backtest, Monday audit).
+  and a weekly standing audit; GitHub Actions crons run the day (slate
+  06:07 UTC; predict as a TWO-STAGE lock — 12:10 UTC safety lock plus a
+  12:45 UTC refresh re-lock against the 22:59 JST deadline, the market
+  closing at 23:00 JST; settle as two-hourly sweeps across the finish
+  window so games settle within ~2h of ending; backtest; Monday audit).
 - **Step 6 (odds/EV) — ◑ partial.** EV math and 半-notation settlement are
   implemented and tested, and `fetch-slate` now auto-fills market run lines
   and totals from The Odds API consensus when the `ODDS_API_KEY` secret is
