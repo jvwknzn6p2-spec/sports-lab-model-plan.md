@@ -350,12 +350,11 @@ bet, stamped or not.
   wOBA event weights are the one documented approximation (MLB weights over
   NPB anchors — exact weights need a play-by-play RE matrix npb.jp does not
   publish).
-- **Honest v1 gaps, all flagged or absent rather than faked**: bullpen =
+- **Honest gaps, all flagged or absent rather than faked**: bullpen =
   club pitching total minus the day's matched starter (npb.jp has no
   reliever split); a starter surname that doesn't match exactly one arm on
-  the club page leaves the game downgraded (nothing guessed); park factors,
-  weather, recent form, workloads, IL and lineups are simply absent
-  (neutral). Draws are real NPB results and settle as moneyline pushes
+  the club page leaves the game downgraded (nothing guessed); weather,
+  workloads, IL and lineups are simply absent (neutral). Draws are real NPB results and settle as moneyline pushes
   (the settle engine already did this); rained-off games (中止) are
   reported and never settle.
 - **Crons** (JST clock): `npb-slate.yml` 00:07 UTC (~09:55 JST fire) opens
@@ -366,8 +365,15 @@ bet, stamped or not.
   08/10/12/14 UTC plus a 22:00 UTC backstop. The Monday audit runs
   `audit --league npb` alongside MLB, judging lock discipline against the
   EARLIEST per-game deadline on each slate.
-- **Not yet**: NPB endpoints on the read-only API/frontend; recent form
-  from the schedule page's own scores; a curated NPB park-factor table.
+- **Context inputs (2026-08-22, second pass)**: recent form (each club's
+  last ≤15 finished games) and PARK FACTORS are now DERIVED from the
+  season's own month-page game logs at fetch time — PF = 100 + (raw − 100)
+  · n/(n+60), half-weighting a park at ~one home slate, main parks only
+  (a 地方開催 game keeps venue id null and runs park-neutral). Venue names
+  are matched canonically (spaces stripped — the schedule pads 横　浜 /
+  神　宮). The read-only API serves NPB under `/api/npb/*` (same three
+  endpoints, own store) and both frontend screens carry an MLB/NPB toggle.
+- **Not yet**: NPB weather (venue coordinates), lineups/IL equivalents.
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

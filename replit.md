@@ -26,7 +26,7 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
 - `lib/sports-data/` — **Step 2** package: sabermetrics (FIP-family, wOBA), MLB Stats API client, feature builders, orchestrator, persistence mappers. See its `README.md`.
 - `lib/db/src/schema/` — Drizzle DB schema (teams, games, pitcher/team/bullpen stats with FIP columns).
 - `lib/api-spec/openapi.yaml` — OpenAPI contract; `lib/api-zod` and `lib/api-client-react` are generated from it (Orval).
-- `artifacts/api-server/` — Express API server; `artifacts/mockup-sandbox/` — React frontend.
+- `artifacts/api-server/` — Express API server (MLB at `/api/*`, NPB at `/api/npb/*`); `artifacts/mockup-sandbox/` — React frontend (MLB/NPB toggle on both screens).
 
 ## Architecture decisions
 

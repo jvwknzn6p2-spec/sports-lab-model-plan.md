@@ -374,3 +374,58 @@ test("end-to-end: an NPB slate flows through assemble → run model → decide",
   assert.ok(p.handicap.coverProbability !== null);
   assert.ok(p.total.probability !== null);
 });
+
+test("recent form and park factors derive from the season game log", async () => {
+  const { buildNpbForms, buildNpbParkFactors, venueIdFor, canonicalVenue } =
+    await import("../src/npb/context");
+  const games = parseNpbSchedule(schedule, 2026, 8);
+
+  // Form: through 8/21 every club has played ≥15 August games? Not
+  // guaranteed — assert the window is capped at 15 and matches a hand
+  // recomputation for the Giants.
+  const forms = buildNpbForms(games, "2026-08-22");
+  const giants = teamByScheduleName("巨人");
+  const gf = forms[String(giants.teamId)]!;
+  assert.ok(gf.games > 0 && gf.games <= 15);
+  const gGames = games
+    .filter(
+      (g) =>
+        !g.cancelled &&
+        g.homeScore !== null &&
+        g.date < "2026-08-22" &&
+        (g.home.teamId === giants.teamId || g.away.teamId === giants.teamId),
+    )
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-15);
+  const scored = gGames.reduce(
+    (a, g) => a + (g.home.teamId === giants.teamId ? g.homeScore! : g.awayScore!),
+    0,
+  );
+  assert.equal(gf.games, gGames.length);
+  assert.ok(Math.abs(gf.runsScoredPerGame - scored / gGames.length) < 0.01);
+  // Form must not peek at the slate date's own games.
+  const formsEarly = buildNpbForms(games, "2026-08-02");
+  assert.ok((formsEarly[String(giants.teamId)]?.games ?? 0) <= 1);
+
+  // Venue canonicalization: padded names resolve to the same park.
+  assert.equal(canonicalVenue("横　浜"), "横浜");
+  assert.equal(venueIdFor("横 浜"), 9103);
+  assert.equal(venueIdFor("神 宮"), 9105);
+  assert.equal(venueIdFor("松山坊っちゃん"), null); // 地方開催 → neutral
+
+  // Park factors: derived, regressed, and bounded like a real environment.
+  const { parkFactors, leagueRunsPerGame } = buildNpbParkFactors(
+    games,
+    "2026-08-22",
+  );
+  assert.ok(leagueRunsPerGame > 4 && leagueRunsPerGame < 12);
+  assert.ok(Object.keys(parkFactors).length >= 10, "most main parks sampled");
+  for (const [id, pf] of Object.entries(parkFactors)) {
+    assert.ok(pf >= 70 && pf <= 130, `PF ${pf} at ${id} out of range`);
+  }
+  // One-month samples (~10 games/park) must be HEAVILY regressed: with
+  // n/(n+60) weighting no single-month factor can stray far from 100.
+  for (const pf of Object.values(parkFactors)) {
+    assert.ok(Math.abs(pf - 100) <= 15, `insufficiently regressed PF ${pf}`);
+  }
+});

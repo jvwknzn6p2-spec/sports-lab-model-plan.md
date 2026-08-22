@@ -12,13 +12,26 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-export function sportsDataDir(): string {
+export type League = "mlb" | "npb";
+
+/** Store directory name per league — mirrors engine/league.ts. */
+const DIR_BY_LEAGUE: Record<League, string> = {
+  mlb: "data",
+  npb: "data-npb",
+};
+
+export function sportsDataDir(league: League = "mlb"): string {
   const override = process.env.SPORTS_DATA_DIR;
-  if (override) return resolve(override);
+  // The override names the MLB store; the NPB store is its sibling.
+  if (override) {
+    return league === "mlb"
+      ? resolve(override)
+      : join(resolve(override), "..", DIR_BY_LEAGUE.npb);
+  }
   let dir = process.cwd();
   for (;;) {
     if (existsSync(join(dir, "pnpm-workspace.yaml"))) {
-      return join(dir, "lib", "sports-data", "data");
+      return join(dir, "lib", "sports-data", DIR_BY_LEAGUE[league]);
     }
     const parent = dirname(dir);
     if (parent === dir) {
