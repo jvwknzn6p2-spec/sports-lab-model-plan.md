@@ -60,6 +60,17 @@ export interface MarketLine {
   homeCoverProb: number | null;
   /** Same, for the OVER at `total`. */
   overProb: number | null;
+  /**
+   * Median decimal PROFIT per unit staked on the home side at exactly
+   * `homeLine` (e.g. −110 → 0.909), across the same books that fed
+   * `homeCoverProb`. This is the market's PAYOUT, kept separate from the
+   * devigged probability: the pipeline's own record still settles at the
+   * fixed-0.9 book, so this feeds a display-only "EV at the market's price"
+   * benchmark, never the staked EV. Null when no book priced the point.
+   */
+  homePayout: number | null;
+  /** Same, for the away side at `-homeLine`. */
+  awayPayout: number | null;
   /** Bookmakers contributing to the medians. */
   books: number;
 }
@@ -74,6 +85,11 @@ const median = (xs: number[]): number | null => {
 /** American odds → the implied probability the price charges for. */
 export function americanImpliedProbability(price: number): number {
   return price < 0 ? -price / (-price + 100) : 100 / (price + 100);
+}
+
+/** American odds → decimal profit per unit staked (−110 → 0.909, +120 → 1.2). */
+export function americanDecimalProfit(price: number): number {
+  return price < 0 ? 100 / -price : price / 100;
 }
 
 /**
@@ -113,6 +129,8 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
   // is built only from books quoting both sides of the exact median point.
   const coverProbs: number[] = [];
   const overProbs: number[] = [];
+  const homePayouts: number[] = [];
+  const awayPayouts: number[] = [];
   for (const b of ev.bookmakers ?? []) {
     for (const m of b.markets ?? []) {
       if (m.key === "spreads" && homeLine !== null) {
@@ -124,6 +142,8 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
         );
         if (typeof home?.price === "number" && typeof away?.price === "number") {
           coverProbs.push(devigPair(home.price, away.price));
+          homePayouts.push(americanDecimalProfit(home.price));
+          awayPayouts.push(americanDecimalProfit(away.price));
         }
       } else if (m.key === "totals" && total !== null) {
         const over = m.outcomes.find(
@@ -140,6 +160,8 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
   }
   const homeCoverProb = median(coverProbs);
   const overProb = median(overProbs);
+  const homePayout = median(homePayouts);
+  const awayPayout = median(awayPayouts);
 
   return {
     homeTeam: ev.home_team,
@@ -149,6 +171,8 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
     total,
     homeCoverProb: homeCoverProb === null ? null : round3(homeCoverProb),
     overProb: overProb === null ? null : round3(overProb),
+    homePayout: homePayout === null ? null : round3(homePayout),
+    awayPayout: awayPayout === null ? null : round3(awayPayout),
     books: (ev.bookmakers ?? []).length,
   };
 }
@@ -242,6 +266,10 @@ export function fillControlTowerFromOdds(
       entry.line === line.homeLine
     ) {
       entry.marketHomeCover = line.homeCoverProb;
+      // The payouts ride the identical exact-point guard: a price quoted at a
+      // different line than the one being bet prices a different proposition.
+      if (line.homePayout !== null) entry.marketHomePayout = line.homePayout;
+      if (line.awayPayout !== null) entry.marketAwayPayout = line.awayPayout;
     }
     if (line.overProb !== null && entry.total === line.total) {
       entry.marketOver = line.overProb;

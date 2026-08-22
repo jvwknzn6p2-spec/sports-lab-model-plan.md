@@ -14,6 +14,9 @@
  *   A-1  distribution validity — the simulator's variance/correlation
  *        assumptions (negative binomial r, shared-environment sd) checked
  *        against what actually happened, analytically, per game.
+ *   A-3  tail trust — each market's learned tail/far-tail shrink against the
+ *        TAIL_TRUST_FLOOR that caps S at A, with the stamped-row counts that
+ *        say how much of the learning is banded evidence vs legacy fallback.
  *   A-4  input-data health — how often the feature pipeline runs degraded
  *        (estimated xFIP, low-sample starters, missing results).
  *   A-5  known losing cohorts — the patterns deliberately left uncorrected
@@ -31,6 +34,7 @@ import {
   DEFAULT_CALIBRATION,
   hasQuotedLine,
   resolveHandicap,
+  TAIL_TRUST_FLOOR,
 } from "./decision";
 import {
   expectedProfit,
@@ -135,6 +139,30 @@ export interface RealLineSettlement {
   storedProfit: number | null;
 }
 
+/**
+ * A-3: one market's learned tail state against the floor that gates S.
+ *
+ * The S-cap (decision.ts, TAIL_TRUST_FLOOR) lifts only when the WINNER
+ * market's tail bands learn their way back above the floor, and the far-tail
+ * split (2026-08-21) learns from stamped rows that accumulate slowly — a few
+ * tail bets a day at most. This section exists so recovery is WATCHED rather
+ * than assumed: the shrinks, how far below the floor they sit, and how much
+ * of the evidence is banded stamps vs the legacy both-bands fallback.
+ */
+export interface TailTrustStat {
+  market: "winner" | "handicap" | "total";
+  tailShrink: number;
+  farTailShrink: number;
+  /** True while this market's tails sit below TAIL_TRUST_FLOOR. */
+  belowFloor: boolean;
+  /** Scored bets stamped tail (raw ≥ TAIL_START). */
+  tailRows: number;
+  /** Of those, stamped far-tail (raw ≥ FAR_TAIL_START). */
+  farTailRows: number;
+  /** Tail rows without a far-tail stamp — legacy, teaching BOTH tail bands. */
+  legacyTailRows: number;
+}
+
 export interface AuditReport {
   generatedAt: string;
   daysAudited: number;
@@ -145,6 +173,13 @@ export interface AuditReport {
   cohorts: CohortStat[];
   /** A-2: settled bets on real lines — empty until real lines are quoted. */
   realLines: RealLineSettlement[];
+  /** A-3: learned tail shrinks vs the S-cap floor. Null pre-tail-learning. */
+  tailTrust: {
+    floor: number;
+    /** True while S is capped at A (winner tails below the floor). */
+    sCapActive: boolean;
+    markets: TailTrustStat[];
+  } | null;
 }
 
 /**
@@ -611,6 +646,100 @@ export function realLineSettlements(days: AuditDay[]): {
   return { settlements, issues };
 }
 
+/**
+ * A-3: reduce the settlement history's band stamps and the learned shrinks
+ * to the watchable state of each market's tail. Null when the caller has no
+ * shrink state to report (e.g. integrity-only synthetic runs).
+ */
+export function tailTrustStatus(
+  history: SettlementReport[],
+  calibration: {
+    gamesSettled: number;
+    tailShrink?: number;
+    farTailShrink?: number;
+    handicapTailShrink?: number;
+    handicapFarTailShrink?: number;
+    totalTailShrink?: number;
+    totalFarTailShrink?: number;
+  },
+): AuditReport["tailTrust"] {
+  if (
+    calibration.tailShrink === undefined ||
+    calibration.farTailShrink === undefined
+  ) {
+    return null;
+  }
+  const count = (
+    scored: (g: SettlementReport["games"][number]) => boolean,
+    tail: (g: SettlementReport["games"][number]) => boolean | null | undefined,
+    farTail: (
+      g: SettlementReport["games"][number],
+    ) => boolean | null | undefined,
+  ) => {
+    let tailRows = 0;
+    let farTailRows = 0;
+    let legacyTailRows = 0;
+    for (const r of history) {
+      for (const g of r.games) {
+        if (!scored(g) || tail(g) !== true) continue;
+        tailRows++;
+        const far = farTail(g);
+        if (far === true) farTailRows++;
+        // A tail row from before the far-tail split carries no far stamp at
+        // all and teaches BOTH tail bands (settle.ts) — that is the share of
+        // the learning that is fallback rather than banded evidence.
+        if (far === null || far === undefined) legacyTailRows++;
+      }
+    }
+    return { tailRows, farTailRows, legacyTailRows };
+  };
+
+  const markets: TailTrustStat[] = [
+    {
+      market: "winner" as const,
+      tailShrink: calibration.tailShrink,
+      farTailShrink: calibration.farTailShrink,
+      ...count(
+        (g) => g.winnerCorrect !== null,
+        (g) => g.winnerTail,
+        (g) => g.winnerFarTail,
+      ),
+    },
+    {
+      market: "handicap" as const,
+      tailShrink: calibration.handicapTailShrink ?? calibration.tailShrink,
+      farTailShrink:
+        calibration.handicapFarTailShrink ?? calibration.farTailShrink,
+      ...count(
+        (g) => g.handicapCorrect !== null,
+        (g) => g.handicapTail,
+        (g) => g.handicapFarTail,
+      ),
+    },
+    {
+      market: "total" as const,
+      tailShrink: calibration.totalTailShrink ?? calibration.tailShrink,
+      farTailShrink:
+        calibration.totalFarTailShrink ?? calibration.farTailShrink,
+      ...count(
+        (g) => g.totalCorrect !== null,
+        (g) => g.totalTail,
+        (g) => g.totalFarTail,
+      ),
+    },
+  ].map((m) => ({
+    ...m,
+    belowFloor: Math.min(m.tailShrink, m.farTailShrink) < TAIL_TRUST_FLOOR,
+  }));
+
+  return {
+    floor: TAIL_TRUST_FLOOR,
+    // The S-cap reads the WINNER tails only (confidenceFor in decision.ts).
+    sCapActive: markets[0]!.belowFloor,
+    markets,
+  };
+}
+
 export function runAudit(
   days: AuditDay[],
   history: SettlementReport[],
@@ -687,6 +816,7 @@ export function runAudit(
     flagRates: flagRates(days),
     cohorts: cohorts(days),
     realLines: realLines.settlements,
+    tailTrust: tailTrustStatus(history, calibration),
   };
 }
 

@@ -14,6 +14,7 @@ import type { RunExpectation } from "./run-model";
 import type { SimulationResult } from "./simulate";
 import {
   breakEvenProbability,
+  expectedValueAtPayout,
   expectedValueFromProbability,
   recommendedStake,
 } from "./ev";
@@ -56,6 +57,15 @@ export interface HandicapInput {
   marketHomeCover?: number | null;
   /** Same, for the OVER at `total`. */
   marketOver?: number | null;
+  /**
+   * Median decimal profit per unit the market pays on the home side at this
+   * exact `line` (−110 → 0.909), attached by the odds fill alongside
+   * `marketHomeCover`. Feeds the display-only market-price EV benchmark;
+   * the staked EV keeps the fixed-0.9 book (see ev.ts).
+   */
+  marketHomePayout?: number | null;
+  /** Same, for the away side at the complementary line. */
+  marketAwayPayout?: number | null;
 }
 
 /**
@@ -372,6 +382,13 @@ export interface GamePrediction {
      */
     marketProbability?: number | null;
     /**
+     * The model's cover probability priced at the market's OWN payout for
+     * the picked side (see expectedValueAtPayout) — what this edge is worth
+     * at the sportsbook's actual price rather than the fixed-0.9 book.
+     * Display-only benchmark; null when the market's price is unknown.
+     */
+    marketPriceEv?: number | null;
+    /**
      * Quarter-Kelly stake suggestion in units (see ev.ts). Display-only:
      * settlement scores a flat 1 unit regardless. Null when no bet stands.
      */
@@ -580,6 +597,8 @@ export function decide(
   let handicapEv: number | null = null;
   /** Market-consensus probability of the PICKED side, when priced. */
   let handicapMarketProb: number | null = null;
+  /** Model probability priced at the market's own payout (display-only). */
+  let handicapMarketPriceEv: number | null = null;
   /**
    * True when every part of the quoted line sits on 0 — a pick'em, which is
    * not a handicap at all: it is the moneyline with the stake returned on a
@@ -624,6 +643,20 @@ export function decide(
       handicap.side === "home" ? (handicap.marketHomeCover ?? null) : null;
     if (marketQuoted !== null) {
       handicapMarketProb = round3(takeQuoted ? marketQuoted : 1 - marketQuoted);
+    }
+    // Payouts follow the same home-side-only attachment as the probability;
+    // the picked side's payout prices the model's own number at what the
+    // market actually pays for that side.
+    const pickedPayout =
+      handicap.side === "home"
+        ? takeQuoted
+          ? (handicap.marketHomePayout ?? null)
+          : (handicap.marketAwayPayout ?? null)
+        : null;
+    if (pickedPayout !== null) {
+      handicapMarketPriceEv = round3(
+        expectedValueAtPayout(chosen, quoted.push, pickedPayout),
+      );
     }
   }
 
@@ -769,6 +802,13 @@ export function decide(
         `(${fmtPct(coverProbability - handicapMarketProb!)} vs market)`,
     );
   }
+  if (handicapMarketPriceEv !== null) {
+    reasons.unshift(
+      `At the market's own price this edge is worth ` +
+        `${fmtPct(handicapMarketPriceEv)} per unit (benchmark only — the ` +
+        `staked EV above prices the fixed-0.9 book)`,
+    );
+  }
   if (marketOutlier) {
     reasons.unshift(
       `Market disagreement: the model sits ${fmtPct(marketDivergence!)} from ` +
@@ -844,6 +884,7 @@ export function decide(
       rawCoverProbability,
       ev: handicapEv,
       marketProbability: handicapMarketProb,
+      marketPriceEv: handicapMarketPriceEv,
       recommendedStake:
         handicapSuppressed || handicapUnprofitable
           ? null

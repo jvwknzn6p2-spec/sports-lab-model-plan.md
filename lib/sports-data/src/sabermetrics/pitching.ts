@@ -88,6 +88,18 @@ export function fip(line: RawPitchingLine, c: LeagueConstants): number | null {
  * Replaces actual HR with fly balls × league HR/FB rate. When batted-ball data
  * is unavailable we estimate expected fly balls from IP so xFIP still computes,
  * and flag it via `xfipEstimated`.
+ *
+ * What the estimate actually is — and why it is kept rather than "fixed":
+ * with FB = IP·1.05, the HR term collapses to the LEAGUE-average HR rate per
+ * inning, so estimated xFIP differs from FIP only in that term. The default
+ * 50/50 FIP–xFIP blend (starting-pitcher.ts) is then exactly a 50% regression
+ * of the pitcher's own HR rate toward league average — a deliberate shrinkage
+ * prior on the noisiest FIP component, not a fabricated batted-ball stat. The
+ * season stat splits the MLB client pulls expose no fly-ball counts (see
+ * parse.ts), and substituting a proxy like airOuts would swap a transparent
+ * league prior for an opaque approximation with its own bias. ~93% of live
+ * slates run on this estimate (A-4 audit), which is expected, flagged per
+ * game, and honest.
  */
 export function xfip(
   line: RawPitchingLine,

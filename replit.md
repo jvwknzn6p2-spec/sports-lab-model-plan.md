@@ -38,7 +38,29 @@ _An MLB game-prediction and betting-value decision-support system: for every sch
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+**HandiEdge** — a daily MLB betting decision-support tool. What a user gets:
+
+- **Daily pick report** (`data/reports/<date>.md`, phone-readable): every
+  scheduled game with predicted winner + probability, confidence S/A/B/C,
+  handicap pick with EV and ¼-Kelly stake hint, total pick, plain-language
+  reasons, and PASS games with why. Ordered by expected value; includes a
+  Pick Tracker paste block with the same numbering.
+- **Cumulative record** (`data/reports/summary.md` and the
+  `HandiEdgeReport.tsx` screen): running W-L, units P&L with a
+  significance test, calibration by band, confidence-ladder breakdown,
+  per-day history, and the learned shrink state.
+- **Standing audit** (`data/reports/audit.md`, weekly cron): integrity
+  re-score, lock discipline, simulator distribution checks, tail-trust /
+  S-cap watch, input-data health, and watched losing cohorts.
+- **Read-only API + slate viewer**: `GET /api/predictions`,
+  `/api/predictions/{date}`, `/api/report` served from the committed locks
+  (`artifacts/api-server`), rendered by `HandiEdgeSlate.tsx` /
+  `HandiEdgeReport.tsx` (`artifacts/mockup-sandbox`, vite proxies `/api`).
+- **AI reviewer briefings** (`data/reviews/<date>.md`, advisory-only,
+  needs `ANTHROPIC_API_KEY`): Data Auditor / Matchup Analyst / Risk
+  Reviewer read the locked slate and write concerns; picks never change.
+
+Everything is decision support — the system places no bets (model-plan §1).
 
 ## User preferences
 

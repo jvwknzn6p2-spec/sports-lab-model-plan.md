@@ -241,6 +241,10 @@ test("the odds fill attaches market probabilities at the exact point only", () =
   assert.equal(handicaps["1"]!.line, -1.5);
   assert.ok(Math.abs(handicaps["1"]!.marketHomeCover! - 0.5) < 1e-9);
   assert.ok(handicaps["1"]!.marketOver! < 0.5); // under carries the juice (-115)
+  // Payouts ride the same exact-point guard: −110 pays 0.909 per unit.
+  assert.ok(Math.abs(handicaps["1"]!.marketHomePayout! - 0.909) < 1e-3);
+  assert.ok(Math.abs(handicaps["1"]!.marketAwayPayout! - 0.909) < 1e-3);
   assert.equal(handicaps["2"]!.marketHomeCover, undefined);
+  assert.equal(handicaps["2"]!.marketHomePayout, undefined);
   assert.equal(handicaps["2"]!.line, -2.5);
 });

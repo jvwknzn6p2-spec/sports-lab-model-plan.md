@@ -61,6 +61,32 @@ export function breakEvenProbability(commission = WIN_COMMISSION): number {
 }
 
 /**
+ * Profit per unit staked at an ARBITRARY payout — the model's probability
+ * priced at what a sportsbook actually pays (decimal profit per unit, e.g.
+ * −110 → 0.909, +120 → 1.2), rather than at the fixed-0.9 book the record
+ * settles in.
+ *
+ * DISPLAY-ONLY benchmark: nothing that gates a bet or sizes a stake reads
+ * this number. It exists so that when a real market price is known for the
+ * exact line being bet, the report can say what the model's edge would be
+ * worth AT THAT PRICE — the number a user comparing books actually needs.
+ * The staked EV stays on the fixed-0.9 commission math on purpose: mixing
+ * payout models inside one P&L record would make the record incomparable
+ * with its own history.
+ *
+ * Push shares are excluded from the risk exactly as in
+ * `expectedValueFromProbability` — a pushed share is returned, not settled.
+ */
+export function expectedValueAtPayout(
+  probability: number,
+  pushShare: number,
+  payout: number,
+): number {
+  const atRisk = 1 - pushShare;
+  return atRisk * (probability * payout - (1 - probability));
+}
+
+/**
  * Kelly fraction actually recommended. Full Kelly assumes the stated edge is
  * exact; this book's own record says its edges arrive with error (that is
  * what the whole calibration layer corrects), and overbetting a misjudged

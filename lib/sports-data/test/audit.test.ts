@@ -493,3 +493,80 @@ test("integrity grades the LAST report for a date, not the first", () => {
     `superseded row was graded: ${JSON.stringify(issues)}`,
   );
 });
+
+test("tail trust reduces shrinks and band stamps to a watchable status", async () => {
+  const { tailTrustStatus } = await import("../src/engine/audit");
+
+  // No shrink state at all → nothing to report.
+  assert.equal(tailTrustStatus([], { gamesSettled: 0 }), null);
+
+  const game = (over: Record<string, unknown>) => ({
+    gamePk: 1,
+    home: "H",
+    away: "A",
+    pass: false,
+    confidence: "B",
+    predictedWinner: "H",
+    actualWinner: "H",
+    winnerCorrect: true,
+    statedProbability: 0.66,
+    brier: 0.12,
+    handicapPick: null,
+    handicapCorrect: null,
+    handicapProbability: null,
+    handicapProfit: null,
+    totalPick: null,
+    totalCorrect: null,
+    totalProbability: null,
+    marginError: 1,
+    totalError: 1,
+    ...over,
+  });
+  const report = (date: string, games: unknown[]): SettlementReport =>
+    ({
+      date,
+      gamesSettled: games.length,
+      gamesPassed: 0,
+      gamesMissingResults: 0,
+      winnerRecord: { wins: games.length, losses: 0 },
+      handicapRecord: { wins: 0, losses: 0 },
+      handicapProfit: 0,
+      totalRecord: { wins: 0, losses: 0 },
+      meanBrier: 0.12,
+      statedVsActual: { statedMean: 0.66, actualRate: 1 },
+      meanMarginError: 1,
+      meanTotalError: 1,
+      games,
+    }) as unknown as SettlementReport;
+
+  const history = [
+    // Legacy tail row: stamped tail, NO far-tail stamp → teaches both bands.
+    report("2026-08-01", [game({ winnerTail: true })]),
+    // Banded rows: one near-tail (far stamp false), one far-tail.
+    report("2026-08-02", [
+      game({ winnerTail: true, winnerFarTail: false }),
+      game({ winnerTail: true, winnerFarTail: true }),
+      game({ winnerTail: false, winnerFarTail: false }),
+    ]),
+  ];
+
+  const t = tailTrustStatus(history, {
+    gamesSettled: 4,
+    tailShrink: 0.672,
+    farTailShrink: 0.663,
+    handicapTailShrink: 0.641,
+    handicapFarTailShrink: 0.632,
+    totalTailShrink: 0.85,
+    totalFarTailShrink: 0.85,
+  });
+  assert.ok(t);
+  assert.equal(t.sCapActive, true, "winner tails below the 0.75 floor");
+  const winner = t.markets.find((m) => m.market === "winner")!;
+  assert.equal(winner.tailRows, 3);
+  assert.equal(winner.farTailRows, 1);
+  assert.equal(winner.legacyTailRows, 1);
+  assert.equal(winner.belowFloor, true);
+  const total = t.markets.find((m) => m.market === "total")!;
+  assert.equal(total.belowFloor, false, "0.85 prior sits above the floor");
+  assert.equal(total.tailRows, 0, "no total bet has ever been scored");
+});
