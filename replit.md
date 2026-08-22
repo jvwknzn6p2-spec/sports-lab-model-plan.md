@@ -101,8 +101,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 - **NPB runs under `--league npb`** (every handiedge command; or
   `HANDIEDGE_LEAGUE=npb`) with its OWN store `lib/sports-data/data-npb/` —
   separate history and learned calibration, never blended with MLB's. NPB
-  locks at **12:59 JST the game day** (weekend day games start 13:00), not
-  MLB's 22:59-evening-before; its season key is 1000000+year (derived
+  picks lock **per game, 33 minutes before each game's own first pitch**
+  (day/night alike; no-start-time fallback 12:27 JST), not MLB's fixed
+  22:59-evening-before; its season key is 1000000+year (derived
   constants, `src/npb/constants.ts`). Data comes from npb.jp page parsers
   (`src/npb/`) built against the live samples in `probe/npb/` — if npb.jp
   changes a table layout the parsers fail loud naming the column; refresh

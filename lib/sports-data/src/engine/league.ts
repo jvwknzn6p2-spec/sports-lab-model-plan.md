@@ -41,6 +41,14 @@ export interface LeagueConfig {
   /** The Odds API sport key for this league's markets. */
   readonly oddsSportKey: string;
   readonly deadlines: LeagueDeadlines;
+  /**
+   * When set, each game's prediction locks THIS many minutes before its own
+   * first pitch (per-game deadlines) instead of at the fixed
+   * `deadlines.prediction` time — which then serves only as the fallback for
+   * a game whose start time the schedule did not carry. Unset = the whole
+   * slate locks at the fixed time (MLB).
+   */
+  readonly perGameLockLeadMinutes?: number;
 }
 
 export const MLB_CONFIG: LeagueConfig = {
@@ -62,13 +70,15 @@ export const NPB_CONFIG: LeagueConfig = {
   label: "NPB",
   dataDirName: "data-npb",
   oddsSportKey: "baseball_npb",
+  // Each NPB pick locks 33 minutes before ITS OWN first pitch — day game,
+  // twilight or night game alike (owner's rule, 2026-08-22). The fixed
+  // prediction time below is only the fallback for a game with no start
+  // time on the schedule: 12:27 JST = 33 minutes before the earliest
+  // standard first pitch (13:00 weekend day games), i.e. the most
+  // conservative deadline the rule could produce.
+  perGameLockLeadMinutes: 33,
   deadlines: {
-    // NPB games are played ON the slate date: night games 17:45/18:00 JST,
-    // weekend day games 13:00/14:00 JST. 12:59 JST the same day is the
-    // latest cut-off that is safely before EVERY standard first pitch; a
-    // later lock would let day-game picks be edited mid-game. Tighten or
-    // relax here if the book's actual NPB close time turns out to differ.
-    prediction: { hour: 12, minute: 59, dayOffset: 0 },
+    prediction: { hour: 12, minute: 27, dayOffset: 0 },
     // The last NPB game ends before midnight JST; results are due the next
     // morning.
     results: { hour: 9, minute: 0, dayOffset: 1 },

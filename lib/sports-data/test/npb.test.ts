@@ -22,8 +22,10 @@ import {
 import { teamByScheduleName, NPB_TEAMS } from "../src/npb/teams";
 import { inningsToDecimal } from "../src/sabermetrics";
 import {
+  gamePredictionDeadline,
   isPredictionLocked,
   predictionDeadline,
+  predictionFrozen,
   resultsDeadline,
 } from "../src/engine/deadline";
 import { NPB_CONFIG, resolveLeague } from "../src/engine/league";
@@ -251,30 +253,62 @@ test("results come off the schedule page with the time guard and draws intact", 
   assert.equal(morning.pending.length, 6);
 });
 
-test("NPB deadlines: locked 12:59 JST same day; results due next morning", () => {
+test("NPB deadlines: every pick locks 33 minutes before ITS first pitch", () => {
   const d = NPB_CONFIG.deadlines;
-  // 12:59 JST on 2026-08-22 = 03:59 UTC the same day.
+  const lead = NPB_CONFIG.perGameLockLeadMinutes;
+  assert.equal(lead, 33);
+
+  // An 18:00 JST night game locks at 17:27 JST = 08:27 UTC…
+  const night = new Date("2026-08-22T18:00:00+09:00").toISOString();
   assert.equal(
-    predictionDeadline("2026-08-22", d).toISOString(),
-    "2026-08-22T03:59:00.000Z",
+    gamePredictionDeadline("2026-08-22", night, d, lead).toISOString(),
+    "2026-08-22T08:27:00.000Z",
   );
+  // …a 14:00 JST day game at 13:27 JST — same 33-minute rule, all games.
+  const day = new Date("2026-08-22T14:00:00+09:00").toISOString();
+  assert.equal(
+    gamePredictionDeadline("2026-08-22", day, d, lead).toISOString(),
+    "2026-08-22T04:27:00.000Z",
+  );
+  // No start time on the schedule → the conservative fixed fallback,
+  // 12:27 JST (33' before the earliest standard 13:00 first pitch).
+  assert.equal(
+    gamePredictionDeadline("2026-08-22", null, d, lead).toISOString(),
+    "2026-08-22T03:27:00.000Z",
+  );
+
+  // A frozen pick stays frozen: stored deadline passed ⇒ carried, even when
+  // no run has stamped it final yet.
+  const prev = { final: false, lockDeadline: "2026-08-22T08:27:00.000Z" };
+  assert.equal(
+    predictionFrozen(prev, new Date("2026-08-22T08:26:00Z"), false),
+    false,
+  );
+  assert.equal(
+    predictionFrozen(prev, new Date("2026-08-22T08:28:00Z"), false),
+    true,
+  );
+  // Legacy row with no stored deadline falls back to the slate-level state.
+  assert.equal(predictionFrozen({ final: false }, new Date(), true), true);
+
   // 09:00 JST on 08-23 = 00:00 UTC on 08-23.
   assert.equal(
     resultsDeadline("2026-08-22", d).toISOString(),
     "2026-08-23T00:00:00.000Z",
   );
-  assert.equal(
-    isPredictionLocked("2026-08-22", new Date("2026-08-22T03:00:00Z"), d),
-    false,
-  );
-  assert.equal(
-    isPredictionLocked("2026-08-22", new Date("2026-08-22T04:00:00Z"), d),
-    true,
-  );
-  // The MLB default is untouched: 22:59 JST = 13:59 UTC.
+  // The MLB default is untouched: one fixed 22:59 JST = 13:59 UTC deadline,
+  // and gamePredictionDeadline without a lead reduces to exactly that.
   assert.equal(
     predictionDeadline("2026-08-22").toISOString(),
     "2026-08-22T13:59:00.000Z",
+  );
+  assert.equal(
+    gamePredictionDeadline("2026-08-22", night).toISOString(),
+    "2026-08-22T13:59:00.000Z",
+  );
+  assert.equal(
+    isPredictionLocked("2026-08-22", new Date("2026-08-22T03:00:00Z"), d),
+    false,
   );
 });
 

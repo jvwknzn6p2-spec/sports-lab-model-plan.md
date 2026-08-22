@@ -118,9 +118,9 @@ import {
   TOTAL_MARKET_NEVER_QUOTED,
 } from "../engine/report";
 import {
+  gamePredictionDeadline,
   isPredictionLocked,
-  minutesUntilPredictionLock,
-  predictionDeadline,
+  predictionFrozen,
 } from "../engine/deadline";
 import {
   MLB_CONFIG,
@@ -611,26 +611,29 @@ async function cmdPredict(args: {
     );
   }
 
-  // The slate's predictions freeze at 22:59 JST the evening before the games.
-  // Once that has passed, a re-run must carry the committed picks through
-  // untouched rather than silently rewriting what was already decided.
+  // Freezing: MLB's whole slate locks at 22:59 JST the evening before the
+  // games; a per-game-lock league (NPB) freezes each pick 33 minutes before
+  // ITS OWN first pitch. Either way, once a pick's deadline has passed a
+  // re-run must carry it through untouched rather than silently rewriting
+  // what was already decided — the pick standing at the deadline instant IS
+  // the bet, whether or not a later run has stamped it final yet.
   const now = new Date();
-  const locked = isPredictionLocked(ct.date, now, LEAGUE.deadlines);
-  const deadlineIso = predictionDeadline(
-    ct.date,
-    LEAGUE.deadlines,
-  ).toISOString();
+  const slateLocked = isPredictionLocked(ct.date, now, LEAGUE.deadlines);
+  const gameDeadline = (gameDate: string | null | undefined): Date =>
+    gamePredictionDeadline(
+      ct.date,
+      gameDate,
+      LEAGUE.deadlines,
+      LEAGUE.perGameLockLeadMinutes,
+    );
   const previous = existsSync(lockPath)
     ? await readJson<PredictionLock>(lockPath)
     : null;
   const alreadyFinal = new Map<number, GamePrediction>();
   for (const p of previous?.predictions ?? []) {
-    if (p.final) alreadyFinal.set(p.gamePk, p);
-  }
-  if (locked && alreadyFinal.size === 0 && previous) {
-    // Deadline passed and an unfrozen lock exists: freeze what is there rather
-    // than recomputing it, so the committed slate is what gets settled.
-    for (const p of previous.predictions) alreadyFinal.set(p.gamePk, p);
+    if (predictionFrozen(p, now, slateLocked)) {
+      alreadyFinal.set(p.gamePk, { ...p, final: true });
+    }
   }
 
   const predictions: GamePrediction[] = [];
@@ -652,10 +655,12 @@ async function cmdPredict(args: {
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
     const p = decide(g, runs, sim, calibration, handicap, cfg);
 
-    p.lockDeadline = deadlineIso;
-    p.final = locked;
-    if (locked) {
-      // Produced after the slate's cut-off — recorded as such rather than
+    const deadline = gameDeadline(g.gameDate);
+    const gameLocked = now.getTime() >= deadline.getTime();
+    p.lockDeadline = deadline.toISOString();
+    p.final = gameLocked;
+    if (gameLocked) {
+      // Produced after this game's cut-off — recorded as such rather than
       // passed off as a pick that was made in time.
       p.flags = [...p.flags, "[warn] predicted_after_deadline"];
       lateCount++;
@@ -1220,6 +1225,7 @@ async function cmdAudit(): Promise<void> {
     calibration,
     new Date(),
     LEAGUE.deadlines,
+    LEAGUE.perGameLockLeadMinutes != null,
   );
   for (const path of parseFailures) {
     report.issues.push({

@@ -151,3 +151,47 @@ export function minutesUntilPredictionLock(
       60_000,
   );
 }
+
+/**
+ * ONE game's prediction deadline. With `leadMinutes` set (per-game-lock
+ * leagues — NPB locks every pick 33 minutes before its own first pitch),
+ * the deadline is the game's start time minus the lead; without it, or for
+ * a game whose start time the schedule did not carry, the slate's fixed
+ * deadline applies — which for NPB is deliberately the most conservative
+ * value the rule could produce (33' before the earliest standard start).
+ */
+export function gamePredictionDeadline(
+  slateDate: string,
+  gameDateIso: string | null | undefined,
+  deadlines: LeagueDeadlines = MLB_DEADLINES,
+  leadMinutes?: number,
+): Date {
+  if (leadMinutes != null && gameDateIso) {
+    const start = new Date(gameDateIso);
+    if (!Number.isNaN(start.getTime())) {
+      return new Date(start.getTime() - leadMinutes * 60_000);
+    }
+  }
+  return predictionDeadline(slateDate, deadlines);
+}
+
+/**
+ * Is a previously committed prediction FROZEN — i.e. must a re-run carry it
+ * through unchanged? Three ways to be frozen, from strongest to weakest
+ * evidence: it was already stamped final; its own stored deadline has
+ * passed (the per-game rule — the pick standing at that instant is the
+ * bet, whether or not a run has stamped it since); or, for a legacy row
+ * that stored no deadline at all, the slate's fixed deadline has passed.
+ */
+export function predictionFrozen(
+  prev: { final?: boolean | null; lockDeadline?: string | null },
+  now: Date,
+  slateFixedDeadlinePassed: boolean,
+): boolean {
+  if (prev.final) return true;
+  if (prev.lockDeadline != null) {
+    const d = new Date(prev.lockDeadline);
+    if (!Number.isNaN(d.getTime())) return now.getTime() >= d.getTime();
+  }
+  return slateFixedDeadlinePassed;
+}

@@ -382,11 +382,17 @@ export function lockMargins(
       if (!lockedAt || Number.isNaN(lockedAt.getTime())) {
         return { date: d.date, marginMinutes: null, late: false };
       }
-      const stored = d.lock!.predictions.find(
-        (p) => p.lockDeadline != null,
-      )?.lockDeadline;
-      const deadline = stored
-        ? new Date(stored)
+      // Under per-game deadlines (NPB) each pick stores its own cut-off;
+      // the slate's lock discipline is judged against the EARLIEST of them —
+      // the first moment anything on the slate stopped being editable. For
+      // an all-same-deadline lock (MLB) the minimum IS the deadline.
+      const storedTimes = d
+        .lock!.predictions.map((p) =>
+          p.lockDeadline ? new Date(p.lockDeadline).getTime() : NaN,
+        )
+        .filter((t) => !Number.isNaN(t));
+      const deadline = storedTimes.length
+        ? new Date(Math.min(...storedTimes))
         : predictionDeadline(d.date, deadlines);
       const margin = (deadline.getTime() - lockedAt.getTime()) / 60_000;
       return {
@@ -757,6 +763,14 @@ export function runAudit(
   calibration: { gamesSettled: number },
   now: Date,
   deadlines: LeagueDeadlines = MLB_DEADLINES,
+  /**
+   * True for leagues whose picks lock per game (NPB): stored per-game
+   * deadlines never equal the fixed-time formula, so the "produced under
+   * the current rule" comparison below would misread every lock as
+   * pre-rule-change and amnesty real late locks. Under per-game lock the
+   * stored deadlines ARE the current rule by construction.
+   */
+  perGameLock = false,
 ): AuditReport {
   const issues = checkIntegrity(days, history, calibration, now, deadlines);
   const margins = lockMargins(days, deadlines);
@@ -808,6 +822,7 @@ export function runAudit(
       (p) => p.lockDeadline != null,
     )?.lockDeadline;
     const producedUnderCurrentRule =
+      perGameLock ||
       !stored ||
       new Date(stored).getTime() ===
         predictionDeadline(m.date, deadlines).getTime();

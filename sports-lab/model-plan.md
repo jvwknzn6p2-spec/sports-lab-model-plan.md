@@ -324,10 +324,15 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
 The pipeline is league-scoped: `--league npb` (or `HANDIEDGE_LEAGUE=npb`)
 switches every command onto NPB's own store (`data-npb/` — separate slates,
 locks, results, history and LEARNED CALIBRATION; MLB's shrinks were earned
-on MLB bets and are never shared), NPB's own deadlines (lock **12:59 JST
-the game day** — safely before 13:00 weekend day games; results due 09:00
-JST next morning), and The Odds API's `baseball_npb` market (verified live:
-h2h/spreads/totals across ~23 books).
+on MLB bets and are never shared), NPB's own deadlines (**every pick locks
+33 minutes before its own first pitch** — day, twilight and night games
+alike, owner's rule 2026-08-22; a game with no posted start time falls back
+to 12:27 JST, the most conservative value the rule can produce; results due
+09:00 JST next morning), and The Odds API's `baseball_npb` market (verified
+live: h2h/spreads/totals across ~23 books). Per-game freezing lives in the
+CLI (`predictionFrozen`): once a pick's stored deadline passes, every later
+run carries it through unchanged — the pick standing at that instant is the
+bet, stamped or not.
 
 - **Data source: npb.jp** (no public API exists). Parsers are built against
   live page samples committed under `probe/npb/` and unit-tested on those
@@ -354,10 +359,13 @@ h2h/spreads/totals across ~23 books).
   (the settle engine already did this); rained-off games (中止) are
   reported and never settle.
 - **Crons** (JST clock): `npb-slate.yml` 00:07 UTC (~09:55 JST fire) opens
-  the line-entry window; `npb-predict.yml` two-stage lock 02:40 + 03:05 UTC
-  against the 03:59 UTC deadline, with the advisory AI review; -
-  `npb-settle.yml` sweeps 08/10/12/14 UTC plus a 22:00 UTC backstop.
-  The Monday audit runs `audit --league npb` alongside MLB.
+  the line-entry window; `npb-predict.yml` runs six times through the day
+  (02:30/03:30/06:30/07:15/07:45/08:15 UTC), each pass re-predicting only
+  the games whose −33′ cut-off has not passed and carrying frozen picks
+  through, with the advisory AI review; `npb-settle.yml` sweeps
+  08/10/12/14 UTC plus a 22:00 UTC backstop. The Monday audit runs
+  `audit --league npb` alongside MLB, judging lock discipline against the
+  EARLIEST per-game deadline on each slate.
 - **Not yet**: NPB endpoints on the read-only API/frontend; recent form
   from the schedule page's own scores; a curated NPB park-factor table.
 

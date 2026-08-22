@@ -1,10 +1,11 @@
 name: HandiEdge NPB — morning slate
 
 # NPB mirror of handiedge-slate.yml, on the NPB clock: games are played ON
-# the slate date in the JST afternoon/evening, and the market cut-off is
-# 12:59 JST the same day (weekend day games start 13:00 JST). This job runs
-# at 00:07 UTC ≈ 09:07 JST (scheduler drift lands it ~09:55 JST), leaving a
-# ~2.5-hour window to hand-edit lines before the predict lock at ~12:45 JST.
+# the slate date in the JST afternoon/evening, and every pick locks 33
+# minutes before ITS OWN first pitch (12:27 JST for a 13:00 day game,
+# 17:27 JST for an 18:00 night game). This job runs at 00:07 UTC ≈ 09:07
+# JST (scheduler drift lands it ~09:55 JST), opening the line-entry window
+# hours before the earliest possible cut-off.
 #
 # Data comes from npb.jp (schedule + club stats pages) and The Odds API's
 # baseball_npb market (verified live: h2h/spreads/totals, ~23 books). The
@@ -71,7 +72,7 @@ jobs:
           {
             echo "# NPB handicap lines for ${{ steps.d.outputs.date }}"
             echo
-            echo "Edit \`$CT\` and commit before **12:30 JST** (lock deadline 12:59 JST)."
+            echo "Edit \`$CT\` and commit before each game's cut-off — every pick locks **33 minutes before its own first pitch** (13:00 game → 12:27 JST, 18:00 game → 17:27 JST)."
             echo
             echo '| gamePk | matchup | line now | total |'
             echo '| --- | --- | --- | --- |'
