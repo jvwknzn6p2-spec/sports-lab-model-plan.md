@@ -125,10 +125,22 @@ function GameCard({ p }: { p: Prediction }) {
                     ` / 推奨 ${p.handicap.recommendedStake}u`}
                 </span>
               </>
-            ) : (
+            ) : p.handicap?.coverProbability != null ? (
+              // A line was quoted and priced but the pick is withheld
+              // (no-value price, C informational-only, or PASS). Showing
+              // the price without the pick IS the point — hiding it as
+              // 市場なし would misreport a real quote.
               <span className="text-muted-foreground">
-                {p.handicap?.noValue ? "価値なし（見送り）" : "市場なし"}
+                {p.handicap?.noValue ? "価値なし（見送り）" : "保留（賭けなし）"}
+                {" — "}
+                {pct(p.handicap.coverProbability)}
+                {p.handicap.ev != null &&
+                  ` / EV ${(p.handicap.ev * 100).toFixed(1)}%`}
+                {p.handicap.marketProbability != null &&
+                  ` / 市場 ${pct(p.handicap.marketProbability)}`}
               </span>
+            ) : (
+              <span className="text-muted-foreground">市場なし</span>
             )}
           </span>
           <span>
@@ -142,6 +154,11 @@ function GameCard({ p }: { p: Prediction }) {
                   {pct(p.total.probability)}
                 </span>
               </>
+            ) : p.total?.line != null ? (
+              <span className="text-muted-foreground">
+                線 {p.total.line} / 予測 {p.total.predicted.toFixed(1)}
+                （ピック保留）
+              </span>
             ) : (
               <span className="text-muted-foreground">
                 {p.total ? `予測 ${p.total.predicted.toFixed(1)}（線なし）` : "—"}
