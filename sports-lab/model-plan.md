@@ -232,7 +232,11 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   the book with more resolution: S went from 1 pick to 16 at 68.8%
   [+4.90u], A 25 at 72.0%);
   settlement + self-learning (`settle`); cumulative reporting
-  and a weekly standing audit; GitHub Actions crons run the day (slate
+  and a weekly standing audit (which since 2026-08-22 includes an A-3
+  tail-trust section: each market's learned tail/far-tail shrink against
+  the 0.75 S-cap floor, plus how many scored tail bets are banded far-tail
+  stamps vs legacy rows — so the S-cap's recovery is watched, not
+  assumed); GitHub Actions crons run the day (slate
   06:07 UTC; predict as a TWO-STAGE lock — 12:10 UTC safety lock plus a
   12:45 UTC refresh re-lock against the 22:59 JST deadline, the market
   closing at 23:00 JST; settle as two-hourly sweeps across the finish
@@ -249,8 +253,18 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   `[warn] market_disagreement` and caps confidence at B — the EV-outlier
   lesson measured directly. EV itself still prices the fixed-0.9 book the
   pipeline actually bets; the market probability is a benchmark, not a
-  payout. No real-line bet has settled yet; the A-2 audit section watches
-  for the first.
+  payout. Since 2026-08-22 the fill also captures the market's own PAYOUT
+  (median decimal profit at the exact consensus point,
+  `marketHomePayout`/`marketAwayPayout`) and decide() reports a
+  display-only `marketPriceEv` — the model's edge priced at what the
+  sportsbook actually pays — alongside the staked fixed-0.9 EV; the daily
+  report shows both. A slate where NO line was entered or filled now
+  carries a single banner naming the missing `ODDS_API_KEY` instead of
+  fifteen per-game repeats. No real-line bet has settled yet; the A-2
+  audit section watches for the first. NOTE: the `ODDS_API_KEY` and
+  `ANTHROPIC_API_KEY` repo secrets are still UNSET in production — the
+  odds fill and the AI review have never run on a live slate; setting the
+  two secrets is the single highest-value remaining action.
 - **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
   per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
   temperature multiplier adjusts the run environment at open-air parks,

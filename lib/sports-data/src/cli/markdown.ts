@@ -9,7 +9,7 @@
 
 import type { AuditReport } from "../engine/audit";
 import type { CalibrationState, GamePrediction } from "../engine/decision";
-import { fmtPct, fmtUnits, rankByValue } from "../engine/decision";
+import { fmtPct, fmtUnits, hasQuotedLine, rankByValue } from "../engine/decision";
 import {
   marketRecordLabel,
   TOTAL_MARKET_NEVER_QUOTED,
@@ -52,6 +52,23 @@ export function predictionsToMarkdown(
   );
   out.push("");
 
+  // A whole slate with no quoted line means the odds fill never ran (no
+  // ODDS_API_KEY and no hand-entered lines) — every "handicap" today is the
+  // moneyline in disguise and the totals market is silent. Said ONCE at the
+  // top: the per-game reason repeats it fifteen times where nobody reads it.
+  if (
+    predictions.length > 0 &&
+    predictions.every((p) => !hasQuotedLine(p.handicap.input))
+  ) {
+    out.push(
+      "> ⚠️ **No market lines on this slate.** Run lines and totals were " +
+        "neither entered nor auto-filled — set the `ODDS_API_KEY` repo " +
+        "secret (the-odds-api.com) or edit the control tower to quote real " +
+        "markets. Today runs moneyline-only.",
+    );
+    out.push("");
+  }
+
   if (picks.length === 0) {
     out.push("_No game cleared the confidence threshold today._");
     out.push("");
@@ -77,7 +94,10 @@ export function predictionsToMarkdown(
             : "") +
           (p.handicap.ev === null
             ? ""
-            : ` · EV **${fmtPct(p.handicap.ev)}** per unit`),
+            : ` · EV **${fmtPct(p.handicap.ev)}** per unit`) +
+          (p.handicap.marketPriceEv == null
+            ? ""
+            : ` · at the market's price ${fmtPct(p.handicap.marketPriceEv)}`),
       );
     } else if (p.handicap.noValue) {
       // The game is still a pick — only this market is skipped, and saying so
@@ -414,6 +434,31 @@ export function auditToMarkdown(a: AuditReport): string {
       `- Same-game run correlation: empirical ${d.empiricalRunCorrelation} vs model ${d.modelRunCorrelation}`,
     );
     out.push(`- Mean |margin error|: ${d.meanMarginError} runs`);
+  }
+  out.push("");
+
+  out.push("## A-3 — Tail trust (S-cap watch)");
+  out.push("");
+  if (!a.tailTrust) {
+    out.push("_No learned tail state to report._");
+  } else {
+    const t = a.tailTrust;
+    out.push(
+      t.sCapActive
+        ? `⚠️ **S is capped at A**: the winner market's tail trust sits below ` +
+            `the ${t.floor} floor. It lifts when BOTH winner tail shrinks ` +
+            `learn back above the floor.`
+        : `✅ S-cap inactive: winner tail trust is at or above the ` +
+            `${t.floor} floor.`,
+    );
+    for (const m of t.markets) {
+      out.push(
+        `- ${m.market}: tail ${m.tailShrink} / far ${m.farTailShrink}` +
+          ` ${m.belowFloor ? "(below floor)" : "(ok)"} — ` +
+          `${m.tailRows} tail bet(s) scored, ${m.farTailRows} stamped ` +
+          `far-tail, ${m.legacyTailRows} legacy (teaching both bands)`,
+      );
+    }
   }
   out.push("");
 

@@ -123,6 +123,45 @@ test("market disagreement caps confidence; agreement leaves it alone", async () 
   );
 });
 
+test("the market's own payout prices a display-only EV benchmark", async () => {
+  const games = await loadSlateGames();
+  const g = games[0]!;
+  const runs = expectedRuns(g, 2024);
+  const strong = simulateGame(6.2, 3.2, { sims: 10_000, seed: 1 });
+  const p = decide(g, runs, strong, DEFAULT_CALIBRATION, {
+    side: "home",
+    line: -1.5,
+    marketHomeCover: 0.55,
+    marketHomePayout: 0.909, // −110
+    marketAwayPayout: 0.833, // −120
+  });
+  assert.ok(p.handicap.marketPriceEv !== null);
+  // The strong home favourite picks the home side, so the home payout is the
+  // one priced: EV = atRisk·(p·0.909 − (1 − p)) with the sim's push share.
+  const chosen = p.handicap.coverProbability!;
+  assert.ok(
+    Math.abs(
+      p.handicap.marketPriceEv! - (chosen * 0.909 - (1 - chosen)),
+    ) < 0.02, // -1.5 pushes are impossible, so atRisk ≈ 1
+    `marketPriceEv ${p.handicap.marketPriceEv} vs chosen ${chosen}`,
+  );
+  assert.ok(
+    p.reasons.some((r) => r.includes("At the market's own price")),
+    p.reasons.join(" | "),
+  );
+  // The STAKED EV is untouched by the market payout: still the 0.9 book.
+  assert.ok(Math.abs(p.handicap.ev! - (chosen * 0.9 - (1 - chosen))) < 0.02);
+
+  // No payout attached → no benchmark, and nothing else changes.
+  const bare = decide(g, runs, strong, DEFAULT_CALIBRATION, {
+    side: "home",
+    line: -1.5,
+    marketHomeCover: 0.55,
+  });
+  assert.equal(bare.handicap.marketPriceEv, null);
+  assert.equal(bare.handicap.ev, p.handicap.ev);
+});
+
 test("the total's market probability is reported for the picked side", async () => {
   const games = await loadSlateGames();
   const g = games[0]!;

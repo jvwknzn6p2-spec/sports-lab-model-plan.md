@@ -17,6 +17,7 @@ import {
   DEFAULT_DECISION_CONFIG,
   rankByValue,
   type GamePrediction,
+  type HandicapInput,
 } from "../src/engine/decision";
 import type { GameCoreData } from "../src/step2";
 
@@ -288,4 +289,56 @@ test("recommended stake is quarter-Kelly on the fixed payout, capped and floored
   assert.equal(recommendedStake(null), null);
   // The cap holds however absurd the stated edge.
   assert.equal(recommendedStake(9), 1);
+});
+
+test("a slate with no quoted line at all gets ONE odds-fill banner", async () => {
+  const { predictionsToMarkdown } = await import("../src/cli/markdown");
+  const mk = (gamePk: number, input: HandicapInput | null) =>
+    ({
+      gamePk,
+      gameDate: null,
+      home: "Home",
+      away: "Away",
+      pass: true,
+      predictedWinner: null,
+      predictedLoser: null,
+      winProbability: 0.52,
+      rawWinProbability: 0.52,
+      confidence: "C",
+      handicap: {
+        input,
+        pick: null,
+        coverProbability: null,
+        rawCoverProbability: null,
+        ev: null,
+        noValue: false,
+      },
+      total: {
+        line: null,
+        predicted: 8,
+        pick: null,
+        probability: null,
+        rawProbability: null,
+      },
+      expectedRuns: { home: 4, away: 4 },
+      reasons: [],
+      flags: [],
+    }) as GamePrediction;
+
+  const BANNER = "No market lines on this slate";
+  const bare = predictionsToMarkdown(
+    "2024-07-25",
+    [mk(1, { side: "home", notation: null }), mk(2, null)],
+    DEFAULT_CALIBRATION,
+  );
+  assert.ok(bare.includes(BANNER));
+  assert.ok(bare.includes("ODDS_API_KEY"));
+
+  // One real line anywhere on the slate and the banner must vanish.
+  const quoted = predictionsToMarkdown(
+    "2024-07-25",
+    [mk(1, { side: "home", line: -1.5 }), mk(2, null)],
+    DEFAULT_CALIBRATION,
+  );
+  assert.ok(!quoted.includes(BANNER));
 });
