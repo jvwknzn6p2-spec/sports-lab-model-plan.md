@@ -1,0 +1,109 @@
+name: HandiEdge NPB — settle and score
+
+# Sweeps the NPB finish window: day games end ~17:00 JST (08:00 UTC), night
+# games ~21:30–22:30 JST (12:30–13:30 UTC), extra-inning stragglers by
+# ~23:30 JST. Final scores come off the npb.jp month schedule page; a game
+# settles only when its scores are posted AND 3.5h have passed since first
+# pitch (the page has no explicit final marker). Draws are real NPB results
+# and settle as moneyline pushes. The 22:00 UTC backstop (07:00 JST next
+# morning) is the last sweep before the 09:00 JST results deadline the
+# audit grades against.
+
+on:
+  schedule:
+    - cron: "0 8,10,12,14,22 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date to settle (YYYY-MM-DD, JST). Blank = the game day the sweep covers."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-npb-data
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Games belong to the JST date they were played on: sweeps during the
+      # JST evening cover "today", the 07:00 JST backstop covers "yesterday".
+      - name: Resolve date (JST game day)
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then
+            if [ "$(TZ=Asia/Tokyo date +%H)" -ge 15 ]; then
+              DATE=$(TZ=Asia/Tokyo date +%F)
+            else
+              DATE=$(TZ=Asia/Tokyo date -d 'yesterday' +%F)
+            fi
+          fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Decide whether anything needs settling
+        id: guard
+        run: |
+          DATE="${{ steps.d.outputs.date }}"
+          LOCK="lib/sports-data/data-npb/predictions/$DATE.json"
+          RESULTS="lib/sports-data/data-npb/results/$DATE.json"
+          if [ ! -f "$LOCK" ]; then
+            echo "No NPB prediction lock for $DATE — nothing to settle."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -f "$RESULTS" ]; then
+            PENDING=$(node -e "console.log((JSON.parse(require('fs').readFileSync('$RESULTS','utf8')).pending||[]).length)")
+            if [ "$PENDING" -eq 0 ]; then
+              echo "$DATE is already fully settled."
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch final scores and settle
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: pnpm run handiedge fetch-results --league npb --date "${{ steps.d.outputs.date }}" --force --settle --poll
+
+      - name: Refresh running results
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: pnpm run handiedge report --league npb
+
+      - name: Publish to run summary
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          MD="lib/sports-data/data-npb/reports/summary.md"
+          if [ -f "$MD" ]; then cat "$MD" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Commit results and updated calibration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data-npb
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge NPB: settled ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

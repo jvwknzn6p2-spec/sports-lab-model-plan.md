@@ -319,6 +319,56 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   This narrows the market decoupling: a real-line handicap survives the
   thin-winner-edge PASS only while the game still rates at least B.
 
+### NPB — second league on the same engine (2026-08-22) — ✅ v1 live
+
+The pipeline is league-scoped: `--league npb` (or `HANDIEDGE_LEAGUE=npb`)
+switches every command onto NPB's own store (`data-npb/` — separate slates,
+locks, results, history and LEARNED CALIBRATION; MLB's shrinks were earned
+on MLB bets and are never shared), NPB's own deadlines (**every pick locks
+33 minutes before its own first pitch** — day, twilight and night games
+alike, owner's rule 2026-08-22; a game with no posted start time falls back
+to 12:27 JST, the most conservative value the rule can produce; results due
+09:00 JST next morning), and The Odds API's `baseball_npb` market (verified
+live: h2h/spreads/totals across ~23 books). Per-game freezing lives in the
+CLI (`predictionFrozen`): once a pick's stored deadline passes, every later
+run carries it through unchanged — the pick standing at that instant is the
+bet, stamped or not.
+
+- **Data source: npb.jp** (no public API exists). Parsers are built against
+  live page samples committed under `probe/npb/` and unit-tested on those
+  exact bytes (`src/npb/`, `test/npb.test.ts`): the monthly schedule page
+  carries every game's card, venue, start time, final score, cancellation
+  marker AND the announced starters (先発), so schedule, results and
+  probables come from one page; club stats come from the BIS team/individual
+  tables. Parsers assert the column headers they expect and fail loud on
+  any layout change.
+- **League constants are DERIVED, not copied**: cFIP, lgFIP, runsPerPA,
+  hrPerFB and the league wOBA anchor are computed from NPB's own pooled
+  league totals at fetch time (`src/npb/constants.ts`), stamped with a
+  synthetic season key (1000000+year) and persisted in the slate bundle so
+  predict re-registers the exact environment the slate was built with. The
+  wOBA event weights are the one documented approximation (MLB weights over
+  NPB anchors — exact weights need a play-by-play RE matrix npb.jp does not
+  publish).
+- **Honest v1 gaps, all flagged or absent rather than faked**: bullpen =
+  club pitching total minus the day's matched starter (npb.jp has no
+  reliever split); a starter surname that doesn't match exactly one arm on
+  the club page leaves the game downgraded (nothing guessed); park factors,
+  weather, recent form, workloads, IL and lineups are simply absent
+  (neutral). Draws are real NPB results and settle as moneyline pushes
+  (the settle engine already did this); rained-off games (中止) are
+  reported and never settle.
+- **Crons** (JST clock): `npb-slate.yml` 00:07 UTC (~09:55 JST fire) opens
+  the line-entry window; `npb-predict.yml` runs six times through the day
+  (02:30/03:30/06:30/07:15/07:45/08:15 UTC), each pass re-predicting only
+  the games whose −33′ cut-off has not passed and carrying frozen picks
+  through, with the advisory AI review; `npb-settle.yml` sweeps
+  08/10/12/14 UTC plus a 22:00 UTC backstop. The Monday audit runs
+  `audit --league npb` alongside MLB, judging lock discipline against the
+  EARLIEST per-game deadline on each slate.
+- **Not yet**: NPB endpoints on the read-only API/frontend; recent form
+  from the schedule page's own scores; a curated NPB park-factor table.
+
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 
 Built as the `@workspace/sports-data` package (`lib/sports-data`).

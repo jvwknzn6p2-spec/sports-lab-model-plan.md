@@ -43,7 +43,12 @@ import {
   WIN_COMMISSION,
   type WeightedLine,
 } from "./handicap-notation";
-import { isResultsDue, predictionDeadline } from "./deadline";
+import {
+  isResultsDue,
+  MLB_DEADLINES,
+  predictionDeadline,
+  type LeagueDeadlines,
+} from "./deadline";
 import { settle, type GameResult, type SettlementReport } from "./settle";
 import { SHARED_ENV_SD, TEAM_RUN_DISPERSION } from "./simulate";
 
@@ -216,6 +221,7 @@ export function checkIntegrity(
   history: SettlementReport[],
   calibration: { gamesSettled: number },
   now: Date,
+  deadlines: LeagueDeadlines = MLB_DEADLINES,
 ): AuditIssue[] {
   const issues: AuditIssue[] = [];
   const historyByDate = new Map<string, SettlementReport[]>();
@@ -236,7 +242,7 @@ export function checkIntegrity(
   }
 
   for (const day of days) {
-    const overdue = isResultsDue(day.date, now);
+    const overdue = isResultsDue(day.date, now, deadlines);
 
     // Control-tower notations must resolve — a typo here breaks predict, so
     // this check runs BEFORE the lock guard: the day a typo matters most is
@@ -365,7 +371,10 @@ export function checkIntegrity(
  * happened (or absolve lateness that did). Slates from before the field
  * existed fall back to the current rule.
  */
-export function lockMargins(days: AuditDay[]): LockMargin[] {
+export function lockMargins(
+  days: AuditDay[],
+  deadlines: LeagueDeadlines = MLB_DEADLINES,
+): LockMargin[] {
   return days
     .filter((d) => d.lock)
     .map((d) => {
@@ -373,10 +382,18 @@ export function lockMargins(days: AuditDay[]): LockMargin[] {
       if (!lockedAt || Number.isNaN(lockedAt.getTime())) {
         return { date: d.date, marginMinutes: null, late: false };
       }
-      const stored = d.lock!.predictions.find(
-        (p) => p.lockDeadline != null,
-      )?.lockDeadline;
-      const deadline = stored ? new Date(stored) : predictionDeadline(d.date);
+      // Under per-game deadlines (NPB) each pick stores its own cut-off;
+      // the slate's lock discipline is judged against the EARLIEST of them —
+      // the first moment anything on the slate stopped being editable. For
+      // an all-same-deadline lock (MLB) the minimum IS the deadline.
+      const storedTimes = d
+        .lock!.predictions.map((p) =>
+          p.lockDeadline ? new Date(p.lockDeadline).getTime() : NaN,
+        )
+        .filter((t) => !Number.isNaN(t));
+      const deadline = storedTimes.length
+        ? new Date(Math.min(...storedTimes))
+        : predictionDeadline(d.date, deadlines);
       const margin = (deadline.getTime() - lockedAt.getTime()) / 60_000;
       return {
         date: d.date,
@@ -745,9 +762,18 @@ export function runAudit(
   history: SettlementReport[],
   calibration: { gamesSettled: number },
   now: Date,
+  deadlines: LeagueDeadlines = MLB_DEADLINES,
+  /**
+   * True for leagues whose picks lock per game (NPB): stored per-game
+   * deadlines never equal the fixed-time formula, so the "produced under
+   * the current rule" comparison below would misread every lock as
+   * pre-rule-change and amnesty real late locks. Under per-game lock the
+   * stored deadlines ARE the current rule by construction.
+   */
+  perGameLock = false,
 ): AuditReport {
-  const issues = checkIntegrity(days, history, calibration, now);
-  const margins = lockMargins(days);
+  const issues = checkIntegrity(days, history, calibration, now, deadlines);
+  const margins = lockMargins(days, deadlines);
   const realLines = realLineSettlements(days);
   issues.push(...realLines.issues);
 
@@ -796,8 +822,10 @@ export function runAudit(
       (p) => p.lockDeadline != null,
     )?.lockDeadline;
     const producedUnderCurrentRule =
+      perGameLock ||
       !stored ||
-      new Date(stored).getTime() === predictionDeadline(m.date).getTime();
+      new Date(stored).getTime() ===
+        predictionDeadline(m.date, deadlines).getTime();
     if (producedUnderCurrentRule) {
       issues.push({
         severity: "error",

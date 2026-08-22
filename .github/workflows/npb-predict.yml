@@ -1,0 +1,122 @@
+name: HandiEdge NPB — daily predictions
+
+# NPB picks lock PER GAME: every pick freezes 33 minutes before its own
+# first pitch (day, twilight and night games alike — owner's rule). Each run
+# below refreshes the slate (starters firm up during the day), re-predicts
+# only the games whose cut-off has NOT passed, and carries every frozen pick
+# through unchanged — the freeze semantics live in the CLI, keyed on each
+# game's stored lockDeadline, so extra or late runs can never rewrite a
+# locked pick.
+#
+# Standard NPB first pitches (JST) and their −33' cut-offs:
+#   13:00→12:27  14:00→13:27  17:00→16:27  17:45→17:12
+#   18:00→17:27  18:15→17:42  18:30→17:57
+# GitHub's scheduler on this repo fires ~45–50 minutes late, so each cron is
+# set ~55–75 minutes before the cluster's cut-off; the final run stamps the
+# last picks final after 17:57 JST.
+
+on:
+  schedule:
+    - cron: "30 2 * * *"   # fires ~03:15 UTC (12:15 JST) → 13:00 games
+    - cron: "30 3 * * *"   # fires ~04:15 UTC (13:15 JST) → 14:00 games
+    - cron: "30 6 * * *"   # fires ~07:15 UTC (16:15 JST) → 17:00 games
+    - cron: "15 7 * * *"   # fires ~08:00 UTC (17:00 JST) → 17:45 games
+    - cron: "45 7 * * *"   # fires ~08:30 UTC (17:30 JST) → 18:15 games
+    - cron: "15 8 * * *"   # fires ~09:00 UTC (18:00 JST) → final stamp
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD, JST). Blank = today in JST."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-npb-data
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date (JST)
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(TZ=Asia/Tokyo date +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      # Refresh starters/stats/odds right before locking; entered lines are
+      # never overwritten (create-once control tower).
+      - name: Refresh NPB slate
+        working-directory: lib/sports-data
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: pnpm run handiedge fetch-slate --league npb --date "${{ steps.d.outputs.date }}" --force
+
+      - name: Check the slate has games
+        id: guard
+        run: |
+          SLATE="lib/sports-data/data-npb/slates/${{ steps.d.outputs.date }}.json"
+          if [ ! -f "$SLATE" ]; then
+            echo "No NPB slate for ${{ steps.d.outputs.date }} — nothing to predict." >> "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Predict and lock
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: |
+          pnpm run handiedge predict --league npb \
+            --control "data-npb/control-towers/${{ steps.d.outputs.date }}.json" \
+            --force
+
+      # Advisory AI review of the locked slate (skips cleanly without the key).
+      - name: AI review (advisory)
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            pnpm run handiedge review --league npb --date "${{ steps.d.outputs.date }}"
+          else
+            echo "ANTHROPIC_API_KEY not set — review skipped."
+          fi
+
+      - name: Publish report to run summary
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          MD="lib/sports-data/data-npb/reports/${{ steps.d.outputs.date }}.md"
+          if [ -f "$MD" ]; then cat "$MD" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Commit today's NPB slate and predictions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data-npb
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge NPB: predictions for ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

@@ -118,10 +118,18 @@ import {
   TOTAL_MARKET_NEVER_QUOTED,
 } from "../engine/report";
 import {
+  gamePredictionDeadline,
   isPredictionLocked,
-  minutesUntilPredictionLock,
-  predictionDeadline,
+  predictionFrozen,
 } from "../engine/deadline";
+import {
+  MLB_CONFIG,
+  resolveLeague,
+  type LeagueConfig,
+} from "../engine/league";
+import { registerSeasonConstants } from "../sabermetrics";
+import { buildNpbSlate, fetchNpbResults } from "../npb/slate";
+import { teamById } from "../npb/teams";
 import {
   auditToMarkdown,
   predictionsToMarkdown,
@@ -132,15 +140,35 @@ import type { SettlementReport } from "../engine/settle";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(here, "..", "..");
-const DATA_DIR = join(PKG_ROOT, "data");
-const PRED_DIR = join(DATA_DIR, "predictions");
-const SLATE_DIR = join(DATA_DIR, "slates");
-const CT_DIR = join(DATA_DIR, "control-towers");
-const RESULTS_DIR = join(DATA_DIR, "results");
-const CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
-const HISTORY_PATH = join(DATA_DIR, "history.jsonl");
-const REPORTS_DIR = join(DATA_DIR, "reports");
+
+/**
+ * The active league, set ONCE in main() before any command runs (default
+ * MLB). Every path below is derived from it: each league keeps its own
+ * slates, locks, results, history and learned calibration — MLB's shrinks
+ * were earned on MLB bets and NPB neither reads nor teaches them.
+ */
+let LEAGUE: LeagueConfig = MLB_CONFIG;
+let DATA_DIR = join(PKG_ROOT, MLB_CONFIG.dataDirName);
+let PRED_DIR = join(DATA_DIR, "predictions");
+let SLATE_DIR = join(DATA_DIR, "slates");
+let CT_DIR = join(DATA_DIR, "control-towers");
+let RESULTS_DIR = join(DATA_DIR, "results");
+let CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
+let HISTORY_PATH = join(DATA_DIR, "history.jsonl");
+let REPORTS_DIR = join(DATA_DIR, "reports");
 const DEFAULT_SLATE = join(PKG_ROOT, "fixtures", "2024-slate.json");
+
+function setLeague(cfg: LeagueConfig): void {
+  LEAGUE = cfg;
+  DATA_DIR = join(PKG_ROOT, cfg.dataDirName);
+  PRED_DIR = join(DATA_DIR, "predictions");
+  SLATE_DIR = join(DATA_DIR, "slates");
+  CT_DIR = join(DATA_DIR, "control-towers");
+  RESULTS_DIR = join(DATA_DIR, "results");
+  CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
+  HISTORY_PATH = join(DATA_DIR, "history.jsonl");
+  REPORTS_DIR = join(DATA_DIR, "reports");
+}
 
 interface ControlTower {
   date: string;
@@ -245,6 +273,157 @@ function printPrediction(p: GamePrediction): void {
   if (p.flags.length) console.log(`  Flags: ${p.flags.join(", ")}`);
 }
 
+/**
+ * Control-tower skeleton + odds fill, shared by the MLB and NPB slate
+ * fetches. Create-once (a human's edits are never overwritten), then fill
+ * still-unentered lines from The Odds API consensus. `oddsGames` is the
+ * games list whose team NAMES match what the odds feed speaks — identical
+ * to `games` for MLB; for NPB it carries the English club names.
+ */
+async function writeSkeletonAndFillOdds(
+  date: string,
+  season: number,
+  games: FixtureBundle["games"],
+  oddsGames: FixtureBundle["games"],
+): Promise<string> {
+  // Control-tower skeleton: create once, never overwrite the user's edits.
+  const ctPath = join(CT_DIR, `${date}.json`);
+  if (!existsSync(ctPath)) {
+    const handicaps: Record<string, HandicapInput> = {};
+    for (const g of games) {
+      // null = 未入力: no line has been entered yet, so predict quotes NO
+      // handicap market for the game (moneyline and total only). This is
+      // deliberately not "0" — "0" is a real pick'em quote, and writing it
+      // as the placeholder let 24 straight unedited control towers run the
+      // moneyline twice under two names. Replace each null with the slate's
+      // real handicap, then re-run predict --force.
+      handicaps[String(g.gamePk)] = { side: "home", notation: null };
+    }
+    await saveJson(ctPath, {
+      date,
+      season,
+      sims: 10_000,
+      passThreshold: 0.55,
+      minEv: 0,
+      handicaps,
+    });
+    console.log(
+      `  Control-tower skeleton → ${ctPath}  (edit lines/totals, then run predict)`,
+    );
+  } else {
+    console.log(`  Control tower exists → ${ctPath}  (kept your edits)`);
+  }
+
+  // Market lines: fill any still-unentered handicap/total from The Odds API
+  // consensus. Entered lines are never touched, and a fetch failure leaves
+  // the tower as it is — the day then simply quotes no handicap market.
+  const oddsKey = process.env.ODDS_API_KEY;
+  if (oddsKey) {
+    try {
+      const events = await fetchMlbOdds({
+        apiKey: oddsKey,
+        sportKey: LEAGUE.oddsSportKey,
+      });
+      const ct = await readJson<ControlTower>(ctPath);
+      const fill = fillControlTowerFromOdds(
+        ct.handicaps ?? {},
+        oddsGames,
+        events,
+      );
+      await saveJson(ctPath, ct);
+      console.log(
+        `  Odds: filled ${fill.linesFilled} line(s) and ${fill.totalsFilled} ` +
+          `total(s) from market consensus` +
+          (fill.kept ? `; kept ${fill.kept} entered line(s)` : ""),
+      );
+      for (const w of fill.warnings) console.log(`    - ${w}`);
+    } catch (err) {
+      console.log(
+        `  Odds fetch FAILED — lines stay unentered (no handicap market): ` +
+          `${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  } else {
+    console.log(
+      "  Odds: ODDS_API_KEY not set — enter lines by hand or export a key " +
+        "(https://the-odds-api.com) to fill them automatically.",
+    );
+  }
+  return ctPath;
+}
+
+/** NPB slate fetch — npb.jp pages instead of statsapi (see src/npb/). */
+async function cmdFetchSlateNpb(args: {
+  date?: string;
+  out?: string;
+  force?: boolean;
+}): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  const outPath = resolve(args.out ?? join(SLATE_DIR, `${date}.json`));
+  if (existsSync(outPath) && !args.force) {
+    throw new Error(
+      `Slate already exists for ${date} (${outPath}). Use --force to refetch.`,
+    );
+  }
+
+  console.log(`Fetching NPB slate for ${date} from npb.jp…`);
+  const report = await buildNpbSlate({ date });
+  const bundle = report.bundle;
+  if (bundle.games.length === 0) {
+    throw new Error(
+      `No NPB games scheduled on ${date} (month page carried ` +
+        `${report.monthGameCount} game(s) on other dates).`,
+    );
+  }
+  await saveJson(outPath, bundle);
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — NPB slate for ${date}`);
+  console.log("=".repeat(72));
+  for (const g of bundle.games) {
+    const sp = (id: number | null) =>
+      id !== null && bundle.starters[String(id)] ? "✓" : "✗";
+    console.log(
+      `  ${g.gamePk}  ${g.away.teamName} @ ${g.home.teamName}` +
+        `  (SP ${g.away.probablePitcherName ?? "未発表"} ${sp(g.away.probablePitcherId)}` +
+        ` vs ${g.home.probablePitcherName ?? "未発表"} ${sp(g.home.probablePitcherId)})`,
+    );
+  }
+  console.log(
+    `  Derived NPB constants: lgFIP ${bundle.leagueConstants!.lgFIP}, ` +
+      `cFIP ${bundle.leagueConstants!.cFIP}, lgwOBA ${bundle.leagueConstants!.wOBA}, ` +
+      `R/PA ${bundle.leagueConstants!.runsPerPA} (season key ${bundle.season}).`,
+  );
+  for (const n of report.notes) console.log(`    - ${n}`);
+  console.log(`  Slate written → ${outPath}`);
+
+  // Odds matching needs the English club names The Odds API speaks.
+  const oddsGames = bundle.games.map((g) => ({
+    ...g,
+    home: {
+      ...g.home,
+      teamName: teamById(g.home.teamId!)?.oddsName ?? g.home.teamName,
+    },
+    away: {
+      ...g.away,
+      teamName: teamById(g.away.teamId!)?.oddsName ?? g.away.teamName,
+    },
+  }));
+  const ctPath = await writeSkeletonAndFillOdds(
+    date,
+    bundle.season,
+    bundle.games,
+    oddsGames,
+  );
+  console.log("");
+  console.log(
+    `Next: pnpm run handiedge predict --league npb --control ${ctPath}`,
+  );
+}
+
 async function cmdFetchSlate(args: {
   date?: string;
   season?: string;
@@ -255,6 +434,7 @@ async function cmdFetchSlate(args: {
   "skip-weather"?: boolean;
   "skip-injuries"?: boolean;
 }): Promise<void> {
+  if (LEAGUE.league === "npb") return cmdFetchSlateNpb(args);
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
@@ -378,66 +558,12 @@ async function cmdFetchSlate(args: {
   for (const line of workloadSummary) console.log(line);
   console.log(`  Slate written → ${outPath}`);
 
-  // Control-tower skeleton: create once, never overwrite the user's edits.
-  const ctPath = join(CT_DIR, `${date}.json`);
-  if (!existsSync(ctPath)) {
-    const handicaps: Record<string, HandicapInput> = {};
-    for (const g of bundle.games) {
-      // null = 未入力: no line has been entered yet, so predict quotes NO
-      // handicap market for the game (moneyline and total only). This is
-      // deliberately not "0" — "0" is a real pick'em quote, and writing it
-      // as the placeholder let 24 straight unedited control towers run the
-      // moneyline twice under two names. Replace each null with the slate's
-      // real handicap, then re-run predict --force.
-      handicaps[String(g.gamePk)] = { side: "home", notation: null };
-    }
-    await saveJson(ctPath, {
-      date,
-      season,
-      sims: 10_000,
-      passThreshold: 0.55,
-      minEv: 0,
-      handicaps,
-    });
-    console.log(
-      `  Control-tower skeleton → ${ctPath}  (edit lines/totals, then run predict)`,
-    );
-  } else {
-    console.log(`  Control tower exists → ${ctPath}  (kept your edits)`);
-  }
-
-  // Market lines: fill any still-unentered handicap/total from The Odds API
-  // consensus. Entered lines are never touched, and a fetch failure leaves
-  // the tower as it is — the day then simply quotes no handicap market.
-  const oddsKey = process.env.ODDS_API_KEY;
-  if (oddsKey) {
-    try {
-      const events = await fetchMlbOdds({ apiKey: oddsKey });
-      const ct = await readJson<ControlTower>(ctPath);
-      const fill = fillControlTowerFromOdds(
-        ct.handicaps ?? {},
-        bundle.games,
-        events,
-      );
-      await saveJson(ctPath, ct);
-      console.log(
-        `  Odds: filled ${fill.linesFilled} line(s) and ${fill.totalsFilled} ` +
-          `total(s) from market consensus` +
-          (fill.kept ? `; kept ${fill.kept} entered line(s)` : ""),
-      );
-      for (const w of fill.warnings) console.log(`    - ${w}`);
-    } catch (err) {
-      console.log(
-        `  Odds fetch FAILED — lines stay unentered (no handicap market): ` +
-          `${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
-  } else {
-    console.log(
-      "  Odds: ODDS_API_KEY not set — enter lines by hand or export a key " +
-        "(https://the-odds-api.com) to fill them automatically.",
-    );
-  }
+  const ctPath = await writeSkeletonAndFillOdds(
+    date,
+    season,
+    bundle.games,
+    bundle.games,
+  );
   console.log("");
   console.log(`Next: pnpm run handiedge predict --control ${ctPath}`);
 }
@@ -463,6 +589,10 @@ async function cmdPredict(args: {
     args.slate ?? (existsSync(fetchedSlate) ? fetchedSlate : DEFAULT_SLATE),
   );
   const bundle = await readJson<FixtureBundle>(slatePath);
+  // A slate built against a derived environment (NPB) carries its constants;
+  // registering them here means the lock is scored with the exact numbers
+  // the slate was built from — reproducible across processes.
+  if (bundle.leagueConstants) registerSeasonConstants(bundle.leagueConstants);
   const source = new FixtureCoreDataSource(bundle);
   const calibration = await loadCalibration();
 
@@ -481,23 +611,29 @@ async function cmdPredict(args: {
     );
   }
 
-  // The slate's predictions freeze at 22:59 JST the evening before the games.
-  // Once that has passed, a re-run must carry the committed picks through
-  // untouched rather than silently rewriting what was already decided.
+  // Freezing: MLB's whole slate locks at 22:59 JST the evening before the
+  // games; a per-game-lock league (NPB) freezes each pick 33 minutes before
+  // ITS OWN first pitch. Either way, once a pick's deadline has passed a
+  // re-run must carry it through untouched rather than silently rewriting
+  // what was already decided — the pick standing at the deadline instant IS
+  // the bet, whether or not a later run has stamped it final yet.
   const now = new Date();
-  const locked = isPredictionLocked(ct.date, now);
-  const deadlineIso = predictionDeadline(ct.date).toISOString();
+  const slateLocked = isPredictionLocked(ct.date, now, LEAGUE.deadlines);
+  const gameDeadline = (gameDate: string | null | undefined): Date =>
+    gamePredictionDeadline(
+      ct.date,
+      gameDate,
+      LEAGUE.deadlines,
+      LEAGUE.perGameLockLeadMinutes,
+    );
   const previous = existsSync(lockPath)
     ? await readJson<PredictionLock>(lockPath)
     : null;
   const alreadyFinal = new Map<number, GamePrediction>();
   for (const p of previous?.predictions ?? []) {
-    if (p.final) alreadyFinal.set(p.gamePk, p);
-  }
-  if (locked && alreadyFinal.size === 0 && previous) {
-    // Deadline passed and an unfrozen lock exists: freeze what is there rather
-    // than recomputing it, so the committed slate is what gets settled.
-    for (const p of previous.predictions) alreadyFinal.set(p.gamePk, p);
+    if (predictionFrozen(p, now, slateLocked)) {
+      alreadyFinal.set(p.gamePk, { ...p, final: true });
+    }
   }
 
   const predictions: GamePrediction[] = [];
@@ -519,10 +655,12 @@ async function cmdPredict(args: {
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
     const p = decide(g, runs, sim, calibration, handicap, cfg);
 
-    p.lockDeadline = deadlineIso;
-    p.final = locked;
-    if (locked) {
-      // Produced after the slate's cut-off — recorded as such rather than
+    const deadline = gameDeadline(g.gameDate);
+    const gameLocked = now.getTime() >= deadline.getTime();
+    p.lockDeadline = deadline.toISOString();
+    p.final = gameLocked;
+    if (gameLocked) {
+      // Produced after this game's cut-off — recorded as such rather than
       // passed off as a pick that was made in time.
       p.flags = [...p.flags, "[warn] predicted_after_deadline"];
       lateCount++;
@@ -586,6 +724,67 @@ async function cmdPredict(args: {
   }
 }
 
+/** NPB results — final scores read off the npb.jp month schedule page. */
+async function cmdFetchResultsNpb(
+  args: {
+    date?: string;
+    out?: string;
+    force?: boolean;
+    settle?: boolean;
+    poll?: boolean;
+  },
+  date: string,
+  outPath: string,
+): Promise<void> {
+  console.log(`Fetching NPB final scores for ${date} from npb.jp…`);
+  const report = await fetchNpbResults({ date });
+  const finals = Object.keys(report.results).length;
+
+  console.log("=".repeat(72));
+  console.log(`HandiEdge — NPB results for ${date}`);
+  console.log("=".repeat(72));
+  for (const [gamePk, r] of Object.entries(report.results)) {
+    console.log(
+      `  ${gamePk}: home ${r.homeScore} — away ${r.awayScore}` +
+        (r.homeScore === r.awayScore ? "  (draw — moneyline pushes)" : ""),
+    );
+  }
+  for (const p of report.pending) console.log(`  ${p} — PENDING`);
+  for (const c of report.cancelled) console.log(`  ${c} — 中止 (never settles)`);
+
+  if (finals === 0) {
+    if (args.poll) {
+      console.log(
+        `No final NPB games for ${date} yet (${report.pending.length} pending) — ` +
+          `nothing written; the next poll will pick them up.`,
+      );
+      return;
+    }
+    throw new Error(
+      `No final NPB games for ${date} yet (${report.pending.length} pending). ` +
+        `Nothing written — rerun after the games finish.`,
+    );
+  }
+
+  const payload = {
+    date,
+    fetchedAt: new Date().toISOString(),
+    results: report.results,
+    pending: report.pending,
+    cancelled: report.cancelled,
+  };
+  await saveJson(outPath, payload);
+  console.log(`  Results written → ${outPath}`);
+
+  if (args.settle) {
+    console.log("");
+    await runSettle(payload);
+  } else {
+    console.log("");
+    console.log(`Next: pnpm run handiedge settle --results ${outPath}`);
+  }
+}
+
 async function cmdFetchResults(args: {
   date?: string;
   out?: string;
@@ -603,6 +802,7 @@ async function cmdFetchResults(args: {
       `Results already exist for ${date} (${outPath}). Use --force to refetch.`,
     );
   }
+  if (LEAGUE.league === "npb") return cmdFetchResultsNpb(args, date, outPath);
 
   console.log(`Fetching MLB final scores for ${date}…`);
   const client = new MlbStatsClient();
@@ -825,7 +1025,7 @@ async function cmdReview(args: { date?: string }): Promise<void> {
 async function cmdReport(): Promise<void> {
   if (!existsSync(HISTORY_PATH)) {
     console.log(
-      "No history yet (data/history.jsonl missing). Run settle or " +
+      `No history yet (${HISTORY_PATH} missing). Run settle or ` +
         "fetch-results --settle after games finish, then try again.",
     );
     return;
@@ -1019,7 +1219,14 @@ async function cmdAudit(): Promise<void> {
 
   const history = existsSync(HISTORY_PATH) ? await loadHistory() : [];
   const calibration = await loadCalibration();
-  const report = runAudit(days, history, calibration, new Date());
+  const report = runAudit(
+    days,
+    history,
+    calibration,
+    new Date(),
+    LEAGUE.deadlines,
+    LEAGUE.perGameLockLeadMinutes != null,
+  );
   for (const path of parseFailures) {
     report.issues.push({
       severity: "error",
@@ -1295,8 +1502,11 @@ async function main(): Promise<void> {
       "skip-form": { type: "boolean", default: false },
       "skip-weather": { type: "boolean", default: false },
       "skip-injuries": { type: "boolean", default: false },
+      league: { type: "string" },
     },
   });
+  // League first: every path and deadline the commands read derives from it.
+  setLeague(resolveLeague(values.league ?? process.env["HANDIEDGE_LEAGUE"]));
   const cmd = positionals[0];
   if (cmd === "fetch-slate") await cmdFetchSlate(values);
   else if (cmd === "fetch-results") await cmdFetchResults(values);
@@ -1325,6 +1535,10 @@ async function main(): Promise<void> {
     console.log("  handiedge audit");
     console.log(
       "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",
+    );
+    console.log(
+      "  Every command accepts --league mlb|npb (default mlb; or set " +
+        "HANDIEDGE_LEAGUE). NPB keeps its own store under data-npb/.",
     );
     process.exitCode = cmd ? 1 : 0;
   }
