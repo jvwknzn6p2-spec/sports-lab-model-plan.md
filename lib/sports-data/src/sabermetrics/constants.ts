@@ -151,7 +151,27 @@ export const LATEST_SEASON = KNOWN_SEASONS[KNOWN_SEASONS.length - 1]!;
  * `season` field always reveals which environment was actually applied, so
  * callers can detect and log a fallback rather than being silently misled.
  */
+/**
+ * Runtime-registered constants for environments FanGraphs does not publish
+ * (NPB constants are derived from npb.jp league totals at fetch time and
+ * persisted in the slate bundle; predict re-registers them before
+ * assembling). Registered under synthetic season keys (e.g. 1002026 =
+ * NPB 2026) so they can never shadow a published MLB season.
+ */
+const REGISTERED: Record<number, LeagueConstants> = {};
+
+export function registerSeasonConstants(c: LeagueConstants): void {
+  if (c.season in SEASONS) {
+    throw new Error(
+      `Season ${c.season} has published constants — refusing to overwrite`,
+    );
+  }
+  REGISTERED[c.season] = c;
+}
+
 export function getLeagueConstants(season: number): LeagueConstants {
+  const registered = REGISTERED[season];
+  if (registered) return registered;
   const exact = SEASONS[season];
   if (exact) return exact;
   const clamped = Math.max(KNOWN_SEASONS[0]!, Math.min(LATEST_SEASON, season));

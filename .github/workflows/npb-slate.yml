@@ -1,0 +1,105 @@
+name: HandiEdge NPB — morning slate
+
+# NPB mirror of handiedge-slate.yml, on the NPB clock: games are played ON
+# the slate date in the JST afternoon/evening, and the market cut-off is
+# 12:59 JST the same day (weekend day games start 13:00 JST). This job runs
+# at 00:07 UTC ≈ 09:07 JST (scheduler drift lands it ~09:55 JST), leaving a
+# ~2.5-hour window to hand-edit lines before the predict lock at ~12:45 JST.
+#
+# Data comes from npb.jp (schedule + club stats pages) and The Odds API's
+# baseball_npb market (verified live: h2h/spreads/totals, ~23 books). The
+# whole NPB store lives under lib/sports-data/data-npb — its own record,
+# its own learned calibration; nothing shared with MLB.
+
+on:
+  schedule:
+    - cron: "7 0 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD, JST). Blank = today in JST."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-npb-data
+  cancel-in-progress: false
+
+jobs:
+  slate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date (JST)
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(TZ=Asia/Tokyo date +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      # Always --force (idempotent re-runs); the control tower is never
+      # overwritten, so entered lines survive a refresh.
+      - name: Fetch NPB slate (npb.jp schedule, club stats, derived constants)
+        working-directory: lib/sports-data
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: pnpm run handiedge fetch-slate --league npb --date "${{ steps.d.outputs.date }}" --force
+
+      - name: Publish line sheet to run summary
+        run: |
+          CT="lib/sports-data/data-npb/control-towers/${{ steps.d.outputs.date }}.json"
+          SLATE="lib/sports-data/data-npb/slates/${{ steps.d.outputs.date }}.json"
+          if [ ! -f "$CT" ]; then
+            echo "No NPB control tower for ${{ steps.d.outputs.date }} (no games?)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "# NPB handicap lines for ${{ steps.d.outputs.date }}"
+            echo
+            echo "Edit \`$CT\` and commit before **12:30 JST** (lock deadline 12:59 JST)."
+            echo
+            echo '| gamePk | matchup | line now | total |'
+            echo '| --- | --- | --- | --- |'
+          } >> "$GITHUB_STEP_SUMMARY"
+          node -e '
+            const fs = require("fs");
+            const ct = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            const slate = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+            const name = new Map(slate.games.map((g) => [
+              String(g.gamePk),
+              `${g.away.teamName ?? "?"} @ ${g.home.teamName ?? "?"}`,
+            ]));
+            for (const [pk, h] of Object.entries(ct.handicaps ?? {})) {
+              const line = h.notation ?? h.line;
+              const shown = line == null ? "— (未入力 — 市場なし)" : `\`${line}\``;
+              console.log(`| ${pk} | ${name.get(pk) ?? "?"} | ${shown} | ${h.total ?? "—"} |`);
+            }
+          ' "$CT" "$SLATE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the NPB slate and control tower
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data-npb
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge NPB: slate and control tower for ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

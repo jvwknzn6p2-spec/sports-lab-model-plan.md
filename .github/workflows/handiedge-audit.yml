@@ -55,9 +55,25 @@ jobs:
       # Only a run that actually produced a report may publish or commit it —
       # attaching last week's file to a crashed run would point the reader at
       # the wrong evidence.
+      # NPB store: same audit, its own record and deadlines. Skipped until
+      # the first NPB lock exists; its exit code is informational for now —
+      # the MLB audit's exit stays the one that gates the run red.
+      - name: Run standing audit (NPB)
+        if: always()
+        working-directory: lib/sports-data
+        run: |
+          if [ -d data-npb/predictions ]; then
+            pnpm exec tsx src/cli/handiedge.ts audit --league npb || true
+          else
+            echo "No NPB predictions yet — NPB audit skipped."
+          fi
+
       - name: Publish to run summary
         if: steps.audit.outputs.exit == '0' || steps.audit.outputs.exit == '2'
-        run: cat "lib/sports-data/data/reports/audit.md" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          cat "lib/sports-data/data/reports/audit.md" >> "$GITHUB_STEP_SUMMARY"
+          NPB="lib/sports-data/data-npb/reports/audit.md"
+          if [ -f "$NPB" ]; then cat "$NPB" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Commit audit report
         if: steps.audit.outputs.exit == '0' || steps.audit.outputs.exit == '2'
@@ -65,6 +81,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add lib/sports-data/data/reports/audit.md
+          if [ -f lib/sports-data/data-npb/reports/audit.md ]; then
+            git add lib/sports-data/data-npb/reports/audit.md
+          fi
           if git diff --cached --quiet; then
             echo "Nothing to commit."
           else

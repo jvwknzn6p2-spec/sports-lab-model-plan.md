@@ -8,7 +8,11 @@
 
 import type { BullpenWorkload } from "../features";
 import type { NormalizedGame } from "../mlb/parse";
-import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
+import type {
+  LeagueConstants,
+  RawBattingLine,
+  RawPitchingLine,
+} from "../sabermetrics";
 import type { CoreDataSource, TeamRecentForm } from "../step2";
 import type { GameWeather } from "./weather";
 import type { IlPlayer } from "./injuries-builder";
@@ -40,6 +44,13 @@ export interface FixtureBundle {
   lineups?: Record<string, GameLineups>;
   /** Keyed by stringified playerId (optional): lineup bats' season lines. */
   lineupBatting?: Record<string, RawBattingLine>;
+  /**
+   * Derived league constants for environments with no published "Guts!"
+   * (NPB). When present, predict registers them (registerSeasonConstants)
+   * before assembling, so the slate is scored with the exact environment it
+   * was built against. Absent on MLB slates — those use published constants.
+   */
+  leagueConstants?: LeagueConstants;
 }
 
 export class FixtureCoreDataSource implements CoreDataSource {

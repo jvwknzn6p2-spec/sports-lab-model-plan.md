@@ -1,0 +1,116 @@
+name: HandiEdge NPB — daily predictions
+
+# Two-stage lock against the 12:59 JST (03:59 UTC) NPB deadline — the same
+# safety-lock + refresh re-lock pattern the MLB predict job uses against its
+# 22:59 JST deadline, compressed to the NPB clock:
+#
+#   02:40 UTC (11:40 JST)  safety lock  — picks exist even if the later run
+#                                         fails or the scheduler runs long
+#   03:05 UTC (12:05 JST)  refresh      — re-locks on fresher starters/lines
+#
+# GitHub's scheduler on this repo runs ~45–50 minutes late, so the real fire
+# times land ~03:25 and ~03:50 UTC, both before the deadline. After 03:59
+# UTC `predict --force` carries the frozen picks through unchanged (the
+# two-stage lock semantics live in the CLI, not here).
+
+on:
+  schedule:
+    - cron: "40 2 * * *"
+    - cron: "5 3 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Slate date (YYYY-MM-DD, JST). Blank = today in JST."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: handiedge-npb-data
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve date (JST)
+        id: d
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(TZ=Asia/Tokyo date +%F); fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      # Refresh starters/stats/odds right before locking; entered lines are
+      # never overwritten (create-once control tower).
+      - name: Refresh NPB slate
+        working-directory: lib/sports-data
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: pnpm run handiedge fetch-slate --league npb --date "${{ steps.d.outputs.date }}" --force
+
+      - name: Check the slate has games
+        id: guard
+        run: |
+          SLATE="lib/sports-data/data-npb/slates/${{ steps.d.outputs.date }}.json"
+          if [ ! -f "$SLATE" ]; then
+            echo "No NPB slate for ${{ steps.d.outputs.date }} — nothing to predict." >> "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Predict and lock
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        run: |
+          pnpm run handiedge predict --league npb \
+            --control "data-npb/control-towers/${{ steps.d.outputs.date }}.json" \
+            --force
+
+      # Advisory AI review of the locked slate (skips cleanly without the key).
+      - name: AI review (advisory)
+        if: steps.guard.outputs.run == 'true'
+        working-directory: lib/sports-data
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            pnpm run handiedge review --league npb --date "${{ steps.d.outputs.date }}"
+          else
+            echo "ANTHROPIC_API_KEY not set — review skipped."
+          fi
+
+      - name: Publish report to run summary
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          MD="lib/sports-data/data-npb/reports/${{ steps.d.outputs.date }}.md"
+          if [ -f "$MD" ]; then cat "$MD" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Commit today's NPB slate and predictions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/sports-data/data-npb
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "HandiEdge NPB: predictions for ${{ steps.d.outputs.date }}"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

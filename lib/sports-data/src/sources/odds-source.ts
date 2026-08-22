@@ -286,18 +286,22 @@ export class OddsApiError extends Error {
 }
 
 /**
- * Pull MLB spreads + totals from The Odds API. Fail-loud: a non-2xx response
- * or malformed payload throws (the caller decides whether the day proceeds
- * without lines). The free tier's quota is generous for one call a day.
+ * Pull baseball spreads + totals from The Odds API. Fail-loud: a non-2xx
+ * response or malformed payload throws (the caller decides whether the day
+ * proceeds without lines). The free tier's quota is generous for one call a
+ * day. `sportKey` selects the league — "baseball_mlb" (default) or
+ * "baseball_npb", both verified live (probe 2026-08-22: NPB carries
+ * h2h/spreads/totals across ~23 books, with English team names).
  */
 export async function fetchMlbOdds(opts: {
   apiKey: string;
+  sportKey?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
 }): Promise<OddsApiEvent[]> {
   const doFetch = opts.fetchImpl ?? fetch;
   const url =
-    "https://api.the-odds-api.com/v4/sports/baseball_mlb/odds" +
+    `https://api.the-odds-api.com/v4/sports/${opts.sportKey ?? "baseball_mlb"}/odds` +
     `?apiKey=${encodeURIComponent(opts.apiKey)}` +
     "&regions=us&markets=spreads,totals&oddsFormat=american&dateFormat=iso";
   const ctrl = new AbortController();

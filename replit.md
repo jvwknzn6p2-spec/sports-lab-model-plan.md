@@ -1,6 +1,6 @@
 # AI Sports Lab
 
-_An MLB game-prediction and betting-value decision-support system: for every scheduled game it estimates win probability, run line, and total runs, ranks confidence (S/A/B/C), and flags positive-EV bets. See `sports-lab/model-plan.md` for the full technical plan._
+_An MLB **and NPB** game-prediction and betting-value decision-support system: for every scheduled game it estimates win probability, run line, and total runs, ranks confidence (S/A/B/C), and flags positive-EV bets. See `sports-lab/model-plan.md` for the full technical plan._
 
 ## Run & Operate
 
@@ -98,6 +98,17 @@ _Populate as you build — explicit user instructions worth remembering across s
 - **`ANTHROPIC_API_KEY`** (repo secret) enables the Step-9 AI reviewer panel
   (`handiedge review`) — advisory briefings in `data/reviews/`, never a pick
   change. Without the key the step skips cleanly.
+- **NPB runs under `--league npb`** (every handiedge command; or
+  `HANDIEDGE_LEAGUE=npb`) with its OWN store `lib/sports-data/data-npb/` —
+  separate history and learned calibration, never blended with MLB's. NPB
+  locks at **12:59 JST the game day** (weekend day games start 13:00), not
+  MLB's 22:59-evening-before; its season key is 1000000+year (derived
+  constants, `src/npb/constants.ts`). Data comes from npb.jp page parsers
+  (`src/npb/`) built against the live samples in `probe/npb/` — if npb.jp
+  changes a table layout the parsers fail loud naming the column; refresh
+  the probe samples (`npb-probe.yml` workflow) and fix the parser against
+  the new bytes. NPB draws settle as moneyline pushes; 中止 (rained-off)
+  games never settle.
 
 ## Pointers
 
