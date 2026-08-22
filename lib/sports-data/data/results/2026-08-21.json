@@ -1,10 +1,14 @@
 {
   "date": "2026-08-21",
-  "fetchedAt": "2026-08-22T04:39:55.014Z",
+  "fetchedAt": "2026-08-22T06:50:14.325Z",
   "results": {
     "822857": {
       "homeScore": 2,
       "awayScore": 1
+    },
+    "823101": {
+      "homeScore": 6,
+      "awayScore": 5
     },
     "823262": {
       "homeScore": 6,
@@ -25,6 +29,10 @@
     "823830": {
       "homeScore": 3,
       "awayScore": 2
+    },
+    "823911": {
+      "homeScore": 5,
+      "awayScore": 4
     },
     "824072": {
       "homeScore": 5,
@@ -55,16 +63,5 @@
       "awayScore": 0
     }
   },
-  "pending": [
-    {
-      "gamePk": 823911,
-      "matchup": "Pittsburgh Pirates @ Los Angeles Dodgers",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823101,
-      "matchup": "Chicago Cubs @ Seattle Mariners",
-      "reason": "not final (In Progress)"
-    }
-  ]
+  "pending": []
 }
