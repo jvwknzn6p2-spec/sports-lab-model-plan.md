@@ -261,10 +261,12 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   report shows both. A slate where NO line was entered or filled now
   carries a single banner naming the missing `ODDS_API_KEY` instead of
   fifteen per-game repeats. No real-line bet has settled yet; the A-2
-  audit section watches for the first. NOTE: the `ODDS_API_KEY` and
-  `ANTHROPIC_API_KEY` repo secrets are still UNSET in production — the
-  odds fill and the AI review have never run on a live slate; setting the
-  two secrets is the single highest-value remaining action.
+  audit section watches for the first. `ODDS_API_KEY` is SET in
+  production since 2026-08-22 — both leagues' live slates carry market
+  consensus fills (`marketHomeCover`/`marketHomePayout` on the entries).
+  NOTE: `ANTHROPIC_API_KEY` remains UNSET — the AI review has never run
+  on a live slate (no `data/reviews/` exists); setting it is the single
+  highest-value remaining action.
 - **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
   per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
   temperature multiplier adjusts the run environment at open-air parks,
@@ -304,8 +306,11 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   deterministic standing audit (`src/engine/audit.ts`) still covers
   integrity re-scoring.
 - **Frontend/API surface — ◑ started.** Read-only endpoints
-  (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
-  the committed locks and cumulative record from `artifacts/api-server`;
+  (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`,
+  `/api/reviews{,/{date}}`, `/api/audit`; NPB mirrors under `/api/npb/*`)
+  serve
+  the committed locks, cumulative record, AI briefings and standing audit
+  from `artifacts/api-server`;
   the slate viewer
   (`artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`) and
   a cumulative-record screen (`HandiEdgeReport.tsx`: P&L significance,
@@ -373,7 +378,21 @@ bet, stamped or not.
   are matched canonically (spaces stripped — the schedule pads 横　浜 /
   神　宮). The read-only API serves NPB under `/api/npb/*` (same three
   endpoints, own store) and both frontend screens carry an MLB/NPB toggle.
-- **Not yet**: NPB weather (venue coordinates), lineups/IL equivalents.
+- **Weather (2026-08-22, third pass)**: fetch-slate attaches first-pitch
+  weather at the 12 main parks via the same Open-Meteo builder MLB uses,
+  pointed at NPB's own coordinate/roof table (`src/npb/weather.ts`).
+  Outdoor parks (甲子園, 横浜, マツダ, 神宮, ZOZOマリン, 楽天モバイル) get
+  the bounded temperature multiplier and the ≥30 km/h high-wind warn flag;
+  the five domes — ベルーナドーム's open walls included, conservatively —
+  and the two retractable roofs (エスコン, PayPayドーム) are never
+  adjusted. NPB wind stays DIRECTION-BLIND: no orientation feed exists for
+  NPB parks and bearings are never typed in from memory, so
+  `cfBearingDeg` is null and only the warn flag speaks. 地方開催 games
+  (venueId null) have no coordinates and run weatherless with the usual
+  `weather_missing` info flag. The weekly standing audit is now served
+  read-only at `GET /api/audit` / `/api/npb/audit` (verbatim markdown) and
+  rendered at the bottom of the record screen.
+- **Not yet**: NPB lineups/IL equivalents.
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

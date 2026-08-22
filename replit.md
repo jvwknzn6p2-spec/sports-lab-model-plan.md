@@ -53,8 +53,10 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
   re-score, lock discipline, simulator distribution checks, tail-trust /
   S-cap watch, input-data health, and watched losing cohorts.
 - **Read-only API + slate viewer**: `GET /api/predictions`,
-  `/api/predictions/{date}`, `/api/report` served from the committed locks
-  (`artifacts/api-server`), rendered by `HandiEdgeSlate.tsx` /
+  `/api/predictions/{date}`, `/api/report`, `/api/reviews{,/{date}}`,
+  `/api/audit` served from the
+  committed locks (`artifacts/api-server`; NPB under `/api/npb/*`),
+  rendered by `HandiEdgeSlate.tsx` /
   `HandiEdgeReport.tsx` (`artifacts/mockup-sandbox`, vite proxies `/api`).
 - **AI reviewer briefings** (`data/reviews/<date>.md`, advisory-only,
   needs `ANTHROPIC_API_KEY`): Data Auditor / Matchup Analyst / Risk
@@ -104,7 +106,11 @@ _Populate as you build — explicit user instructions worth remembering across s
   picks lock **per game, 33 minutes before each game's own first pitch**
   (day/night alike; no-start-time fallback 12:27 JST), not MLB's fixed
   22:59-evening-before; its season key is 1000000+year (derived
-  constants, `src/npb/constants.ts`). Data comes from npb.jp page parsers
+  constants, `src/npb/constants.ts`); NPB weather uses its own 12-park
+  coordinate/roof table (`src/npb/weather.ts`) — wind stays
+  direction-blind there (no orientation feed; warn flag only), and
+  ベルーナドーム counts as a dome (open walls, conservatively
+  unadjusted). Data comes from npb.jp page parsers
   (`src/npb/`) built against the live samples in `probe/npb/` — if npb.jp
   changes a table layout the parsers fail loud naming the column; refresh
   the probe samples (`npb-probe.yml` workflow) and fix the parser against

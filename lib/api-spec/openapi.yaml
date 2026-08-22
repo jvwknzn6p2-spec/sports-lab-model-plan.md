@@ -75,6 +75,61 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /reviews:
+    get:
+      operationId: listReviewDates
+      tags: [predictions]
+      summary: List dates with an AI reviewer briefing
+      responses:
+        "200":
+          description: Dates, newest first (empty until reviews run)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDates"
+  /reviews/{date}:
+    get:
+      operationId: getReviewBriefing
+      tags: [predictions]
+      summary: The AI reviewer briefing for one date (verbatim markdown)
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: The committed briefing, untouched — advisory only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewBriefing"
+        "404":
+          description: No briefing exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /audit:
+    get:
+      operationId: getStandingAudit
+      tags: [predictions]
+      summary: The latest weekly standing audit (verbatim markdown)
+      responses:
+        "200":
+          description: The committed audit.md, untouched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+        "404":
+          description: No standing audit committed yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /npb/predictions:
     get:
       operationId: listNpbPredictionDates
@@ -124,6 +179,61 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /npb/reviews:
+    get:
+      operationId: listNpbReviewDates
+      tags: [npb]
+      summary: List dates with an NPB AI reviewer briefing
+      responses:
+        "200":
+          description: Dates, newest first (empty until reviews run)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDates"
+  /npb/reviews/{date}:
+    get:
+      operationId: getNpbReviewBriefing
+      tags: [npb]
+      summary: The NPB AI reviewer briefing for one date (verbatim markdown)
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: The committed briefing, untouched — advisory only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewBriefing"
+        "404":
+          description: No briefing exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /npb/audit:
+    get:
+      operationId: getNpbStandingAudit
+      tags: [npb]
+      summary: The latest weekly NPB standing audit (verbatim markdown)
+      responses:
+        "200":
+          description: The committed audit.md, untouched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+        "404":
+          description: No standing audit committed yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -215,4 +325,44 @@ components:
       required:
         - summary
         - calibration
+    ReviewBriefing:
+      type: object
+      description: >-
+        One date's AI reviewer briefing (Data Auditor / Matchup Analyst /
+        Risk Reviewer), exactly as committed — advisory only, written after
+        the lock; markdown passes through verbatim.
+      properties:
+        league:
+          type: string
+          enum: [mlb, npb]
+        date:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        markdown:
+          type: string
+      required:
+        - league
+        - date
+        - updatedAt
+        - markdown
+    AuditReport:
+      type: object
+      description: >-
+        The weekly standing audit exactly as the Monday cron committed it —
+        markdown passes through verbatim, never re-rendered.
+      properties:
+        league:
+          type: string
+          enum: [mlb, npb]
+        updatedAt:
+          type: string
+          format: date-time
+        markdown:
+          type: string
+      required:
+        - league
+        - updatedAt
+        - markdown
 

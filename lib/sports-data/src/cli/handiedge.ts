@@ -129,6 +129,7 @@ import {
 } from "../engine/league";
 import { registerSeasonConstants } from "../sabermetrics";
 import { buildNpbSlate, fetchNpbResults } from "../npb/slate";
+import { buildNpbWeather } from "../npb/weather";
 import { teamById } from "../npb/teams";
 import {
   auditToMarkdown,
@@ -357,6 +358,7 @@ async function cmdFetchSlateNpb(args: {
   date?: string;
   out?: string;
   force?: boolean;
+  "skip-weather"?: boolean;
 }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -378,6 +380,23 @@ async function cmdFetchSlateNpb(args: {
         `${report.monthGameCount} game(s) on other dates).`,
     );
   }
+
+  // First-pitch weather (Open-Meteo, keyless) at the 12 main parks — same
+  // fail-soft policy as MLB; a 地方開催 game (venueId null) has no
+  // coordinates and simply runs weatherless. NPB wind stays direction-blind
+  // (no orientation feed) — see src/npb/weather.ts for the honesty rules.
+  if (!args["skip-weather"]) {
+    console.log("Fetching first-pitch weather (Open-Meteo)…");
+    const wx = await buildNpbWeather({ date, games: bundle.games });
+    bundle.weather = wx.weather;
+    report.notes.push(
+      `Weather: ${Object.keys(wx.weather).length}/${bundle.games.length} game(s) covered.`,
+      ...wx.warnings.map((w) => `weather: ${w}`),
+    );
+  } else {
+    report.notes.push("Weather fetch skipped (--skip-weather).");
+  }
+
   await saveJson(outPath, bundle);
 
   console.log("=".repeat(72));

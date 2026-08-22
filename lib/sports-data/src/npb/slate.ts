@@ -12,9 +12,11 @@
  *     That overweights rotation quality slightly, but every number in it is
  *     real; inventing a reliever split npb.jp does not publish would not
  *     be. Recorded in the slate's `notes` for the audit trail.
- *   - Park factors, weather, recent form, workloads, IL and lineups are
- *     simply ABSENT in v1 (all optional in the bundle): the run model
- *     treats them as neutral, and nothing pretends otherwise.
+ *   - Recent form and park factors are DERIVED from the season's own game
+ *     log (npb/context.ts); weather is attached by fetch-slate at the 12
+ *     main parks (npb/weather.ts). Workloads, IL and lineups remain ABSENT
+ *     (all optional in the bundle): the run model treats them as neutral,
+ *     and nothing pretends otherwise.
  *
  * Synthetic ids (npb.jp has none):
  *   gamePk   = 9YYYYMMDDHH where HH is the home club's 2-digit id suffix —
@@ -324,8 +326,9 @@ export async function buildNpbSlate(
   );
   notes.push(
     "NPB inputs: bullpen = club pitching total minus today's matched " +
-      "starter (npb.jp publishes no reliever split); weather, workloads, " +
-      "IL and lineups are absent and treated as neutral.",
+      "starter (npb.jp publishes no reliever split); workloads, IL and " +
+      "lineups are absent and treated as neutral. Weather is attached by " +
+      "fetch-slate at the 12 main parks (see npb/weather.ts).",
   );
 
   return {

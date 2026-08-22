@@ -17,10 +17,12 @@ import type {
 
 import type {
   ApiError,
+  AuditReport,
   HealthStatus,
   PredictionDates,
   PredictionDay,
-  ReportSummary
+  ReportSummary,
+  ReviewBriefing
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -359,6 +361,237 @@ export function useGetReportSummary<TData = Awaited<ReturnType<typeof getReportS
 
 
 
+export const getListReviewDatesUrl = () => {
+
+
+
+
+  return `/api/reviews`
+}
+
+/**
+ * @summary List dates with an AI reviewer briefing
+ */
+export const listReviewDates = async ( options?: RequestInit): Promise<PredictionDates> => {
+
+  return customFetch<PredictionDates>(getListReviewDatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListReviewDatesQueryKey = () => {
+    return [
+    `/api/reviews`
+    ] as const;
+    }
+
+
+export const getListReviewDatesQueryOptions = <TData = Awaited<ReturnType<typeof listReviewDates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listReviewDates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReviewDatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReviewDates>>> = ({ signal }) => listReviewDates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReviewDates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListReviewDatesQueryResult = NonNullable<Awaited<ReturnType<typeof listReviewDates>>>
+export type ListReviewDatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List dates with an AI reviewer briefing
+ */
+
+export function useListReviewDates<TData = Awaited<ReturnType<typeof listReviewDates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listReviewDates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListReviewDatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetReviewBriefingUrl = (date: string,) => {
+
+
+
+
+  return `/api/reviews/${date}`
+}
+
+/**
+ * @summary The AI reviewer briefing for one date (verbatim markdown)
+ */
+export const getReviewBriefing = async (date: string, options?: RequestInit): Promise<ReviewBriefing> => {
+
+  return customFetch<ReviewBriefing>(getGetReviewBriefingUrl(date),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReviewBriefingQueryKey = (date: string,) => {
+    return [
+    `/api/reviews/${date}`
+    ] as const;
+    }
+
+
+export const getGetReviewBriefingQueryOptions = <TData = Awaited<ReturnType<typeof getReviewBriefing>>, TError = ErrorType<ApiError>>(date: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewBriefing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReviewBriefingQueryKey(date);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewBriefing>>> = ({ signal }) => getReviewBriefing(date, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: date !== null && date !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReviewBriefing>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReviewBriefingQueryResult = NonNullable<Awaited<ReturnType<typeof getReviewBriefing>>>
+export type GetReviewBriefingQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The AI reviewer briefing for one date (verbatim markdown)
+ */
+
+export function useGetReviewBriefing<TData = Awaited<ReturnType<typeof getReviewBriefing>>, TError = ErrorType<ApiError>>(
+ date: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewBriefing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReviewBriefingQueryOptions(date,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStandingAuditUrl = () => {
+
+
+
+
+  return `/api/audit`
+}
+
+/**
+ * @summary The latest weekly standing audit (verbatim markdown)
+ */
+export const getStandingAudit = async ( options?: RequestInit): Promise<AuditReport> => {
+
+  return customFetch<AuditReport>(getGetStandingAuditUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStandingAuditQueryKey = () => {
+    return [
+    `/api/audit`
+    ] as const;
+    }
+
+
+export const getGetStandingAuditQueryOptions = <TData = Awaited<ReturnType<typeof getStandingAudit>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStandingAuditQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStandingAudit>>> = ({ signal }) => getStandingAudit({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStandingAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStandingAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getStandingAudit>>>
+export type GetStandingAuditQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The latest weekly standing audit (verbatim markdown)
+ */
+
+export function useGetStandingAudit<TData = Awaited<ReturnType<typeof getStandingAudit>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStandingAuditQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListNpbPredictionDatesUrl = () => {
 
 
@@ -578,6 +811,237 @@ export function useGetNpbReportSummary<TData = Awaited<ReturnType<typeof getNpbR
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetNpbReportSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListNpbReviewDatesUrl = () => {
+
+
+
+
+  return `/api/npb/reviews`
+}
+
+/**
+ * @summary List dates with an NPB AI reviewer briefing
+ */
+export const listNpbReviewDates = async ( options?: RequestInit): Promise<PredictionDates> => {
+
+  return customFetch<PredictionDates>(getListNpbReviewDatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListNpbReviewDatesQueryKey = () => {
+    return [
+    `/api/npb/reviews`
+    ] as const;
+    }
+
+
+export const getListNpbReviewDatesQueryOptions = <TData = Awaited<ReturnType<typeof listNpbReviewDates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNpbReviewDates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListNpbReviewDatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNpbReviewDates>>> = ({ signal }) => listNpbReviewDates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNpbReviewDates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListNpbReviewDatesQueryResult = NonNullable<Awaited<ReturnType<typeof listNpbReviewDates>>>
+export type ListNpbReviewDatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List dates with an NPB AI reviewer briefing
+ */
+
+export function useListNpbReviewDates<TData = Awaited<ReturnType<typeof listNpbReviewDates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNpbReviewDates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListNpbReviewDatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNpbReviewBriefingUrl = (date: string,) => {
+
+
+
+
+  return `/api/npb/reviews/${date}`
+}
+
+/**
+ * @summary The NPB AI reviewer briefing for one date (verbatim markdown)
+ */
+export const getNpbReviewBriefing = async (date: string, options?: RequestInit): Promise<ReviewBriefing> => {
+
+  return customFetch<ReviewBriefing>(getGetNpbReviewBriefingUrl(date),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNpbReviewBriefingQueryKey = (date: string,) => {
+    return [
+    `/api/npb/reviews/${date}`
+    ] as const;
+    }
+
+
+export const getGetNpbReviewBriefingQueryOptions = <TData = Awaited<ReturnType<typeof getNpbReviewBriefing>>, TError = ErrorType<ApiError>>(date: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbReviewBriefing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNpbReviewBriefingQueryKey(date);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNpbReviewBriefing>>> = ({ signal }) => getNpbReviewBriefing(date, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: date !== null && date !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNpbReviewBriefing>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNpbReviewBriefingQueryResult = NonNullable<Awaited<ReturnType<typeof getNpbReviewBriefing>>>
+export type GetNpbReviewBriefingQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The NPB AI reviewer briefing for one date (verbatim markdown)
+ */
+
+export function useGetNpbReviewBriefing<TData = Awaited<ReturnType<typeof getNpbReviewBriefing>>, TError = ErrorType<ApiError>>(
+ date: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbReviewBriefing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNpbReviewBriefingQueryOptions(date,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNpbStandingAuditUrl = () => {
+
+
+
+
+  return `/api/npb/audit`
+}
+
+/**
+ * @summary The latest weekly NPB standing audit (verbatim markdown)
+ */
+export const getNpbStandingAudit = async ( options?: RequestInit): Promise<AuditReport> => {
+
+  return customFetch<AuditReport>(getGetNpbStandingAuditUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNpbStandingAuditQueryKey = () => {
+    return [
+    `/api/npb/audit`
+    ] as const;
+    }
+
+
+export const getGetNpbStandingAuditQueryOptions = <TData = Awaited<ReturnType<typeof getNpbStandingAudit>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNpbStandingAuditQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNpbStandingAudit>>> = ({ signal }) => getNpbStandingAudit({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNpbStandingAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNpbStandingAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getNpbStandingAudit>>>
+export type GetNpbStandingAuditQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The latest weekly NPB standing audit (verbatim markdown)
+ */
+
+export function useGetNpbStandingAudit<TData = Awaited<ReturnType<typeof getNpbStandingAudit>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNpbStandingAuditQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
