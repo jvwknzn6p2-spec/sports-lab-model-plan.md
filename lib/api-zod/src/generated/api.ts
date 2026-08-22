@@ -62,6 +62,32 @@ export const GetReportSummaryResponse = zod.object({
 
 
 /**
+ * @summary List dates with an AI reviewer briefing
+ */
+export const ListReviewDatesResponse = zod.object({
+  "dates": zod.array(zod.string())
+})
+
+
+/**
+ * @summary The AI reviewer briefing for one date (verbatim markdown)
+ */
+export const getReviewBriefingPathDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetReviewBriefingParams = zod.object({
+  "date": zod.coerce.string().regex(getReviewBriefingPathDateRegExp)
+})
+
+export const GetReviewBriefingResponse = zod.object({
+  "league": zod.enum(['mlb', 'npb']),
+  "date": zod.string(),
+  "updatedAt": zod.coerce.date(),
+  "markdown": zod.string()
+}).describe('One date\'s AI reviewer briefing (Data Auditor \/ Matchup Analyst \/ Risk Reviewer), exactly as committed — advisory only, written after the lock; markdown passes through verbatim.')
+
+
+/**
  * @summary The latest weekly standing audit (verbatim markdown)
  */
 export const GetStandingAuditResponse = zod.object({
@@ -113,6 +139,32 @@ export const GetNpbReportSummaryResponse = zod.object({
   "summary": zod.record(zod.string(), zod.unknown()),
   "calibration": zod.record(zod.string(), zod.unknown())
 }).describe('aggregateHistory() output plus the learned calibration state. The shape is owned by @workspace\/sports-data; the API passes it through.')
+
+
+/**
+ * @summary List dates with an NPB AI reviewer briefing
+ */
+export const ListNpbReviewDatesResponse = zod.object({
+  "dates": zod.array(zod.string())
+})
+
+
+/**
+ * @summary The NPB AI reviewer briefing for one date (verbatim markdown)
+ */
+export const getNpbReviewBriefingPathDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetNpbReviewBriefingParams = zod.object({
+  "date": zod.coerce.string().regex(getNpbReviewBriefingPathDateRegExp)
+})
+
+export const GetNpbReviewBriefingResponse = zod.object({
+  "league": zod.enum(['mlb', 'npb']),
+  "date": zod.string(),
+  "updatedAt": zod.coerce.date(),
+  "markdown": zod.string()
+}).describe('One date\'s AI reviewer briefing (Data Auditor \/ Matchup Analyst \/ Risk Reviewer), exactly as committed — advisory only, written after the lock; markdown passes through verbatim.')
 
 
 /**

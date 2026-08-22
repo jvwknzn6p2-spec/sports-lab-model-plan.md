@@ -53,7 +53,8 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
   re-score, lock discipline, simulator distribution checks, tail-trust /
   S-cap watch, input-data health, and watched losing cohorts.
 - **Read-only API + slate viewer**: `GET /api/predictions`,
-  `/api/predictions/{date}`, `/api/report`, `/api/audit` served from the
+  `/api/predictions/{date}`, `/api/report`, `/api/reviews{,/{date}}`,
+  `/api/audit` served from the
   committed locks (`artifacts/api-server`; NPB under `/api/npb/*`),
   rendered by `HandiEdgeSlate.tsx` /
   `HandiEdgeReport.tsx` (`artifacts/mockup-sandbox`, vite proxies `/api`).

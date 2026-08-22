@@ -306,8 +306,11 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   deterministic standing audit (`src/engine/audit.ts`) still covers
   integrity re-scoring.
 - **Frontend/API surface — ◑ started.** Read-only endpoints
-  (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`) serve
-  the committed locks and cumulative record from `artifacts/api-server`;
+  (`GET /api/predictions`, `/api/predictions/{date}`, `/api/report`,
+  `/api/reviews{,/{date}}`, `/api/audit`; NPB mirrors under `/api/npb/*`)
+  serve
+  the committed locks, cumulative record, AI briefings and standing audit
+  from `artifacts/api-server`;
   the slate viewer
   (`artifacts/mockup-sandbox/src/components/mockups/HandiEdgeSlate.tsx`) and
   a cumulative-record screen (`HandiEdgeReport.tsx`: P&L significance,

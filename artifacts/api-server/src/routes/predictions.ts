@@ -92,6 +92,46 @@ router.get("/report", async (_req, res, next) => {
   }
 });
 
+// AI reviewer briefings (Data Auditor / Matchup Analyst / Risk Reviewer),
+// written AFTER the lock and advisory-only — serving them verbatim can never
+// move a pick. Empty list until the ANTHROPIC_API_KEY secret lets them run.
+router.get("/reviews", async (_req, res, next) => {
+  try {
+    const dir = join(sportsDataDir(league), "reviews");
+    const files = existsSync(dir) ? await readdir(dir) : [];
+    const dates = files
+      .filter((f) => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
+      .map((f) => f.slice(0, 10))
+      .sort()
+      .reverse();
+    res.json({ dates });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/reviews/:date", async (req, res, next) => {
+  try {
+    const { date } = req.params;
+    if (!DATE_RE.test(date)) {
+      res.status(404).json({ error: `Not a date: ${date}` });
+      return;
+    }
+    const path = join(sportsDataDir(league), "reviews", `${date}.md`);
+    if (!existsSync(path)) {
+      res.status(404).json({ error: `No AI review briefing for ${date}` });
+      return;
+    }
+    const [markdown, info] = await Promise.all([
+      readFile(path, "utf8"),
+      stat(path),
+    ]);
+    res.json({ league, date, updatedAt: info.mtime.toISOString(), markdown });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // The weekly standing audit, verbatim as the Monday cron committed it
 // (data/reports/audit.md). Markdown passes through untouched — the audit's
 // wording IS the deliverable, and re-rendering it here could only distort it.

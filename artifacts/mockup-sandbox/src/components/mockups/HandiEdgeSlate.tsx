@@ -58,6 +58,49 @@ interface ReportSummary {
   };
 }
 
+interface ReviewBriefing {
+  league: string;
+  date: string;
+  updatedAt: string;
+  markdown: string;
+}
+
+/**
+ * The date's AI reviewer briefing (Data Auditor / Matchup Analyst / Risk
+ * Reviewer), verbatim. Advisory only — it is written after the lock and can
+ * never move a pick, which is exactly why it renders untouched.
+ */
+function ReviewCard({ review }: { review: ReviewBriefing | null }) {
+  const [open, setOpen] = useState(false);
+  if (!review) return null;
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">AIレビュー（助言のみ）</CardTitle>
+          <button
+            type="button"
+            className="text-xs text-sky-700 underline"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? "閉じる" : "読む"}
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          ロック後に生成 — ピックは一切変わりません。原文をそのまま表示。
+        </p>
+      </CardHeader>
+      {open && (
+        <CardContent>
+          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+            {review.markdown}
+          </pre>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
 const CONF_STYLE: Record<Prediction["confidence"], string> = {
   S: "bg-purple-600 text-white",
   A: "bg-emerald-600 text-white",
@@ -197,6 +240,7 @@ export default function HandiEdgeSlate() {
     predictions: Prediction[];
   } | null>(null);
   const [report, setReport] = useState<ReportSummary | null>(null);
+  const [review, setReview] = useState<ReviewBriefing | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Each league is its own store server-side (/api vs /api/npb) — switching
@@ -231,6 +275,7 @@ export default function HandiEdgeSlate() {
     if (!date) return;
     let cancelled = false;
     setDay(null);
+    setReview(null);
     fetch(`${apiBase}/predictions/${date}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -238,6 +283,12 @@ export default function HandiEdgeSlate() {
       })
       .then((d) => !cancelled && setDay(d))
       .catch((e) => !cancelled && setError(String(e)));
+    // The briefing is optional context: 404 (no review ran for this date)
+    // just leaves the card hidden, and a fetch failure never breaks the slate.
+    fetch(`${apiBase}/reviews/${date}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((rv) => !cancelled && setReview(rv))
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -306,6 +357,8 @@ export default function HandiEdgeSlate() {
           {picks.length} / 見送り {passes.length}
         </p>
       )}
+
+      <ReviewCard review={review} />
 
       <div className="space-y-3">
         {picks.map((p) => (

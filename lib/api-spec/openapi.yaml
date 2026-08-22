@@ -75,6 +75,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /reviews:
+    get:
+      operationId: listReviewDates
+      tags: [predictions]
+      summary: List dates with an AI reviewer briefing
+      responses:
+        "200":
+          description: Dates, newest first (empty until reviews run)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDates"
+  /reviews/{date}:
+    get:
+      operationId: getReviewBriefing
+      tags: [predictions]
+      summary: The AI reviewer briefing for one date (verbatim markdown)
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: The committed briefing, untouched — advisory only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewBriefing"
+        "404":
+          description: No briefing exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /audit:
     get:
       operationId: getStandingAudit
@@ -142,6 +179,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /npb/reviews:
+    get:
+      operationId: listNpbReviewDates
+      tags: [npb]
+      summary: List dates with an NPB AI reviewer briefing
+      responses:
+        "200":
+          description: Dates, newest first (empty until reviews run)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDates"
+  /npb/reviews/{date}:
+    get:
+      operationId: getNpbReviewBriefing
+      tags: [npb]
+      summary: The NPB AI reviewer briefing for one date (verbatim markdown)
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: The committed briefing, untouched — advisory only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewBriefing"
+        "404":
+          description: No briefing exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /npb/audit:
     get:
       operationId: getNpbStandingAudit
@@ -251,6 +325,28 @@ components:
       required:
         - summary
         - calibration
+    ReviewBriefing:
+      type: object
+      description: >-
+        One date's AI reviewer briefing (Data Auditor / Matchup Analyst /
+        Risk Reviewer), exactly as committed — advisory only, written after
+        the lock; markdown passes through verbatim.
+      properties:
+        league:
+          type: string
+          enum: [mlb, npb]
+        date:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        markdown:
+          type: string
+      required:
+        - league
+        - date
+        - updatedAt
+        - markdown
     AuditReport:
       type: object
       description: >-

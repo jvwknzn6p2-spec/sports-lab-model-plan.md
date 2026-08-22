@@ -64,6 +64,24 @@ export interface ReportSummary {
   calibration: ReportSummaryCalibration;
 }
 
+export type ReviewBriefingLeague = typeof ReviewBriefingLeague[keyof typeof ReviewBriefingLeague];
+
+
+export const ReviewBriefingLeague = {
+  mlb: 'mlb',
+  npb: 'npb',
+} as const;
+
+/**
+ * One date's AI reviewer briefing (Data Auditor / Matchup Analyst / Risk Reviewer), exactly as committed — advisory only, written after the lock; markdown passes through verbatim.
+ */
+export interface ReviewBriefing {
+  league: ReviewBriefingLeague;
+  date: string;
+  updatedAt: string;
+  markdown: string;
+}
+
 export type AuditReportLeague = typeof AuditReportLeague[keyof typeof AuditReportLeague];
 
 
