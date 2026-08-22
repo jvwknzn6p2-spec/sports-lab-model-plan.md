@@ -250,7 +250,21 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   lesson measured directly. EV itself still prices the fixed-0.9 book the
   pipeline actually bets; the market probability is a benchmark, not a
   payout. No real-line bet has settled yet; the A-2 audit section watches
-  for the first.
+  for the first. Since 2026-08-22 the benchmark side deepened three ways:
+  (a) consensus prices devig with **Shin's method** instead of the
+  proportional split (`devigPairShin` in `src/sources/odds-source.ts`) —
+  proportional spreads the margin evenly, priced markets load it onto the
+  longshot, so the old read systematically flattered underdogs; (b) each
+  real-line pick also carries **`marketEv`** — the same bet valued at the
+  market's probability and the same 0.9 payout, so "model says +6%, market
+  says −24%" is one visible number per pick; (c) **closing-line value**: a
+  new `handiedge closing` command (cron 13:10 UTC, firing ≈22:56–23:00 JST
+  at the observed scheduler delay) snapshots the market's last consensus to
+  `data/closing/<date>.json`, and settlement stamps each staked pick with
+  `handicapClv`/`totalClv` — closing minus locked market probability of the
+  picked side, stated only at the SAME point (a moved line is flagged, not
+  compared). Positive mean CLV within weeks is the earliest honest evidence
+  the edges are real; the P&L needs months to say the same thing.
 - **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
   per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
   temperature multiplier adjusts the run environment at open-air parks,

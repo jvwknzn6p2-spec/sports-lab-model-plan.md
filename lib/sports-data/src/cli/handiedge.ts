@@ -91,6 +91,7 @@ import {
 import {
   settle,
   recalibrateFromHistory,
+  type ClosingLine,
   type GameResult,
 } from "../engine/settle";
 import {
@@ -106,6 +107,8 @@ import { buildSlate } from "../sources/slate-builder";
 import {
   fetchMlbOdds,
   fillControlTowerFromOdds,
+  matchGameLines,
+  type MarketLine,
 } from "../sources/odds-source";
 import { buildResults } from "../sources/results-builder";
 import { buildWorkloads } from "../sources/workload-builder";
@@ -137,6 +140,7 @@ const PRED_DIR = join(DATA_DIR, "predictions");
 const SLATE_DIR = join(DATA_DIR, "slates");
 const CT_DIR = join(DATA_DIR, "control-towers");
 const RESULTS_DIR = join(DATA_DIR, "results");
+const CLOSING_DIR = join(DATA_DIR, "closing");
 const CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
 const HISTORY_PATH = join(DATA_DIR, "history.jsonl");
 const REPORTS_DIR = join(DATA_DIR, "reports");
@@ -670,6 +674,56 @@ async function cmdFetchResults(args: {
   }
 }
 
+/**
+ * Closing-line snapshot — the market's last read before the 23:00 JST close.
+ *
+ * One Odds API pull, matched to the day's slate and written to
+ * data/closing/<date>.json. Settlement then compares each staked pick's
+ * LOCKED market probability against this closing one at the same point:
+ * closing-line value. Whether the market moved toward the picks between lock
+ * and close is the earliest honest read on whether the model's edges are
+ * real — a P&L needs months to say what CLV says in weeks.
+ *
+ * Fail-soft like the odds fill: no key or no slate simply means no snapshot,
+ * and settlement states no CLV for the day rather than a fabricated one.
+ */
+async function cmdClosing(args: { date?: string }): Promise<void> {
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`--date must be YYYY-MM-DD (got "${date}")`);
+  }
+  const oddsKey = process.env.ODDS_API_KEY;
+  if (!oddsKey) {
+    console.log(
+      `closing: ODDS_API_KEY not set — no closing snapshot for ${date} ` +
+        "(CLV will not be stated at settlement).",
+    );
+    return;
+  }
+  const slatePath = join(SLATE_DIR, `${date}.json`);
+  if (!existsSync(slatePath)) {
+    console.log(
+      `closing: no slate for ${date} (${slatePath}) — nothing to snapshot.`,
+    );
+    return;
+  }
+  const bundle = await readJson<FixtureBundle>(slatePath);
+  const events = await fetchMlbOdds({ apiKey: oddsKey });
+  const { byGamePk, warnings } = matchGameLines(bundle.games, events);
+  const lines: Record<string, MarketLine> = {};
+  for (const [pk, line] of byGamePk) lines[String(pk)] = line;
+  const outPath = join(CLOSING_DIR, `${date}.json`);
+  await saveJson(outPath, {
+    date,
+    fetchedAt: new Date().toISOString(),
+    lines,
+  });
+  console.log(
+    `closing: snapshot for ${byGamePk.size}/${bundle.games.length} game(s) → ${outPath}`,
+  );
+  for (const w of warnings) console.log(`  - ${w}`);
+}
+
 async function cmdSettle(args: { results?: string }): Promise<void> {
   if (!args.results)
     throw new Error("settle requires --results <results.json>");
@@ -693,6 +747,14 @@ async function runSettle(payload: {
   const lock = await readJson<PredictionLock>(lockPath);
   const calibration = await loadCalibration();
 
+  // Closing snapshot, when the pre-close cron captured one: adds CLV columns
+  // to the settled rows. Its absence changes nothing else about settlement.
+  const closingPath = join(CLOSING_DIR, `${payload.date}.json`);
+  const closing = existsSync(closingPath)
+    ? (await readJson<{ lines: Record<string, ClosingLine> }>(closingPath))
+        .lines
+    : undefined;
+
   const now = new Date();
   const scored = settle(
     payload.date,
@@ -700,6 +762,7 @@ async function runSettle(payload: {
     payload.results,
     calibration,
     now,
+    closing,
   );
 
   // A slate is settled more than once (early pass, then west-coast
@@ -767,6 +830,20 @@ async function runSettle(payload: {
     console.log(`  Mean margin err: ${report.meanMarginError} runs`);
   if (report.meanTotalError !== null)
     console.log(`  Mean total err:  ${report.meanTotalError} runs`);
+  if (report.meanHandicapClv != null || report.meanTotalClv != null) {
+    console.log(
+      `  Closing-line value: ` +
+        (report.meanHandicapClv != null
+          ? `handicap ${fmtPct(report.meanHandicapClv)} mean over ${report.handicapClvCount} pick(s)`
+          : "") +
+        (report.meanHandicapClv != null && report.meanTotalClv != null
+          ? "; "
+          : "") +
+        (report.meanTotalClv != null
+          ? `total ${fmtPct(report.meanTotalClv)} mean over ${report.totalClvCount} pick(s)`
+          : ""),
+    );
+  }
   console.log(
     `  Self-learning:   shrink ${report.calibrationBefore.shrink} → ${report.calibrationAfter.shrink}, ` +
       `tail ${report.calibrationBefore.tailShrink} → ${report.calibrationAfter.tailShrink}, ` +
@@ -1302,6 +1379,7 @@ async function main(): Promise<void> {
   else if (cmd === "fetch-results") await cmdFetchResults(values);
   else if (cmd === "predict") await cmdPredict(values);
   else if (cmd === "settle") await cmdSettle(values);
+  else if (cmd === "closing") await cmdClosing(values);
   else if (cmd === "report") await cmdReport();
   else if (cmd === "review") await cmdReview(values);
   else if (cmd === "audit") await cmdAudit();
@@ -1318,6 +1396,9 @@ async function main(): Promise<void> {
       "  handiedge fetch-results [--date YYYY-MM-DD] [--out <results.json>] [--force] [--settle]",
     );
     console.log("  handiedge settle        --results <results.json>");
+    console.log(
+      "  handiedge closing       [--date YYYY-MM-DD]   (needs ODDS_API_KEY; snapshot for CLV)",
+    );
     console.log("  handiedge report");
     console.log(
       "  handiedge review        [--date YYYY-MM-DD]   (needs ANTHROPIC_API_KEY)",

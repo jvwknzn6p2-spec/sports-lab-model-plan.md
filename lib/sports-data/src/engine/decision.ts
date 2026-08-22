@@ -372,6 +372,15 @@ export interface GamePrediction {
      */
     marketProbability?: number | null;
     /**
+     * What this bet would be worth per unit if the MARKET's devigged
+     * probability were the truth, at the same fixed-0.9 payout the pipeline
+     * bets. `ev` above says what the model thinks the bet is worth; this says
+     * what the market thinks of the same bet — negative here while `ev` is
+     * positive is the entire disagreement in one number. Null when the market
+     * did not price this exact line.
+     */
+    marketEv?: number | null;
+    /**
      * Quarter-Kelly stake suggestion in units (see ev.ts). Display-only:
      * settlement scores a flat 1 unit regardless. Null when no bet stands.
      */
@@ -580,6 +589,8 @@ export function decide(
   let handicapEv: number | null = null;
   /** Market-consensus probability of the PICKED side, when priced. */
   let handicapMarketProb: number | null = null;
+  /** The bet's EV at the MARKET's probability (same 0.9 payout), when priced. */
+  let handicapMarketEv: number | null = null;
   /**
    * True when every part of the quoted line sits on 0 — a pick'em, which is
    * not a handicap at all: it is the moneyline with the stake returned on a
@@ -624,6 +635,10 @@ export function decide(
       handicap.side === "home" ? (handicap.marketHomeCover ?? null) : null;
     if (marketQuoted !== null) {
       handicapMarketProb = round3(takeQuoted ? marketQuoted : 1 - marketQuoted);
+      // Same push share: the line is the line, whoever states the probability.
+      handicapMarketEv = round3(
+        expectedValueFromProbability(handicapMarketProb, quoted.push),
+      );
     }
   }
 
@@ -766,7 +781,11 @@ export function decide(
     reasons.unshift(
       `Market consensus on the handicap: ${(handicapMarketProb! * 100).toFixed(1)}% ` +
         `for this side — model ${(coverProbability * 100).toFixed(1)}% ` +
-        `(${fmtPct(coverProbability - handicapMarketProb!)} vs market)`,
+        `(${fmtPct(coverProbability - handicapMarketProb!)} vs market` +
+        (handicapMarketEv !== null
+          ? `; at the market's number this bet is worth ${fmtPct(handicapMarketEv)} per unit`
+          : "") +
+        `)`,
     );
   }
   if (marketOutlier) {
@@ -844,6 +863,7 @@ export function decide(
       rawCoverProbability,
       ev: handicapEv,
       marketProbability: handicapMarketProb,
+      marketEv: handicapMarketEv,
       recommendedStake:
         handicapSuppressed || handicapUnprofitable
           ? null

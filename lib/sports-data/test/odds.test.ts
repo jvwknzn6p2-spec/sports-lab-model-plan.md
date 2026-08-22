@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import {
   consensusLine,
   devigPair,
+  devigPairShin,
   fillControlTowerFromOdds,
   matchGameLines,
   type OddsApiEvent,
@@ -190,6 +191,21 @@ test("devig removes the vig proportionally and is side-symmetric", () => {
   assert.ok(Math.abs(devigPair(-110, -110) - 0.5) < 1e-9);
   assert.ok(Math.abs(devigPair(-150, 130) + devigPair(130, -150) - 1) < 1e-9);
   assert.ok(devigPair(-150, 130) > 0.5);
+});
+
+test("Shin devig sums to 1, is exact on a balanced market, and shades the longshot", () => {
+  assert.ok(Math.abs(devigPairShin(-110, -110) - 0.5) < 1e-6);
+  assert.ok(
+    Math.abs(devigPairShin(-200, 170) + devigPairShin(170, -200) - 1) < 1e-6,
+  );
+  // The whole point of Shin over proportional: the margin sits mostly on the
+  // longshot, so the favorite's fair probability comes out HIGHER than the
+  // proportional split and the longshot's lower.
+  assert.ok(devigPairShin(-200, 170) > devigPair(-200, 170));
+  assert.ok(devigPairShin(170, -200) < devigPair(170, -200));
+  // A pair with no overround has no margin to explain — identical to the
+  // proportional split.
+  assert.ok(Math.abs(devigPairShin(100, 105) - devigPair(100, 105)) < 1e-9);
 });
 
 test("consensus probability uses only books pricing the exact median point", () => {

@@ -106,6 +106,9 @@ test("market disagreement caps confidence; agreement leaves it alone", async () 
   assert.ok(disagree.flags.includes("[warn] market_disagreement"));
   assert.ok(["B", "C"].includes(disagree.confidence));
   assert.equal(disagree.handicap.marketProbability, 0.4);
+  // The market's own EV for the same bet at the same 0.9 payout: a -1.5
+  // half-line has no push share, so 0.4 · 0.9 − 0.6 = −0.24 per unit.
+  assert.equal(disagree.handicap.marketEv, -0.24);
   assert.ok(
     disagree.reasons.some((r) => r.includes("Market disagreement")),
     disagree.reasons.join(" | "),

@@ -51,8 +51,8 @@ export interface MarketLine {
   total: number | null;
   /**
    * Devigged consensus probability that the HOME side covers `homeLine`
-   * (median across the books pricing exactly that point, vig removed
-   * proportionally). This is the market's OPINION, not the payout of the
+   * (median across the books pricing exactly that point, vig removed with
+   * Shin's method). This is the market's OPINION, not the payout of the
    * fixed-0.9 book the pipeline bets — EV keeps its own commission math; the
    * probability is stored as an external benchmark for the model's number.
    * Null when no book priced both sides of the median point.
@@ -80,11 +80,56 @@ export function americanImpliedProbability(price: number): number {
  * Remove the vig from a two-way price pair proportionally: the two implied
  * probabilities overround past 1 by the book's margin, and each side keeps
  * its share. Returns the first side's fair probability.
+ *
+ * Kept as the reference method, but the consensus probabilities below use
+ * `devigPairShin`: proportional devigging spreads the margin evenly, and
+ * priced markets don't — books load more of it onto the longshot (the
+ * favorite–longshot bias), so a proportional read systematically overstates
+ * the underdog's fair probability.
  */
 export function devigPair(priceA: number, priceB: number): number {
   const qa = americanImpliedProbability(priceA);
   const qb = americanImpliedProbability(priceB);
   return qa / (qa + qb);
+}
+
+/**
+ * Remove the vig with Shin's method (Shin 1992/93): model the overround as
+ * the book defending against a share `z` of insider money, which it prices
+ * by inflating longshots more than favorites. The fair probability of side i
+ * with implied probability q_i (Q = Σq) is
+ *
+ *     p_i(z) = (√(z² + 4(1−z)·q_i²/Q) − z) / (2(1−z))
+ *
+ * with z chosen so the fair probabilities sum to 1. For a two-way market
+ * Σp_i(z) is continuous and strictly decreasing in z — from √Q > 1 at z = 0
+ * to below 1 well before z = 1 — so plain bisection finds it.
+ *
+ * Returns the first side's fair probability. Relative to the proportional
+ * method this moves the favorite UP and the longshot DOWN, which is the
+ * direction the settled favorite–longshot record says the margin actually
+ * sits. A pair with no overround (Q ≤ 1) has no margin to explain and falls
+ * back to the proportional split.
+ */
+export function devigPairShin(priceA: number, priceB: number): number {
+  const qa = americanImpliedProbability(priceA);
+  const qb = americanImpliedProbability(priceB);
+  const Q = qa + qb;
+  if (Q <= 1) return qa / Q;
+  const fair = (q: number, z: number) =>
+    (Math.sqrt(z * z + (4 * (1 - z) * q * q) / Q) - z) / (2 * (1 - z));
+  const excess = (z: number) => fair(qa, z) + fair(qb, z) - 1;
+  let lo = 0;
+  let hi = 0.99;
+  // A margin so extreme even z = 0.99 cannot absorb it is not a real price;
+  // fall back to proportional rather than report a fabricated z.
+  if (excess(hi) > 0) return qa / Q;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (excess(mid) > 0) lo = mid;
+    else hi = mid;
+  }
+  return fair(qa, (lo + hi) / 2);
 }
 
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
@@ -123,7 +168,7 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
           (o) => o.name === ev.away_team && o.point === -homeLine,
         );
         if (typeof home?.price === "number" && typeof away?.price === "number") {
-          coverProbs.push(devigPair(home.price, away.price));
+          coverProbs.push(devigPairShin(home.price, away.price));
         }
       } else if (m.key === "totals" && total !== null) {
         const over = m.outcomes.find(
@@ -133,7 +178,7 @@ export function consensusLine(ev: OddsApiEvent): MarketLine {
           (o) => o.name === "Under" && o.point === total,
         );
         if (typeof over?.price === "number" && typeof under?.price === "number") {
-          overProbs.push(devigPair(over.price, under.price));
+          overProbs.push(devigPairShin(over.price, under.price));
         }
       }
     }

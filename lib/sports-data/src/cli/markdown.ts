@@ -77,7 +77,10 @@ export function predictionsToMarkdown(
             : "") +
           (p.handicap.ev === null
             ? ""
-            : ` · EV **${fmtPct(p.handicap.ev)}** per unit`),
+            : ` · EV **${fmtPct(p.handicap.ev)}** per unit`) +
+          (p.handicap.marketEv == null
+            ? ""
+            : ` · market prices it ${fmtPct(p.handicap.marketEv)}`),
       );
     } else if (p.handicap.noValue) {
       // The game is still a pick — only this market is skipped, and saying so
@@ -174,6 +177,24 @@ export function settlementToMarkdown(r: SettlementReport): string {
   }
   out.push("");
   if (r.meanBrier !== null) out.push(`- Mean Brier: ${r.meanBrier}`);
+  if (r.meanHandicapClv != null || r.meanTotalClv != null) {
+    // Positive = the market moved toward the picks between lock and close.
+    out.push(
+      `- Closing-line value: ` +
+        [
+          ...(r.meanHandicapClv != null
+            ? [
+                `handicap ${fmtPct(r.meanHandicapClv)} mean over ${r.handicapClvCount} pick(s)`,
+              ]
+            : []),
+          ...(r.meanTotalClv != null
+            ? [
+                `total ${fmtPct(r.meanTotalClv)} mean over ${r.totalClvCount} pick(s)`,
+              ]
+            : []),
+        ].join(" · "),
+    );
+  }
   if (r.statedVsActual) {
     out.push(
       `- Calibration: stated ${pct(r.statedVsActual.statedMean)} vs actual ${pct(r.statedVsActual.actualRate)}`,

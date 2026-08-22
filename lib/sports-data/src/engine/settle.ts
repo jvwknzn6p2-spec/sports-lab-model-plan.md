@@ -26,6 +26,23 @@ export interface GameResult {
   awayScore: number;
 }
 
+/**
+ * One game's market consensus at the last read before the 23:00 JST close,
+ * as `handiedge closing` stores it in data/closing/<date>.json (structurally
+ * a MarketLine from odds-source.ts — declared here so the settlement engine
+ * does not depend on the ingestion layer).
+ */
+export interface ClosingLine {
+  /** Closing signed spread on the HOME team, null if unquoted. */
+  homeLine: number | null;
+  /** Shin-devigged closing probability the home side covers `homeLine`. */
+  homeCoverProb: number | null;
+  /** Closing over/under total point, null if unquoted. */
+  total: number | null;
+  /** Shin-devigged closing probability of the OVER at `total`. */
+  overProb: number | null;
+}
+
 export interface SettledGame {
   gamePk: number;
   home: string;
@@ -83,6 +100,27 @@ export interface SettledGame {
   totalFarTail?: boolean | null;
   marginError: number | null; // |predicted margin − actual margin|
   totalError: number | null; // |predicted total − actual total|
+  /**
+   * Closing-line value in probability points: the market's devigged closing
+   * probability of the PICKED side minus its locked probability of the same
+   * side at the same point. Positive = the market moved toward the pick
+   * between lock and close — the best-known leading indicator that an edge
+   * is real, measurable within days instead of the months a P&L needs.
+   * Null when no closing snapshot exists, the lock carried no market
+   * probability, or the closing point differs from the locked one (a moved
+   * line prices a different proposition — see `handicapLineMoved`).
+   * Optional because history written before CLV tracking lacks it.
+   */
+  handicapClv?: number | null;
+  /**
+   * True when the market's closing point differs from the locked line, so
+   * no probability-space CLV can honestly be stated. Null when unknown
+   * (no snapshot, or the closing feed did not quote the market).
+   */
+  handicapLineMoved?: boolean | null;
+  /** Same pair for the total. */
+  totalClv?: number | null;
+  totalLineMoved?: boolean | null;
 }
 
 export interface SettlementReport {
@@ -104,6 +142,16 @@ export interface SettlementReport {
   statedVsActual: { statedMean: number; actualRate: number } | null;
   meanMarginError: number | null;
   meanTotalError: number | null;
+  /**
+   * Mean closing-line value across the day's staked handicaps / totals that
+   * were comparable at the close (same point, both probabilities present),
+   * with the count of picks behind each mean. Null/absent when no closing
+   * snapshot covered the day.
+   */
+  meanHandicapClv?: number | null;
+  handicapClvCount?: number;
+  meanTotalClv?: number | null;
+  totalClvCount?: number;
   games: SettledGame[];
   calibrationBefore: CalibrationState;
   calibrationAfter: CalibrationState;
@@ -332,6 +380,7 @@ export function settle(
   results: Record<string, GameResult>,
   calibration: CalibrationState,
   now: Date,
+  closing?: Record<string, ClosingLine>,
 ): SettlementReport {
   const games: SettledGame[] = [];
   let missing = 0;
@@ -395,6 +444,52 @@ export function settle(
       handicapCorrect =
         settled.win === settled.loss ? null : settled.win > settled.loss;
       handicapProfit = round3(expectedProfit(settled));
+    }
+
+    // Closing-line value. Only a like-for-like comparison is stated: the
+    // locked market probability and the closing one must price the SAME
+    // point, and both must exist. The locked side of the comparison is the
+    // lock's own `marketProbability` (the market at lock time), so CLV
+    // measures pure market movement — did the price the model bet against
+    // move toward the pick by the close? A line entered in Japanese 半
+    // notation never carries a market probability, so it never states a CLV.
+    const close = closing?.[String(p.gamePk)];
+    let handicapClv: number | null = null;
+    let handicapLineMoved: boolean | null = null;
+    if (
+      close &&
+      p.handicap.pick &&
+      p.handicap.input?.side === "home" &&
+      typeof p.handicap.input.line === "number" &&
+      p.handicap.marketProbability != null
+    ) {
+      if (close.homeLine !== p.handicap.input.line) {
+        handicapLineMoved = close.homeLine === null ? null : true;
+      } else if (close.homeCoverProb !== null) {
+        handicapLineMoved = false;
+        const pickedHome = p.handicap.pick.startsWith(p.home);
+        const closeProb = pickedHome
+          ? close.homeCoverProb
+          : 1 - close.homeCoverProb;
+        handicapClv = round3(closeProb - p.handicap.marketProbability);
+      }
+    }
+    let totalClv: number | null = null;
+    let totalLineMoved: boolean | null = null;
+    if (
+      close &&
+      p.total.pick &&
+      p.total.line !== null &&
+      p.total.marketProbability != null
+    ) {
+      if (close.total !== p.total.line) {
+        totalLineMoved = close.total === null ? null : true;
+      } else if (close.overProb !== null) {
+        totalLineMoved = false;
+        const closeProb =
+          p.total.pick === "OVER" ? close.overProb : 1 - close.overProb;
+        totalClv = round3(closeProb - p.total.marketProbability);
+      }
     }
 
     let totalCorrect: boolean | null = null;
@@ -469,6 +564,10 @@ export function settle(
       totalError: p.pass
         ? null
         : Math.round(Math.abs(p.total.predicted - actualTotal) * 100) / 100,
+      handicapClv,
+      handicapLineMoved,
+      totalClv,
+      totalLineMoved,
     });
   }
 
@@ -507,6 +606,14 @@ export function settle(
     meanTotalError: mean(
       games.filter((g) => g.totalError !== null).map((g) => g.totalError!),
     ),
+    meanHandicapClv: mean(
+      games.filter((g) => g.handicapClv != null).map((g) => g.handicapClv!),
+    ),
+    handicapClvCount: games.filter((g) => g.handicapClv != null).length,
+    meanTotalClv: mean(
+      games.filter((g) => g.totalClv != null).map((g) => g.totalClv!),
+    ),
+    totalClvCount: games.filter((g) => g.totalClv != null).length,
     games,
     calibrationBefore: calibration,
     calibrationAfter,
