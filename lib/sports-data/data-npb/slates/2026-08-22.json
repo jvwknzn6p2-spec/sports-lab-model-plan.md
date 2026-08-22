@@ -1,0 +1,625 @@
+{
+  "date": "2026-08-22",
+  "season": 1002026,
+  "fetchedAt": "2026-08-22T04:19:06.556Z",
+  "games": [
+    {
+      "gamePk": 92026082201,
+      "gameDate": "2026-08-22T05:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9101,
+        "name": "東京ドーム"
+      },
+      "home": {
+        "teamId": 901,
+        "teamName": "読売ジャイアンツ",
+        "probablePitcherId": 90148929,
+        "probablePitcherName": "代木 大和",
+        "score": null
+      },
+      "away": {
+        "teamId": 904,
+        "teamName": "広島東洋カープ",
+        "probablePitcherId": 90453699,
+        "probablePitcherName": "玉村 昇悟",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082203,
+      "gameDate": "2026-08-22T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9103,
+        "name": "横 浜"
+      },
+      "home": {
+        "teamId": 903,
+        "teamName": "横浜DeNAベイスターズ",
+        "probablePitcherId": 90304860,
+        "probablePitcherName": "竹田 祐",
+        "score": null
+      },
+      "away": {
+        "teamId": 902,
+        "teamName": "阪神タイガース",
+        "probablePitcherId": 90285937,
+        "probablePitcherName": "今朝丸 裕喜",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082206,
+      "gameDate": "2026-08-22T05:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9106,
+        "name": "バンテリンドーム"
+      },
+      "home": {
+        "teamId": 906,
+        "teamName": "中日ドラゴンズ",
+        "probablePitcherId": 90652652,
+        "probablePitcherName": "マラー",
+        "score": null
+      },
+      "away": {
+        "teamId": 905,
+        "teamName": "東京ヤクルトスワローズ",
+        "probablePitcherId": 90566821,
+        "probablePitcherName": "増居 翔太",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082212,
+      "gameDate": "2026-08-22T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9112,
+        "name": "楽天モバイル"
+      },
+      "home": {
+        "teamId": 912,
+        "teamName": "東北楽天ゴールデンイーグルス",
+        "probablePitcherId": 91285600,
+        "probablePitcherName": "早川 隆久",
+        "score": null
+      },
+      "away": {
+        "teamId": 910,
+        "teamName": "埼玉西武ライオンズ",
+        "probablePitcherId": 91061129,
+        "probablePitcherName": "隅田 知一郎",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082209,
+      "gameDate": "2026-08-22T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9109,
+        "name": "ZOZOマリン"
+      },
+      "home": {
+        "teamId": 909,
+        "teamName": "千葉ロッテマリーンズ",
+        "probablePitcherId": 90973389,
+        "probablePitcherName": "ジャクソン",
+        "score": null
+      },
+      "away": {
+        "teamId": 908,
+        "teamName": "北海道日本ハムファイターズ",
+        "probablePitcherId": 90838546,
+        "probablePitcherName": "達 孝太",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082207,
+      "gameDate": "2026-08-22T05:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9107,
+        "name": "みずほPayPay"
+      },
+      "home": {
+        "teamId": 907,
+        "teamName": "福岡ソフトバンクホークス",
+        "probablePitcherId": 90743852,
+        "probablePitcherName": "大津 亮介",
+        "score": null
+      },
+      "away": {
+        "teamId": 911,
+        "teamName": "オリックス・バファローズ",
+        "probablePitcherId": 91116065,
+        "probablePitcherName": "髙島 泰都",
+        "score": null
+      }
+    }
+  ],
+  "starters": {
+    "90148929": {
+      "inningsPitched": "13",
+      "battersFaced": 54,
+      "hits": 10,
+      "homeRuns": 2,
+      "baseOnBalls": 5,
+      "hitByPitch": 0,
+      "strikeOuts": 10,
+      "runs": 6,
+      "earnedRuns": 6
+    },
+    "90285937": {
+      "inningsPitched": "8",
+      "battersFaced": 36,
+      "hits": 10,
+      "homeRuns": 1,
+      "baseOnBalls": 2,
+      "hitByPitch": 1,
+      "strikeOuts": 3,
+      "runs": 5,
+      "earnedRuns": 5
+    },
+    "90304860": {
+      "inningsPitched": "22.1",
+      "battersFaced": 95,
+      "hits": 23,
+      "homeRuns": 4,
+      "baseOnBalls": 7,
+      "hitByPitch": 0,
+      "strikeOuts": 15,
+      "runs": 21,
+      "earnedRuns": 15
+    },
+    "90453699": {
+      "inningsPitched": "48.2",
+      "battersFaced": 190,
+      "hits": 38,
+      "homeRuns": 4,
+      "baseOnBalls": 9,
+      "hitByPitch": 2,
+      "strikeOuts": 31,
+      "runs": 15,
+      "earnedRuns": 13
+    },
+    "90566821": {
+      "inningsPitched": "23",
+      "battersFaced": 86,
+      "hits": 10,
+      "homeRuns": 1,
+      "baseOnBalls": 9,
+      "hitByPitch": 0,
+      "strikeOuts": 14,
+      "runs": 5,
+      "earnedRuns": 4
+    },
+    "90652652": {
+      "inningsPitched": "89.1",
+      "battersFaced": 359,
+      "hits": 77,
+      "homeRuns": 8,
+      "baseOnBalls": 18,
+      "hitByPitch": 2,
+      "strikeOuts": 71,
+      "runs": 28,
+      "earnedRuns": 25
+    },
+    "90743852": {
+      "inningsPitched": "112.1",
+      "battersFaced": 443,
+      "hits": 97,
+      "homeRuns": 14,
+      "baseOnBalls": 21,
+      "hitByPitch": 2,
+      "strikeOuts": 92,
+      "runs": 36,
+      "earnedRuns": 34
+    },
+    "90838546": {
+      "inningsPitched": "89.2",
+      "battersFaced": 368,
+      "hits": 72,
+      "homeRuns": 8,
+      "baseOnBalls": 21,
+      "hitByPitch": 5,
+      "strikeOuts": 88,
+      "runs": 33,
+      "earnedRuns": 31
+    },
+    "90973389": {
+      "inningsPitched": "124",
+      "battersFaced": 509,
+      "hits": 97,
+      "homeRuns": 11,
+      "baseOnBalls": 46,
+      "hitByPitch": 8,
+      "strikeOuts": 113,
+      "runs": 46,
+      "earnedRuns": 43
+    },
+    "91061129": {
+      "inningsPitched": "127",
+      "battersFaced": 499,
+      "hits": 110,
+      "homeRuns": 9,
+      "baseOnBalls": 19,
+      "hitByPitch": 1,
+      "strikeOuts": 112,
+      "runs": 43,
+      "earnedRuns": 35
+    },
+    "91116065": {
+      "inningsPitched": "72.1",
+      "battersFaced": 325,
+      "hits": 91,
+      "homeRuns": 5,
+      "baseOnBalls": 18,
+      "hitByPitch": 6,
+      "strikeOuts": 61,
+      "runs": 34,
+      "earnedRuns": 31
+    },
+    "91285600": {
+      "inningsPitched": "107",
+      "battersFaced": 429,
+      "hits": 84,
+      "homeRuns": 11,
+      "baseOnBalls": 26,
+      "hitByPitch": 1,
+      "strikeOuts": 108,
+      "runs": 35,
+      "earnedRuns": 33
+    }
+  },
+  "batting": {
+    "901": {
+      "plateAppearances": 4024,
+      "atBats": 3635,
+      "hits": 854,
+      "doubles": 151,
+      "triples": 11,
+      "homeRuns": 80,
+      "stolenBases": 80,
+      "caughtStealing": 32,
+      "sacFlies": 21,
+      "baseOnBalls": 271,
+      "intentionalWalks": 16,
+      "hitByPitch": 35,
+      "strikeOuts": 936
+    },
+    "902": {
+      "plateAppearances": 4145,
+      "atBats": 3647,
+      "hits": 895,
+      "doubles": 140,
+      "triples": 10,
+      "homeRuns": 99,
+      "stolenBases": 56,
+      "caughtStealing": 22,
+      "sacFlies": 26,
+      "baseOnBalls": 338,
+      "intentionalWalks": 24,
+      "hitByPitch": 54,
+      "strikeOuts": 940
+    },
+    "903": {
+      "plateAppearances": 4155,
+      "atBats": 3745,
+      "hits": 911,
+      "doubles": 172,
+      "triples": 5,
+      "homeRuns": 93,
+      "stolenBases": 40,
+      "caughtStealing": 20,
+      "sacFlies": 16,
+      "baseOnBalls": 296,
+      "intentionalWalks": 17,
+      "hitByPitch": 51,
+      "strikeOuts": 835
+    },
+    "904": {
+      "plateAppearances": 3944,
+      "atBats": 3530,
+      "hits": 802,
+      "doubles": 114,
+      "triples": 17,
+      "homeRuns": 72,
+      "stolenBases": 63,
+      "caughtStealing": 29,
+      "sacFlies": 23,
+      "baseOnBalls": 283,
+      "intentionalWalks": 15,
+      "hitByPitch": 32,
+      "strikeOuts": 780
+    },
+    "905": {
+      "plateAppearances": 3989,
+      "atBats": 3621,
+      "hits": 845,
+      "doubles": 148,
+      "triples": 10,
+      "homeRuns": 64,
+      "stolenBases": 75,
+      "caughtStealing": 20,
+      "sacFlies": 23,
+      "baseOnBalls": 284,
+      "intentionalWalks": 22,
+      "hitByPitch": 30,
+      "strikeOuts": 881
+    },
+    "906": {
+      "plateAppearances": 4183,
+      "atBats": 3696,
+      "hits": 845,
+      "doubles": 136,
+      "triples": 16,
+      "homeRuns": 89,
+      "stolenBases": 40,
+      "caughtStealing": 15,
+      "sacFlies": 25,
+      "baseOnBalls": 353,
+      "intentionalWalks": 23,
+      "hitByPitch": 41,
+      "strikeOuts": 968
+    },
+    "907": {
+      "plateAppearances": 4257,
+      "atBats": 3725,
+      "hits": 961,
+      "doubles": 168,
+      "triples": 19,
+      "homeRuns": 120,
+      "stolenBases": 62,
+      "caughtStealing": 12,
+      "sacFlies": 36,
+      "baseOnBalls": 392,
+      "intentionalWalks": 15,
+      "hitByPitch": 46,
+      "strikeOuts": 863
+    },
+    "908": {
+      "plateAppearances": 4302,
+      "atBats": 3844,
+      "hits": 967,
+      "doubles": 165,
+      "triples": 23,
+      "homeRuns": 140,
+      "stolenBases": 54,
+      "caughtStealing": 24,
+      "sacFlies": 31,
+      "baseOnBalls": 323,
+      "intentionalWalks": 15,
+      "hitByPitch": 47,
+      "strikeOuts": 903
+    },
+    "909": {
+      "plateAppearances": 3994,
+      "atBats": 3618,
+      "hits": 856,
+      "doubles": 134,
+      "triples": 9,
+      "homeRuns": 94,
+      "stolenBases": 40,
+      "caughtStealing": 17,
+      "sacFlies": 19,
+      "baseOnBalls": 278,
+      "intentionalWalks": 8,
+      "hitByPitch": 44,
+      "strikeOuts": 848
+    },
+    "910": {
+      "plateAppearances": 4285,
+      "atBats": 3856,
+      "hits": 951,
+      "doubles": 158,
+      "triples": 21,
+      "homeRuns": 84,
+      "stolenBases": 49,
+      "caughtStealing": 26,
+      "sacFlies": 29,
+      "baseOnBalls": 283,
+      "intentionalWalks": 4,
+      "hitByPitch": 48,
+      "strikeOuts": 798
+    },
+    "911": {
+      "plateAppearances": 4110,
+      "atBats": 3687,
+      "hits": 905,
+      "doubles": 168,
+      "triples": 12,
+      "homeRuns": 78,
+      "stolenBases": 34,
+      "caughtStealing": 26,
+      "sacFlies": 29,
+      "baseOnBalls": 300,
+      "intentionalWalks": 8,
+      "hitByPitch": 38,
+      "strikeOuts": 737
+    },
+    "912": {
+      "plateAppearances": 4016,
+      "atBats": 3598,
+      "hits": 873,
+      "doubles": 140,
+      "triples": 15,
+      "homeRuns": 81,
+      "stolenBases": 52,
+      "caughtStealing": 23,
+      "sacFlies": 24,
+      "baseOnBalls": 317,
+      "intentionalWalks": 14,
+      "hitByPitch": 30,
+      "strikeOuts": 827
+    }
+  },
+  "bullpens": {
+    "901": {
+      "inningsPitched": "978.2",
+      "battersFaced": 4058,
+      "strikeOuts": 901,
+      "baseOnBalls": 326,
+      "hitByPitch": 52,
+      "homeRuns": 76,
+      "hits": 830,
+      "earnedRuns": 318,
+      "runs": 348
+    },
+    "902": {
+      "inningsPitched": "969",
+      "battersFaced": 3966,
+      "strikeOuts": 890,
+      "baseOnBalls": 246,
+      "hitByPitch": 31,
+      "homeRuns": 87,
+      "hits": 847,
+      "earnedRuns": 309,
+      "runs": 341
+    },
+    "903": {
+      "inningsPitched": "964.1",
+      "battersFaced": 4086,
+      "strikeOuts": 901,
+      "baseOnBalls": 329,
+      "hitByPitch": 39,
+      "homeRuns": 82,
+      "hits": 880,
+      "earnedRuns": 368,
+      "runs": 402
+    },
+    "904": {
+      "inningsPitched": "904.2",
+      "battersFaced": 3822,
+      "strikeOuts": 777,
+      "baseOnBalls": 296,
+      "hitByPitch": 34,
+      "homeRuns": 60,
+      "hits": 834,
+      "earnedRuns": 340,
+      "runs": 368
+    },
+    "905": {
+      "inningsPitched": "935",
+      "battersFaced": 3935,
+      "strikeOuts": 828,
+      "baseOnBalls": 289,
+      "hitByPitch": 46,
+      "homeRuns": 94,
+      "hits": 855,
+      "earnedRuns": 367,
+      "runs": 403
+    },
+    "906": {
+      "inningsPitched": "910.2",
+      "battersFaced": 3829,
+      "strikeOuts": 820,
+      "baseOnBalls": 287,
+      "hitByPitch": 31,
+      "homeRuns": 90,
+      "hits": 832,
+      "earnedRuns": 338,
+      "runs": 361
+    },
+    "907": {
+      "inningsPitched": "873",
+      "battersFaced": 3645,
+      "strikeOuts": 820,
+      "baseOnBalls": 288,
+      "hitByPitch": 45,
+      "homeRuns": 87,
+      "hits": 775,
+      "earnedRuns": 305,
+      "runs": 334
+    },
+    "908": {
+      "inningsPitched": "931.2",
+      "battersFaced": 3880,
+      "strikeOuts": 795,
+      "baseOnBalls": 268,
+      "hitByPitch": 29,
+      "homeRuns": 93,
+      "hits": 849,
+      "earnedRuns": 344,
+      "runs": 385
+    },
+    "909": {
+      "inningsPitched": "831.1",
+      "battersFaced": 3530,
+      "strikeOuts": 603,
+      "baseOnBalls": 262,
+      "hitByPitch": 42,
+      "homeRuns": 98,
+      "hits": 788,
+      "earnedRuns": 356,
+      "runs": 392
+    },
+    "910": {
+      "inningsPitched": "906.2",
+      "battersFaced": 3722,
+      "strikeOuts": 765,
+      "baseOnBalls": 322,
+      "hitByPitch": 26,
+      "homeRuns": 70,
+      "hits": 752,
+      "earnedRuns": 298,
+      "runs": 332
+    },
+    "911": {
+      "inningsPitched": "908.2",
+      "battersFaced": 3869,
+      "strikeOuts": 780,
+      "baseOnBalls": 300,
+      "hitByPitch": 46,
+      "homeRuns": 93,
+      "hits": 869,
+      "earnedRuns": 384,
+      "runs": 421
+    },
+    "912": {
+      "inningsPitched": "854.1",
+      "battersFaced": 3669,
+      "strikeOuts": 718,
+      "baseOnBalls": 304,
+      "hitByPitch": 47,
+      "homeRuns": 86,
+      "hits": 835,
+      "earnedRuns": 372,
+      "runs": 407
+    }
+  },
+  "leagueConstants": {
+    "season": 1002026,
+    "wOBA": 0.294,
+    "wOBAScale": 1.24,
+    "wBB": 0.69,
+    "wHBP": 0.722,
+    "w1B": 0.882,
+    "w2B": 1.256,
+    "w3B": 1.59,
+    "wHR": 2.05,
+    "runSB": 0.2,
+    "runCS": -0.4,
+    "runsPerPA": 0.097,
+    "runsPerWin": 9.6,
+    "cFIP": 2.807,
+    "lgFIP": 3.335,
+    "hrPerFB": 0.088
+  }
+}
