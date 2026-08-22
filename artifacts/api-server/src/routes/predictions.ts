@@ -5,7 +5,7 @@
  */
 
 import { Router, type IRouter } from "express";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -87,6 +87,28 @@ router.get("/report", async (_req, res, next) => {
         : {},
     );
     res.json({ summary: aggregateHistory(reports), calibration });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The weekly standing audit, verbatim as the Monday cron committed it
+// (data/reports/audit.md). Markdown passes through untouched — the audit's
+// wording IS the deliverable, and re-rendering it here could only distort it.
+router.get("/audit", async (_req, res, next) => {
+  try {
+    const path = join(sportsDataDir(league), "reports", "audit.md");
+    if (!existsSync(path)) {
+      res.status(404).json({
+        error: `No standing audit committed yet for ${league} (Monday cron)`,
+      });
+      return;
+    }
+    const [markdown, info] = await Promise.all([
+      readFile(path, "utf8"),
+      stat(path),
+    ]);
+    res.json({ league, updatedAt: info.mtime.toISOString(), markdown });
   } catch (err) {
     next(err);
   }

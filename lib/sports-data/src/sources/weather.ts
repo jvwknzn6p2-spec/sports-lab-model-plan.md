@@ -51,7 +51,7 @@ export interface GameWeather {
   fetchedAt?: string;
 }
 
-interface VenueSite {
+export interface VenueSite {
   readonly venueId: number;
   readonly lat: number;
   readonly lon: number;
@@ -273,28 +273,42 @@ export interface WeatherBuildReport {
 /**
  * Fetch first-pitch weather for a slate. One Open-Meteo call per unique
  * venue; a failed venue is warned and skipped (its games stay weatherless).
+ *
+ * League-agnostic via `siteFor`: the default table is the 30 MLB parks, and
+ * the NPB path passes its own 12-park table (src/npb/weather.ts). Park
+ * orientations come from the MLB Stats API only — a league with no azimuth
+ * feed sets `fetchAzimuths: false` and its wind stays direction-blind (the
+ * high-wind warn flag still applies; see windRunMultiplier's honesty rules).
  */
 export async function buildWeather(opts: {
   date: string;
   games: NormalizedGame[];
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  siteFor?: (venueId: number | null) => VenueSite | undefined;
+  fetchAzimuths?: boolean;
 }): Promise<WeatherBuildReport> {
   const doFetch = opts.fetchImpl ?? fetch;
+  const siteFor = opts.siteFor ?? getVenueSite;
   const warnings: string[] = [];
   const weather: Record<string, GameWeather> = {};
   const byVenue = new Map<number, OpenMeteoHourly | null>();
 
   // Park orientations for the slate's outdoor venues, so the wind direction
   // can become a signed run effect (see windRunMultiplier). Fail-soft.
-  const outdoorVenueIds = [
-    ...new Set(
-      opts.games
-        .map((g) => getVenueSite(g.venue.id))
-        .filter((s): s is VenueSite => s !== undefined && s.roof === "outdoor")
-        .map((s) => s.venueId),
-    ),
-  ];
+  const outdoorVenueIds =
+    opts.fetchAzimuths === false
+      ? []
+      : [
+          ...new Set(
+            opts.games
+              .map((g) => siteFor(g.venue.id))
+              .filter(
+                (s): s is VenueSite => s !== undefined && s.roof === "outdoor",
+              )
+              .map((s) => s.venueId),
+          ),
+        ];
   const azimuths = await fetchVenueAzimuths({
     venueIds: outdoorVenueIds,
     fetchImpl: opts.fetchImpl,
@@ -303,7 +317,7 @@ export async function buildWeather(opts: {
   warnings.push(...azimuths.warnings);
 
   for (const g of opts.games) {
-    const site = getVenueSite(g.venue.id);
+    const site = siteFor(g.venue.id);
     if (!site) {
       warnings.push(
         `game ${g.gamePk}: unknown venue ${g.venue.id ?? "?"} (${g.venue.name ?? "?"}) — no weather`,

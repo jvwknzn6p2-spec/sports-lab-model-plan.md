@@ -64,3 +64,20 @@ export interface ReportSummary {
   calibration: ReportSummaryCalibration;
 }
 
+export type AuditReportLeague = typeof AuditReportLeague[keyof typeof AuditReportLeague];
+
+
+export const AuditReportLeague = {
+  mlb: 'mlb',
+  npb: 'npb',
+} as const;
+
+/**
+ * The weekly standing audit exactly as the Monday cron committed it — markdown passes through verbatim, never re-rendered.
+ */
+export interface AuditReport {
+  league: AuditReportLeague;
+  updatedAt: string;
+  markdown: string;
+}
+

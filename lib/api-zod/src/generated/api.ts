@@ -62,6 +62,16 @@ export const GetReportSummaryResponse = zod.object({
 
 
 /**
+ * @summary The latest weekly standing audit (verbatim markdown)
+ */
+export const GetStandingAuditResponse = zod.object({
+  "league": zod.enum(['mlb', 'npb']),
+  "updatedAt": zod.coerce.date(),
+  "markdown": zod.string()
+}).describe('The weekly standing audit exactly as the Monday cron committed it — markdown passes through verbatim, never re-rendered.')
+
+
+/**
  * @summary List dates with a locked NPB prediction slate
  */
 export const ListNpbPredictionDatesResponse = zod.object({
@@ -103,5 +113,15 @@ export const GetNpbReportSummaryResponse = zod.object({
   "summary": zod.record(zod.string(), zod.unknown()),
   "calibration": zod.record(zod.string(), zod.unknown())
 }).describe('aggregateHistory() output plus the learned calibration state. The shape is owned by @workspace\/sports-data; the API passes it through.')
+
+
+/**
+ * @summary The latest weekly NPB standing audit (verbatim markdown)
+ */
+export const GetNpbStandingAuditResponse = zod.object({
+  "league": zod.enum(['mlb', 'npb']),
+  "updatedAt": zod.coerce.date(),
+  "markdown": zod.string()
+}).describe('The weekly standing audit exactly as the Monday cron committed it — markdown passes through verbatim, never re-rendered.')
 
 

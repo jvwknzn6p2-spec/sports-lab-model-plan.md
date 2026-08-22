@@ -156,15 +156,50 @@ function BucketTable({ title, buckets }: { title: string; buckets: Bucket[] }) {
   );
 }
 
+interface Audit {
+  league: string;
+  updatedAt: string;
+  markdown: string;
+}
+
+/**
+ * The weekly standing audit, verbatim. The audit's own wording is the
+ * deliverable — it renders as preformatted text, never re-interpreted.
+ */
+function AuditCard({ audit }: { audit: Audit | "absent" | null }) {
+  if (audit === null) return null;
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">週次スタンディング監査</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          {audit === "absent"
+            ? "まだ生成されていません（月曜の監査cronがコミットします）"
+            : `最終更新 ${new Date(audit.updatedAt).toLocaleString("ja-JP")} — audit.md の原文をそのまま表示`}
+        </p>
+      </CardHeader>
+      {audit !== "absent" && (
+        <CardContent>
+          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+            {audit.markdown}
+          </pre>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
 export default function HandiEdgeReport() {
   const [league, setLeague] = useState<"mlb" | "npb">("mlb");
   const [report, setReport] = useState<Report | null>(null);
+  const [audit, setAudit] = useState<Audit | "absent" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const apiBase = league === "npb" ? "/api/npb" : "/api";
   useEffect(() => {
     let cancelled = false;
     setReport(null);
+    setAudit(null);
     setError(null);
     fetch(`${apiBase}/report`)
       .then((r) => {
@@ -173,6 +208,12 @@ export default function HandiEdgeReport() {
       })
       .then((r) => !cancelled && setReport(r))
       .catch((e) => !cancelled && setError(String(e)));
+    // The audit is optional context: a 404 (not committed yet) is a normal
+    // state, and a fetch failure only hides this card, never the record.
+    fetch(`${apiBase}/audit`)
+      .then((r) => (r.ok ? r.json() : "absent" as const))
+      .then((a) => !cancelled && setAudit(a))
+      .catch(() => !cancelled && setAudit("absent"));
     return () => {
       cancelled = true;
     };
@@ -379,6 +420,8 @@ export default function HandiEdgeReport() {
           </table>
         </CardContent>
       </Card>
+
+      <AuditCard audit={audit} />
     </div>
   );
 }

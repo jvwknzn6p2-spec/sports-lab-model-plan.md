@@ -75,6 +75,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /audit:
+    get:
+      operationId: getStandingAudit
+      tags: [predictions]
+      summary: The latest weekly standing audit (verbatim markdown)
+      responses:
+        "200":
+          description: The committed audit.md, untouched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+        "404":
+          description: No standing audit committed yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /npb/predictions:
     get:
       operationId: listNpbPredictionDates
@@ -124,6 +142,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /npb/audit:
+    get:
+      operationId: getNpbStandingAudit
+      tags: [npb]
+      summary: The latest weekly NPB standing audit (verbatim markdown)
+      responses:
+        "200":
+          description: The committed audit.md, untouched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+        "404":
+          description: No standing audit committed yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -215,4 +251,22 @@ components:
       required:
         - summary
         - calibration
+    AuditReport:
+      type: object
+      description: >-
+        The weekly standing audit exactly as the Monday cron committed it —
+        markdown passes through verbatim, never re-rendered.
+      properties:
+        league:
+          type: string
+          enum: [mlb, npb]
+        updatedAt:
+          type: string
+          format: date-time
+        markdown:
+          type: string
+      required:
+        - league
+        - updatedAt
+        - markdown
 

@@ -7,6 +7,8 @@
  */
 
 export * from './apiError';
+export * from './auditReport';
+export * from './auditReportLeague';
 export * from './gamePrediction';
 export * from './gamePredictionConfidence';
 export * from './healthStatus';

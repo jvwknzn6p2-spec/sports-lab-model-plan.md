@@ -17,6 +17,7 @@ import type {
 
 import type {
   ApiError,
+  AuditReport,
   HealthStatus,
   PredictionDates,
   PredictionDay,
@@ -359,6 +360,83 @@ export function useGetReportSummary<TData = Awaited<ReturnType<typeof getReportS
 
 
 
+export const getGetStandingAuditUrl = () => {
+
+
+
+
+  return `/api/audit`
+}
+
+/**
+ * @summary The latest weekly standing audit (verbatim markdown)
+ */
+export const getStandingAudit = async ( options?: RequestInit): Promise<AuditReport> => {
+
+  return customFetch<AuditReport>(getGetStandingAuditUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStandingAuditQueryKey = () => {
+    return [
+    `/api/audit`
+    ] as const;
+    }
+
+
+export const getGetStandingAuditQueryOptions = <TData = Awaited<ReturnType<typeof getStandingAudit>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStandingAuditQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStandingAudit>>> = ({ signal }) => getStandingAudit({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStandingAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStandingAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getStandingAudit>>>
+export type GetStandingAuditQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The latest weekly standing audit (verbatim markdown)
+ */
+
+export function useGetStandingAudit<TData = Awaited<ReturnType<typeof getStandingAudit>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStandingAuditQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListNpbPredictionDatesUrl = () => {
 
 
@@ -578,6 +656,83 @@ export function useGetNpbReportSummary<TData = Awaited<ReturnType<typeof getNpbR
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetNpbReportSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNpbStandingAuditUrl = () => {
+
+
+
+
+  return `/api/npb/audit`
+}
+
+/**
+ * @summary The latest weekly NPB standing audit (verbatim markdown)
+ */
+export const getNpbStandingAudit = async ( options?: RequestInit): Promise<AuditReport> => {
+
+  return customFetch<AuditReport>(getGetNpbStandingAuditUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNpbStandingAuditQueryKey = () => {
+    return [
+    `/api/npb/audit`
+    ] as const;
+    }
+
+
+export const getGetNpbStandingAuditQueryOptions = <TData = Awaited<ReturnType<typeof getNpbStandingAudit>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNpbStandingAuditQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNpbStandingAudit>>> = ({ signal }) => getNpbStandingAudit({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNpbStandingAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNpbStandingAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getNpbStandingAudit>>>
+export type GetNpbStandingAuditQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The latest weekly NPB standing audit (verbatim markdown)
+ */
+
+export function useGetNpbStandingAudit<TData = Awaited<ReturnType<typeof getNpbStandingAudit>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbStandingAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNpbStandingAuditQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
