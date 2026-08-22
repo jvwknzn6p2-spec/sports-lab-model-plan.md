@@ -80,3 +80,4 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `.claude/skills/` — project skills (`systematic-debugging`, `test-driven-development`, `verification-before-completion`), vendored from obra/superpowers; see its `README.md`
