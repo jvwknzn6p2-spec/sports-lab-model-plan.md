@@ -32,6 +32,7 @@ import {
 } from "../sabermetrics";
 import type { FixtureBundle } from "../sources/fixture-source";
 import { deriveNpbConstants, npbSeasonKey } from "./constants";
+import { buildNpbForms, buildNpbParkFactors, venueIdFor } from "./context";
 import {
   matchStarter,
   parseNpbClubPitching,
@@ -171,6 +172,26 @@ export async function buildNpbSlate(
   const todays = monthGames.filter(
     (g) => g.date === opts.date && !g.cancelled,
   );
+
+  // The season's earlier month pages feed recent form and the derived park
+  // factors. Each is fail-soft (a missing/unparseable month narrows the
+  // context sample and says so) — only the CURRENT month, fetched above, is
+  // load-bearing for the slate itself. NPB's season opens in March.
+  const seasonGames: NpbScheduleGame[] = [...monthGames];
+  const earlier = [];
+  for (let m = 3; m < month; m++) earlier.push(m);
+  await Promise.all(
+    earlier.map(async (m) => {
+      try {
+        const html = await fetchNpbPage(npbUrls.scheduleMonth(year, m), f);
+        seasonGames.push(...parseNpbSchedule(html, year, m));
+      } catch (err) {
+        notes.push(
+          `context: month ${m} page unavailable (${err instanceof Error ? err.message : String(err)}) — form/park sample narrowed`,
+        );
+      }
+    }),
+  );
   const batting = [...parseNpbTeamBatting(tmbC), ...parseNpbTeamBatting(tmbP)];
   const pitching = [
     ...parseNpbTeamPitching(tmpC),
@@ -271,7 +292,10 @@ export async function buildNpbSlate(
       status: g.homeScore !== null ? "Final?" : "Scheduled",
       abstractState: g.homeScore !== null ? null : "Preview",
       gameType: "R",
-      venue: { id: g.home.venueId, name: g.venue || g.home.homeVenue },
+      // A 地方開催 game's venue is not one of the 12 main parks: id stays
+      // null and the game runs park-neutral (its derived factor would have
+      // been regressed to ~100 anyway on a handful of games).
+      venue: { id: venueIdFor(g.venue), name: g.venue || g.home.homeVenue },
       home: {
         teamId: g.home.teamId,
         teamName: g.home.fullName,
@@ -289,11 +313,19 @@ export async function buildNpbSlate(
     });
   }
 
+  // Season-context features from the same game log (see npb/context.ts).
+  const forms = buildNpbForms(seasonGames, opts.date);
+  const parks = buildNpbParkFactors(seasonGames, opts.date);
   notes.push(
-    "NPB v1 inputs: bullpen = club pitching total minus today's matched " +
-      "starter (npb.jp publishes no reliever split); park factors, weather, " +
-      "recent form, workloads, IL and lineups are absent and treated as " +
-      "neutral.",
+    `Context: recent form for ${Object.keys(forms).length} club(s) and ` +
+      `park factors for ${Object.keys(parks.parkFactors).length} park(s) ` +
+      `derived from ${seasonGames.length} scheduled game(s) this season ` +
+      `(league ${parks.leagueRunsPerGame} runs/game).`,
+  );
+  notes.push(
+    "NPB inputs: bullpen = club pitching total minus today's matched " +
+      "starter (npb.jp publishes no reliever split); weather, workloads, " +
+      "IL and lineups are absent and treated as neutral.",
   );
 
   return {
@@ -305,6 +337,8 @@ export async function buildNpbSlate(
       starters,
       batting: bundleBatting,
       bullpens,
+      forms,
+      parkFactors: parks.parkFactors,
       leagueConstants,
     },
     monthGameCount: monthGames.length,

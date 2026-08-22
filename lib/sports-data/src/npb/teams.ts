@@ -33,7 +33,10 @@ export interface NpbTeam {
   readonly league: NpbLeague;
   /** Synthetic venue id for the club's main home park. */
   readonly venueId: number;
-  /** Main home park name (地方開催 games list a different string). */
+  /** Main home park name, CANONICAL form: all spaces stripped (the schedule
+   * page pads names like 横　浜 with full-width spaces; match via
+   * canonicalVenue in npb/context.ts, never raw equality). 地方開催 games
+   * list a different string. */
   readonly homeVenue: string;
 }
 
@@ -41,13 +44,13 @@ export const NPB_TEAMS: readonly NpbTeam[] = [
   // Central
   { teamId: 901, scheduleName: "巨人", fullName: "読売ジャイアンツ", bisCode: "g", oddsName: "Yomiuri Giants", league: "central", venueId: 9101, homeVenue: "東京ドーム" },
   { teamId: 902, scheduleName: "阪神", fullName: "阪神タイガース", bisCode: "t", oddsName: "Hanshin Tigers", league: "central", venueId: 9102, homeVenue: "甲子園" },
-  { teamId: 903, scheduleName: "DeNA", fullName: "横浜DeNAベイスターズ", bisCode: "db", oddsName: "Yokohama DeNA BayStars", league: "central", venueId: 9103, homeVenue: "横　浜" },
+  { teamId: 903, scheduleName: "DeNA", fullName: "横浜DeNAベイスターズ", bisCode: "db", oddsName: "Yokohama DeNA BayStars", league: "central", venueId: 9103, homeVenue: "横浜" },
   { teamId: 904, scheduleName: "広島", fullName: "広島東洋カープ", bisCode: "c", oddsName: "Hiroshima Toyo Carp", league: "central", venueId: 9104, homeVenue: "マツダスタジアム" },
   { teamId: 905, scheduleName: "ヤクルト", fullName: "東京ヤクルトスワローズ", bisCode: "s", oddsName: "Tokyo Yakult Swallows", league: "central", venueId: 9105, homeVenue: "神宮" },
   { teamId: 906, scheduleName: "中日", fullName: "中日ドラゴンズ", bisCode: "d", oddsName: "Chunichi Dragons", league: "central", venueId: 9106, homeVenue: "バンテリンドーム" },
   // Pacific
   { teamId: 907, scheduleName: "ソフトバンク", fullName: "福岡ソフトバンクホークス", bisCode: "h", oddsName: "Fukuoka SoftBank Hawks", league: "pacific", venueId: 9107, homeVenue: "みずほPayPay" },
-  { teamId: 908, scheduleName: "日本ハム", fullName: "北海道日本ハムファイターズ", bisCode: "f", oddsName: "Hokkaido Nippon-Ham Fighters", league: "pacific", venueId: 9108, homeVenue: "エスコンフィールド" },
+  { teamId: 908, scheduleName: "日本ハム", fullName: "北海道日本ハムファイターズ", bisCode: "f", oddsName: "Hokkaido Nippon-Ham Fighters", league: "pacific", venueId: 9108, homeVenue: "エスコンＦ" },
   { teamId: 909, scheduleName: "ロッテ", fullName: "千葉ロッテマリーンズ", bisCode: "m", oddsName: "Chiba Lotte Marines", league: "pacific", venueId: 9109, homeVenue: "ZOZOマリン" },
   { teamId: 910, scheduleName: "西武", fullName: "埼玉西武ライオンズ", bisCode: "l", oddsName: "Saitama Seibu Lions", league: "pacific", venueId: 9110, homeVenue: "ベルーナドーム" },
   { teamId: 911, scheduleName: "オリックス", fullName: "オリックス・バファローズ", bisCode: "b", oddsName: "Orix Buffaloes", league: "pacific", venueId: 9111, homeVenue: "京セラD大阪" },

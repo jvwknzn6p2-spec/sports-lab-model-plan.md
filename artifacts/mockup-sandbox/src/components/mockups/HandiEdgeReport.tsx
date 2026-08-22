@@ -157,25 +157,55 @@ function BucketTable({ title, buckets }: { title: string; buckets: Bucket[] }) {
 }
 
 export default function HandiEdgeReport() {
+  const [league, setLeague] = useState<"mlb" | "npb">("mlb");
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const apiBase = league === "npb" ? "/api/npb" : "/api";
   useEffect(() => {
-    fetch("/api/report")
+    let cancelled = false;
+    setReport(null);
+    setError(null);
+    fetch(`${apiBase}/report`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then(setReport)
-      .catch((e) => setError(String(e)));
-  }, []);
+      .then((r) => !cancelled && setReport(r))
+      .catch((e) => !cancelled && setError(String(e)));
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
+
+  const leagueToggle = (
+    <div className="flex overflow-hidden rounded-md border">
+      {(["mlb", "npb"] as const).map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setLeague(l)}
+          className={`px-3 py-1.5 text-xs font-semibold uppercase ${
+            league === l
+              ? "bg-primary text-primary-foreground"
+              : "bg-background text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
 
   if (error) {
     return (
-      <p className="m-6 rounded-md bg-red-50 p-3 text-sm text-red-700">
-        読み込みエラー: {error}（APIサーバーは起動していますか?
-        `pnpm --filter @workspace/api-server dev`）
-      </p>
+      <div className="m-6 space-y-3">
+        {leagueToggle}
+        <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          読み込みエラー: {error}（APIサーバーは起動していますか?
+          `pnpm --filter @workspace/api-server dev`）
+        </p>
+      </div>
     );
   }
   if (!report) {
@@ -189,11 +219,14 @@ export default function HandiEdgeReport() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-6">
-      <div>
-        <h1 className="text-xl font-bold">HandiEdge — 通算成績</h1>
-        <p className="text-xs text-muted-foreground">
-          {s.dates} 日間 / {s.gamesSettled} 試合精算 / {s.gamesPassed} 見送り
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold">HandiEdge — 通算成績</h1>
+          <p className="text-xs text-muted-foreground">
+            {s.dates} 日間 / {s.gamesSettled} 試合精算 / {s.gamesPassed} 見送り
+          </p>
+        </div>
+        {leagueToggle}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

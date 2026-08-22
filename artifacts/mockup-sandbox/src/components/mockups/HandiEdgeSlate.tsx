@@ -172,6 +172,7 @@ function GameCard({ p }: { p: Prediction }) {
 }
 
 export default function HandiEdgeSlate() {
+  const [league, setLeague] = useState<"mlb" | "npb">("mlb");
   const [dates, setDates] = useState<string[]>([]);
   const [date, setDate] = useState<string | null>(null);
   const [day, setDay] = useState<{
@@ -181,31 +182,49 @@ export default function HandiEdgeSlate() {
   const [report, setReport] = useState<ReportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Each league is its own store server-side (/api vs /api/npb) — switching
+  // resets everything and refetches; a cancelled flag keeps a slow response
+  // from the previous league from landing on the new one's screen.
+  const apiBase = league === "npb" ? "/api/npb" : "/api";
   useEffect(() => {
-    fetch("/api/predictions")
+    let cancelled = false;
+    setDates([]);
+    setDate(null);
+    setDay(null);
+    setReport(null);
+    setError(null);
+    fetch(`${apiBase}/predictions`)
       .then((r) => r.json())
       .then((d: { dates: string[] }) => {
+        if (cancelled) return;
         setDates(d.dates);
-        setDate((cur) => cur ?? d.dates[0] ?? null);
+        setDate(d.dates[0] ?? null);
       })
-      .catch((e) => setError(String(e)));
-    fetch("/api/report")
+      .catch((e) => !cancelled && setError(String(e)));
+    fetch(`${apiBase}/report`)
       .then((r) => r.json())
-      .then(setReport)
+      .then((r) => !cancelled && setReport(r))
       .catch(() => undefined);
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
 
   useEffect(() => {
     if (!date) return;
+    let cancelled = false;
     setDay(null);
-    fetch(`/api/predictions/${date}`)
+    fetch(`${apiBase}/predictions/${date}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then(setDay)
-      .catch((e) => setError(String(e)));
-  }, [date]);
+      .then((d) => !cancelled && setDay(d))
+      .catch((e) => !cancelled && setError(String(e)));
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase, date]);
 
   const picks = day?.predictions.filter((p) => !p.pass) ?? [];
   const passes = day?.predictions.filter((p) => p.pass) ?? [];
@@ -225,18 +244,36 @@ export default function HandiEdgeSlate() {
             </p>
           )}
         </div>
-        <Select value={date ?? undefined} onValueChange={setDate}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="日付" />
-          </SelectTrigger>
-          <SelectContent>
-            {dates.map((d) => (
-              <SelectItem key={d} value={d}>
-                {d}
-              </SelectItem>
+        <div className="flex items-center gap-2">
+          <div className="flex overflow-hidden rounded-md border">
+            {(["mlb", "npb"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLeague(l)}
+                className={`px-3 py-1.5 text-xs font-semibold uppercase ${
+                  league === l
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {l}
+              </button>
             ))}
-          </SelectContent>
-        </Select>
+          </div>
+          <Select value={date ?? undefined} onValueChange={setDate}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="日付" />
+            </SelectTrigger>
+            <SelectContent>
+              {dates.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && (

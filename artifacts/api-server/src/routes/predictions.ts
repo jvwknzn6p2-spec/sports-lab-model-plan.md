@@ -13,15 +13,21 @@ import {
   normalizeCalibration,
   type SettlementReport,
 } from "@workspace/sports-data";
-import { sportsDataDir } from "../lib/data-dir";
-
-const router: IRouter = Router();
+import { sportsDataDir, type League } from "../lib/data-dir";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * The same three read-only endpoints for either league's store. Mounted at
+ * the root for MLB (the historical paths keep their exact meaning) and
+ * under /npb for NPB — each serves only its own committed record.
+ */
+export function predictionsRouter(league: League): IRouter {
+  const router: IRouter = Router();
+
 router.get("/predictions", async (_req, res, next) => {
   try {
-    const dir = join(sportsDataDir(), "predictions");
+    const dir = join(sportsDataDir(league), "predictions");
     const files = existsSync(dir) ? await readdir(dir) : [];
     const dates = files
       .filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
@@ -41,7 +47,7 @@ router.get("/predictions/:date", async (req, res, next) => {
       res.status(404).json({ error: `Not a date: ${date}` });
       return;
     }
-    const path = join(sportsDataDir(), "predictions", `${date}.json`);
+    const path = join(sportsDataDir(league), "predictions", `${date}.json`);
     if (!existsSync(path)) {
       res.status(404).json({ error: `No prediction lock for ${date}` });
       return;
@@ -65,7 +71,7 @@ router.get("/predictions/:date", async (req, res, next) => {
 
 router.get("/report", async (_req, res, next) => {
   try {
-    const dataDir = sportsDataDir();
+    const dataDir = sportsDataDir(league);
     const historyPath = join(dataDir, "history.jsonl");
     const raw = existsSync(historyPath)
       ? await readFile(historyPath, "utf8")
@@ -86,4 +92,7 @@ router.get("/report", async (_req, res, next) => {
   }
 });
 
-export default router;
+  return router;
+}
+
+export default predictionsRouter("mlb");

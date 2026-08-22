@@ -75,6 +75,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportSummary"
+  /npb/predictions:
+    get:
+      operationId: listNpbPredictionDates
+      tags: [npb]
+      summary: List dates with a locked NPB prediction slate
+      responses:
+        "200":
+          description: Dates, newest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDates"
+  /npb/predictions/{date}:
+    get:
+      operationId: getNpbPredictionDay
+      tags: [npb]
+      summary: The locked NPB predictions for one date
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: The prediction lock, exactly as committed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionDay"
+        "404":
+          description: No lock exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /npb/report:
+    get:
+      operationId: getNpbReportSummary
+      tags: [npb]
+      summary: Cumulative NPB record across all settled dates
+      responses:
+        "200":
+          description: Aggregated history plus the current learning state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
 components:
   schemas:
     HealthStatus:

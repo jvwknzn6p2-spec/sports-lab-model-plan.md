@@ -359,3 +359,234 @@ export function useGetReportSummary<TData = Awaited<ReturnType<typeof getReportS
 
 
 
+export const getListNpbPredictionDatesUrl = () => {
+
+
+
+
+  return `/api/npb/predictions`
+}
+
+/**
+ * @summary List dates with a locked NPB prediction slate
+ */
+export const listNpbPredictionDates = async ( options?: RequestInit): Promise<PredictionDates> => {
+
+  return customFetch<PredictionDates>(getListNpbPredictionDatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListNpbPredictionDatesQueryKey = () => {
+    return [
+    `/api/npb/predictions`
+    ] as const;
+    }
+
+
+export const getListNpbPredictionDatesQueryOptions = <TData = Awaited<ReturnType<typeof listNpbPredictionDates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNpbPredictionDates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListNpbPredictionDatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNpbPredictionDates>>> = ({ signal }) => listNpbPredictionDates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNpbPredictionDates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListNpbPredictionDatesQueryResult = NonNullable<Awaited<ReturnType<typeof listNpbPredictionDates>>>
+export type ListNpbPredictionDatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List dates with a locked NPB prediction slate
+ */
+
+export function useListNpbPredictionDates<TData = Awaited<ReturnType<typeof listNpbPredictionDates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNpbPredictionDates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListNpbPredictionDatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNpbPredictionDayUrl = (date: string,) => {
+
+
+
+
+  return `/api/npb/predictions/${date}`
+}
+
+/**
+ * @summary The locked NPB predictions for one date
+ */
+export const getNpbPredictionDay = async (date: string, options?: RequestInit): Promise<PredictionDay> => {
+
+  return customFetch<PredictionDay>(getGetNpbPredictionDayUrl(date),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNpbPredictionDayQueryKey = (date: string,) => {
+    return [
+    `/api/npb/predictions/${date}`
+    ] as const;
+    }
+
+
+export const getGetNpbPredictionDayQueryOptions = <TData = Awaited<ReturnType<typeof getNpbPredictionDay>>, TError = ErrorType<ApiError>>(date: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbPredictionDay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNpbPredictionDayQueryKey(date);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNpbPredictionDay>>> = ({ signal }) => getNpbPredictionDay(date, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: date !== null && date !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNpbPredictionDay>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNpbPredictionDayQueryResult = NonNullable<Awaited<ReturnType<typeof getNpbPredictionDay>>>
+export type GetNpbPredictionDayQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The locked NPB predictions for one date
+ */
+
+export function useGetNpbPredictionDay<TData = Awaited<ReturnType<typeof getNpbPredictionDay>>, TError = ErrorType<ApiError>>(
+ date: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbPredictionDay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNpbPredictionDayQueryOptions(date,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNpbReportSummaryUrl = () => {
+
+
+
+
+  return `/api/npb/report`
+}
+
+/**
+ * @summary Cumulative NPB record across all settled dates
+ */
+export const getNpbReportSummary = async ( options?: RequestInit): Promise<ReportSummary> => {
+
+  return customFetch<ReportSummary>(getGetNpbReportSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNpbReportSummaryQueryKey = () => {
+    return [
+    `/api/npb/report`
+    ] as const;
+    }
+
+
+export const getGetNpbReportSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getNpbReportSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbReportSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNpbReportSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNpbReportSummary>>> = ({ signal }) => getNpbReportSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNpbReportSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNpbReportSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getNpbReportSummary>>>
+export type GetNpbReportSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Cumulative NPB record across all settled dates
+ */
+
+export function useGetNpbReportSummary<TData = Awaited<ReturnType<typeof getNpbReportSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNpbReportSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNpbReportSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+

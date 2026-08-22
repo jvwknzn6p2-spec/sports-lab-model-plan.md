@@ -61,3 +61,47 @@ export const GetReportSummaryResponse = zod.object({
 }).describe('aggregateHistory() output plus the learned calibration state. The shape is owned by @workspace\/sports-data; the API passes it through.')
 
 
+/**
+ * @summary List dates with a locked NPB prediction slate
+ */
+export const ListNpbPredictionDatesResponse = zod.object({
+  "dates": zod.array(zod.string())
+})
+
+
+/**
+ * @summary The locked NPB predictions for one date
+ */
+export const getNpbPredictionDayPathDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetNpbPredictionDayParams = zod.object({
+  "date": zod.coerce.string().regex(getNpbPredictionDayPathDateRegExp)
+})
+
+export const GetNpbPredictionDayResponse = zod.object({
+  "date": zod.string(),
+  "lockedAt": zod.string(),
+  "final": zod.boolean().optional(),
+  "predictions": zod.array(zod.object({
+  "gamePk": zod.number(),
+  "gameDate": zod.string().nullish(),
+  "home": zod.string(),
+  "away": zod.string(),
+  "pass": zod.boolean(),
+  "predictedWinner": zod.string().nullable(),
+  "winProbability": zod.number(),
+  "confidence": zod.enum(['S', 'A', 'B', 'C'])
+}).describe('One game\'s locked prediction. Only the fields the UI keys on are typed; the full engine payload (handicap, total, expectedRuns, reasons, flags) passes through untouched.'))
+})
+
+
+/**
+ * @summary Cumulative NPB record across all settled dates
+ */
+export const GetNpbReportSummaryResponse = zod.object({
+  "summary": zod.record(zod.string(), zod.unknown()),
+  "calibration": zod.record(zod.string(), zod.unknown())
+}).describe('aggregateHistory() output plus the learned calibration state. The shape is owned by @workspace\/sports-data; the API passes it through.')
+
+
