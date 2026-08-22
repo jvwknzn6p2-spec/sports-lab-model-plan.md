@@ -1,0 +1,92 @@
+name: NPB — data-source probe
+
+# One-shot reconnaissance for NPB support. The dev sandbox has no egress to
+# npb.jp or The Odds API, so this runner fetches real page/API samples and
+# commits them under probe/npb/ for parser development — the same
+# fixtures-first pattern the MLB client was built with. Safe to re-run;
+# it only ever writes into probe/npb/ on the branch it was dispatched on.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: npb-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch samples
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -u
+          DIR=probe/npb
+          mkdir -p "$DIR"
+          MANIFEST="$DIR/manifest.txt"
+          : > "$MANIFEST"
+          TODAY=$(TZ=Asia/Tokyo date +%Y%m%d)
+          YEAR=$(TZ=Asia/Tokyo date +%Y)
+          MONTH=$(TZ=Asia/Tokyo date +%m)
+
+          fetch () { # fetch <name> <url>  (the manifest NEVER records the key)
+            local name="$1" url="$2" code
+            local shown="${url%%\?*}"
+            code=$(curl -sSL --max-time 30 --max-filesize 3000000 \
+              -A "Mozilla/5.0 (compatible; HandiEdgeProbe/1.0)" \
+              -o "$DIR/$name" -w "%{http_code}" "$url" || echo "ERR")
+            local bytes=0
+            [ -f "$DIR/$name" ] && bytes=$(wc -c < "$DIR/$name")
+            echo "$code $bytes $name $shown" | tee -a "$MANIFEST"
+            # Keep only useful bodies: drop errors and empty files.
+            if [ "$code" != "200" ] || [ "$bytes" -lt 200 ]; then
+              rm -f "$DIR/$name"
+            fi
+          }
+
+          # --- npb.jp: index pages first (link discovery beats guessed paths)
+          fetch npb-top.html                "https://npb.jp/"
+          fetch npb-games-index.html        "https://npb.jp/games/${YEAR}/"
+          fetch npb-schedule-month.html     "https://npb.jp/games/${YEAR}/schedule_${MONTH}_detail.html"
+          fetch npb-scores-today.html       "https://npb.jp/scores/${YEAR}/${TODAY:4:4}/"
+          fetch npb-scores-index.html       "https://npb.jp/scores/"
+          fetch npb-bis-stats-index.html    "https://npb.jp/bis/${YEAR}/stats/"
+          fetch npb-bis-batting-central.html  "https://npb.jp/bis/${YEAR}/stats/bat_c.html"
+          fetch npb-bis-batting-pacific.html  "https://npb.jp/bis/${YEAR}/stats/bat_p.html"
+          fetch npb-bis-pitching-central.html "https://npb.jp/bis/${YEAR}/stats/pit_c.html"
+          fetch npb-bis-pitching-pacific.html "https://npb.jp/bis/${YEAR}/stats/pit_p.html"
+          fetch npb-bis-team-batting-c.html   "https://npb.jp/bis/${YEAR}/stats/tmb_c.html"
+          fetch npb-bis-team-pitching-c.html  "https://npb.jp/bis/${YEAR}/stats/tmp_c.html"
+          fetch npb-announcement-index.html "https://npb.jp/announcement/"
+          fetch npb-starters.html           "https://npb.jp/announcement/${YEAR}/pitcher.html"
+
+          # --- The Odds API: does it carry NPB, and at what markets?
+          if [ -n "${ODDS_API_KEY:-}" ]; then
+            fetch odds-sports.json \
+              "https://api.the-odds-api.com/v4/sports/?apiKey=${ODDS_API_KEY}&all=true"
+            fetch odds-npb-h2h.json \
+              "https://api.the-odds-api.com/v4/sports/baseball_npb/odds?apiKey=${ODDS_API_KEY}&regions=us,eu,au&markets=h2h,spreads,totals&oddsFormat=american&dateFormat=iso"
+          else
+            echo "SKIP - - ODDS_API_KEY unset" | tee -a "$MANIFEST"
+          fi
+
+          echo "--- manifest ---"
+          cat "$MANIFEST"
+
+      - name: Commit samples
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add probe/npb
+          if git diff --cached --quiet; then
+            echo "No samples to commit."
+          else
+            git commit -m "NPB probe: data-source samples"
+            git push
+          fi
