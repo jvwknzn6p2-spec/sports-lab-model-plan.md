@@ -1,7 +1,7 @@
 {
   "date": "2026-08-23",
   "season": 1002026,
-  "fetchedAt": "2026-08-23T04:08:07.786Z",
+  "fetchedAt": "2026-08-23T07:12:19.263Z",
   "games": [
     {
       "gamePk": 92026082301,
@@ -98,8 +98,8 @@
       "away": {
         "teamId": 910,
         "teamName": "埼玉西武ライオンズ",
-        "probablePitcherId": 91073120,
-        "probablePitcherName": "武内 夏暉",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
         "score": null
       }
     },
@@ -220,17 +220,6 @@
       "strikeOuts": 113,
       "runs": 46,
       "earnedRuns": 43
-    },
-    "91073120": {
-      "inningsPitched": "115.2",
-      "battersFaced": 452,
-      "hits": 101,
-      "homeRuns": 9,
-      "baseOnBalls": 20,
-      "hitByPitch": 2,
-      "strikeOuts": 90,
-      "runs": 41,
-      "earnedRuns": 37
     },
     "91193863": {
       "inningsPitched": "58.1",
@@ -538,15 +527,15 @@
       "runs": 392
     },
     "910": {
-      "inningsPitched": "927",
-      "battersFaced": 3798,
-      "strikeOuts": 796,
-      "baseOnBalls": 321,
-      "hitByPitch": 25,
-      "homeRuns": 70,
-      "hits": 764,
-      "earnedRuns": 296,
-      "runs": 334
+      "inningsPitched": "1042.2",
+      "battersFaced": 4250,
+      "hits": 865,
+      "homeRuns": 79,
+      "baseOnBalls": 341,
+      "hitByPitch": 27,
+      "strikeOuts": 886,
+      "runs": 375,
+      "earnedRuns": 333
     },
     "911": {
       "inningsPitched": "930.2",
@@ -672,12 +661,12 @@
       "roof": "dome"
     },
     "92026082303": {
-      "temperatureC": 28.5,
-      "windSpeedKmh": 2.1,
-      "windDirectionDeg": 121,
+      "temperatureC": 28.4,
+      "windSpeedKmh": 6.5,
+      "windDirectionDeg": 96,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-23T04:08:08.340Z"
+      "fetchedAt": "2026-08-23T07:12:19.974Z"
     },
     "92026082306": {
       "temperatureC": null,
@@ -685,28 +674,28 @@
       "roof": "dome"
     },
     "92026082312": {
-      "temperatureC": 25.2,
-      "windSpeedKmh": 4.7,
-      "windDirectionDeg": 148,
+      "temperatureC": 25.7,
+      "windSpeedKmh": 5.3,
+      "windDirectionDeg": 152,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-23T04:08:08.459Z"
+      "fetchedAt": "2026-08-23T07:12:20.100Z"
     },
     "92026082309": {
-      "temperatureC": 28.8,
-      "windSpeedKmh": 7.6,
-      "windDirectionDeg": 85,
+      "temperatureC": 28.6,
+      "windSpeedKmh": 10.7,
+      "windDirectionDeg": 78,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-23T04:08:08.578Z"
+      "fetchedAt": "2026-08-23T07:12:20.237Z"
     },
     "92026082307": {
-      "temperatureC": 28.9,
-      "windSpeedKmh": 15.3,
-      "windDirectionDeg": 351,
+      "temperatureC": 29.1,
+      "windSpeedKmh": 16.5,
+      "windDirectionDeg": 350,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-23T04:08:08.696Z"
+      "fetchedAt": "2026-08-23T07:12:20.362Z"
     }
   }
 }
