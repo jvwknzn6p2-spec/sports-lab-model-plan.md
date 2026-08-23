@@ -246,7 +246,12 @@ test("a bad price on the run line does not silence the other markets", () => {
   assert.equal(p.handicap.noValue, true);
   assert.equal(p.pass, false, "the GAME is still a pick");
   assert.ok(p.predictedWinner !== null, "the moneyline survives");
-  assert.ok(p.total.pick !== null, "the total survives");
+  // The total is a PRICED market, so `minEv` binds it too (its own value
+  // gate) — refused on price, never folded into `pass`: the probability
+  // stays on display and the game stays a pick.
+  assert.equal(p.total.pick, null);
+  assert.equal(p.total.noValue, true);
+  assert.ok(p.total.probability !== null, "the total price is still shown");
   // And it still carries a scoreable probability, so settlement still learns.
   assert.ok(p.winProbability > 0.5);
 });

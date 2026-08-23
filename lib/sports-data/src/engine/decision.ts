@@ -409,6 +409,22 @@ export interface GamePrediction {
     rawProbability: number | null;
     /** Market-consensus probability of the picked side (see handicap). */
     marketProbability?: number | null;
+    /**
+     * Profit per unit staked at the fixed-0.9 book, built from the CALIBRATED
+     * probability with a whole-number line's push share excluded from the
+     * risk — the same math the handicap answers to (ev.ts). Null when no
+     * total line is quoted.
+     */
+    ev?: number | null;
+    /**
+     * A total line was quoted, the model has an opinion, and that opinion is
+     * not worth backing: either the EV cannot clear the house's cut, or the
+     * model sits so far from the market's own consensus on this line that
+     * history says the model is the one that is wrong. Mirrors
+     * `handicap.noValue` — the probability is still shown, the pick is
+     * withheld, and settlement stakes nothing.
+     */
+    noValue?: boolean;
   };
   expectedRuns: { home: number; away: number };
   reasons: string[];
@@ -765,9 +781,10 @@ export function decide(
   let totalPick: "OVER" | "UNDER" | null = null;
   let totalProbability: number | null = null;
   let rawTotalProbability: number | null = null;
+  let totalEv: number | null = null;
   const totalLine = handicap?.total ?? null;
   if (totalLine !== null) {
-    const { over } = sim.totalProb(totalLine);
+    const { over, push: totalPushShare } = sim.totalProb(totalLine);
     const pOver = calibrateBanded(
       over,
       calibration.totalShrink,
@@ -777,6 +794,15 @@ export function decide(
     totalPick = pOver >= 0.5 ? "OVER" : "UNDER";
     totalProbability = round3(pOver >= 0.5 ? pOver : 1 - pOver);
     rawTotalProbability = round3(pOver >= 0.5 ? over : 1 - over);
+    // Priced exactly like the handicap: calibrated probability, push share
+    // (a whole-number total returns the stake on the exact score) excluded
+    // from the risk, the house's cut off every win.
+    totalEv = round3(
+      expectedValueFromProbability(
+        pOver >= 0.5 ? pOver : 1 - pOver,
+        totalPushShare,
+      ),
+    );
   }
   const totalMarketProb =
     totalLine !== null && totalPick !== null && handicap?.marketOver != null
@@ -787,12 +813,50 @@ export function decide(
         )
       : null;
 
+  // The totals market gets the SAME value discipline every other market
+  // already answers to — it historically had none, and the record showed it:
+  // the first 7 settled totals went 2-5 saying 59.7% and hitting 28.6%,
+  // every one picked at "whichever side of 50%" with no break-even bar at
+  // all. Now that market lines auto-fill (ODDS_API_KEY), a total rides on
+  // nearly every game, so the missing gate would scale into the book's
+  // biggest leak.
+  //
+  // Two ways a quoted total is refused, both leaving the price on display:
+  //   - it cannot clear the house's cut (the exact `handicapUnprofitable`
+  //     test: EV ≤ minEv, i.e. a stated probability under ~52.6%);
+  //   - the model sits MARKET_DISAGREEMENT_THRESHOLD or further from the
+  //     devigged consensus on this exact line. On the handicap that much
+  //     disagreement only caps confidence, because the handicap record has
+  //     earned some trust; the totals record (above) has not, so here the
+  //     lesson is applied at full strength and the pick is withheld.
+  const totalDivergence =
+    totalMarketProb !== null && totalProbability !== null
+      ? Math.abs(totalProbability - totalMarketProb)
+      : null;
+  const totalMarketOutlier =
+    totalDivergence !== null &&
+    totalDivergence >= MARKET_DISAGREEMENT_THRESHOLD;
+  const totalUnprofitable = totalEv !== null && totalEv <= cfg.minEv;
+  const totalNoValue =
+    totalLine !== null && (totalUnprofitable || totalMarketOutlier);
+
   const reasons = buildReasons(g, runs, sim);
   if (totalMarketProb !== null && totalProbability !== null) {
     reasons.unshift(
       `Market consensus on the total: ${(totalMarketProb * 100).toFixed(1)}% ` +
         `for the ${totalPick} — model ${(totalProbability * 100).toFixed(1)}% ` +
         `(${fmtPct(totalProbability - totalMarketProb)} vs market)`,
+    );
+  }
+  if (!pass && totalNoValue && totalEv !== null) {
+    reasons.unshift(
+      totalMarketOutlier
+        ? `No total bet: the model sits ${fmtPct(totalDivergence!)} from the ` +
+            `market consensus on this line — disagreement this large has ` +
+            `historically been model error, not value`
+        : `No total bet: ${fmtPct(totalEv)} per unit at this line ` +
+            `(needs ${(breakEvenProbability() * 100).toFixed(1)}% to break even ` +
+            `after the ${WIN_COMMISSION * 100}% cut)`,
     );
   }
   if (marketDivergence !== null && coverProbability !== null) {
@@ -894,10 +958,12 @@ export function decide(
     total: {
       line: totalLine,
       predicted: round2(sim.meanTotal),
-      pick: pass ? null : totalPick,
+      pick: pass || totalNoValue ? null : totalPick,
       probability: totalProbability,
       rawProbability: rawTotalProbability,
       marketProbability: totalMarketProb,
+      ev: totalEv,
+      noValue: !pass && totalNoValue,
     },
     expectedRuns: { home: runs.homeMu, away: runs.awayMu },
     reasons,
@@ -905,6 +971,7 @@ export function decide(
       ...g.flags.map((f) => `[${f.severity}] ${f.code}`),
       ...(evOutlier ? ["[warn] ev_outlier"] : []),
       ...(marketOutlier ? ["[warn] market_disagreement"] : []),
+      ...(totalMarketOutlier ? ["[warn] total_market_disagreement"] : []),
     ],
   };
 }

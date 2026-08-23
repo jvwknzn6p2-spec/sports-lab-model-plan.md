@@ -14,10 +14,14 @@ name: HandiEdge — daily predictions
 # TWO-STAGE LOCK against a 22:59 JST (13:59 UTC) deadline — the market
 # itself closes at 23:00 JST.
 #
-#   12:10 UTC cron — the SAFETY lock. Fires ~12:56–13:00 at the observed
+#   11:40 UTC cron — the SAFETY lock. Fires ~12:26–12:30 at the observed
 #     scheduler delay (46–50 min on this repository, spikes to 117 min),
-#     locking ~22:00 JST with ~an hour of headroom. Whatever happens later,
-#     the day has an on-time slate.
+#     locking ~21:30 JST with ~90 minutes of headroom. Moved earlier from
+#     12:10 on 2026-08-23: at 12:10 the observed WORST spike (117 min) would
+#     fire 14:07 — past the 13:59 deadline — so the safety lock could itself
+#     arrive late; from 11:40 even that spike lands 13:37, still on time.
+#     Whatever happens later, the day has an on-time slate; the refresh
+#     below still re-locks on fresher data.
 #   12:45 UTC cron — the REFRESH lock. Fires ~13:31–13:35 (≈22:31–35 JST),
 #     re-locking on ~35 minutes' fresher data: confirmed probables, moved
 #     market lines, updated weather. If the queue spikes past the deadline,
@@ -35,7 +39,7 @@ name: HandiEdge — daily predictions
 # The slate date is MLB's game date, which is the UTC date this job runs on.
 on:
   schedule:
-    - cron: "10 12 * * *"
+    - cron: "40 11 * * *"
     - cron: "45 12 * * *"
   workflow_dispatch:
     inputs:

@@ -316,6 +316,29 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   a cumulative-record screen (`HandiEdgeReport.tsx`: P&L significance,
   calibration by band, confidence ladder, learned shrinks, per-day history)
   render over it (vite proxies `/api` to the Express server).
+- **The totals market answers to the value gate (2026-08-23).** Totals
+  historically had NO break-even discipline — a quoted total was picked at
+  "whichever side of 50%", and the first 7 settled totals went 2-5 saying
+  59.7% and hitting 28.6%. Now that `ODDS_API_KEY` auto-fills a market total
+  onto nearly every game, that missing gate would have scaled into the
+  book's biggest leak. A quoted total is refused (price shown, pick
+  withheld, `total.noValue`, settlement stakes nothing) when its calibrated
+  EV at the fixed-0.9 book cannot clear `minEv` — the exact
+  `handicapUnprofitable` test, with a whole-number line's push share
+  excluded from the risk (`sim.totalProb` now reports it) — or when the
+  model sits ≥12pt from the market's devigged consensus on that exact line
+  (`[warn] total_market_disagreement`); on the handicap that much
+  disagreement only caps confidence, but the totals record has earned no
+  trust, so there the pick itself is withheld. Also since 2026-08-23 the
+  daily settled report calls out every REAL-line (non-zero) handicap
+  settlement for a hand-check the day it happens (`handicapRealLine` on the
+  settled row) instead of waiting for the Monday audit's A-2 table, and the
+  safety-lock cron moved 12:10→11:40 UTC so it survives the worst observed
+  scheduler spike (117 min — at 12:10 that spike would have fired 14:07,
+  past the 13:59 UTC deadline); workflows.test.ts now pins that invariant.
+  Bullpen `heavy_usage` was re-banded for signal (penalty math unchanged):
+  9–12 relief IP over 3 days is roughly league-normal and flagged `info`;
+  `warn` starts above 12, so it stops firing on 55–62% of all games.
 - **Confidence C stakes nothing (2026-08-21).** Section 2 defines C as
   "informational only"; the decision engine now enforces it. A C-rated game
   still shows its handicap price and EV, but the pick is withheld so
@@ -392,7 +415,12 @@ bet, stamped or not.
   `weather_missing` info flag. The weekly standing audit is now served
   read-only at `GET /api/audit` / `/api/npb/audit` (verbatim markdown) and
   rendered at the bottom of the record screen.
-- **Not yet**: NPB lineups/IL equivalents.
+- **Not yet**: NPB lineups/IL equivalents. Groundwork landed 2026-08-23:
+  `npb-probe.yml` now self-discovers and snapshots the per-game score pages
+  (where npb.jp posts starting lineups) and the daily 出場選手登録・抹消
+  roster-move pages from the announcement index. Dispatch the probe on a
+  game day, then build the parsers against the committed bytes — never from
+  memory of the layout (the dev sandbox has no egress to npb.jp).
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

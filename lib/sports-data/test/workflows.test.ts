@@ -88,6 +88,18 @@ test("the picks still lock well before the deadline, at the OBSERVED delay", () 
     `only ${headroom} min of headroom after the observed ${OBSERVED_DELAY} min ` +
       "scheduler delay — move the cron earlier",
   );
+  // The safety lock is the lock of last resort, so it must also survive the
+  // WORST delay this repository has actually seen — not just the typical one.
+  // At the old 12:10 cron the 117-minute spike would have fired 14:07, eight
+  // minutes past the deadline, and the "safety" lock would itself have been
+  // the late one.
+  const WORST_OBSERVED_DELAY = 117;
+  const worstCase = deadlineUtc - (predict + WORST_OBSERVED_DELAY);
+  assert.ok(
+    worstCase > 0,
+    `the worst observed scheduler delay (${WORST_OBSERVED_DELAY} min) would ` +
+      `fire the safety lock ${-worstCase} min AFTER the deadline — move the cron earlier`,
+  );
 });
 
 test("nothing that writes data can push at the same time as anything else", () => {

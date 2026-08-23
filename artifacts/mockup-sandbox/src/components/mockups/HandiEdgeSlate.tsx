@@ -43,6 +43,8 @@ interface Prediction {
     predicted: number;
     pick: "OVER" | "UNDER" | null;
     probability: number | null;
+    ev?: number | null;
+    noValue?: boolean;
   };
   reasons?: string[];
   flags?: string[];
@@ -197,6 +199,12 @@ function GameCard({ p }: { p: Prediction }) {
                   {pct(p.total.probability)}
                 </span>
               </>
+            ) : p.total?.noValue && p.total.line != null ? (
+              // 線は提示されたが価値なし — ハンデの「この線では賭けない」と同じ声。
+              <span className="text-muted-foreground">
+                線 {p.total.line} で価値なし（{pct(p.total.probability)}
+                {p.total.ev != null ? ` / EV ${(p.total.ev * 100).toFixed(1)}%` : ""}）
+              </span>
             ) : p.total?.line != null ? (
               <span className="text-muted-foreground">
                 線 {p.total.line} / 予測 {p.total.predicted.toFixed(1)}
