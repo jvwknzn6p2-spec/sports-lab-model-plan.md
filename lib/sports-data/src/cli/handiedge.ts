@@ -1052,6 +1052,30 @@ export function assertCredentialIsHeaderSafe(
   }
 }
 
+/**
+ * Is this failure "the account cannot pay", as opposed to something worth
+ * failing on?
+ *
+ * The API reports credit exhaustion as a 400 `invalid_request_error` whose
+ * message names the credit balance — verified against a real run
+ * (`req_011CeLVWQtUav3RT3EA3ivA4`, 2026-08-23):
+ *
+ *   400 {"type":"error","error":{"type":"invalid_request_error","message":
+ *   "Your credit balance is too low to access the Anthropic API. ..."}}
+ *
+ * Matched on the message because that is the only part of the response that
+ * distinguishes it from every other 400 — a malformed request is the same
+ * status and type. Matching on status alone would swallow real bugs, so the
+ * text is the narrower and therefore safer signal here; if the wording ever
+ * changes, this stops matching and the error goes back to being loud, which
+ * is the correct direction to fail in.
+ */
+export function isBillingUnavailable(e: unknown): boolean {
+  const message =
+    e instanceof Error ? e.message : typeof e === "string" ? e : "";
+  return /credit balance is too low|billing|purchase credits/i.test(message);
+}
+
 async function cmdReview(args: { date?: string }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -1084,7 +1108,32 @@ async function cmdReview(args: { date?: string }): Promise<void> {
     calibration: lock.calibration,
     bundle,
   });
-  const result = await runAiReview(payload, anthropicReviewModel());
+  let result;
+  try {
+    result = await runAiReview(payload, anthropicReviewModel());
+  } catch (e) {
+    // An account with no credits is not a broken pipeline — it is the
+    // reviewer being UNAVAILABLE, operationally identical to the missing-key
+    // case handled above, and it will be the standing state until somebody
+    // buys credits. Failing hard on it would paint every daily run red for a
+    // condition no code change can fix, and would bury the failures that do
+    // mean something. So: say it plainly, once, and exit clean.
+    //
+    // Deliberately narrow. Every other API failure — a rejected key, a rate
+    // limit, a 500, a network drop — still throws, because those are either
+    // fixable misconfiguration or worth retrying, and silence would hide
+    // them. Advisory-only output is what makes the clean exit safe: no pick
+    // depends on this file existing (model-plan §4.5).
+    if (!isBillingUnavailable(e)) throw e;
+    console.log(
+      "AI review skipped: the Anthropic account has no credits " +
+        "(the API answered 'credit balance is too low'). The picks are " +
+        "unaffected — the reviewer panel is advisory-only and changes no " +
+        "pick. Add credits at console.anthropic.com/settings/billing to " +
+        "turn it back on.",
+    );
+    return;
+  }
   const outPath = join(DATA_DIR, "reviews", `${date}.md`);
   await saveMarkdown(outPath, reviewToMarkdown(date, result));
   console.log(`AI review → ${outPath}`);
