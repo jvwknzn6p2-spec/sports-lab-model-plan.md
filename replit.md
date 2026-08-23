@@ -108,7 +108,14 @@ _Populate as you build — explicit user instructions worth remembering across s
   Final yet; partial settles are replaced last-wins).
 - **`ANTHROPIC_API_KEY`** (repo secret) enables the Step-9 AI reviewer panel
   (`handiedge review`) — advisory briefings in `data/reviews/`, never a pick
-  change. Without the key the step skips cleanly.
+  change. Without the key the step skips cleanly. A key that is PRESENT but
+  broken is the failure mode that has actually happened twice: an account
+  with no credits (the API answers `credit balance is too low`), and a key
+  carrying a non-ASCII lookalike character (U+0425 Cyrillic Х for Latin X)
+  that `fetch` rejects while building the header. The command now
+  preflights the credential and names the bad index; run
+  `handiedge-review.yml` on demand to verify a key without touching the
+  day's lock.
 - **NPB runs under `--league npb`** (every handiedge command; or
   `HANDIEDGE_LEAGUE=npb`) with its OWN store `lib/sports-data/data-npb/` —
   separate history and learned calibration, never blended with MLB's. NPB

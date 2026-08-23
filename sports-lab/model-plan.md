@@ -264,9 +264,20 @@ Far beyond Step 2. The daily "HandiEdge" pipeline is live and automated:
   audit section watches for the first. `ODDS_API_KEY` is SET in
   production since 2026-08-22 — both leagues' live slates carry market
   consensus fills (`marketHomeCover`/`marketHomePayout` on the entries).
-  NOTE: `ANTHROPIC_API_KEY` remains UNSET — the AI review has never run
-  on a live slate (no `data/reviews/` exists); setting it is the single
-  highest-value remaining action.
+  NOTE: the AI review has still never produced a briefing on a live slate
+  (no `data/reviews/` exists), but NOT because the secret is missing —
+  that earlier claim was wrong. `ANTHROPIC_API_KEY` has been SET since at
+  least 2026-08-22; the on-demand review workflow has failed on the
+  credential itself every time. 2026-08-22: the API answered
+  `credit balance is too low` (billing, not wiring). 2026-08-23: the
+  re-registered key contained a NON-ASCII lookalike character — U+0425
+  (Cyrillic Х, indistinguishable from Latin X) at index 79 — so the SDK
+  could not even build the `x-api-key` header and no request ever left the
+  runner. `handiedge review` now preflights the credential
+  (`assertCredentialIsHeaderSafe`) and names the offending index and code
+  point instead of letting `fetch` report an unattributed ByteString
+  error. Getting a well-formed key onto an account WITH credits remains
+  the single highest-value remaining action.
 - **Step 3 (weather) — ◑ partial.** `fetch-slate` pulls first-pitch weather
   per park from Open-Meteo (keyless; `src/sources/weather.ts`): a bounded
   temperature multiplier adjusts the run environment at open-air parks,

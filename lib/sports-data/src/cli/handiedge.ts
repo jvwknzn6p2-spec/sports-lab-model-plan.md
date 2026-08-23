@@ -1001,6 +1001,57 @@ async function runSettle(payload: {
  * changes. Skips (exit 0) when no Anthropic credential is available, so the
  * daily pipeline works with or without the ANTHROPIC_API_KEY secret.
  */
+/**
+ * A credential that cannot be put in an HTTP header, caught BEFORE the SDK
+ * turns it into one.
+ *
+ * The SDK sends the key as the `x-api-key` header, and a header value must be
+ * a ByteString — every code unit ≤ 255. A key carrying anything else fails
+ * inside `fetch` with a message that names neither the key nor the variable:
+ *
+ *   Cannot convert argument to a ByteString because the character at index 79
+ *   has a value of 1061 which is greater than 255
+ *
+ * That is what a real 2026-08-23 run reported. 1061 is U+0425, CYRILLIC
+ * CAPITAL LETTER HA — visually identical to a Latin "X", invisible in the
+ * GitHub secret UI, and impossible to spot by eye. Anthropic keys are plain
+ * ASCII, so any non-ASCII code point means the secret was mangled in transit
+ * (an IME, an autocorrect, a copy from rendered HTML) and the fix is to
+ * re-copy it, not to debug the pipeline.
+ *
+ * Surrounding whitespace gets the same treatment: a trailing newline pasted
+ * into the secret box is a byte the header cannot carry either, and it is the
+ * other way these credentials arrive broken.
+ */
+export function assertCredentialIsHeaderSafe(
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  for (const name of ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"] as const) {
+    const value = env[name];
+    if (!value) continue;
+    if (value !== value.trim()) {
+      throw new Error(
+        `${name} has leading or trailing whitespace (often a newline pasted ` +
+          `into the secret box). Re-add the secret with no surrounding blanks.`,
+      );
+    }
+    // eslint-disable-next-line no-control-regex
+    const bad = /[^\x20-\x7e]/.exec(value);
+    if (bad) {
+      const codePoint = bad[0]!.codePointAt(0)!;
+      throw new Error(
+        `${name} contains a non-ASCII character at index ${bad.index} ` +
+          `(U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}) and ` +
+          `cannot be sent as an HTTP header. Anthropic keys are plain ASCII, ` +
+          `so this one was mangled on the way into the secret — a lookalike ` +
+          `such as U+0425 (Cyrillic Х) is indistinguishable from Latin X by ` +
+          `eye. Copy the key straight from console.anthropic.com and re-add ` +
+          `the secret; do not retype it.`,
+      );
+    }
+  }
+}
+
 async function cmdReview(args: { date?: string }): Promise<void> {
   const date = args.date ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -1013,6 +1064,7 @@ async function cmdReview(args: { date?: string }): Promise<void> {
     );
     return;
   }
+  assertCredentialIsHeaderSafe();
   const lockPath = join(PRED_DIR, `${date}.json`);
   if (!existsSync(lockPath)) {
     throw new Error(`No prediction lock for ${date} (${lockPath}) — run predict first.`);
