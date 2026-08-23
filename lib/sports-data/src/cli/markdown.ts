@@ -110,7 +110,17 @@ export function predictionsToMarkdown(
     }
     if (p.total.pick) {
       out.push(
-        `- Total: **${p.total.pick} ${p.total.line}** (${pct(p.total.probability!)}, model ${p.total.predicted})`,
+        `- Total: **${p.total.pick} ${p.total.line}** (${pct(p.total.probability!)}, model ${p.total.predicted}` +
+          (p.total.ev != null ? `, EV ${fmtPct(p.total.ev)}` : "") +
+          `)`,
+      );
+    } else if (p.total.noValue) {
+      // Same voice as the handicap's refusal: the line was priced, the
+      // opinion is not worth backing at it.
+      out.push(
+        `- Total: **no bet at this line** (${pct(p.total.probability!)}` +
+          (p.total.ev != null ? `, EV ${fmtPct(p.total.ev)} per unit` : "") +
+          `, model ${p.total.predicted})`,
       );
     }
     out.push(
@@ -193,6 +203,24 @@ export function settlementToMarkdown(r: SettlementReport): string {
     );
   }
   out.push("");
+  // A-2 tripwire, surfaced the DAY it fires rather than waiting for the
+  // Monday audit: the first real-line settlements are the first production
+  // proof of the 半-line machinery (split stakes, partial pushes), and each
+  // one should be checked by hand against the book's own statement.
+  const realLine = r.games.filter(
+    (g) => g.handicapRealLine && g.handicapProfit !== null,
+  );
+  if (realLine.length > 0) {
+    out.push(
+      `> ⚠️ **${realLine.length} real-line settlement(s) on this slate — ` +
+        `hand-check them (audit A-2).** Verify each stake's win/push/loss ` +
+        `split against the book's own statement: ` +
+        realLine
+          .map((g) => `${g.handicapPick} ${fmtUnits(g.handicapProfit!)}`)
+          .join(" · "),
+    );
+    out.push("");
+  }
   if (r.meanBrier !== null) out.push(`- Mean Brier: ${r.meanBrier}`);
   if (r.statedVsActual) {
     out.push(

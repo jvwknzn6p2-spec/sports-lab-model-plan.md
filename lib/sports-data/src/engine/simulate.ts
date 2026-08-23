@@ -100,7 +100,14 @@ export interface SimulationResult {
     side: "home" | "away",
     line: number | readonly WeightedLine[],
   ) => number;
-  totalProb: (line: number) => { over: number; under: number };
+  /**
+   * Push-excluded over/under probabilities, plus the share of simulations
+   * that land exactly on the line (`push`). A whole-number total returns the
+   * stake on the exact score, so pricing the bet needs the push share as well
+   * as the conditional probability — exactly as `asianCover` reports for run
+   * lines. Zero for any half-run line.
+   */
+  totalProb: (line: number) => { over: number; under: number; push: number };
 }
 
 export interface SimulateOptions {
@@ -256,6 +263,7 @@ export function simulateGame(
     return {
       over: decided === 0 ? 0.5 : over / decided,
       under: decided === 0 ? 0.5 : (decided - over) / decided,
+      push: push / sims,
     };
   };
 

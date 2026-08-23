@@ -73,9 +73,16 @@ export function fatiguePenalty(workload: BullpenWorkload | undefined): {
   // Above ~9 relief IP in 3 days the pen is stretched; ~0.06 R/9 per extra IP.
   if (ip3 > 9) {
     penalty += Math.min(0.5, (ip3 - 9) * 0.06);
+    // The penalty is continuous from 9 IP, but the WARN label starts at 12:
+    // ~3.5–4 relief IP per game is ordinary usage, so 9–12 IP over 3 days is
+    // roughly league-normal and the 2026-08 standing audit showed the warn
+    // firing on 55–62% of all games — a warning most games carry warns about
+    // nothing. Below 12 the adjustment is still surfaced (info), so every
+    // priced input stays visible; warn is reserved for a genuinely stretched
+    // pen. Display banding only — the penalty math is unchanged either way.
     flags.push({
       code: "bullpen_heavy_usage",
-      severity: "warn",
+      severity: ip3 > 12 ? "warn" : "info",
       message: `Bullpen threw ${ip3.toFixed(1)} IP over the last 3 days.`,
     });
   }

@@ -65,6 +65,40 @@ jobs:
           fetch npb-bis-team-pitching-c.html  "https://npb.jp/bis/${YEAR}/stats/tmp_c.html"
           fetch npb-announcement-index.html "https://npb.jp/announcement/"
           fetch npb-starters.html           "https://npb.jp/announcement/${YEAR}/pitcher.html"
+
+          # --- Lineups + roster moves (the two remaining honest data gaps).
+          # Same link-discovery pattern as everything above: fetch the index,
+          # extract real hrefs from its bytes, follow the first few. Guessed
+          # deep paths rot; discovered ones are what the site actually serves.
+          #
+          # 1) Per-game score pages. Today's scores index links each game's
+          #    own directory; the game page (and its siblings like box.html)
+          #    is where npb.jp posts starting lineups (スタメン) once clubs
+          #    announce them. Snapshot the first game's pages so a lineup
+          #    parser can be built against real bytes.
+          if [ -f "$DIR/npb-scores-today.html" ]; then
+            GAME_PATH=$(grep -oE 'href="(/scores/[0-9]{4}/[0-9]{4}/[^"]+/)"' \
+              "$DIR/npb-scores-today.html" | head -1 | sed 's/href="//;s/"//')
+            if [ -n "$GAME_PATH" ]; then
+              fetch npb-game-index.html      "https://npb.jp${GAME_PATH}"
+              fetch npb-game-box.html        "https://npb.jp${GAME_PATH}box.html"
+              fetch npb-game-playbyplay.html "https://npb.jp${GAME_PATH}playbyplay.html"
+            else
+              echo "SKIP - - no game link found in scores-today" | tee -a "$MANIFEST"
+            fi
+          fi
+          # 2) Roster moves (出場選手登録・抹消) — NPB's IL-equivalent feed.
+          #    The announcement index links the daily roster pages; follow the
+          #    first three distinct ones it actually advertises.
+          if [ -f "$DIR/npb-announcement-index.html" ]; then
+            N=0
+            for REL in $(grep -oE 'href="(/announcement/[0-9]{4}/[^"]+\.html)"' \
+              "$DIR/npb-announcement-index.html" | sed 's/href="//;s/"//' | sort -u | head -3); do
+              N=$((N + 1))
+              fetch "npb-roster-moves-$N.html" "https://npb.jp${REL}"
+            done
+            [ "$N" -eq 0 ] && echo "SKIP - - no announcement links found" | tee -a "$MANIFEST"
+          fi
           # Round 2: Pacific team aggregates + one team's individual pages
           fetch npb-bis-team-batting-p.html   "https://npb.jp/bis/${YEAR}/stats/tmb_p.html"
           fetch npb-bis-team-pitching-p.html  "https://npb.jp/bis/${YEAR}/stats/tmp_p.html"

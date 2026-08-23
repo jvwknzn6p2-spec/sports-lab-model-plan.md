@@ -91,6 +91,15 @@ _Populate as you build — explicit user instructions worth remembering across s
 - **Confidence C never stakes** (model-plan §2: informational only). A
   C-rated game shows its handicap price/EV but `handicap.pick` is null, so
   settle puts no money on it.
+- **Totals answer to the value gate (2026-08-23).** A quoted total whose
+  calibrated EV can't clear `minEv` at the fixed-0.9 book, or that sits
+  ≥12pt from the market consensus on that line, shows its price but
+  withholds the pick (`total.noValue`) — the first 7 settled totals went
+  2-5 with no gate at all. Don't "restore" the old always-pick behaviour.
+- **Real-line settlements get a hand-check banner** in the day's
+  `-settled.md` (audit A-2): verify each one against the book's own
+  statement — the 半-line split-stake machinery is proving itself in
+  production through exactly these rows.
 - Predictions are LOCKED per date against a **22:59 JST deadline** (market
   closes 23:00 JST). The daily cycle is a two-stage lock: 12:10 UTC safety
   lock + 12:45 UTC refresh re-lock; after the deadline `predict --force`

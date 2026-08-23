@@ -55,6 +55,15 @@ export interface SettledGame {
   handicapProfit: number | null;
   /** Stated probability that the handicap pick covers (for learning). */
   handicapProbability: number | null;
+  /**
+   * True when the settled handicap stake sat on a REAL (non-zero) line —
+   * the A-2 audit's tripwire. The 半-line settlement machinery (split
+   * stakes, partial pushes) was unproven in production until these existed,
+   * so the daily settled report calls each one out for a hand-check against
+   * the book's own statement. Optional: history rows from before the field
+   * existed lack it, and a game with no handicap stake carries null.
+   */
+  handicapRealLine?: boolean | null;
   totalPick: "OVER" | "UNDER" | null;
   totalCorrect: boolean | null;
   /** Stated probability for the total pick (for learning). */
@@ -367,6 +376,7 @@ export function settle(
 
     let handicapCorrect: boolean | null = null;
     let handicapProfit: number | null = null;
+    let handicapRealLine: boolean | null = null;
     // Gated on the PICK, not on `pass`. The handicap survives a thin-winner-
     // edge pass (decision.ts), so `pass` no longer answers "was a run-line
     // stake placed?" — the presence of a pick does, and it already carries
@@ -395,6 +405,9 @@ export function settle(
       handicapCorrect =
         settled.win === settled.loss ? null : settled.win > settled.loss;
       handicapProfit = round3(expectedProfit(settled));
+      // A pick'em (every part on 0) is the moneyline in disguise; anything
+      // else is the 半-line machinery earning its keep for real.
+      handicapRealLine = !r.parts.every((part) => part.line === 0);
     }
 
     let totalCorrect: boolean | null = null;
@@ -429,6 +442,7 @@ export function settle(
       handicapCorrect,
       handicapProfit,
       handicapProbability: p.handicap.coverProbability,
+      handicapRealLine,
       totalPick: p.total.pick,
       totalCorrect,
       totalProbability: p.total.probability,
