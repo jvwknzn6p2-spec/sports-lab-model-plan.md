@@ -34,6 +34,12 @@ jobs:
           TODAY=$(TZ=Asia/Tokyo date +%Y%m%d)
           YEAR=$(TZ=Asia/Tokyo date +%Y)
           MONTH=$(TZ=Asia/Tokyo date +%m)
+          # Yesterday matters as much as today for LINEUP work: clubs post
+          # スタメン only a few hours before first pitch, so a probe that runs
+          # in the JST morning sees today's card with no lineups on it at all.
+          # A FINISHED game always carries the batting orders that actually
+          # took the field, which is the sample a parser has to be built on.
+          YESTERDAY=$(TZ=Asia/Tokyo date -d "yesterday" +%Y%m%d)
 
           fetch () { # fetch <name> <url>  (the manifest NEVER records the key)
             local name="$1" url="$2" code
@@ -55,6 +61,7 @@ jobs:
           fetch npb-games-index.html        "https://npb.jp/games/${YEAR}/"
           fetch npb-schedule-month.html     "https://npb.jp/games/${YEAR}/schedule_${MONTH}_detail.html"
           fetch npb-scores-today.html       "https://npb.jp/scores/${YEAR}/${TODAY:4:4}/"
+          fetch npb-scores-yesterday.html   "https://npb.jp/scores/${YEAR}/${YESTERDAY:4:4}/"
           fetch npb-scores-index.html       "https://npb.jp/scores/"
           fetch npb-bis-stats-index.html    "https://npb.jp/bis/${YEAR}/stats/"
           fetch npb-bis-batting-central.html  "https://npb.jp/bis/${YEAR}/stats/bat_c.html"
@@ -76,17 +83,27 @@ jobs:
           #    is where npb.jp posts starting lineups (スタメン) once clubs
           #    announce them. Snapshot the first game's pages so a lineup
           #    parser can be built against real bytes.
-          if [ -f "$DIR/npb-scores-today.html" ]; then
-            GAME_PATH=$(grep -oE 'href="(/scores/[0-9]{4}/[0-9]{4}/[^"]+/)"' \
-              "$DIR/npb-scores-today.html" | head -1 | sed 's/href="//;s/"//')
-            if [ -n "$GAME_PATH" ]; then
-              fetch npb-game-index.html      "https://npb.jp${GAME_PATH}"
-              fetch npb-game-box.html        "https://npb.jp${GAME_PATH}box.html"
-              fetch npb-game-playbyplay.html "https://npb.jp${GAME_PATH}playbyplay.html"
-            else
-              echo "SKIP - - no game link found in scores-today" | tee -a "$MANIFEST"
+          # Sample from BOTH days under the same naming scheme: the finished
+          # (yesterday) game is the one guaranteed to carry batting orders,
+          # while today's shows what the page looks like BEFORE lineups are
+          # posted — the pre-deadline state the slate fetch actually meets,
+          # and the case the parser must degrade honestly on.
+          probe_game_pages () { # probe_game_pages <index-file> <label>
+            local index="$DIR/$1" label="$2" path
+            [ -f "$index" ] || return 0
+            path=$(grep -oE 'href="/scores/[0-9]{4}/[0-9]{4}/[^"]+/"' "$index" \
+              | head -1 | sed 's/href="//;s/"$//')
+            if [ -z "$path" ]; then
+              echo "SKIP - - no game link in $1" | tee -a "$MANIFEST"
+              return 0
             fi
-          fi
+            fetch "npb-game-$label-index.html" "https://npb.jp${path}"
+            fetch "npb-game-$label-box.html"   "https://npb.jp${path}box.html"
+            fetch "npb-game-$label-playbyplay.html" \
+              "https://npb.jp${path}playbyplay.html"
+          }
+          probe_game_pages npb-scores-yesterday.html finished
+          probe_game_pages npb-scores-today.html     upcoming
           # 2) Roster moves (出場選手登録・抹消) — NPB's IL-equivalent feed.
           #    The announcement index links the daily roster pages; follow the
           #    first three distinct ones it actually advertises.
