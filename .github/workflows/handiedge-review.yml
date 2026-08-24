@@ -66,6 +66,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # The reviewer can legitimately produce nothing — no credential, or
+          # an account with no credits — and until the FIRST briefing lands
+          # the directory does not exist at all. `git add` on a missing path
+          # is a fatal error, so without this guard a clean skip still failed
+          # the job (run #7, 2026-08-23: the panel skipped correctly and the
+          # commit step died on `pathspec ... did not match any files`).
+          if [ ! -d lib/sports-data/data/reviews ]; then
+            echo "No review was produced — nothing to commit."
+            exit 0
+          fi
           git add lib/sports-data/data/reviews
           if git diff --cached --quiet; then
             echo "Nothing to commit."

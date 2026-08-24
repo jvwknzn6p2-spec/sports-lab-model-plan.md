@@ -25,7 +25,11 @@
  */
 
 import type { RawBattingLine, RawPitchingLine } from "../sabermetrics";
-import { teamByScheduleName, type NpbTeam } from "./teams";
+import {
+  teamByFullName,
+  teamByScheduleName,
+  type NpbTeam,
+} from "./teams";
 
 export class NpbParseError extends Error {
   constructor(message: string) {
@@ -318,5 +322,274 @@ export function matchStarter(
   pitchers: NpbPitcherRow[],
 ): NpbPitcherRow | null {
   const hits = pitchers.filter((p) => p.familyName === surname.trim());
+  return hits.length === 1 ? hits[0]! : null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Batting order and roster moves — the last two NPB data gaps.
+ *
+ * Both were built against live samples committed 2026-08-24 under
+ * probe/npb/ (npb-game-1-index.html, npb-roster-moves.html). Every path
+ * here was DISCOVERED from those bytes: the same probe proved that
+ * /scores/ is a redirect, that /scores/<year>/<MMDD>/ 404s, and that
+ * /announcement/<year>/pitcher.html does not exist — guessed URLs rot,
+ * which is why npbUrls only speaks paths a real page linked to.
+ * ------------------------------------------------------------------ */
+
+/** One row of a posted batting order. */
+export interface NpbOrderSlot {
+  /** 1–9 for the batting order; null for the starting pitcher's row. */
+  slot: number | null;
+  /** Fielding position as npb.jp writes it (三, 遊, DH, 投 …). */
+  position: string;
+  /** npb.jp player id — the stable key, unlike the abbreviated name. */
+  playerId: string;
+  /** Abbreviated name as the order block writes it (宗, 牧原大 …). */
+  name: string;
+}
+
+/** A game's posted order, both sides. */
+export interface NpbGameOrder {
+  /** The side batting first (先攻) — the visiting club. */
+  away: { team: NpbTeam; slots: NpbOrderSlot[] };
+  /** The side batting second (後攻) — the host. */
+  home: { team: NpbTeam; slots: NpbOrderSlot[] };
+}
+
+/**
+ * Parse the per-game order block (`<div id="player-order">`).
+ *
+ * Returns null when the block is absent or carries no batters — which is
+ * the NORMAL state before a club posts its lineup, not an error. The caller
+ * keeps the team-season baseline and flags the game, exactly as the MLB
+ * path does for an unposted lineup. Nothing is ever guessed or projected.
+ *
+ * Layout, verified on the live sample: an `.half_left` / `.half_right` pair,
+ * each opening with an `<h5>` full club name and a table of
+ * `<th>slot</th><th>position</th><td><a href="/bis/players/<id>.html">name</a></td>`.
+ * Left is the side batting first. The pitcher's row carries a blank slot.
+ *
+ * A malformed block FAILS rather than returning a partial order: a lineup
+ * missing a bat would silently re-base a side's offense on eight players.
+ */
+export function parseNpbGameOrder(html: string): NpbGameOrder | null {
+  // Sliced by INDEX, not by a balanced-div regex: the block is
+  // `<div class="wrap" id="player-order">` wrapping two half divs and closed
+  // by a run of `</div>`s that a non-greedy match lands inside of, which
+  // silently returned only the first club. The page's own trailing furniture
+  // (the pagetop button, the footer) bounds the slice instead.
+  const start = html.indexOf('id="player-order"');
+  if (start < 0) return null;
+  const tail = html.slice(start);
+  const end = Math.min(
+    ...["<footer", "js-pagetop"]
+      .map((marker) => tail.indexOf(marker))
+      .filter((i) => i > 0)
+      .concat(tail.length),
+  );
+  const halves = [...tail.slice(0, end).matchAll(
+    /<div[^>]*class="half_(?:left|right)"[^>]*>([\s\S]*?)<\/div>/g,
+  )];
+  if (halves.length !== 2) return null;
+
+  const sides = halves.map((h) => {
+    const inner = h[1]!;
+    const h5 = /<h5[^>]*>([\s\S]*?)<\/h5>/.exec(inner);
+    if (!h5) throw new NpbParseError("Order block half has no club name");
+    const team = teamByFullName(text(h5[1]!));
+    const slots: NpbOrderSlot[] = [];
+    for (const row of rows(inner)) {
+      const ths = [...row.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map((m) =>
+        text(m[1]!),
+      );
+      const link = /<a[^>]*href="\/bis\/players\/([^".]+)\.html"[^>]*>([\s\S]*?)<\/a>/.exec(
+        row,
+      );
+      if (ths.length < 2 || !link) continue;
+      const rawSlot = ths[0]!;
+      slots.push({
+        slot: rawSlot === "" ? null : num(rawSlot),
+        position: ths[1]!,
+        playerId: link[1]!,
+        name: text(link[2]!),
+      });
+    }
+    return { team, slots };
+  });
+
+  const batters = sides.flatMap((s) => s.slots.filter((x) => x.slot !== null));
+  // No batters at all = not posted yet. That is the pre-game state, and the
+  // caller must treat it as "no lineup", not as a parse failure.
+  if (batters.length === 0) return null;
+  for (const side of sides) {
+    const nine = side.slots.filter((s) => s.slot !== null);
+    if (nine.length !== 9) {
+      throw new NpbParseError(
+        `${side.team.fullName}: posted order has ${nine.length} batter(s), expected 9`,
+      );
+    }
+    const seen = new Set(nine.map((s) => s.slot));
+    if (seen.size !== 9) {
+      throw new NpbParseError(
+        `${side.team.fullName}: batting-order slots are not 1–9 distinct`,
+      );
+    }
+  }
+  return { away: sides[0]!, home: sides[1]! };
+}
+
+/** One registration or de-registration from the 公示. */
+export interface NpbRosterMove {
+  team: NpbTeam;
+  /** 投手 / 捕手 / 内野手 / 外野手 as published. */
+  position: string;
+  /** Uniform number as published (kept as text — npb.jp writes e.g. "05"). */
+  number: string;
+  playerId: string;
+  /** Full name, spaces collapsed to one ASCII space. */
+  name: string;
+}
+
+/** A day's 出場選手登録・登録抹消 公示. */
+export interface NpbRosterMoves {
+  /** The date the page states, as YYYY-MM-DD. */
+  date: string;
+  registered: NpbRosterMove[];
+  deregistered: NpbRosterMove[];
+}
+
+/**
+ * Parse a day's roster-move公示 (/announcement/roster/roster_MMDD.html).
+ *
+ * This is NPB's IL equivalent and the closest thing the league publishes to
+ * an injury feed: a de-registered (登録抹消) player cannot be re-registered
+ * for 10 days, so the list is a hard statement about availability rather
+ * than the "probable/questionable" guesswork an injury report carries. Why
+ * it is only ever INFORMATIONAL downstream: the公示 says who is gone, never
+ * who replaces them, and inventing a replacement's value would fabricate an
+ * input — the same rule that keeps MLB's IL detection to an [info] flag.
+ *
+ * Both leagues appear on one page, split `half_left` (Central) /
+ * `half_right` (Pacific), each with an 出場選手登録 section followed by an
+ * 出場選手登録抹消 one. A day with no moves yields empty lists, not an error.
+ */
+export function parseNpbRosterMoves(html: string): NpbRosterMoves {
+  const heading = /<h4[^>]*>\s*(\d{4})年(\d{1,2})月(\d{1,2})日の出場選手登録/.exec(
+    html,
+  );
+  if (!heading) {
+    throw new NpbParseError(
+      "Roster-move page carries no '<year>年<month>月<day>日の出場選手登録' heading",
+    );
+  }
+  const date = `${heading[1]}-${heading[2]!.padStart(2, "0")}-${heading[3]!.padStart(2, "0")}`;
+
+  const registered: NpbRosterMove[] = [];
+  const deregistered: NpbRosterMove[] = [];
+  // Sections are delimited by their own <h5>; 登録抹消 CONTAINS 登録, so the
+  // longer label has to be tested first or every de-registration would be
+  // filed as an activation.
+  const sections = [...html.matchAll(
+    /<h5[^>]*>\s*(出場選手登録抹消|出場選手登録)\s*<\/h5>([\s\S]*?)(?=<h5|<\/div>\s*<\/div>\s*<\/div>|$)/g,
+  )];
+  for (const [, label, body] of sections) {
+    const target = label === "出場選手登録抹消" ? deregistered : registered;
+    for (const row of rows(body!)) {
+      const team = /<td[^>]*class="team"[^>]*>([\s\S]*?)<\/td>/.exec(row);
+      const pos = /<td[^>]*class="pos"[^>]*>([\s\S]*?)<\/td>/.exec(row);
+      const numCell = /<td[^>]*class="num"[^>]*>([\s\S]*?)<\/td>/.exec(row);
+      const link = /<a[^>]*href="\/bis\/players\/([^".]+)\.html"[^>]*>([\s\S]*?)<\/a>/.exec(
+        row,
+      );
+      if (!team || !pos || !numCell || !link) continue;
+      target.push({
+        team: teamByFullName(text(team[1]!)),
+        position: text(pos[1]!),
+        number: text(numCell[1]!),
+        playerId: link[1]!,
+        name: text(link[2]!),
+      });
+    }
+  }
+  return { date, registered, deregistered };
+}
+
+const CLUB_BATTING_HEADER = [
+  "選手", "試合", "打席", "打数", "得点", "安打", "二塁打", "三塁打",
+  "本塁打", "塁打", "打点", "盗塁", "盗塁刺", "犠打", "犠飛", "四球",
+  "故意四", "死球", "三振",
+];
+
+export interface NpbBatterRow {
+  /** Name as printed, spaces collapsed (e.g. "宗 佑磨"). */
+  name: string;
+  /** Name with ALL spaces removed — what abbreviated order names prefix. */
+  compactName: string;
+  line: RawBattingLine;
+}
+
+/**
+ * Parse a club's individual batting page (idb1_<code>.html) — the season
+ * line behind each name in a posted order.
+ *
+ * npb.jp marks some rows with a leading "*" or "+" (qualifying markers);
+ * those are stripped from the name so matching sees the name alone.
+ */
+export function parseNpbClubBatting(html: string): NpbBatterRow[] {
+  assertHeader(html, CLUB_BATTING_HEADER, "club batting");
+  const out: NpbBatterRow[] = [];
+  for (const row of rows(html)) {
+    const c = cells(row);
+    if (c.length < 19) continue;
+    const name = c[0]!.replace(/^[*+＊＋]\s*/, "").trim();
+    if (name === "") continue;
+    out.push({
+      name,
+      compactName: name.replace(/[\s　]/g, ""),
+      line: {
+        plateAppearances: num(c[2]!),
+        atBats: num(c[3]!),
+        hits: num(c[5]!),
+        doubles: num(c[6]!),
+        triples: num(c[7]!),
+        homeRuns: num(c[8]!),
+        stolenBases: num(c[11]!),
+        caughtStealing: num(c[12]!),
+        sacFlies: num(c[14]!),
+        baseOnBalls: num(c[15]!),
+        intentionalWalks: num(c[16]!),
+        hitByPitch: num(c[17]!),
+        strikeOuts: num(c[18]!),
+      },
+    });
+  }
+  if (out.length === 0) {
+    throw new NpbParseError("Club batting page parsed to zero batters");
+  }
+  return out;
+}
+
+/**
+ * Resolve an order block's ABBREVIATED name against the club's batting page.
+ *
+ * npb.jp abbreviates a posted order to the shortest form unique WITHIN the
+ * club — 宗 for 宗佑磨, but 牧原大 for 牧原大成 because 牧原 alone would
+ * collide with a team-mate. So the abbreviation is a prefix of the full
+ * compacted name, and requiring EXACTLY ONE prefix match reproduces the
+ * site's own disambiguation.
+ *
+ * Zero or several matches return null and the caller flags that bat: the
+ * cost of guessing between two 山本s is a fabricated offense input, which
+ * this codebase never pays (`matchStarter` refuses the same way).
+ */
+export function matchBatter(
+  abbreviated: string,
+  batters: NpbBatterRow[],
+): NpbBatterRow | null {
+  const key = abbreviated.replace(/[\s　]/g, "");
+  if (key === "") return null;
+  const exact = batters.filter((b) => b.compactName === key);
+  if (exact.length === 1) return exact[0]!;
+  const hits = batters.filter((b) => b.compactName.startsWith(key));
   return hits.length === 1 ? hits[0]! : null;
 }
