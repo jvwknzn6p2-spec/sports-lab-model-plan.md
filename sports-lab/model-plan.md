@@ -426,12 +426,37 @@ bet, stamped or not.
   `weather_missing` info flag. The weekly standing audit is now served
   read-only at `GET /api/audit` / `/api/npb/audit` (verbatim markdown) and
   rendered at the bottom of the record screen.
-- **Not yet**: NPB lineups/IL equivalents. Groundwork landed 2026-08-23:
-  `npb-probe.yml` now self-discovers and snapshots the per-game score pages
-  (where npb.jp posts starting lineups) and the daily 出場選手登録・抹消
-  roster-move pages from the announcement index. Dispatch the probe on a
-  game day, then build the parsers against the committed bytes — never from
-  memory of the layout (the dev sandbox has no egress to npb.jp).
+- **Lineups and availability (2026-08-24) — ✅ implemented.** The last two
+  NPB gaps now read real feeds, filling the SAME league-agnostic bundle maps
+  (`injuries`/`lineups`/`lineupBatting`) MLB uses, so nothing downstream had
+  to learn about NPB.
+  - **Posted orders** come from a game page's `<div id="player-order">`,
+    which carries nine slots a side with npb.jp PLAYER IDS. Bats resolve to
+    season lines on the club's individual batting page (`idb1_<code>.html`)
+    by reproducing npb.jp's own abbreviation rule — the least form unique
+    within the club (宗 for 宗佑磨, 牧原大 for 牧原大成) — with an exact hit
+    winning outright and ambiguity refused, exactly as `matchStarter` does.
+  - **Availability** comes from the 出場選手登録・登録抹消公示
+    (`/announcement/roster/roster_MMDD.html`). NPB has no injured list; it
+    has a registration list, and a 登録抹消 player is barred for 10 DAYS —
+    a harder statement than an MLB injury report. A 10-day window is read
+    oldest-first so a re-registration cancels an earlier 抹消. It stays
+    INFORMATIONAL: the公示 says who is gone, never who replaces them.
+  - **Every URL was DISCOVERED, not guessed.** The 2026-08-24 probe proved
+    `/scores/` is a JS redirect, `/scores/<year>/<MMDD>/` 404s,
+    `/announcement/` is a meta refresh with no dated links, and
+    `/announcement/<year>/pitcher.html` does not exist. Per-game slugs
+    (`h-b-17`) are not computable and are read from the games index.
+  - **Honest degradation throughout**: no order block → null (the normal
+    pre-game state; team-season offense stands, flagged), unmatched bat →
+    league-average wOBA at zero sample and flagged, missing公示 or games
+    index → warned and skipped, never fatal. A block carrying anything
+    other than nine distinct slots THROWS rather than re-basing offense on
+    eight players.
+  - **Open empirical question**: whether clubs post orders before the −33′
+    per-game lock. 2026-08-24 was an NPB off day, so it could not be tested;
+    the slate note reports "posted orders: N of M games" every run, which
+    answers it from production.
 
 ### Step 2 — Core game data (starting pitchers, batting, bullpen) — ✅ implemented
 

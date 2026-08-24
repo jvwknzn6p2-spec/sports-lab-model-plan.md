@@ -36,6 +36,11 @@ import type { FixtureBundle } from "../sources/fixture-source";
 import { deriveNpbConstants, npbSeasonKey } from "./constants";
 import { buildNpbForms, buildNpbParkFactors, venueIdFor } from "./context";
 import {
+  buildNpbAvailability,
+  buildNpbLineups,
+  DEREGISTRATION_DAYS,
+} from "./roster";
+import {
   matchStarter,
   parseNpbClubPitching,
   parseNpbSchedule,
@@ -56,6 +61,8 @@ export class NpbFetchError extends Error {
 const BASE = "https://npb.jp";
 
 export const npbUrls = {
+  /** The season's games index — the only page that links per-game slugs. */
+  gamesIndex: (year: number) => `${BASE}/games/${year}/`,
   scheduleMonth: (year: number, month: number) =>
     `${BASE}/games/${year}/schedule_${String(month).padStart(2, "0")}_detail.html`,
   teamBatting: (year: number, league: "c" | "p") =>
@@ -339,11 +346,35 @@ export async function buildNpbSlate(
       `derived from ${seasonGames.length} scheduled game(s) this season ` +
       `(league ${parks.leagueRunsPerGame} runs/game).`,
   );
+  // Posted orders and de-registrations — both optional, both degrade to
+  // "absent" with a note (see npb/roster.ts). They fill the SAME bundle maps
+  // MLB uses, so nothing downstream needed to learn about NPB.
+  const availability = await buildNpbAvailability(opts.date, f);
+  notes.push(...availability.warnings);
+  const lineupReport = await buildNpbLineups({
+    date: opts.date,
+    year,
+    games: todays.map((g) => ({
+      gamePk: npbGamePk(g.date, g.home),
+      home: g.home,
+      away: g.away,
+    })),
+    fetchImpl: f,
+  });
+  notes.push(...lineupReport.warnings);
+
+  const lineupCount = Object.keys(lineupReport.lineups).length;
+  const outCount = Object.values(availability.unavailable).flat().length;
   notes.push(
     "NPB inputs: bullpen = club pitching total minus today's matched " +
-      "starter (npb.jp publishes no reliever split); workloads, IL and " +
-      "lineups are absent and treated as neutral. Weather is attached by " +
-      "fetch-slate at the 12 main parks (see npb/weather.ts).",
+      "starter (npb.jp publishes no reliever split); workloads are absent " +
+      `and treated as neutral. Availability: ${outCount} de-registered ` +
+      `player(s) across the league in the last ${DEREGISTRATION_DAYS} days ` +
+      "(informational — the公示 says who is out, never who replaces them). " +
+      `Posted orders: ${lineupCount} of ${todays.length} game(s) ` +
+      "(clubs post a few hours before first pitch; the rest keep their " +
+      "team-season offense). Weather is attached by fetch-slate at the 12 " +
+      "main parks (see npb/weather.ts).",
   );
 
   return {
@@ -357,6 +388,9 @@ export async function buildNpbSlate(
       bullpens,
       forms,
       parkFactors: parks.parkFactors,
+      injuries: availability.unavailable,
+      lineups: lineupReport.lineups,
+      lineupBatting: lineupReport.lineupBatting,
       leagueConstants,
     },
     monthGameCount: monthGames.length,
