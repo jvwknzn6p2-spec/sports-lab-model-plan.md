@@ -64,6 +64,21 @@ export const npbUrls = {
     `${BASE}/bis/${year}/stats/tmp_${league}.html`,
   clubPitching: (year: number, bisCode: string) =>
     `${BASE}/bis/${year}/stats/idp1_${bisCode}.html`,
+  /** Per-club individual BATTING — the season line behind each posted bat. */
+  clubBatting: (year: number, bisCode: string) =>
+    `${BASE}/bis/${year}/stats/idb1_${bisCode}.html`,
+  /**
+   * One game's page, which carries the posted batting order. `mmdd` is the
+   * JST game date and `code` the `<home>-<away>-<NN>` slug the games index
+   * links (e.g. "h-b-17"). There is NO browsable index above this: a 2026-08-24
+   * probe got 404 for /scores/<year>/<MMDD>/ and a JS redirect for /scores/,
+   * so the slug must come from a page that linked it, never from arithmetic.
+   */
+  gameOrder: (year: number, mmdd: string, code: string) =>
+    `${BASE}/scores/${year}/${mmdd}/${code}/`,
+  /** A day's 出場選手登録・登録抹消 公示 — NPB's IL-equivalent feed. */
+  rosterMoves: (mmdd: string) =>
+    `${BASE}/announcement/roster/roster_${mmdd}.html`,
 };
 
 /** Fetch one npb.jp page as text. Fail-loud; injectable for tests. */
