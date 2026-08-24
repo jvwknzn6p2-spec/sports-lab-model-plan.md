@@ -60,8 +60,11 @@ jobs:
           fetch npb-top.html                "https://npb.jp/"
           fetch npb-games-index.html        "https://npb.jp/games/${YEAR}/"
           fetch npb-schedule-month.html     "https://npb.jp/games/${YEAR}/schedule_${MONTH}_detail.html"
-          fetch npb-scores-today.html       "https://npb.jp/scores/${YEAR}/${TODAY:4:4}/"
-          fetch npb-scores-yesterday.html   "https://npb.jp/scores/${YEAR}/${YESTERDAY:4:4}/"
+          # NOTE: /scores/ and /scores/<year>/<MMDD>/ are NOT browsable — the
+          # first is a JS redirect to /games/<year>/ and the second 404s (a
+          # 2026-08-24 probe proved both). Only the per-game directories
+          # exist. The games index below is the real entry point, so game
+          # links are DISCOVERED from it rather than built from a date.
           fetch npb-scores-index.html       "https://npb.jp/scores/"
           fetch npb-bis-stats-index.html    "https://npb.jp/bis/${YEAR}/stats/"
           fetch npb-bis-batting-central.html  "https://npb.jp/bis/${YEAR}/stats/bat_c.html"
@@ -71,51 +74,41 @@ jobs:
           fetch npb-bis-team-batting-c.html   "https://npb.jp/bis/${YEAR}/stats/tmb_c.html"
           fetch npb-bis-team-pitching-c.html  "https://npb.jp/bis/${YEAR}/stats/tmp_c.html"
           fetch npb-announcement-index.html "https://npb.jp/announcement/"
-          fetch npb-starters.html           "https://npb.jp/announcement/${YEAR}/pitcher.html"
 
           # --- Lineups + roster moves (the two remaining honest data gaps).
-          # Same link-discovery pattern as everything above: fetch the index,
-          # extract real hrefs from its bytes, follow the first few. Guessed
-          # deep paths rot; discovered ones are what the site actually serves.
           #
-          # 1) Per-game score pages. Today's scores index links each game's
-          #    own directory; the game page (and its siblings like box.html)
-          #    is where npb.jp posts starting lineups (スタメン) once clubs
-          #    announce them. Snapshot the first game's pages so a lineup
-          #    parser can be built against real bytes.
-          # Sample from BOTH days under the same naming scheme: the finished
-          # (yesterday) game is the one guaranteed to carry batting orders,
-          # while today's shows what the page looks like BEFORE lineups are
-          # posted — the pre-deadline state the slate fetch actually meets,
-          # and the case the parser must degrade honestly on.
-          probe_game_pages () { # probe_game_pages <index-file> <label>
-            local index="$DIR/$1" label="$2" path
-            [ -f "$index" ] || return 0
-            path=$(grep -oE 'href="/scores/[0-9]{4}/[0-9]{4}/[^"]+/"' "$index" \
-              | head -1 | sed 's/href="//;s/"$//')
-            if [ -z "$path" ]; then
-              echo "SKIP - - no game link in $1" | tee -a "$MANIFEST"
-              return 0
+          # DISCOVERED, not guessed. The 2026-08-24 probe proved every guess
+          # wrong: /scores/ is a JS redirect to /games/<year>/, the dated
+          # directory /scores/<year>/<MMDD>/ 404s, /announcement/ is a meta
+          # refresh to /announcement/<year>/ carrying no dated links, and
+          # /announcement/<year>/pitcher.html does not exist. What the games
+          # index ACTUALLY links is the pattern used below.
+          #
+          # 1) Per-game pages: /scores/<year>/<MMDD>/<away>-<home>-<NN>/ —
+          #    one directory per game, no browsable date index above it. The
+          #    game page and its box.html are where the batting orders live.
+          #    The index lists several days at once, so this takes the LAST
+          #    link (most recent, i.e. a finished game with real lineups) and
+          #    the FIRST (an older one) for a second independent sample.
+          if [ -f "$DIR/npb-games-index.html" ]; then
+            GAMES=$(grep -oE 'href="/scores/[0-9]{4}/[0-9]{4}/[a-z]+-[a-z]+-[0-9]+/"' \
+              "$DIR/npb-games-index.html" | sed 's/href="//;s/"$//' | sort -u)
+            if [ -z "$GAMES" ]; then
+              echo "SKIP - - no game links in games index" | tee -a "$MANIFEST"
+            else
+              N=0
+              for REL in $(echo "$GAMES" | tail -2); do
+                N=$((N + 1))
+                fetch "npb-game-$N-index.html" "https://npb.jp${REL}"
+                fetch "npb-game-$N-box.html"   "https://npb.jp${REL}box.html"
+              done
             fi
-            fetch "npb-game-$label-index.html" "https://npb.jp${path}"
-            fetch "npb-game-$label-box.html"   "https://npb.jp${path}box.html"
-            fetch "npb-game-$label-playbyplay.html" \
-              "https://npb.jp${path}playbyplay.html"
-          }
-          probe_game_pages npb-scores-yesterday.html finished
-          probe_game_pages npb-scores-today.html     upcoming
-          # 2) Roster moves (出場選手登録・抹消) — NPB's IL-equivalent feed.
-          #    The announcement index links the daily roster pages; follow the
-          #    first three distinct ones it actually advertises.
-          if [ -f "$DIR/npb-announcement-index.html" ]; then
-            N=0
-            for REL in $(grep -oE 'href="(/announcement/[0-9]{4}/[^"]+\.html)"' \
-              "$DIR/npb-announcement-index.html" | sed 's/href="//;s/"//' | sort -u | head -3); do
-              N=$((N + 1))
-              fetch "npb-roster-moves-$N.html" "https://npb.jp${REL}"
-            done
-            [ "$N" -eq 0 ] && echo "SKIP - - no announcement links found" | tee -a "$MANIFEST"
           fi
+          # 2) Roster moves (出場選手登録・抹消) — NPB's IL-equivalent feed —
+          #    and the official starter announcements, both linked from the
+          #    games index as /announcement/roster/ and /announcement/starter/.
+          fetch npb-roster-moves.html "https://npb.jp/announcement/roster/"
+          fetch npb-starters.html     "https://npb.jp/announcement/starter/"
           # Round 2: Pacific team aggregates + one team's individual pages
           fetch npb-bis-team-batting-p.html   "https://npb.jp/bis/${YEAR}/stats/tmb_p.html"
           fetch npb-bis-team-pitching-p.html  "https://npb.jp/bis/${YEAR}/stats/tmp_p.html"
