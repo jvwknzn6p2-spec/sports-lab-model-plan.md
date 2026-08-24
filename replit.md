@@ -131,7 +131,20 @@ _Populate as you build — explicit user instructions worth remembering across s
   changes a table layout the parsers fail loud naming the column; refresh
   the probe samples (`npb-probe.yml` workflow) and fix the parser against
   the new bytes. NPB draws settle as moneyline pushes; 中止 (rained-off)
-  games never settle.
+  games never settle. Since 2026-08-24 NPB also reads POSTED ORDERS (a game
+  page's `player-order` block; bats matched to `idb1_<code>.html` by
+  npb.jp's own abbreviation rule — the least form unique within the club)
+  and AVAILABILITY (the 出場選手登録抹消公示 over a 10-day window — NPB has
+  a registration list, not an injured list, and a 抹消 bars a player for 10
+  days; informational only, since the公示 never says who replaces him).
+  Both degrade honestly: an unposted order keeps the team-season offense.
+- **npb.jp URLs are DISCOVERED, never guessed.** A 2026-08-24 probe proved
+  `/scores/` is a JS redirect, `/scores/<year>/<MMDD>/` 404s,
+  `/announcement/` is a meta refresh with no dated links, and
+  `/announcement/<year>/pitcher.html` does not exist. Per-game slugs
+  (`h-b-17`) are not computable — they come only from the games index
+  (`/games/<year>/`). Add new NPB sources by fetching an index and reading
+  its real hrefs, the way `npb-probe.yml` now does.
 
 ## Pointers
 
