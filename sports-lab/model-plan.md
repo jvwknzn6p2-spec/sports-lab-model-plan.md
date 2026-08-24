@@ -386,10 +386,15 @@ bet, stamped or not.
   (the settle engine already did this); rained-off games (中止) are
   reported and never settle.
 - **Crons** (JST clock): `npb-slate.yml` 00:07 UTC (~09:55 JST fire) opens
-  the line-entry window; `npb-predict.yml` runs six times through the day
-  (02:30/03:30/06:30/07:15/07:45/08:15 UTC), each pass re-predicting only
-  the games whose −33′ cut-off has not passed and carrying frozen picks
-  through, with the advisory AI review; `npb-settle.yml` sweeps
+  the line-entry window; `npb-predict.yml` runs seven times through the day
+  (01:00/02:30/03:30/06:30/07:15/07:45/08:15 UTC), each pass re-predicting
+  only the games whose −33′ cut-off has not passed and carrying frozen picks
+  through, with the advisory AI review. The 01:00 pass is a SAFETY pass
+  (added 2026-08-24 after the 08-23 late_lock): the earliest possible
+  cut-off is 12:27 JST = 03:27 UTC, and the old first cron (02:30) fired
+  ~60 min late that day, so the first pick of a 13:00 JST game was born
+  3.1 min past its deadline; 01:00 survives the worst scheduler spike this
+  repo has seen (117 min), and `workflows.test.ts` pins the invariant; `npb-settle.yml` sweeps
   08/10/12/14 UTC plus a 22:00 UTC backstop. The Monday audit runs
   `audit --league npb` alongside MLB, judging lock discipline against the
   EARLIEST per-game deadline on each slate.

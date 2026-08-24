@@ -25,6 +25,7 @@ import {
   JST_UTC_OFFSET_MINUTES,
   PREDICTION_DEADLINE_JST,
 } from "../src/engine/deadline";
+import { NPB_CONFIG } from "../src/engine/league";
 
 const WORKFLOWS = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -42,6 +43,15 @@ function cronMinuteOfDay(yaml: string): number {
   const m = /cron:\s*"(\d+)\s+(\d+)\s+\*\s+\*\s+\*"/.exec(yaml);
   assert.ok(m, `no daily cron found in:\n${yaml.slice(0, 400)}`);
   return Number(m[2]) * 60 + Number(m[1]);
+}
+
+/** Minutes past midnight UTC of EVERY `"M H * * *"` daily cron in the file. */
+function allCronMinutesOfDay(yaml: string): number[] {
+  const minutes = [
+    ...yaml.matchAll(/cron:\s*"(\d+)\s+(\d+)\s+\*\s+\*\s+\*"/g),
+  ].map((m) => Number(m[2]) * 60 + Number(m[1]));
+  assert.ok(minutes.length > 0, `no daily crons found in:\n${yaml.slice(0, 400)}`);
+  return minutes;
 }
 
 test("both slate fetches force unconditionally, or a re-run is a hard failure", () => {
@@ -112,6 +122,55 @@ test("nothing that writes data can push at the same time as anything else", () =
       read(f),
       /concurrency:\s*\n\s*group:\s*handiedge-data/,
       `${f} must serialise against the other data writers`,
+    );
+  }
+});
+
+test("the FIRST NPB predict pass survives the worst observed delay", () => {
+  // NPB picks lock per game, 33' before each first pitch — so the earliest
+  // deadline a slate can hold is 33' before the earliest standard start
+  // (13:00 JST), which is exactly the league's fixed fallback deadline
+  // (12:27 JST). A game with that deadline gets its FIRST pick from the
+  // earliest predict pass; if that pass fires after 12:27 JST the pick is
+  // born late — a genuine discipline breach, not a stale refresh (the
+  // 2026-08-23 late_lock: the 02:30 UTC cron fired ~60 min late and the
+  // first lock landed 03:30, 3.1 min past a 13:00-JST game's cut-off).
+  const earliest = Math.min(...allCronMinutesOfDay(read("npb-predict.yml")));
+  const deadlineUtc =
+    NPB_CONFIG.deadlines.prediction.hour * 60 +
+    NPB_CONFIG.deadlines.prediction.minute -
+    JST_UTC_OFFSET_MINUTES;
+  const OBSERVED_DELAY = 50;
+  const headroom = deadlineUtc - (earliest + OBSERVED_DELAY);
+  assert.ok(
+    headroom >= 40,
+    `only ${headroom} min of headroom after the observed ${OBSERVED_DELAY} min ` +
+      "scheduler delay — move the first NPB predict cron earlier",
+  );
+  const WORST_OBSERVED_DELAY = 117;
+  const worstCase = deadlineUtc - (earliest + WORST_OBSERVED_DELAY);
+  assert.ok(
+    worstCase > 0,
+    `the worst observed scheduler delay (${WORST_OBSERVED_DELAY} min) would ` +
+      `fire the first NPB pass ${-worstCase} min AFTER the earliest possible ` +
+      "per-game deadline — move the cron earlier",
+  );
+});
+
+test("NPB slate fetches force unconditionally and writers serialise", () => {
+  // Same two silent failure modes as MLB: a predict pass that stops forcing
+  // fails every day the slate cron ran first, and two NPB writers pushing
+  // together lose one of the pushes.
+  for (const f of ["npb-slate.yml", "npb-predict.yml"]) {
+    const step = /pnpm run handiedge fetch-slate[^\n]*/.exec(read(f));
+    assert.ok(step, `${f} must fetch the slate`);
+    assert.match(step[0], /--force/, `${f}: ${step[0]}`);
+  }
+  for (const f of ["npb-slate.yml", "npb-predict.yml", "npb-settle.yml"]) {
+    assert.match(
+      read(f),
+      /concurrency:\s*\n\s*group:\s*handiedge-npb-data/,
+      `${f} must serialise against the other NPB data writers`,
     );
   }
 });

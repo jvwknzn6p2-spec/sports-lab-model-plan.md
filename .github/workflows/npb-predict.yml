@@ -11,12 +11,19 @@ name: HandiEdge NPB — daily predictions
 # Standard NPB first pitches (JST) and their −33' cut-offs:
 #   13:00→12:27  14:00→13:27  17:00→16:27  17:45→17:12
 #   18:00→17:27  18:15→17:42  18:30→17:57
-# GitHub's scheduler on this repo fires ~45–50 minutes late, so each cron is
-# set ~55–75 minutes before the cluster's cut-off; the final run stamps the
-# last picks final after 17:57 JST.
+# GitHub's scheduler on this repo fires ~45–50 minutes late routinely and
+# 117 minutes late once (2026-08-13). The EARLIEST cut-off a slate can hold
+# is 12:27 JST (03:27 UTC) — a 13:00 game's first pick is born late if no
+# pass has run by then, which is exactly what happened on 2026-08-23 when
+# the 02:30 cron fired ~60 min late and the first lock landed 03:30. So the
+# first pass is a SAFETY pass budgeted for the worst observed spike
+# (workflows.test.ts pins this); the later crons are the fresh re-locks
+# ~55–75 minutes before each start-time cluster's cut-off, and the final
+# run stamps the last picks final after 17:57 JST.
 
 on:
   schedule:
+    - cron: "0 1 * * *"    # safety pass: survives a 117-min spike before the 03:27 UTC earliest cut-off
     - cron: "30 2 * * *"   # fires ~03:15 UTC (12:15 JST) → 13:00 games
     - cron: "30 3 * * *"   # fires ~04:15 UTC (13:15 JST) → 14:00 games
     - cron: "30 6 * * *"   # fires ~07:15 UTC (16:15 JST) → 17:00 games
