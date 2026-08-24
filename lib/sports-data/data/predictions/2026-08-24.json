@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-08-24T12:00:08.719Z",
-  "updatedAt": "2026-08-24T12:00:08.719Z",
+  "lockedAt": "2026-08-24T13:56:38.040Z",
+  "updatedAt": "2026-08-24T13:56:38.040Z",
   "controlTower": {
     "date": "2026-08-24",
     "season": 2026,
@@ -12,27 +12,27 @@
         "side": "home",
         "line": -1.5,
         "total": 8.5,
-        "marketHomeCover": 0.451,
-        "marketHomePayout": 1.12,
-        "marketAwayPayout": 0.752,
+        "marketHomeCover": 0.453,
+        "marketHomePayout": 1.1,
+        "marketAwayPayout": 0.758,
         "marketOver": 0.478
       },
       "823097": {
         "side": "home",
         "line": 1.5,
         "total": 6.5,
-        "marketHomeCover": 0.624,
-        "marketHomePayout": 0.541,
-        "marketAwayPayout": 1.58,
-        "marketOver": 0.527
+        "marketHomeCover": 0.63,
+        "marketHomePayout": 0.526,
+        "marketAwayPayout": 1.6,
+        "marketOver": 0.528
       },
       "823183": {
         "side": "home",
         "line": 1.5,
         "total": 7.5,
-        "marketHomeCover": 0.553,
-        "marketHomePayout": 0.741,
-        "marketAwayPayout": 1.15,
+        "marketHomeCover": 0.551,
+        "marketHomePayout": 0.746,
+        "marketAwayPayout": 1.13,
         "marketOver": 0.489
       },
       "823260": {
@@ -40,18 +40,18 @@
         "line": 1.5,
         "total": 7.5,
         "marketHomeCover": 0.624,
-        "marketHomePayout": 0.541,
-        "marketAwayPayout": 1.57,
+        "marketHomePayout": 0.538,
+        "marketAwayPayout": 1.58,
         "marketOver": 0.489
       },
       "823828": {
         "side": "home",
         "line": 1.5,
         "total": 7.5,
-        "marketHomeCover": 0.587,
+        "marketHomeCover": 0.581,
         "marketHomePayout": 0.645,
-        "marketAwayPayout": 1.34,
-        "marketOver": 0.497
+        "marketAwayPayout": 1.3,
+        "marketOver": 0.488
       },
       "823992": {
         "side": "home",
@@ -67,9 +67,9 @@
         "line": 1.5,
         "total": 7.5,
         "marketHomeCover": 0.572,
-        "marketHomePayout": 0.69,
+        "marketHomePayout": 0.671,
         "marketAwayPayout": 1.25,
-        "marketOver": 0.518
+        "marketOver": 0.511
       },
       "824557": {
         "side": "home",
@@ -77,8 +77,8 @@
         "total": 8.5,
         "marketHomeCover": 0.372,
         "marketHomePayout": 1.6,
-        "marketAwayPayout": 0.532,
-        "marketOver": 0.489
+        "marketAwayPayout": 0.541,
+        "marketOver": 0.48
       },
       "824964": {
         "side": "home",
@@ -93,10 +93,10 @@
         "side": "home",
         "line": 1.5,
         "total": 9,
-        "marketHomeCover": 0.554,
-        "marketHomePayout": 0.741,
-        "marketAwayPayout": 1.16,
-        "marketOver": 0.504
+        "marketHomeCover": 0.559,
+        "marketHomePayout": 0.714,
+        "marketAwayPayout": 1.18,
+        "marketOver": 0.5
       }
     }
   },
@@ -123,8 +123,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.534,
-      "rawWinProbability": 0.538,
+      "winProbability": 0.533,
+      "rawWinProbability": 0.537,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -132,16 +132,16 @@
           "line": 1.5,
           "total": 7.5,
           "marketHomeCover": 0.572,
-          "marketHomePayout": 0.69,
+          "marketHomePayout": 0.671,
           "marketAwayPayout": 1.25,
-          "marketOver": 0.518
+          "marketOver": 0.511
         },
         "pick": null,
-        "coverProbability": 0.58,
-        "rawCoverProbability": 0.596,
-        "ev": 0.103,
+        "coverProbability": 0.583,
+        "rawCoverProbability": 0.599,
+        "ev": 0.107,
         "marketProbability": 0.572,
-        "marketPriceEv": -0.019,
+        "marketPriceEv": -0.026,
         "recommendedStake": null,
         "noValue": false
       },
@@ -149,29 +149,29 @@
         "line": 7.5,
         "predicted": 9.61,
         "pick": null,
-        "probability": 0.623,
-        "rawProbability": 0.648,
-        "marketProbability": 0.518,
-        "ev": 0.184,
+        "probability": 0.622,
+        "rawProbability": 0.646,
+        "marketProbability": 0.511,
+        "ev": 0.181,
         "noValue": false
       },
       "expectedRuns": {
         "home": 4.53,
-        "away": 4.92
+        "away": 4.93
       },
       "reasons": [
-        "PASS: edge too small (win prob 53.4% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 53.3% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
-        "Handicap EV +10.3% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -1.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 57.2% for this side — model 58.0% (+0.8% vs market)",
-        "Market consensus on the total: 51.8% for the OVER — model 62.3% (+10.5% vs market)",
+        "Handicap EV +10.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -2.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 57.2% for this side — model 58.3% (+1.1% vs market)",
+        "Market consensus on the total: 51.1% for the OVER — model 62.2% (+11.1% vs market)",
         "Starter edge: Tampa Bay Rays (Drew Rasmussen projFIP 3.45 vs 4.27)",
         "Detroit Tigers bullpen fatigued (+0.18 R/9)",
         "Park factor 98 (pitcher-friendly)",
-        "Expected runs 4.53–4.92 over 10000 sims",
-        "Weather: 24°C at first pitch — run environment ×1.021",
-        "Wind: 13 km/h from 290° vs CF bearing 150° — blowing out, run environment ×1.019"
+        "Expected runs 4.53–4.93 over 10000 sims",
+        "Weather: 24°C at first pitch — run environment ×1.020",
+        "Wind: 13 km/h from 291° vs CF bearing 150° — blowing out, run environment ×1.020"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -201,16 +201,16 @@
           "side": "home",
           "line": 1.5,
           "total": 7.5,
-          "marketHomeCover": 0.587,
+          "marketHomeCover": 0.581,
           "marketHomePayout": 0.645,
-          "marketAwayPayout": 1.34,
-          "marketOver": 0.497
+          "marketAwayPayout": 1.3,
+          "marketOver": 0.488
         },
         "pick": null,
         "coverProbability": 0.629,
         "rawCoverProbability": 0.655,
         "ev": 0.195,
-        "marketProbability": 0.587,
+        "marketProbability": 0.581,
         "marketPriceEv": 0.035,
         "recommendedStake": null,
         "noValue": false
@@ -221,7 +221,7 @@
         "pick": null,
         "probability": 0.534,
         "rawProbability": 0.54,
-        "marketProbability": 0.497,
+        "marketProbability": 0.488,
         "ev": 0.014,
         "noValue": false
       },
@@ -234,8 +234,8 @@
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
         "Handicap EV +19.5% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth +3.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 58.7% for this side — model 62.9% (+4.2% vs market)",
-        "Market consensus on the total: 49.7% for the OVER — model 53.4% (+3.7% vs market)",
+        "Market consensus on the handicap: 58.1% for this side — model 62.9% (+4.8% vs market)",
+        "Market consensus on the total: 48.8% for the OVER — model 53.4% (+4.6% vs market)",
         "Starter edge: Boston Red Sox (Ranger Suarez projFIP 3.51 vs 3.97)",
         "Bullpen edge: Boston Red Sox",
         "Miami Marlins bullpen fatigued (+0.26 R/9)",
@@ -262,25 +262,25 @@
       "pass": false,
       "predictedWinner": "Washington Nationals",
       "predictedLoser": "Colorado Rockies",
-      "winProbability": 0.614,
-      "rawWinProbability": 0.627,
+      "winProbability": 0.611,
+      "rawWinProbability": 0.623,
       "confidence": "A",
       "handicap": {
         "input": {
           "side": "home",
           "line": -1.5,
           "total": 8.5,
-          "marketHomeCover": 0.451,
-          "marketHomePayout": 1.12,
-          "marketAwayPayout": 0.752,
+          "marketHomeCover": 0.453,
+          "marketHomePayout": 1.1,
+          "marketAwayPayout": 0.758,
           "marketOver": 0.478
         },
         "pick": null,
-        "coverProbability": 0.501,
-        "rawCoverProbability": 0.502,
-        "ev": -0.047,
-        "marketProbability": 0.549,
-        "marketPriceEv": -0.121,
+        "coverProbability": 0.504,
+        "rawCoverProbability": 0.505,
+        "ev": -0.042,
+        "marketProbability": 0.547,
+        "marketPriceEv": -0.113,
         "recommendedStake": null,
         "noValue": true
       },
@@ -288,30 +288,30 @@
         "line": 8.5,
         "predicted": 10.55,
         "pick": null,
-        "probability": 0.614,
-        "rawProbability": 0.637,
+        "probability": 0.615,
+        "rawProbability": 0.638,
         "marketProbability": 0.478,
-        "ev": 0.167,
+        "ev": 0.169,
         "noValue": true
       },
       "expectedRuns": {
-        "home": 5.89,
-        "away": 4.43
+        "home": 5.88,
+        "away": 4.42
       },
       "reasons": [
-        "No handicap bet: -4.7% per unit at this line (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -12.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 54.9% for this side — model 50.1% (-4.8% vs market)",
-        "No total bet: the model sits +13.6% from the market consensus on this line — disagreement this large has historically been model error, not value",
-        "Market consensus on the total: 47.8% for the OVER — model 61.4% (+13.6% vs market)",
+        "No handicap bet: -4.2% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -11.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 54.7% for this side — model 50.4% (-4.3% vs market)",
+        "No total bet: the model sits +13.7% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 47.8% for the OVER — model 61.5% (+13.7% vs market)",
         "Starter edge: Washington Nationals (Cade Cavalli projFIP 3.73 vs 4.87)",
         "Washington Nationals bullpen fatigued (+0.10 R/9)",
         "Colorado Rockies bullpen fatigued (+0.28 R/9)",
         "Park factor 101 (hitter-friendly)",
-        "Expected runs 5.89–4.43 over 10000 sims",
+        "Expected runs 5.88–4.42 over 10000 sims",
         "home: cold bats — 3.9 R/G last 15 (season baseline 4.8)",
-        "Weather: 26°C at first pitch — run environment ×1.036",
-        "Wind: 11 km/h from 308° vs CF bearing 28° — blowing in, run environment ×0.996"
+        "Weather: 26°C at first pitch — run environment ×1.037",
+        "Wind: 11 km/h from 315° vs CF bearing 28° — blowing in, run environment ×0.993"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -335,8 +335,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.597,
-      "rawWinProbability": 0.607,
+      "winProbability": 0.599,
+      "rawWinProbability": 0.61,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -345,46 +345,46 @@
           "total": 8.5,
           "marketHomeCover": 0.372,
           "marketHomePayout": 1.6,
-          "marketAwayPayout": 0.532,
-          "marketOver": 0.489
+          "marketAwayPayout": 0.541,
+          "marketOver": 0.48
         },
         "pick": null,
-        "coverProbability": 0.535,
-        "rawCoverProbability": 0.542,
-        "ev": 0.017,
+        "coverProbability": 0.534,
+        "rawCoverProbability": 0.541,
+        "ev": 0.015,
         "marketProbability": 0.628,
-        "marketPriceEv": -0.18,
+        "marketPriceEv": -0.177,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 8.5,
-        "predicted": 8.87,
+        "predicted": 8.82,
         "pick": null,
-        "probability": 0.508,
-        "rawProbability": 0.51,
-        "marketProbability": 0.511,
-        "ev": -0.034,
+        "probability": 0.51,
+        "rawProbability": 0.512,
+        "marketProbability": 0.52,
+        "ev": -0.031,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.87,
-        "away": 3.78
+        "home": 4.86,
+        "away": 3.76
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
-        "Handicap EV +1.7% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -18.0% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 62.8% for this side — model 53.5% (-9.3% vs market)",
-        "Market consensus on the total: 51.1% for the UNDER — model 50.8% (-0.3% vs market)",
+        "Handicap EV +1.5% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -17.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.8% for this side — model 53.4% (-9.4% vs market)",
+        "Market consensus on the total: 52.0% for the UNDER — model 51.0% (-1.0% vs market)",
         "Chicago White Sox bullpen fatigued (+0.44 R/9)",
         "Texas Rangers bullpen fatigued (+0.10 R/9)",
         "Park factor 101 (hitter-friendly)",
-        "Expected runs 4.87–3.78 over 10000 sims",
+        "Expected runs 4.86–3.76 over 10000 sims",
         "away: cold bats — 2.8 R/G last 15 (season baseline 4.3)",
         "home: no starter data — league-average assumed",
-        "Weather: 22°C at first pitch — run environment ×1.005",
-        "Wind: 10 km/h from 63° vs CF bearing 127° — blowing in, run environment ×0.991"
+        "Weather: 22°C at first pitch — run environment ×1.004",
+        "Wind: 12 km/h from 65° vs CF bearing 127° — blowing in, run environment ×0.989"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
@@ -407,8 +407,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.543,
-      "rawWinProbability": 0.547,
+      "winProbability": 0.544,
+      "rawWinProbability": 0.549,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -421,40 +421,40 @@
           "marketOver": 0.5
         },
         "pick": null,
-        "coverProbability": 0.589,
-        "rawCoverProbability": 0.606,
-        "ev": 0.12,
+        "coverProbability": 0.588,
+        "rawCoverProbability": 0.605,
+        "ev": 0.118,
         "marketProbability": 0.532,
-        "marketPriceEv": 0.061,
+        "marketPriceEv": 0.059,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 8,
-        "predicted": 8.74,
+        "predicted": 8.71,
         "pick": null,
-        "probability": 0.531,
-        "rawProbability": 0.537,
+        "probability": 0.526,
+        "rawProbability": 0.531,
         "marketProbability": 0.5,
-        "ev": 0.008,
+        "ev": 0,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.01,
-        "away": 4.45
+        "home": 3.99,
+        "away": 4.44
       },
       "reasons": [
-        "PASS: edge too small (win prob 54.3% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 54.4% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
-        "Handicap EV +12.0% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth +6.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 53.2% for this side — model 58.9% (+5.7% vs market)",
-        "Market consensus on the total: 50.0% for the OVER — model 53.1% (+3.1% vs market)",
+        "Handicap EV +11.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +5.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 53.2% for this side — model 58.8% (+5.6% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 52.6% (+2.6% vs market)",
         "Starter edge: Cleveland Guardians (Parker Messick projFIP 3.60 vs 4.45)",
         "Cleveland Guardians bullpen fatigued (+0.14 R/9)",
-        "Expected runs 4.01–4.45 over 10000 sims",
-        "Weather: 32°C at first pitch — run environment ×1.060",
-        "Wind: 17 km/h from 226° vs CF bearing 44° — blowing out, run environment ×1.033"
+        "Expected runs 3.99–4.44 over 10000 sims",
+        "Weather: 30°C at first pitch — run environment ×1.060",
+        "Wind: 14 km/h from 223° vs CF bearing 44° — blowing out, run environment ×1.029"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -485,17 +485,17 @@
           "side": "home",
           "line": 1.5,
           "total": 9,
-          "marketHomeCover": 0.554,
-          "marketHomePayout": 0.741,
-          "marketAwayPayout": 1.16,
-          "marketOver": 0.504
+          "marketHomeCover": 0.559,
+          "marketHomePayout": 0.714,
+          "marketAwayPayout": 1.18,
+          "marketOver": 0.5
         },
         "pick": "Arizona Diamondbacks +1.5",
         "coverProbability": 0.536,
         "rawCoverProbability": 0.543,
         "ev": 0.019,
-        "marketProbability": 0.554,
-        "marketPriceEv": -0.066,
+        "marketProbability": 0.559,
+        "marketPriceEv": -0.081,
         "recommendedStake": 0.01,
         "noValue": false
       },
@@ -505,7 +505,7 @@
         "pick": "OVER",
         "probability": 0.618,
         "rawProbability": 0.642,
-        "marketProbability": 0.504,
+        "marketProbability": 0.5,
         "ev": 0.158,
         "noValue": false
       },
@@ -515,9 +515,9 @@
       },
       "reasons": [
         "Handicap EV +1.9% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -6.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 55.4% for this side — model 53.6% (-1.8% vs market)",
-        "Market consensus on the total: 50.4% for the OVER — model 61.8% (+11.4% vs market)",
+        "At the market's own price this edge is worth -8.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 55.9% for this side — model 53.6% (-2.3% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 61.8% (+11.8% vs market)",
         "Starter edge: Chicago Cubs (Kevin Gausman projFIP 3.90 vs 5.16)",
         "Offense edge: Chicago Cubs (wOBA 0.331 vs 0.314)",
         "Bullpen edge: Arizona Diamondbacks",
@@ -548,8 +548,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.531,
-      "rawWinProbability": 0.535,
+      "winProbability": 0.522,
+      "rawWinProbability": 0.524,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -557,50 +557,50 @@
           "line": 1.5,
           "total": 7.5,
           "marketHomeCover": 0.624,
-          "marketHomePayout": 0.541,
-          "marketAwayPayout": 1.57,
+          "marketHomePayout": 0.538,
+          "marketAwayPayout": 1.58,
           "marketOver": 0.489
         },
         "pick": null,
         "coverProbability": 0.641,
-        "rawCoverProbability": 0.673,
-        "ev": 0.217,
+        "rawCoverProbability": 0.674,
+        "ev": 0.219,
         "marketProbability": 0.624,
-        "marketPriceEv": -0.013,
+        "marketPriceEv": -0.014,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 7.5,
-        "predicted": 9.06,
+        "predicted": 8.9,
         "pick": null,
-        "probability": 0.579,
-        "rawProbability": 0.594,
+        "probability": 0.563,
+        "rawProbability": 0.576,
         "marketProbability": 0.489,
-        "ev": 0.1,
+        "ev": 0.07,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.57,
-        "away": 4.27
+        "home": 4.48,
+        "away": 4.19
       },
       "reasons": [
-        "PASS: edge too small (win prob 53.1% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 52.2% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
-        "Handicap EV +21.7% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -1.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Handicap EV +21.9% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -1.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
         "Market consensus on the handicap: 62.4% for this side — model 64.1% (+1.7% vs market)",
-        "Market consensus on the total: 48.9% for the OVER — model 57.9% (+9.0% vs market)",
+        "Market consensus on the total: 48.9% for the OVER — model 56.3% (+7.4% vs market)",
         "Starter edge: Pittsburgh Pirates (Braxton Ashcraft projFIP 3.57 vs 4.31)",
         "Offense edge: Pittsburgh Pirates (wOBA 0.323 vs 0.310)",
         "Bullpen edge: San Diego Padres",
         "San Diego Padres bullpen fatigued (+0.14 R/9)",
         "Pittsburgh Pirates bullpen fatigued (+0.40 R/9)",
         "Park factor 96 (pitcher-friendly)",
-        "Expected runs 4.57–4.27 over 10000 sims",
+        "Expected runs 4.48–4.19 over 10000 sims",
         "home: hot bats — 4.9 R/G last 15 (season baseline 4.3)",
-        "Weather: 26°C at first pitch — run environment ×1.032",
-        "Wind: 10 km/h from 249° vs CF bearing 0° — blowing out, run environment ×1.007"
+        "Weather: 23°C at first pitch — run environment ×1.014",
+        "Wind: 7 km/h from 246° vs CF bearing 0° — blowing out, run environment ×1.006"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -700,17 +700,17 @@
           "side": "home",
           "line": 1.5,
           "total": 6.5,
-          "marketHomeCover": 0.624,
-          "marketHomePayout": 0.541,
-          "marketAwayPayout": 1.58,
-          "marketOver": 0.527
+          "marketHomeCover": 0.63,
+          "marketHomePayout": 0.526,
+          "marketAwayPayout": 1.6,
+          "marketOver": 0.528
         },
         "pick": "Seattle Mariners +1.5",
         "coverProbability": 0.534,
         "rawCoverProbability": 0.541,
         "ev": 0.015,
-        "marketProbability": 0.624,
-        "marketPriceEv": -0.177,
+        "marketProbability": 0.63,
+        "marketPriceEv": -0.185,
         "recommendedStake": 0,
         "noValue": false
       },
@@ -720,7 +720,7 @@
         "pick": "OVER",
         "probability": 0.634,
         "rawProbability": 0.661,
-        "marketProbability": 0.527,
+        "marketProbability": 0.528,
         "ev": 0.205,
         "noValue": false
       },
@@ -730,9 +730,9 @@
       },
       "reasons": [
         "Handicap EV +1.5% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -17.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 62.4% for this side — model 53.4% (-9.0% vs market)",
-        "Market consensus on the total: 52.7% for the OVER — model 63.4% (+10.7% vs market)",
+        "At the market's own price this edge is worth -18.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 63.0% for this side — model 53.4% (-9.6% vs market)",
+        "Market consensus on the total: 52.8% for the OVER — model 63.4% (+10.6% vs market)",
         "Offense edge: Philadelphia Phillies (wOBA 0.313 vs 0.303)",
         "Bullpen edge: Philadelphia Phillies",
         "Seattle Mariners bullpen fatigued (+0.20 R/9)",
@@ -760,58 +760,58 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.503,
-      "rawWinProbability": 0.504,
+      "winProbability": 0.501,
+      "rawWinProbability": 0.501,
       "confidence": "C",
       "handicap": {
         "input": {
           "side": "home",
           "line": 1.5,
           "total": 7.5,
-          "marketHomeCover": 0.553,
-          "marketHomePayout": 0.741,
-          "marketAwayPayout": 1.15,
+          "marketHomeCover": 0.551,
+          "marketHomePayout": 0.746,
+          "marketAwayPayout": 1.13,
           "marketOver": 0.489
         },
         "pick": null,
-        "coverProbability": 0.63,
-        "rawCoverProbability": 0.657,
-        "ev": 0.198,
-        "marketProbability": 0.553,
+        "coverProbability": 0.628,
+        "rawCoverProbability": 0.653,
+        "ev": 0.193,
+        "marketProbability": 0.551,
         "marketPriceEv": 0.097,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 7.5,
-        "predicted": 8.34,
+        "predicted": 8.37,
         "pick": null,
-        "probability": 0.527,
-        "rawProbability": 0.532,
+        "probability": 0.529,
+        "rawProbability": 0.535,
         "marketProbability": 0.489,
-        "ev": 0.001,
+        "ev": 0.005,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.08,
-        "away": 4.05
+        "home": 4.09,
+        "away": 4.06
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
-        "Handicap EV +19.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "Handicap EV +19.3% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth +9.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 55.3% for this side — model 63.0% (+7.7% vs market)",
-        "Market consensus on the total: 48.9% for the OVER — model 52.7% (+3.8% vs market)",
+        "Market consensus on the handicap: 55.1% for this side — model 62.8% (+7.7% vs market)",
+        "Market consensus on the total: 48.9% for the OVER — model 52.9% (+4.0% vs market)",
         "Bullpen edge: San Francisco Giants",
         "San Francisco Giants bullpen fatigued (+0.20 R/9)",
         "Cincinnati Reds bullpen fatigued (+0.04 R/9)",
         "Park factor 95 (pitcher-friendly)",
-        "Expected runs 4.08–4.05 over 10000 sims",
+        "Expected runs 4.09–4.06 over 10000 sims",
         "home: cold bats — 2.9 R/G last 15 (season baseline 4.3)",
         "away: cold bats — 3.7 R/G last 15 (season baseline 4.2)",
         "home: no starter data — league-average assumed",
-        "Weather: 18°C at first pitch — run environment ×0.980",
-        "Wind: 21 km/h from 268° vs CF bearing 85° — blowing out, run environment ×1.041"
+        "Weather: 18°C at first pitch — run environment ×0.981",
+        "Wind: 22 km/h from 276° vs CF bearing 85° — blowing out, run environment ×1.043"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
