@@ -513,3 +513,83 @@ export function parseNpbRosterMoves(html: string): NpbRosterMoves {
   }
   return { date, registered, deregistered };
 }
+
+const CLUB_BATTING_HEADER = [
+  "選手", "試合", "打席", "打数", "得点", "安打", "二塁打", "三塁打",
+  "本塁打", "塁打", "打点", "盗塁", "盗塁刺", "犠打", "犠飛", "四球",
+  "故意四", "死球", "三振",
+];
+
+export interface NpbBatterRow {
+  /** Name as printed, spaces collapsed (e.g. "宗 佑磨"). */
+  name: string;
+  /** Name with ALL spaces removed — what abbreviated order names prefix. */
+  compactName: string;
+  line: RawBattingLine;
+}
+
+/**
+ * Parse a club's individual batting page (idb1_<code>.html) — the season
+ * line behind each name in a posted order.
+ *
+ * npb.jp marks some rows with a leading "*" or "+" (qualifying markers);
+ * those are stripped from the name so matching sees the name alone.
+ */
+export function parseNpbClubBatting(html: string): NpbBatterRow[] {
+  assertHeader(html, CLUB_BATTING_HEADER, "club batting");
+  const out: NpbBatterRow[] = [];
+  for (const row of rows(html)) {
+    const c = cells(row);
+    if (c.length < 19) continue;
+    const name = c[0]!.replace(/^[*+＊＋]\s*/, "").trim();
+    if (name === "") continue;
+    out.push({
+      name,
+      compactName: name.replace(/[\s　]/g, ""),
+      line: {
+        plateAppearances: num(c[2]!),
+        atBats: num(c[3]!),
+        hits: num(c[5]!),
+        doubles: num(c[6]!),
+        triples: num(c[7]!),
+        homeRuns: num(c[8]!),
+        stolenBases: num(c[11]!),
+        caughtStealing: num(c[12]!),
+        sacFlies: num(c[14]!),
+        baseOnBalls: num(c[15]!),
+        intentionalWalks: num(c[16]!),
+        hitByPitch: num(c[17]!),
+        strikeOuts: num(c[18]!),
+      },
+    });
+  }
+  if (out.length === 0) {
+    throw new NpbParseError("Club batting page parsed to zero batters");
+  }
+  return out;
+}
+
+/**
+ * Resolve an order block's ABBREVIATED name against the club's batting page.
+ *
+ * npb.jp abbreviates a posted order to the shortest form unique WITHIN the
+ * club — 宗 for 宗佑磨, but 牧原大 for 牧原大成 because 牧原 alone would
+ * collide with a team-mate. So the abbreviation is a prefix of the full
+ * compacted name, and requiring EXACTLY ONE prefix match reproduces the
+ * site's own disambiguation.
+ *
+ * Zero or several matches return null and the caller flags that bat: the
+ * cost of guessing between two 山本s is a fabricated offense input, which
+ * this codebase never pays (`matchStarter` refuses the same way).
+ */
+export function matchBatter(
+  abbreviated: string,
+  batters: NpbBatterRow[],
+): NpbBatterRow | null {
+  const key = abbreviated.replace(/[\s　]/g, "");
+  if (key === "") return null;
+  const exact = batters.filter((b) => b.compactName === key);
+  if (exact.length === 1) return exact[0]!;
+  const hits = batters.filter((b) => b.compactName.startsWith(key));
+  return hits.length === 1 ? hits[0]! : null;
+}

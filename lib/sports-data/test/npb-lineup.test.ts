@@ -17,14 +17,25 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  matchBatter,
   NpbParseError,
+  parseNpbClubBatting,
   parseNpbGameOrder,
   parseNpbRosterMoves,
+  type NpbBatterRow,
 } from "../src/npb/parse";
+import type { RawBattingLine } from "../src/sabermetrics";
 import { npbUrls } from "../src/npb/slate";
 
 const FX = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "probe", "npb");
 const read = (name: string) => readFileSync(join(FX, name), "utf-8");
+
+/** A zero line — these fixtures test NAME matching, not the numbers. */
+const EMPTY_LINE: RawBattingLine = {
+  plateAppearances: 0, atBats: 0, hits: 0, doubles: 0, triples: 0,
+  homeRuns: 0, stolenBases: 0, caughtStealing: 0, sacFlies: 0,
+  baseOnBalls: 0, intentionalWalks: 0, hitByPitch: 0, strikeOuts: 0,
+};
 
 test("a posted order parses to nine batters a side, with npb.jp player ids", () => {
   const order = parseNpbGameOrder(read("npb-game-1-index.html"));
@@ -147,4 +158,45 @@ test("the discovered URLs are the ones the live pages actually link", () => {
     npbUrls.clubBatting(2026, "g"),
     "https://npb.jp/bis/2026/stats/idb1_g.html",
   );
+});
+
+test("a club batting page yields every batter, markers stripped", () => {
+  const batters = parseNpbClubBatting(read("npb-bis-idb1-giants.html"));
+  assert.ok(batters.length > 20, `only ${batters.length} batters`);
+  // npb.jp marks qualifying rows with a leading "*"; the name must not keep it.
+  assert.ok(batters.every((b) => !/^[*+＊＋]/.test(b.name)), "markers stripped");
+  assert.ok(batters.every((b) => !/[\s　]/.test(b.compactName)));
+  const izumiguchi = batters.find((b) => b.compactName.startsWith("泉口"));
+  assert.ok(izumiguchi, "泉口 is in the committed sample");
+  assert.ok(izumiguchi.line.atBats > 300, JSON.stringify(izumiguchi.line));
+});
+
+test("abbreviated order names resolve the way npb.jp abbreviates them", () => {
+  const batters = parseNpbClubBatting(read("npb-bis-idb1-giants.html"));
+  // The site shortens a posted order to the least form unique WITHIN the
+  // club, so the abbreviation is a prefix of the full compacted name.
+  const full = batters.find((b) => b.compactName.startsWith("泉口"))!;
+  assert.equal(matchBatter("泉口", batters)?.compactName, full.compactName);
+  assert.equal(matchBatter(full.compactName, batters)?.compactName, full.compactName);
+
+  // Ambiguity is refused, never guessed — the same rule matchStarter follows.
+  const twoYamamotos: NpbBatterRow[] = [
+    { name: "山本 祐大", compactName: "山本祐大", line: full.line },
+    { name: "山本 泰寛", compactName: "山本泰寛", line: full.line },
+  ];
+  assert.equal(matchBatter("山本", twoYamamotos), null, "ambiguous → null");
+  assert.equal(matchBatter("山本祐", twoYamamotos)?.compactName, "山本祐大");
+  assert.equal(matchBatter("該当なし", batters), null);
+  assert.equal(matchBatter("", batters), null);
+});
+
+test("an exact name wins over a longer teammate that it prefixes", () => {
+  // 松本 and 松本剛 can coexist: an exact hit must not be called ambiguous
+  // just because another name starts with the same characters.
+  const roster: NpbBatterRow[] = [
+    { name: "松本", compactName: "松本", line: EMPTY_LINE },
+    { name: "松本 剛", compactName: "松本剛", line: EMPTY_LINE },
+  ];
+  assert.equal(matchBatter("松本", roster)?.compactName, "松本");
+  assert.equal(matchBatter("松本剛", roster)?.compactName, "松本剛");
 });
