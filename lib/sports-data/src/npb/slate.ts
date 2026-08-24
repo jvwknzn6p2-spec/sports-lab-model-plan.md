@@ -358,8 +358,12 @@ export async function buildNpbSlate(
       gamePk: npbGamePk(g.date, g.home),
       home: g.home,
       away: g.away,
+      gameDate: g.startTime
+        ? new Date(`${g.date}T${g.startTime}:00+09:00`).toISOString()
+        : null,
     })),
     fetchImpl: f,
+    now: opts.now,
   });
   notes.push(...lineupReport.warnings);
 

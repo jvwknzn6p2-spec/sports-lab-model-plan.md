@@ -191,3 +191,103 @@ test("an empty slate does no fetching at all", async () => {
   assert.equal(calls, 0);
   assert.deepEqual(report.lineups, {});
 });
+
+test("far from first pitch, no order fetch is made at all", async () => {
+  // The slate is rebuilt SEVEN times a day. A morning rebuild cannot find a
+  // lineup that clubs post hours later, so spending ~19 npb.jp requests on
+  // it is pure cost at a small site with no API — and being blocked would
+  // cost the whole NPB pipeline, not just this feature.
+  let calls = 0;
+  const counting = (async () => {
+    calls++;
+    return new Response("", { status: 200 });
+  }) as unknown as typeof fetch;
+
+  const report = await buildNpbLineups({
+    date: "2026-08-25",
+    year: 2026,
+    games: [
+      {
+        gamePk: 5001,
+        home: teamByFullName("福岡ソフトバンクホークス"),
+        away: teamByFullName("オリックス・バファローズ"),
+        gameDate: "2026-08-25T09:00:00.000Z", // 18:00 JST
+      },
+    ],
+    fetchImpl: counting,
+    now: new Date("2026-08-25T00:07:00.000Z"), // 09:07 JST — the slate cron
+  });
+
+  assert.equal(calls, 0, "not one request before the window");
+  assert.deepEqual(report.lineups, {});
+  assert.ok(
+    report.warnings.some((w) => w.includes("within")),
+    report.warnings.join(" | "),
+  );
+});
+
+test("inside the window the fetch happens; an unknown start time never skips", async () => {
+  const routes = {
+    "/games/2026/": read("npb-games-index.html"),
+    "/scores/2026/0823/": read("npb-game-1-index.html"),
+    "/stats/idb1_": read("npb-bis-idb1-giants.html"),
+  };
+  const home = teamByFullName("福岡ソフトバンクホークス");
+  const away = teamByFullName("オリックス・バファローズ");
+
+  // 90 minutes out — inside ORDER_FETCH_WINDOW_HOURS.
+  const close = await buildNpbLineups({
+    date: "2026-08-23",
+    year: 2026,
+    games: [
+      { gamePk: 5001, home, away, gameDate: "2026-08-23T09:00:00.000Z" },
+    ],
+    fetchImpl: stubFetch(routes),
+    now: new Date("2026-08-23T07:30:00.000Z"),
+  });
+  assert.ok(close.lineups["5001"], close.warnings.join(" | "));
+
+  // No posted start time: absent evidence the game is far off, look anyway.
+  const unknown = await buildNpbLineups({
+    date: "2026-08-23",
+    year: 2026,
+    games: [{ gamePk: 5001, home, away, gameDate: null }],
+    fetchImpl: stubFetch(routes),
+    now: new Date("2026-08-23T00:07:00.000Z"),
+  });
+  assert.ok(unknown.lineups["5001"], unknown.warnings.join(" | "));
+});
+
+test("club batting pages are read only for clubs that actually posted", async () => {
+  // Before the orders land this must be ZERO pages, not twelve.
+  const requested: string[] = [];
+  const tracking = (async (input: unknown) => {
+    const url = String(input);
+    requested.push(url);
+    if (url.includes("/games/2026/")) {
+      return new Response(read("npb-games-index.html"), { status: 200 });
+    }
+    // Every game page exists but carries no order — the pre-game state.
+    return new Response("<html>まもなく開始</html>", { status: 200 });
+  }) as unknown as typeof fetch;
+
+  await buildNpbLineups({
+    date: "2026-08-23",
+    year: 2026,
+    games: [
+      {
+        gamePk: 5001,
+        home: teamByFullName("福岡ソフトバンクホークス"),
+        away: teamByFullName("オリックス・バファローズ"),
+        gameDate: null,
+      },
+    ],
+    fetchImpl: tracking,
+  });
+
+  assert.equal(
+    requested.filter((u) => u.includes("idb1_")).length,
+    0,
+    "no order posted → no club batting pages",
+  );
+});

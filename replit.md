@@ -138,6 +138,12 @@ _Populate as you build — explicit user instructions worth remembering across s
   a registration list, not an injured list, and a 抹消 bars a player for 10
   days; informational only, since the公示 never says who replaces him).
   Both degrade honestly: an unposted order keeps the team-season offense.
+  **Order fetching is WINDOWED** (3h before first pitch) and club batting
+  pages are read only for clubs that actually posted: the NPB slate is
+  rebuilt seven times a day, and an unwindowed version would add ~200
+  requests/day at npb.jp — a small site with no API that has already
+  answered a probe with 403. Being blocked would cost the whole NPB
+  pipeline, not just lineups. Don't remove the window.
 - **npb.jp URLs are DISCOVERED, never guessed.** A 2026-08-24 probe proved
   `/scores/` is a JS redirect, `/scores/<year>/<MMDD>/` 404s,
   `/announcement/` is a meta refresh with no dated links, and

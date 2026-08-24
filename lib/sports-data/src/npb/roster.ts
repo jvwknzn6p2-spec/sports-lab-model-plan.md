@@ -53,7 +53,56 @@ import type { NpbTeam } from "./teams";
  */
 export const DEREGISTRATION_DAYS = 10;
 
+/**
+ * How close to first pitch an order fetch is worth making.
+ *
+ * Clubs post a lineup a couple of hours before the game, so a fetch made in
+ * the JST morning is guaranteed to find nothing. This matters because the
+ * NPB slate is rebuilt SEVEN times a day (npb-slate once, npb-predict six
+ * times) and each rebuild would otherwise re-read the games index, every
+ * game page and up to twelve club batting pages — ~200 requests a day at
+ * npb.jp, a small site with no API that has already answered one of our
+ * probes with a 403. Getting blocked would cost the whole NPB pipeline
+ * (schedule, results, stats), not just this feature, so the cheapest fetch
+ * is the one that is not made.
+ *
+ * Three hours is comfortably wider than the posting habit and wider still
+ * than NPB's own −33-minute lock, so nothing that could have been read is
+ * skipped.
+ */
+export const ORDER_FETCH_WINDOW_HOURS = 3;
+
 const mmdd = (isoDate: string) => isoDate.slice(5).replace("-", "");
+
+/**
+ * Run `jobs` with at most `limit` in flight.
+ *
+ * Sequential fetching is what makes the added traffic a runtime problem: at
+ * a 20s timeout, a bad day of ~29 serial requests is ~10 minutes bolted
+ * onto a job whose whole purpose is to lock picks before a per-game
+ * deadline. A small cap cuts the wall clock without turning a polite crawl
+ * into a burst — the failure this exists to avoid is being blocked.
+ */
+async function mapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      out[i] = await fn(items[i]!);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+/** Concurrency cap for npb.jp reads. Deliberately small — see mapLimit. */
+const NPB_FETCH_CONCURRENCY = 4;
 
 /** The `YYYY-MM-DD` dates of the `days` days ending at (and including) `date`. */
 export function rosterWindow(date: string, days = DEREGISTRATION_DAYS): string[] {
@@ -98,18 +147,25 @@ export async function buildNpbAvailability(
     return m;
   };
 
-  for (const day of rosterWindow(date, days)) {
-    let moves;
+  // Fetched concurrently but APPLIED in date order below: the cancellation
+  // rule depends on ordering, so the results are collected first and only
+  // then folded oldest-first.
+  const window = rosterWindow(date, days);
+  const fetched = await mapLimit(window, NPB_FETCH_CONCURRENCY, async (day) => {
     try {
       const html = await fetchNpbPage(npbUrls.rosterMoves(mmdd(day)), fetchImpl);
-      moves = parseNpbRosterMoves(html);
+      return parseNpbRosterMoves(html);
     } catch (e) {
       warnings.push(
         `roster公示 for ${day} unavailable (${e instanceof Error ? e.message : String(e)}) — ` +
           `that day's moves are not reflected`,
       );
-      continue;
+      return null;
     }
+  });
+
+  for (const moves of fetched) {
+    if (!moves) continue;
     for (const m of moves.deregistered) {
       bucket(m.team).set(m.playerId, {
         name: m.name,
@@ -184,8 +240,16 @@ export async function buildNpbLineups(
   opts: {
     date: string;
     year: number;
-    games: readonly { gamePk: number; home: NpbTeam; away: NpbTeam }[];
+    games: readonly {
+      gamePk: number;
+      home: NpbTeam;
+      away: NpbTeam;
+      /** ISO first pitch; null when the schedule prints no start time. */
+      gameDate?: string | null;
+    }[];
     fetchImpl?: typeof fetch;
+    /** Evaluation instant — injected in tests. */
+    now?: Date;
   },
 ): Promise<NpbLineupReport> {
   const f = opts.fetchImpl ?? fetch;
@@ -193,6 +257,25 @@ export async function buildNpbLineups(
   const lineups: Record<string, GameLineups> = {};
   const lineupBatting: Record<string, RawBattingLine> = {};
   if (opts.games.length === 0) return { lineups, lineupBatting, warnings };
+
+  // Skip the whole read when no game is close enough for an order to exist.
+  // A game with NO posted start time is never skipped: absent evidence that
+  // it is far off, the conservative move is to look.
+  const now = (opts.now ?? new Date()).getTime();
+  const horizon = ORDER_FETCH_WINDOW_HOURS * 3_600_000;
+  const anyClose = opts.games.some((g) => {
+    if (!g.gameDate) return true;
+    const t = new Date(g.gameDate).getTime();
+    return !Number.isFinite(t) || t - now <= horizon;
+  });
+  if (!anyClose) {
+    warnings.push(
+      `No game is within ${ORDER_FETCH_WINDOW_HOURS}h of first pitch — posted ` +
+        `orders not read (clubs post a couple of hours out; fetching now would ` +
+        `find nothing and spend ~${opts.games.length + 13} requests at npb.jp)`,
+    );
+    return { lineups, lineupBatting, warnings };
+  }
 
   let slugs: string[];
   try {
@@ -238,22 +321,34 @@ export async function buildNpbLineups(
   // Resolve every slug ONCE: the order block names both clubs in full, which
   // is what identifies the game — the slug's letters do not, on their own.
   const byPair = new Map<string, Awaited<ReturnType<typeof parseNpbGameOrder>>>();
-  for (const slug of slugs) {
+  const orders = await mapLimit(slugs, NPB_FETCH_CONCURRENCY, async (slug) => {
     try {
       const html = await fetchNpbPage(
         npbUrls.gameOrder(opts.year, mmdd(opts.date), slug),
         f,
       );
-      const order = parseNpbGameOrder(html);
-      if (!order) continue;
-      byPair.set(`${order.away.team.teamId}-${order.home.team.teamId}`, order);
+      return parseNpbGameOrder(html);
     } catch (e) {
       warnings.push(
         `game ${slug}: page unavailable ` +
           `(${e instanceof Error ? e.message : String(e)})`,
       );
+      return null;
     }
+  });
+  for (const order of orders) {
+    if (!order) continue;
+    byPair.set(`${order.away.team.teamId}-${order.home.team.teamId}`, order);
   }
+  // Club batting pages are only worth fetching for clubs that actually have
+  // a posted order — before the lineups land this is zero pages, not twelve.
+  const needed = new Map<number, NpbTeam>();
+  for (const game of opts.games) {
+    if (!byPair.has(`${game.away.teamId}-${game.home.teamId}`)) continue;
+    needed.set(game.away.teamId, game.away);
+    needed.set(game.home.teamId, game.home);
+  }
+  await mapLimit([...needed.values()], NPB_FETCH_CONCURRENCY, clubBatting);
 
   for (const game of opts.games) {
     const order = byPair.get(`${game.away.teamId}-${game.home.teamId}`);
