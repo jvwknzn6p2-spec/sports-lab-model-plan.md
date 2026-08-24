@@ -108,7 +108,14 @@ _Populate as you build — explicit user instructions worth remembering across s
   Final yet; partial settles are replaced last-wins).
 - **`ANTHROPIC_API_KEY`** (repo secret) enables the Step-9 AI reviewer panel
   (`handiedge review`) — advisory briefings in `data/reviews/`, never a pick
-  change. Without the key the step skips cleanly.
+  change. Without the key the step skips cleanly. A key that is PRESENT but
+  broken is the failure mode that has actually happened twice: an account
+  with no credits (the API answers `credit balance is too low`), and a key
+  carrying a non-ASCII lookalike character (U+0425 Cyrillic Х for Latin X)
+  that `fetch` rejects while building the header. The command now
+  preflights the credential and names the bad index; run
+  `handiedge-review.yml` on demand to verify a key without touching the
+  day's lock.
 - **NPB runs under `--league npb`** (every handiedge command; or
   `HANDIEDGE_LEAGUE=npb`) with its OWN store `lib/sports-data/data-npb/` —
   separate history and learned calibration, never blended with MLB's. NPB
@@ -124,7 +131,26 @@ _Populate as you build — explicit user instructions worth remembering across s
   changes a table layout the parsers fail loud naming the column; refresh
   the probe samples (`npb-probe.yml` workflow) and fix the parser against
   the new bytes. NPB draws settle as moneyline pushes; 中止 (rained-off)
-  games never settle.
+  games never settle. Since 2026-08-24 NPB also reads POSTED ORDERS (a game
+  page's `player-order` block; bats matched to `idb1_<code>.html` by
+  npb.jp's own abbreviation rule — the least form unique within the club)
+  and AVAILABILITY (the 出場選手登録抹消公示 over a 10-day window — NPB has
+  a registration list, not an injured list, and a 抹消 bars a player for 10
+  days; informational only, since the公示 never says who replaces him).
+  Both degrade honestly: an unposted order keeps the team-season offense.
+  **Order fetching is WINDOWED** (3h before first pitch) and club batting
+  pages are read only for clubs that actually posted: the NPB slate is
+  rebuilt seven times a day, and an unwindowed version would add ~200
+  requests/day at npb.jp — a small site with no API that has already
+  answered a probe with 403. Being blocked would cost the whole NPB
+  pipeline, not just lineups. Don't remove the window.
+- **npb.jp URLs are DISCOVERED, never guessed.** A 2026-08-24 probe proved
+  `/scores/` is a JS redirect, `/scores/<year>/<MMDD>/` 404s,
+  `/announcement/` is a meta refresh with no dated links, and
+  `/announcement/<year>/pitcher.html` does not exist. Per-game slugs
+  (`h-b-17`) are not computable — they come only from the games index
+  (`/games/<year>/`). Add new NPB sources by fetching an index and reading
+  its real hrefs, the way `npb-probe.yml` now does.
 
 ## Pointers
 

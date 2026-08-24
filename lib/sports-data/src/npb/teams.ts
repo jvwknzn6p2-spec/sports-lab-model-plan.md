@@ -67,6 +67,7 @@ export class NpbTeamError extends Error {
 const byScheduleName = new Map(NPB_TEAMS.map((t) => [t.scheduleName, t]));
 const byTeamId = new Map(NPB_TEAMS.map((t) => [t.teamId, t]));
 const byOddsName = new Map(NPB_TEAMS.map((t) => [t.oddsName, t]));
+const byFullName = new Map(NPB_TEAMS.map((t) => [t.fullName, t]));
 
 /** Resolve a schedule-page short name; unknown names FAIL, never guess. */
 export function teamByScheduleName(name: string): NpbTeam {
@@ -81,6 +82,23 @@ export function teamByScheduleName(name: string): NpbTeam {
 
 export function teamById(teamId: number): NpbTeam | undefined {
   return byTeamId.get(teamId);
+}
+
+/**
+ * Resolve a FULL club name — the form the per-game order block and the
+ * roster-move公示 write (オリックス・バファローズ, 読売ジャイアンツ …),
+ * as opposed to the schedule page's short form. Unknown names FAIL for the
+ * same reason `teamByScheduleName` does: a club silently unmatched would
+ * drop a whole side's lineup rather than announce that npb.jp renamed it.
+ */
+export function teamByFullName(name: string): NpbTeam {
+  const t = byFullName.get(name.trim());
+  if (!t) {
+    throw new NpbTeamError(
+      `Unknown NPB full club name "${name}" — add its alias to npb/teams.ts`,
+    );
+  }
+  return t;
 }
 
 export function teamByOddsName(name: string): NpbTeam | undefined {
