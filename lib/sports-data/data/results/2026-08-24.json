@@ -1,28 +1,25 @@
 {
   "date": "2026-08-24",
-  "fetchedAt": "2026-08-25T01:39:15.660Z",
+  "fetchedAt": "2026-08-25T03:04:49.808Z",
   "results": {
+    "822695": {
+      "homeScore": 13,
+      "awayScore": 3
+    },
+    "823828": {
+      "homeScore": 2,
+      "awayScore": 4
+    },
     "824235": {
       "homeScore": 1,
       "awayScore": 4
+    },
+    "824557": {
+      "homeScore": 2,
+      "awayScore": 11
     }
   },
   "pending": [
-    {
-      "gamePk": 823828,
-      "matchup": "Boston Red Sox @ Miami Marlins",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 822695,
-      "matchup": "Colorado Rockies @ Washington Nationals",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 824557,
-      "matchup": "Texas Rangers @ Chicago White Sox",
-      "reason": "not final (In Progress)"
-    },
     {
       "gamePk": 823992,
       "matchup": "Cleveland Guardians @ Los Angeles Angels",
@@ -31,12 +28,12 @@
     {
       "gamePk": 825041,
       "matchup": "Chicago Cubs @ Arizona Diamondbacks",
-      "reason": "not final (Warmup)"
+      "reason": "not final (In Progress)"
     },
     {
       "gamePk": 823260,
       "matchup": "Pittsburgh Pirates @ San Diego Padres",
-      "reason": "not final (Warmup)"
+      "reason": "not final (In Progress)"
     },
     {
       "gamePk": 824964,
@@ -51,7 +48,7 @@
     {
       "gamePk": 823183,
       "matchup": "Cincinnati Reds @ San Francisco Giants",
-      "reason": "not final (Warmup)"
+      "reason": "not final (In Progress)"
     }
   ]
 }
