@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-08-26T02:26:04.364Z",
-  "updatedAt": "2026-08-26T02:26:04.364Z",
+  "lockedAt": "2026-08-26T03:33:47.086Z",
+  "updatedAt": "2026-08-26T03:33:47.086Z",
   "controlTower": {
     "date": "2026-08-26",
     "season": 1002026,
@@ -12,9 +12,9 @@
         "side": "home",
         "line": 1.5,
         "total": 7,
-        "marketHomeCover": 0.571,
-        "marketHomePayout": 0.662,
-        "marketAwayPayout": 1.2,
+        "marketHomeCover": 0.572,
+        "marketHomePayout": 0.652,
+        "marketAwayPayout": 1.21,
         "marketOver": 0.487
       },
       "92026082606": {
@@ -30,8 +30,8 @@
         "side": "home",
         "line": 1.5,
         "total": 6.5,
-        "marketHomeCover": 0.522,
-        "marketHomePayout": 0.8,
+        "marketHomeCover": 0.521,
+        "marketHomePayout": 0.826,
         "marketAwayPayout": 0.98,
         "marketOver": 0.489
       },
@@ -41,14 +41,14 @@
         "total": 6.5,
         "marketHomeCover": 0.589,
         "marketHomePayout": 0.606,
-        "marketAwayPayout": 1.31,
+        "marketAwayPayout": 1.3,
         "marketOver": 0.5
       },
       "92026082609": {
         "side": "home",
         "line": 1.5,
         "total": 7.5,
-        "marketHomeCover": 0.519,
+        "marketHomeCover": 0.516,
         "marketHomePayout": 0.833,
         "marketAwayPayout": 0.952,
         "marketOver": 0.51
@@ -59,7 +59,7 @@
         "total": 7.5,
         "marketHomeCover": 0.626,
         "marketHomePayout": 0.526,
-        "marketAwayPayout": 1.53,
+        "marketAwayPayout": 1.55,
         "marketOver": 0.489
       }
     }
@@ -95,17 +95,17 @@
           "side": "home",
           "line": 1.5,
           "total": 7,
-          "marketHomeCover": 0.571,
-          "marketHomePayout": 0.662,
-          "marketAwayPayout": 1.2,
+          "marketHomeCover": 0.572,
+          "marketHomePayout": 0.652,
+          "marketAwayPayout": 1.21,
           "marketOver": 0.487
         },
         "pick": null,
         "coverProbability": 0.624,
         "rawCoverProbability": 0.644,
         "ev": 0.186,
-        "marketProbability": 0.571,
-        "marketPriceEv": 0.037,
+        "marketProbability": 0.572,
+        "marketPriceEv": 0.031,
         "recommendedStake": null,
         "noValue": false
       },
@@ -127,8 +127,8 @@
         "PASS: edge too small (win prob 52.6% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
         "Handicap EV +18.6% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth +3.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 57.1% for this side — model 62.4% (+5.3% vs market)",
+        "At the market's own price this edge is worth +3.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 57.2% for this side — model 62.4% (+5.2% vs market)",
         "Market consensus on the total: 51.3% for the UNDER — model 53.3% (+2.0% vs market)",
         "Bullpen edge: 読売ジャイアンツ",
         "Park factor 104 (hitter-friendly)",
@@ -230,8 +230,8 @@
           "side": "home",
           "line": 1.5,
           "total": 6.5,
-          "marketHomeCover": 0.522,
-          "marketHomePayout": 0.8,
+          "marketHomeCover": 0.521,
+          "marketHomePayout": 0.826,
           "marketAwayPayout": 0.98,
           "marketOver": 0.489
         },
@@ -239,8 +239,8 @@
         "coverProbability": 0.608,
         "rawCoverProbability": 0.625,
         "ev": 0.155,
-        "marketProbability": 0.522,
-        "marketPriceEv": 0.094,
+        "marketProbability": 0.521,
+        "marketPriceEv": 0.11,
         "recommendedStake": null,
         "noValue": false
       },
@@ -262,8 +262,8 @@
         "PASS: edge too small (win prob 54.6% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
         "Handicap EV +15.5% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth +9.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 52.2% for this side — model 60.8% (+8.6% vs market)",
+        "At the market's own price this edge is worth +11.0% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 52.1% for this side — model 60.8% (+8.7% vs market)",
         "Market consensus on the total: 48.9% for the OVER — model 53.9% (+5.0% vs market)",
         "Starter edge: 横浜DeNAベイスターズ (東 克樹 projFIP 2.98 vs 3.43)",
         "Offense edge: 横浜DeNAベイスターズ (wOBA 0.297 vs 0.277)",
@@ -301,7 +301,7 @@
           "total": 6.5,
           "marketHomeCover": 0.589,
           "marketHomePayout": 0.606,
-          "marketAwayPayout": 1.31,
+          "marketAwayPayout": 1.3,
           "marketOver": 0.5
         },
         "pick": null,
@@ -365,7 +365,7 @@
           "side": "home",
           "line": 1.5,
           "total": 7.5,
-          "marketHomeCover": 0.519,
+          "marketHomeCover": 0.516,
           "marketHomePayout": 0.833,
           "marketAwayPayout": 0.952,
           "marketOver": 0.51
@@ -374,7 +374,7 @@
         "coverProbability": 0.586,
         "rawCoverProbability": 0.6,
         "ev": 0.114,
-        "marketProbability": 0.481,
+        "marketProbability": 0.484,
         "marketPriceEv": 0.144,
         "recommendedStake": 0.03,
         "noValue": false
@@ -396,7 +396,7 @@
       "reasons": [
         "Handicap EV +11.4% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth +14.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 48.1% for this side — model 58.6% (+10.5% vs market)",
+        "Market consensus on the handicap: 48.4% for this side — model 58.6% (+10.2% vs market)",
         "No total bet: the model sits +14.2% from the market consensus on this line — disagreement this large has historically been model error, not value",
         "Market consensus on the total: 51.0% for the OVER — model 65.2% (+14.2% vs market)",
         "Starter edge: 福岡ソフトバンクホークス (上沢 直之 projFIP 3.30 vs 3.99)",
@@ -438,7 +438,7 @@
           "total": 7.5,
           "marketHomeCover": 0.626,
           "marketHomePayout": 0.526,
-          "marketAwayPayout": 1.53,
+          "marketAwayPayout": 1.55,
           "marketOver": 0.489
         },
         "pick": null,
