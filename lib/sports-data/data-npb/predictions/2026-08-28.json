@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-08-27T18:17:42.605Z",
-  "updatedAt": "2026-08-27T18:17:42.605Z",
+  "lockedAt": "2026-08-27T18:24:55.709Z",
+  "updatedAt": "2026-08-27T18:24:55.709Z",
   "controlTower": {
     "date": "2026-08-28",
     "season": 1002026,
@@ -58,9 +58,9 @@
         "line": 1.5,
         "total": 7,
         "marketHomeCover": 0.578,
-        "marketHomePayout": 0.649,
+        "marketHomePayout": 0.645,
         "marketAwayPayout": 1.25,
-        "marketOver": 0.482
+        "marketOver": 0.479
       }
     }
   },
@@ -432,16 +432,16 @@
           "line": 1.5,
           "total": 7,
           "marketHomeCover": 0.578,
-          "marketHomePayout": 0.649,
+          "marketHomePayout": 0.645,
           "marketAwayPayout": 1.25,
-          "marketOver": 0.482
+          "marketOver": 0.479
         },
         "pick": null,
         "coverProbability": 0.532,
         "rawCoverProbability": 0.537,
         "ev": 0.01,
         "marketProbability": 0.578,
-        "marketPriceEv": -0.123,
+        "marketPriceEv": -0.125,
         "recommendedStake": null,
         "noValue": false
       },
@@ -451,7 +451,7 @@
         "pick": null,
         "probability": 0.654,
         "rawProbability": 0.68,
-        "marketProbability": 0.482,
+        "marketProbability": 0.479,
         "ev": 0.213,
         "noValue": false
       },
@@ -462,9 +462,9 @@
       "reasons": [
         "PASS: incomplete/downgraded data",
         "Handicap EV +1.0% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -12.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "At the market's own price this edge is worth -12.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
         "Market consensus on the handicap: 57.8% for this side — model 53.2% (-4.6% vs market)",
-        "Market consensus on the total: 48.2% for the OVER — model 65.4% (+17.2% vs market)",
+        "Market consensus on the total: 47.9% for the OVER — model 65.4% (+17.5% vs market)",
         "Offense edge: 福岡ソフトバンクホークス (wOBA 0.320 vs 0.294)",
         "Bullpen edge: 福岡ソフトバンクホークス",
         "Park factor 98 (pitcher-friendly)",
