@@ -1,0 +1,2691 @@
+{
+  "date": "2026-08-27",
+  "season": 1002026,
+  "fetchedAt": "2026-08-27T09:35:23.929Z",
+  "games": [
+    {
+      "gamePk": 92026082705,
+      "gameDate": "2026-08-27T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9105,
+        "name": "神 宮"
+      },
+      "home": {
+        "teamId": 905,
+        "teamName": "東京ヤクルトスワローズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 901,
+        "teamName": "読売ジャイアンツ",
+        "probablePitcherId": 90188442,
+        "probablePitcherName": "マタ",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082706,
+      "gameDate": "2026-08-27T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9106,
+        "name": "バンテリンドーム"
+      },
+      "home": {
+        "teamId": 906,
+        "teamName": "中日ドラゴンズ",
+        "probablePitcherId": 90676671,
+        "probablePitcherName": "金丸 夢斗",
+        "score": null
+      },
+      "away": {
+        "teamId": 902,
+        "teamName": "阪神タイガース",
+        "probablePitcherId": 90264840,
+        "probablePitcherName": "下村 海翔",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082704,
+      "gameDate": "2026-08-27T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9104,
+        "name": "マツダスタジアム"
+      },
+      "home": {
+        "teamId": 904,
+        "teamName": "広島東洋カープ",
+        "probablePitcherId": 90490727,
+        "probablePitcherName": "栗林 良吏",
+        "score": null
+      },
+      "away": {
+        "teamId": 903,
+        "teamName": "横浜DeNAベイスターズ",
+        "probablePitcherId": 90368053,
+        "probablePitcherName": "片山 皓心",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082709,
+      "gameDate": "2026-08-27T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9109,
+        "name": "ZOZOマリン"
+      },
+      "home": {
+        "teamId": 909,
+        "teamName": "千葉ロッテマリーンズ",
+        "probablePitcherId": 90932937,
+        "probablePitcherName": "毛利 海大",
+        "score": null
+      },
+      "away": {
+        "teamId": 907,
+        "teamName": "福岡ソフトバンクホークス",
+        "probablePitcherId": 90723696,
+        "probablePitcherName": "上茶谷 大河",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026082711,
+      "gameDate": "2026-08-27T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9111,
+        "name": "京セラD大阪"
+      },
+      "home": {
+        "teamId": 911,
+        "teamName": "オリックス・バファローズ",
+        "probablePitcherId": 91144294,
+        "probablePitcherName": "ジェリー",
+        "score": null
+      },
+      "away": {
+        "teamId": 912,
+        "teamName": "東北楽天ゴールデンイーグルス",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    }
+  ],
+  "starters": {
+    "90188442": {
+      "inningsPitched": "24.1",
+      "battersFaced": 107,
+      "hits": 18,
+      "homeRuns": 0,
+      "baseOnBalls": 15,
+      "hitByPitch": 4,
+      "strikeOuts": 27,
+      "runs": 9,
+      "earnedRuns": 9
+    },
+    "90264840": {
+      "inningsPitched": "32.2",
+      "battersFaced": 138,
+      "hits": 33,
+      "homeRuns": 4,
+      "baseOnBalls": 4,
+      "hitByPitch": 1,
+      "strikeOuts": 31,
+      "runs": 14,
+      "earnedRuns": 11
+    },
+    "90368053": {
+      "inningsPitched": "19",
+      "battersFaced": 88,
+      "hits": 20,
+      "homeRuns": 2,
+      "baseOnBalls": 9,
+      "hitByPitch": 1,
+      "strikeOuts": 17,
+      "runs": 10,
+      "earnedRuns": 9
+    },
+    "90490727": {
+      "inningsPitched": "84",
+      "battersFaced": 320,
+      "hits": 56,
+      "homeRuns": 3,
+      "baseOnBalls": 11,
+      "hitByPitch": 1,
+      "strikeOuts": 70,
+      "runs": 22,
+      "earnedRuns": 19
+    },
+    "90676671": {
+      "inningsPitched": "128.1",
+      "battersFaced": 525,
+      "hits": 125,
+      "homeRuns": 14,
+      "baseOnBalls": 22,
+      "hitByPitch": 3,
+      "strikeOuts": 115,
+      "runs": 41,
+      "earnedRuns": 37
+    },
+    "90723696": {
+      "inningsPitched": "67",
+      "battersFaced": 265,
+      "hits": 55,
+      "homeRuns": 11,
+      "baseOnBalls": 17,
+      "hitByPitch": 3,
+      "strikeOuts": 57,
+      "runs": 21,
+      "earnedRuns": 19
+    },
+    "90932937": {
+      "inningsPitched": "65.1",
+      "battersFaced": 283,
+      "hits": 69,
+      "homeRuns": 8,
+      "baseOnBalls": 22,
+      "hitByPitch": 0,
+      "strikeOuts": 40,
+      "runs": 36,
+      "earnedRuns": 35
+    },
+    "91144294": {
+      "inningsPitched": "96",
+      "battersFaced": 404,
+      "hits": 94,
+      "homeRuns": 4,
+      "baseOnBalls": 24,
+      "hitByPitch": 9,
+      "strikeOuts": 77,
+      "runs": 32,
+      "earnedRuns": 28
+    }
+  },
+  "batting": {
+    "901": {
+      "plateAppearances": 4180,
+      "atBats": 3767,
+      "hits": 886,
+      "doubles": 157,
+      "triples": 12,
+      "homeRuns": 86,
+      "stolenBases": 87,
+      "caughtStealing": 33,
+      "sacFlies": 22,
+      "baseOnBalls": 288,
+      "intentionalWalks": 18,
+      "hitByPitch": 39,
+      "strikeOuts": 967
+    },
+    "902": {
+      "plateAppearances": 4256,
+      "atBats": 3750,
+      "hits": 922,
+      "doubles": 143,
+      "triples": 10,
+      "homeRuns": 101,
+      "stolenBases": 57,
+      "caughtStealing": 22,
+      "sacFlies": 26,
+      "baseOnBalls": 345,
+      "intentionalWalks": 24,
+      "hitByPitch": 55,
+      "strikeOuts": 958
+    },
+    "903": {
+      "plateAppearances": 4273,
+      "atBats": 3851,
+      "hits": 942,
+      "doubles": 182,
+      "triples": 5,
+      "homeRuns": 95,
+      "stolenBases": 41,
+      "caughtStealing": 21,
+      "sacFlies": 17,
+      "baseOnBalls": 304,
+      "intentionalWalks": 18,
+      "hitByPitch": 51,
+      "strikeOuts": 855
+    },
+    "904": {
+      "plateAppearances": 4093,
+      "atBats": 3663,
+      "hits": 835,
+      "doubles": 116,
+      "triples": 17,
+      "homeRuns": 73,
+      "stolenBases": 64,
+      "caughtStealing": 30,
+      "sacFlies": 24,
+      "baseOnBalls": 297,
+      "intentionalWalks": 15,
+      "hitByPitch": 33,
+      "strikeOuts": 796
+    },
+    "905": {
+      "plateAppearances": 4146,
+      "atBats": 3768,
+      "hits": 889,
+      "doubles": 156,
+      "triples": 10,
+      "homeRuns": 67,
+      "stolenBases": 75,
+      "caughtStealing": 21,
+      "sacFlies": 23,
+      "baseOnBalls": 293,
+      "intentionalWalks": 22,
+      "hitByPitch": 30,
+      "strikeOuts": 906
+    },
+    "906": {
+      "plateAppearances": 4322,
+      "atBats": 3818,
+      "hits": 872,
+      "doubles": 139,
+      "triples": 16,
+      "homeRuns": 97,
+      "stolenBases": 40,
+      "caughtStealing": 16,
+      "sacFlies": 25,
+      "baseOnBalls": 365,
+      "intentionalWalks": 26,
+      "hitByPitch": 44,
+      "strikeOuts": 992
+    },
+    "907": {
+      "plateAppearances": 4418,
+      "atBats": 3855,
+      "hits": 992,
+      "doubles": 175,
+      "triples": 19,
+      "homeRuns": 123,
+      "stolenBases": 63,
+      "caughtStealing": 12,
+      "sacFlies": 38,
+      "baseOnBalls": 416,
+      "intentionalWalks": 16,
+      "hitByPitch": 47,
+      "strikeOuts": 889
+    },
+    "909": {
+      "plateAppearances": 4097,
+      "atBats": 3715,
+      "hits": 877,
+      "doubles": 140,
+      "triples": 9,
+      "homeRuns": 96,
+      "stolenBases": 40,
+      "caughtStealing": 18,
+      "sacFlies": 19,
+      "baseOnBalls": 283,
+      "intentionalWalks": 8,
+      "hitByPitch": 45,
+      "strikeOuts": 872
+    },
+    "911": {
+      "plateAppearances": 4253,
+      "atBats": 3814,
+      "hits": 934,
+      "doubles": 173,
+      "triples": 16,
+      "homeRuns": 79,
+      "stolenBases": 34,
+      "caughtStealing": 26,
+      "sacFlies": 29,
+      "baseOnBalls": 313,
+      "intentionalWalks": 8,
+      "hitByPitch": 38,
+      "strikeOuts": 767
+    },
+    "912": {
+      "plateAppearances": 4157,
+      "atBats": 3727,
+      "hits": 895,
+      "doubles": 145,
+      "triples": 15,
+      "homeRuns": 83,
+      "stolenBases": 52,
+      "caughtStealing": 24,
+      "sacFlies": 24,
+      "baseOnBalls": 327,
+      "intentionalWalks": 14,
+      "hitByPitch": 31,
+      "strikeOuts": 862
+    }
+  },
+  "bullpens": {
+    "901": {
+      "inningsPitched": "1003.1",
+      "battersFaced": 4159,
+      "strikeOuts": 905,
+      "baseOnBalls": 330,
+      "hitByPitch": 49,
+      "homeRuns": 81,
+      "hits": 861,
+      "earnedRuns": 327,
+      "runs": 357
+    },
+    "902": {
+      "inningsPitched": "969.1",
+      "battersFaced": 3973,
+      "strikeOuts": 878,
+      "baseOnBalls": 252,
+      "hitByPitch": 33,
+      "homeRuns": 89,
+      "hits": 852,
+      "earnedRuns": 312,
+      "runs": 343
+    },
+    "903": {
+      "inningsPitched": "992.2",
+      "battersFaced": 4209,
+      "strikeOuts": 913,
+      "baseOnBalls": 335,
+      "hitByPitch": 39,
+      "homeRuns": 86,
+      "hits": 912,
+      "earnedRuns": 387,
+      "runs": 429
+    },
+    "904": {
+      "inningsPitched": "904.1",
+      "battersFaced": 3842,
+      "strikeOuts": 764,
+      "baseOnBalls": 308,
+      "hitByPitch": 37,
+      "homeRuns": 65,
+      "hits": 849,
+      "earnedRuns": 349,
+      "runs": 377
+    },
+    "905": {
+      "inningsPitched": "993.1",
+      "battersFaced": 4175,
+      "hits": 894,
+      "homeRuns": 102,
+      "baseOnBalls": 313,
+      "hitByPitch": 49,
+      "strikeOuts": 875,
+      "runs": 429,
+      "earnedRuns": 390
+    },
+    "906": {
+      "inningsPitched": "908.2",
+      "battersFaced": 3810,
+      "strikeOuts": 800,
+      "baseOnBalls": 291,
+      "hitByPitch": 30,
+      "homeRuns": 85,
+      "hits": 820,
+      "earnedRuns": 334,
+      "runs": 356
+    },
+    "907": {
+      "inningsPitched": "954.2",
+      "battersFaced": 3963,
+      "strikeOuts": 885,
+      "baseOnBalls": 301,
+      "hitByPitch": 45,
+      "homeRuns": 92,
+      "hits": 841,
+      "earnedRuns": 329,
+      "runs": 359
+    },
+    "909": {
+      "inningsPitched": "918",
+      "battersFaced": 3878,
+      "strikeOuts": 698,
+      "baseOnBalls": 305,
+      "hitByPitch": 51,
+      "homeRuns": 102,
+      "hits": 836,
+      "earnedRuns": 380,
+      "runs": 418
+    },
+    "911": {
+      "inningsPitched": "920",
+      "battersFaced": 3936,
+      "strikeOuts": 795,
+      "baseOnBalls": 311,
+      "hitByPitch": 44,
+      "homeRuns": 98,
+      "hits": 896,
+      "earnedRuns": 402,
+      "runs": 440
+    },
+    "912": {
+      "inningsPitched": "998.1",
+      "battersFaced": 4258,
+      "hits": 951,
+      "homeRuns": 98,
+      "baseOnBalls": 350,
+      "hitByPitch": 48,
+      "strikeOuts": 858,
+      "runs": 455,
+      "earnedRuns": 416
+    }
+  },
+  "forms": {
+    "901": {
+      "games": 15,
+      "runsScoredPerGame": 3.73,
+      "runsAllowedPerGame": 3.4
+    },
+    "902": {
+      "games": 15,
+      "runsScoredPerGame": 3.13,
+      "runsAllowedPerGame": 2.8
+    },
+    "903": {
+      "games": 15,
+      "runsScoredPerGame": 3.13,
+      "runsAllowedPerGame": 3.6
+    },
+    "904": {
+      "games": 15,
+      "runsScoredPerGame": 3.13,
+      "runsAllowedPerGame": 3.73
+    },
+    "905": {
+      "games": 15,
+      "runsScoredPerGame": 3.53,
+      "runsAllowedPerGame": 3.4
+    },
+    "906": {
+      "games": 15,
+      "runsScoredPerGame": 3,
+      "runsAllowedPerGame": 3.53
+    },
+    "907": {
+      "games": 15,
+      "runsScoredPerGame": 5.8,
+      "runsAllowedPerGame": 3.2
+    },
+    "908": {
+      "games": 15,
+      "runsScoredPerGame": 4.47,
+      "runsAllowedPerGame": 4.07
+    },
+    "909": {
+      "games": 15,
+      "runsScoredPerGame": 3.2,
+      "runsAllowedPerGame": 5.33
+    },
+    "910": {
+      "games": 15,
+      "runsScoredPerGame": 3.27,
+      "runsAllowedPerGame": 3
+    },
+    "911": {
+      "games": 15,
+      "runsScoredPerGame": 4,
+      "runsAllowedPerGame": 5.07
+    },
+    "912": {
+      "games": 15,
+      "runsScoredPerGame": 3.4,
+      "runsAllowedPerGame": 3.93
+    }
+  },
+  "parkFactors": {
+    "9101": 97,
+    "9102": 95,
+    "9103": 104,
+    "9104": 96,
+    "9105": 104,
+    "9106": 98,
+    "9107": 105,
+    "9108": 106,
+    "9109": 104,
+    "9110": 95,
+    "9111": 97,
+    "9112": 101
+  },
+  "injuries": {
+    "901": [
+      {
+        "name": "増田 大輝",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-22"
+      },
+      {
+        "name": "Ｔ．キャベッジ",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-22"
+      },
+      {
+        "name": "代木 大和",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "笹原 操希",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "山﨑 伊織",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "小濱 佑斗",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-26"
+      }
+    ],
+    "902": [
+      {
+        "name": "伊原 陵人",
+        "position": "投手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "岡城 快生",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "谷端 将伍",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-22"
+      },
+      {
+        "name": "今朝丸 裕喜",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "Ｅ．ルーカス",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "湯浅 京己",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "嶋村 麟士朗",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "津田 淳哉",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "903": [
+      {
+        "name": "益子 京右",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-19"
+      },
+      {
+        "name": "藤浪 晋太郎",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "竹田 祐",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "坂本 裕哉",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "京田 陽太",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "深沢 鳳介",
+        "position": "投手",
+        "status": "登録抹消 2026-08-26"
+      }
+    ],
+    "904": [
+      {
+        "name": "小園 海斗",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-18"
+      },
+      {
+        "name": "斉藤 優汰",
+        "position": "投手",
+        "status": "登録抹消 2026-08-19"
+      },
+      {
+        "name": "黒原 拓未",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "松本 竜也",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      }
+    ],
+    "905": [
+      {
+        "name": "田口 麗斗",
+        "position": "投手",
+        "status": "登録抹消 2026-08-22"
+      },
+      {
+        "name": "増居 翔太",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "山野辺 翔",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "906": [
+      {
+        "name": "伊藤 茉央",
+        "position": "投手",
+        "status": "登録抹消 2026-08-19"
+      },
+      {
+        "name": "櫻井 頼之介",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "板山 祐太郎",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "土田 龍空",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "907": [
+      {
+        "name": "Ｒ．オスナ",
+        "position": "投手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "木村 大成",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "石塚 綜一郎",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "908": [
+      {
+        "name": "細野 晴希",
+        "position": "投手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "生田目 翼",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "山﨑 福也",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "万波 中正",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "五十幡 亮汰",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-22"
+      },
+      {
+        "name": "伊藤 大海",
+        "position": "投手",
+        "status": "登録抹消 2026-08-26"
+      }
+    ],
+    "909": [
+      {
+        "name": "立松 由宇",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-19"
+      },
+      {
+        "name": "髙橋 快秀",
+        "position": "投手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "友杉 篤輝",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "石川 慎吾",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "吉川 悠斗",
+        "position": "投手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "Ｓ．ロング",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "910": [
+      {
+        "name": "石井 一成",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "杉山 遙希",
+        "position": "投手",
+        "status": "登録抹消 2026-08-21"
+      },
+      {
+        "name": "山田 陽翔",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "山村 崇嘉",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "佐藤 太陽",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "渡邉 勇太朗",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "蛭間 拓哉",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "西川 愛也",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "911": [
+      {
+        "name": "本田 仁海",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "福永 奨",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "齋藤 響介",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "佐藤 一磨",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      }
+    ],
+    "912": [
+      {
+        "name": "宋 家豪",
+        "position": "投手",
+        "status": "登録抹消 2026-08-19"
+      },
+      {
+        "name": "岸 孝之",
+        "position": "投手",
+        "status": "登録抹消 2026-08-20"
+      },
+      {
+        "name": "古謝 樹",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "津留﨑 大成",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "繁永 晟",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "吉野 創士",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-24"
+      }
+    ]
+  },
+  "lineups": {
+    "92026082705": {
+      "home": [
+        {
+          "playerId": 9050008848,
+          "name": "長岡"
+        },
+        {
+          "playerId": 9050087347,
+          "name": "並木"
+        },
+        {
+          "playerId": 9050121655,
+          "name": "赤羽"
+        },
+        {
+          "playerId": 9050249594,
+          "name": "宮本"
+        },
+        {
+          "playerId": 9050829223,
+          "name": "西村"
+        },
+        {
+          "playerId": 9050620528,
+          "name": "古賀"
+        },
+        {
+          "playerId": 9050379788,
+          "name": "岩田"
+        },
+        {
+          "playerId": 9050660903,
+          "name": "武岡"
+        },
+        {
+          "playerId": 9050848242,
+          "name": "松本健"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 9010745059,
+          "name": "浦田"
+        },
+        {
+          "playerId": 9010154182,
+          "name": "佐々木"
+        },
+        {
+          "playerId": 9010901648,
+          "name": "松本"
+        },
+        {
+          "playerId": 9010095043,
+          "name": "ダルベック"
+        },
+        {
+          "playerId": 9010014451,
+          "name": "大城"
+        },
+        {
+          "playerId": 9010154053,
+          "name": "坂本勇"
+        },
+        {
+          "playerId": 9010576754,
+          "name": "泉口"
+        },
+        {
+          "playerId": 9010312959,
+          "name": "鈴木大"
+        },
+        {
+          "playerId": 9010898084,
+          "name": "マタ"
+        }
+      ]
+    },
+    "92026082706": {
+      "home": [
+        {
+          "playerId": 9060632261,
+          "name": "福永"
+        },
+        {
+          "playerId": 9060200096,
+          "name": "上林"
+        },
+        {
+          "playerId": 9060614868,
+          "name": "細川"
+        },
+        {
+          "playerId": 9060550136,
+          "name": "サノー"
+        },
+        {
+          "playerId": 9060263355,
+          "name": "ボスラー"
+        },
+        {
+          "playerId": 9060942022,
+          "name": "石川昂"
+        },
+        {
+          "playerId": 9060943998,
+          "name": "山本"
+        },
+        {
+          "playerId": 9060756379,
+          "name": "石伊"
+        },
+        {
+          "playerId": 9060093004,
+          "name": "金丸"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 9020402717,
+          "name": "近本"
+        },
+        {
+          "playerId": 9020553760,
+          "name": "中野"
+        },
+        {
+          "playerId": 9020668606,
+          "name": "森下"
+        },
+        {
+          "playerId": 9020037498,
+          "name": "佐藤"
+        },
+        {
+          "playerId": 9020014449,
+          "name": "大山"
+        },
+        {
+          "playerId": 9020159838,
+          "name": "前川"
+        },
+        {
+          "playerId": 9020333747,
+          "name": "坂本"
+        },
+        {
+          "playerId": 9020471640,
+          "name": "元山"
+        },
+        {
+          "playerId": 9020609275,
+          "name": "下村"
+        }
+      ]
+    },
+    "92026082704": {
+      "home": [
+        {
+          "playerId": 9040014453,
+          "name": "大盛"
+        },
+        {
+          "playerId": 9040092947,
+          "name": "菊池"
+        },
+        {
+          "playerId": 9040442989,
+          "name": "ファビアン"
+        },
+        {
+          "playerId": 9040333749,
+          "name": "坂倉"
+        },
+        {
+          "playerId": 9040156210,
+          "name": "モンテロ"
+        },
+        {
+          "playerId": 9040672222,
+          "name": "佐々木"
+        },
+        {
+          "playerId": 9040890386,
+          "name": "持丸"
+        },
+        {
+          "playerId": 9040003189,
+          "name": "勝田"
+        },
+        {
+          "playerId": 9040974545,
+          "name": "栗林"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 9030729777,
+          "name": "度会"
+        },
+        {
+          "playerId": 9030303326,
+          "name": "牧"
+        },
+        {
+          "playerId": 9030699022,
+          "name": "筒香"
+        },
+        {
+          "playerId": 9030584444,
+          "name": "エンカーナシオン"
+        },
+        {
+          "playerId": 9030008792,
+          "name": "宮﨑"
+        },
+        {
+          "playerId": 9030182767,
+          "name": "勝又"
+        },
+        {
+          "playerId": 9030087351,
+          "name": "林"
+        },
+        {
+          "playerId": 9030295566,
+          "name": "戸柱"
+        },
+        {
+          "playerId": 9030093006,
+          "name": "片山"
+        }
+      ]
+    },
+    "92026082709": {
+      "home": [
+        {
+          "playerId": 9090356741,
+          "name": "藤原"
+        },
+        {
+          "playerId": 9090901705,
+          "name": "西川"
+        },
+        {
+          "playerId": 9090345421,
+          "name": "山口"
+        },
+        {
+          "playerId": 9090402772,
+          "name": "佐藤"
+        },
+        {
+          "playerId": 9090364436,
+          "name": "ソト"
+        },
+        {
+          "playerId": 9090075679,
+          "name": "小川"
+        },
+        {
+          "playerId": 9090890329,
+          "name": "安田"
+        },
+        {
+          "playerId": 9090123694,
+          "name": "松川"
+        },
+        {
+          "playerId": 9090660842,
+          "name": "茶谷"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 9070890390,
+          "name": "正木"
+        },
+        {
+          "playerId": 9070788844,
+          "name": "周東"
+        },
+        {
+          "playerId": 9070440895,
+          "name": "近藤"
+        },
+        {
+          "playerId": 9070620524,
+          "name": "栗原"
+        },
+        {
+          "playerId": 9070614867,
+          "name": "柳田"
+        },
+        {
+          "playerId": 9070758360,
+          "name": "山本祐"
+        },
+        {
+          "playerId": 9070463881,
+          "name": "牧原大"
+        },
+        {
+          "playerId": 9070722080,
+          "name": "廣瀨隆"
+        },
+        {
+          "playerId": 9070475260,
+          "name": "庄子"
+        }
+      ]
+    },
+    "92026082711": {
+      "home": [
+        {
+          "playerId": 9110095046,
+          "name": "渡部"
+        },
+        {
+          "playerId": 9110918973,
+          "name": "西川"
+        },
+        {
+          "playerId": 9110154176,
+          "name": "来田"
+        },
+        {
+          "playerId": 9110200095,
+          "name": "太田"
+        },
+        {
+          "playerId": 9110974543,
+          "name": "紅林"
+        },
+        {
+          "playerId": 9110704681,
+          "name": "宗"
+        },
+        {
+          "playerId": 9110374128,
+          "name": "野口"
+        },
+        {
+          "playerId": 9110811835,
+          "name": "若月"
+        },
+        {
+          "playerId": 9110213506,
+          "name": "麦谷"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 9120643583,
+          "name": "中島"
+        },
+        {
+          "playerId": 9120672168,
+          "name": "辰己"
+        },
+        {
+          "playerId": 9120123689,
+          "name": "宗山"
+        },
+        {
+          "playerId": 9120808267,
+          "name": "マッカスカー"
+        },
+        {
+          "playerId": 9120069956,
+          "name": "村林"
+        },
+        {
+          "playerId": 9120926735,
+          "name": "YG安田"
+        },
+        {
+          "playerId": 9120106361,
+          "name": "吉納"
+        },
+        {
+          "playerId": 9120289912,
+          "name": "太田"
+        },
+        {
+          "playerId": 9120878718,
+          "name": "黒川"
+        }
+      ]
+    }
+  },
+  "lineupBatting": {
+    "9010745059": {
+      "plateAppearances": 406,
+      "atBats": 361,
+      "hits": 102,
+      "doubles": 12,
+      "triples": 2,
+      "homeRuns": 0,
+      "stolenBases": 33,
+      "caughtStealing": 9,
+      "sacFlies": 3,
+      "baseOnBalls": 26,
+      "intentionalWalks": 1,
+      "hitByPitch": 8,
+      "strikeOuts": 50
+    },
+    "9010154182": {
+      "plateAppearances": 301,
+      "atBats": 271,
+      "hits": 75,
+      "doubles": 18,
+      "triples": 0,
+      "homeRuns": 9,
+      "stolenBases": 8,
+      "caughtStealing": 6,
+      "sacFlies": 0,
+      "baseOnBalls": 23,
+      "intentionalWalks": 4,
+      "hitByPitch": 3,
+      "strikeOuts": 69
+    },
+    "9010901648": {
+      "plateAppearances": 347,
+      "atBats": 310,
+      "hits": 86,
+      "doubles": 10,
+      "triples": 0,
+      "homeRuns": 3,
+      "stolenBases": 15,
+      "caughtStealing": 7,
+      "sacFlies": 0,
+      "baseOnBalls": 19,
+      "intentionalWalks": 0,
+      "hitByPitch": 5,
+      "strikeOuts": 44
+    },
+    "9010095043": {
+      "plateAppearances": 453,
+      "atBats": 407,
+      "hits": 104,
+      "doubles": 21,
+      "triples": 1,
+      "homeRuns": 21,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 41,
+      "intentionalWalks": 2,
+      "hitByPitch": 1,
+      "strikeOuts": 148
+    },
+    "9010014451": {
+      "plateAppearances": 273,
+      "atBats": 243,
+      "hits": 66,
+      "doubles": 18,
+      "triples": 2,
+      "homeRuns": 8,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 26,
+      "intentionalWalks": 2,
+      "hitByPitch": 3,
+      "strikeOuts": 78
+    },
+    "9010154053": {
+      "plateAppearances": 125,
+      "atBats": 110,
+      "hits": 18,
+      "doubles": 2,
+      "triples": 0,
+      "homeRuns": 5,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 14,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 33
+    },
+    "9010576754": {
+      "plateAppearances": 404,
+      "atBats": 355,
+      "hits": 85,
+      "doubles": 18,
+      "triples": 2,
+      "homeRuns": 6,
+      "stolenBases": 7,
+      "caughtStealing": 1,
+      "sacFlies": 6,
+      "baseOnBalls": 35,
+      "intentionalWalks": 0,
+      "hitByPitch": 6,
+      "strikeOuts": 55
+    },
+    "9010898084": {
+      "plateAppearances": 9,
+      "atBats": 8,
+      "hits": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 5
+    },
+    "9050008848": {
+      "plateAppearances": 414,
+      "atBats": 372,
+      "hits": 100,
+      "doubles": 17,
+      "triples": 1,
+      "homeRuns": 8,
+      "stolenBases": 3,
+      "caughtStealing": 6,
+      "sacFlies": 2,
+      "baseOnBalls": 34,
+      "intentionalWalks": 2,
+      "hitByPitch": 4,
+      "strikeOuts": 55
+    },
+    "9050087347": {
+      "plateAppearances": 52,
+      "atBats": 49,
+      "hits": 13,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 1,
+      "stolenBases": 8,
+      "caughtStealing": 1,
+      "sacFlies": 0,
+      "baseOnBalls": 1,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 7
+    },
+    "9050121655": {
+      "plateAppearances": 240,
+      "atBats": 218,
+      "hits": 52,
+      "doubles": 10,
+      "triples": 0,
+      "homeRuns": 5,
+      "stolenBases": 7,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 17,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 71
+    },
+    "9050249594": {
+      "plateAppearances": 61,
+      "atBats": 56,
+      "hits": 19,
+      "doubles": 5,
+      "triples": 0,
+      "homeRuns": 1,
+      "stolenBases": 1,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 3,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "strikeOuts": 13
+    },
+    "9050829223": {
+      "plateAppearances": 49,
+      "atBats": 46,
+      "hits": 15,
+      "doubles": 3,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 2,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 9
+    },
+    "9050620528": {
+      "plateAppearances": 278,
+      "atBats": 259,
+      "hits": 72,
+      "doubles": 8,
+      "triples": 2,
+      "homeRuns": 1,
+      "stolenBases": 2,
+      "caughtStealing": 0,
+      "sacFlies": 3,
+      "baseOnBalls": 6,
+      "intentionalWalks": 1,
+      "hitByPitch": 6,
+      "strikeOuts": 23
+    },
+    "9050379788": {
+      "plateAppearances": 365,
+      "atBats": 344,
+      "hits": 86,
+      "doubles": 9,
+      "triples": 1,
+      "homeRuns": 1,
+      "stolenBases": 30,
+      "caughtStealing": 6,
+      "sacFlies": 1,
+      "baseOnBalls": 14,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "strikeOuts": 67
+    },
+    "9050660903": {
+      "plateAppearances": 275,
+      "atBats": 250,
+      "hits": 56,
+      "doubles": 14,
+      "triples": 1,
+      "homeRuns": 4,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 22,
+      "intentionalWalks": 4,
+      "hitByPitch": 1,
+      "strikeOuts": 67
+    },
+    "9050848242": {
+      "plateAppearances": 28,
+      "atBats": 28,
+      "hits": 3,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 19
+    },
+    "9020402717": {
+      "plateAppearances": 275,
+      "atBats": 249,
+      "hits": 67,
+      "doubles": 7,
+      "triples": 0,
+      "homeRuns": 2,
+      "stolenBases": 8,
+      "caughtStealing": 4,
+      "sacFlies": 1,
+      "baseOnBalls": 24,
+      "intentionalWalks": 1,
+      "hitByPitch": 1,
+      "strikeOuts": 37
+    },
+    "9020553760": {
+      "plateAppearances": 453,
+      "atBats": 397,
+      "hits": 112,
+      "doubles": 12,
+      "triples": 1,
+      "homeRuns": 0,
+      "stolenBases": 7,
+      "caughtStealing": 3,
+      "sacFlies": 3,
+      "baseOnBalls": 31,
+      "intentionalWalks": 0,
+      "hitByPitch": 2,
+      "strikeOuts": 67
+    },
+    "9020668606": {
+      "plateAppearances": 491,
+      "atBats": 424,
+      "hits": 126,
+      "doubles": 25,
+      "triples": 1,
+      "homeRuns": 31,
+      "stolenBases": 3,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 48,
+      "intentionalWalks": 2,
+      "hitByPitch": 15,
+      "strikeOuts": 72
+    },
+    "9020037498": {
+      "plateAppearances": 481,
+      "atBats": 420,
+      "hits": 134,
+      "doubles": 32,
+      "triples": 3,
+      "homeRuns": 30,
+      "stolenBases": 6,
+      "caughtStealing": 3,
+      "sacFlies": 3,
+      "baseOnBalls": 57,
+      "intentionalWalks": 7,
+      "hitByPitch": 1,
+      "strikeOuts": 125
+    },
+    "9020014449": {
+      "plateAppearances": 463,
+      "atBats": 394,
+      "hits": 109,
+      "doubles": 16,
+      "triples": 1,
+      "homeRuns": 15,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 8,
+      "baseOnBalls": 53,
+      "intentionalWalks": 4,
+      "hitByPitch": 8,
+      "strikeOuts": 71
+    },
+    "9020159838": {
+      "plateAppearances": 163,
+      "atBats": 143,
+      "hits": 34,
+      "doubles": 7,
+      "triples": 0,
+      "homeRuns": 5,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 16,
+      "intentionalWalks": 1,
+      "hitByPitch": 4,
+      "strikeOuts": 33
+    },
+    "9020333747": {
+      "plateAppearances": 236,
+      "atBats": 209,
+      "hits": 46,
+      "doubles": 6,
+      "triples": 1,
+      "homeRuns": 8,
+      "stolenBases": 2,
+      "caughtStealing": 1,
+      "sacFlies": 2,
+      "baseOnBalls": 17,
+      "intentionalWalks": 2,
+      "hitByPitch": 2,
+      "strikeOuts": 67
+    },
+    "9020471640": {
+      "plateAppearances": 95,
+      "atBats": 81,
+      "hits": 22,
+      "doubles": 0,
+      "triples": 1,
+      "homeRuns": 0,
+      "stolenBases": 1,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 10,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 21
+    },
+    "9020609275": {
+      "plateAppearances": 11,
+      "atBats": 10,
+      "hits": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 1,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 6
+    },
+    "9060632261": {
+      "plateAppearances": 322,
+      "atBats": 289,
+      "hits": 81,
+      "doubles": 9,
+      "triples": 0,
+      "homeRuns": 4,
+      "stolenBases": 12,
+      "caughtStealing": 4,
+      "sacFlies": 0,
+      "baseOnBalls": 27,
+      "intentionalWalks": 1,
+      "hitByPitch": 5,
+      "strikeOuts": 57
+    },
+    "9060200096": {
+      "plateAppearances": 29,
+      "atBats": 27,
+      "hits": 6,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 2,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 2,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 6
+    },
+    "9060614868": {
+      "plateAppearances": 491,
+      "atBats": 402,
+      "hits": 93,
+      "doubles": 13,
+      "triples": 1,
+      "homeRuns": 21,
+      "stolenBases": 1,
+      "caughtStealing": 1,
+      "sacFlies": 3,
+      "baseOnBalls": 78,
+      "intentionalWalks": 7,
+      "hitByPitch": 8,
+      "strikeOuts": 127
+    },
+    "9060550136": {
+      "plateAppearances": 267,
+      "atBats": 233,
+      "hits": 52,
+      "doubles": 6,
+      "triples": 0,
+      "homeRuns": 20,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 28,
+      "intentionalWalks": 2,
+      "hitByPitch": 2,
+      "strikeOuts": 72
+    },
+    "9060263355": {
+      "plateAppearances": 249,
+      "atBats": 232,
+      "hits": 45,
+      "doubles": 7,
+      "triples": 1,
+      "homeRuns": 7,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 12,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "strikeOuts": 73
+    },
+    "9060942022": {
+      "plateAppearances": 288,
+      "atBats": 261,
+      "hits": 68,
+      "doubles": 18,
+      "triples": 0,
+      "homeRuns": 8,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 0,
+      "baseOnBalls": 24,
+      "intentionalWalks": 1,
+      "hitByPitch": 3,
+      "strikeOuts": 57
+    },
+    "9060943998": {
+      "plateAppearances": 69,
+      "atBats": 59,
+      "hits": 11,
+      "doubles": 1,
+      "triples": 0,
+      "homeRuns": 1,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 6,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 13
+    },
+    "9060756379": {
+      "plateAppearances": 316,
+      "atBats": 292,
+      "hits": 73,
+      "doubles": 15,
+      "triples": 1,
+      "homeRuns": 7,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 2,
+      "baseOnBalls": 13,
+      "intentionalWalks": 0,
+      "hitByPitch": 5,
+      "strikeOuts": 72
+    },
+    "9060093004": {
+      "plateAppearances": 40,
+      "atBats": 39,
+      "hits": 2,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 19
+    },
+    "9030729777": {
+      "plateAppearances": 379,
+      "atBats": 345,
+      "hits": 98,
+      "doubles": 18,
+      "triples": 0,
+      "homeRuns": 7,
+      "stolenBases": 4,
+      "caughtStealing": 4,
+      "sacFlies": 1,
+      "baseOnBalls": 26,
+      "intentionalWalks": 0,
+      "hitByPitch": 6,
+      "strikeOuts": 51
+    },
+    "9030303326": {
+      "plateAppearances": 348,
+      "atBats": 308,
+      "hits": 90,
+      "doubles": 21,
+      "triples": 0,
+      "homeRuns": 22,
+      "stolenBases": 2,
+      "caughtStealing": 2,
+      "sacFlies": 1,
+      "baseOnBalls": 29,
+      "intentionalWalks": 1,
+      "hitByPitch": 10,
+      "strikeOuts": 60
+    },
+    "9030699022": {
+      "plateAppearances": 288,
+      "atBats": 246,
+      "hits": 64,
+      "doubles": 13,
+      "triples": 0,
+      "homeRuns": 14,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 39,
+      "intentionalWalks": 1,
+      "hitByPitch": 1,
+      "strikeOuts": 78
+    },
+    "9030584444": {
+      "plateAppearances": 174,
+      "atBats": 166,
+      "hits": 49,
+      "doubles": 9,
+      "triples": 0,
+      "homeRuns": 10,
+      "stolenBases": 1,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 6,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 32
+    },
+    "9030008792": {
+      "plateAppearances": 304,
+      "atBats": 269,
+      "hits": 68,
+      "doubles": 11,
+      "triples": 0,
+      "homeRuns": 8,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 2,
+      "baseOnBalls": 28,
+      "intentionalWalks": 1,
+      "hitByPitch": 5,
+      "strikeOuts": 37
+    },
+    "9030182767": {
+      "plateAppearances": 334,
+      "atBats": 315,
+      "hits": 92,
+      "doubles": 11,
+      "triples": 0,
+      "homeRuns": 4,
+      "stolenBases": 3,
+      "caughtStealing": 2,
+      "sacFlies": 1,
+      "baseOnBalls": 11,
+      "intentionalWalks": 1,
+      "hitByPitch": 5,
+      "strikeOuts": 56
+    },
+    "9030087351": {
+      "plateAppearances": 119,
+      "atBats": 107,
+      "hits": 24,
+      "doubles": 9,
+      "triples": 0,
+      "homeRuns": 1,
+      "stolenBases": 5,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 8,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 28
+    },
+    "9030295566": {
+      "plateAppearances": 72,
+      "atBats": 66,
+      "hits": 12,
+      "doubles": 4,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 5,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 13
+    },
+    "9030093006": {
+      "plateAppearances": 5,
+      "atBats": 3,
+      "hits": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 3
+    },
+    "9040014453": {
+      "plateAppearances": 293,
+      "atBats": 274,
+      "hits": 63,
+      "doubles": 7,
+      "triples": 3,
+      "homeRuns": 5,
+      "stolenBases": 12,
+      "caughtStealing": 5,
+      "sacFlies": 0,
+      "baseOnBalls": 11,
+      "intentionalWalks": 2,
+      "hitByPitch": 1,
+      "strikeOuts": 74
+    },
+    "9040092947": {
+      "plateAppearances": 404,
+      "atBats": 342,
+      "hits": 85,
+      "doubles": 18,
+      "triples": 0,
+      "homeRuns": 7,
+      "stolenBases": 3,
+      "caughtStealing": 3,
+      "sacFlies": 4,
+      "baseOnBalls": 40,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 76
+    },
+    "9040442989": {
+      "plateAppearances": 306,
+      "atBats": 278,
+      "hits": 64,
+      "doubles": 10,
+      "triples": 1,
+      "homeRuns": 16,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 17,
+      "intentionalWalks": 0,
+      "hitByPitch": 7,
+      "strikeOuts": 52
+    },
+    "9040333749": {
+      "plateAppearances": 438,
+      "atBats": 386,
+      "hits": 98,
+      "doubles": 18,
+      "triples": 1,
+      "homeRuns": 12,
+      "stolenBases": 3,
+      "caughtStealing": 3,
+      "sacFlies": 2,
+      "baseOnBalls": 47,
+      "intentionalWalks": 4,
+      "hitByPitch": 3,
+      "strikeOuts": 83
+    },
+    "9040156210": {
+      "plateAppearances": 286,
+      "atBats": 251,
+      "hits": 61,
+      "doubles": 10,
+      "triples": 0,
+      "homeRuns": 11,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 3,
+      "baseOnBalls": 30,
+      "intentionalWalks": 3,
+      "hitByPitch": 2,
+      "strikeOuts": 66
+    },
+    "9040672222": {
+      "plateAppearances": 295,
+      "atBats": 276,
+      "hits": 72,
+      "doubles": 9,
+      "triples": 1,
+      "homeRuns": 4,
+      "stolenBases": 2,
+      "caughtStealing": 2,
+      "sacFlies": 0,
+      "baseOnBalls": 17,
+      "intentionalWalks": 1,
+      "hitByPitch": 1,
+      "strikeOuts": 35
+    },
+    "9040890386": {
+      "plateAppearances": 236,
+      "atBats": 194,
+      "hits": 40,
+      "doubles": 6,
+      "triples": 0,
+      "homeRuns": 6,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 31,
+      "intentionalWalks": 1,
+      "hitByPitch": 2,
+      "strikeOuts": 53
+    },
+    "9040003189": {
+      "plateAppearances": 173,
+      "atBats": 150,
+      "hits": 25,
+      "doubles": 2,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 5,
+      "caughtStealing": 2,
+      "sacFlies": 1,
+      "baseOnBalls": 13,
+      "intentionalWalks": 2,
+      "hitByPitch": 4,
+      "strikeOuts": 26
+    },
+    "9040974545": {
+      "plateAppearances": 28,
+      "atBats": 23,
+      "hits": 1,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 13
+    },
+    "9070890390": {
+      "plateAppearances": 361,
+      "atBats": 306,
+      "hits": 84,
+      "doubles": 9,
+      "triples": 1,
+      "homeRuns": 21,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 3,
+      "baseOnBalls": 47,
+      "intentionalWalks": 2,
+      "hitByPitch": 5,
+      "strikeOuts": 72
+    },
+    "9070788844": {
+      "plateAppearances": 472,
+      "atBats": 413,
+      "hits": 115,
+      "doubles": 16,
+      "triples": 5,
+      "homeRuns": 2,
+      "stolenBases": 26,
+      "caughtStealing": 5,
+      "sacFlies": 6,
+      "baseOnBalls": 38,
+      "intentionalWalks": 0,
+      "hitByPitch": 5,
+      "strikeOuts": 69
+    },
+    "9070440895": {
+      "plateAppearances": 481,
+      "atBats": 394,
+      "hits": 120,
+      "doubles": 27,
+      "triples": 0,
+      "homeRuns": 25,
+      "stolenBases": 5,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 78,
+      "intentionalWalks": 7,
+      "hitByPitch": 5,
+      "strikeOuts": 72
+    },
+    "9070620524": {
+      "plateAppearances": 499,
+      "atBats": 425,
+      "hits": 111,
+      "doubles": 20,
+      "triples": 2,
+      "homeRuns": 34,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 62,
+      "intentionalWalks": 1,
+      "hitByPitch": 7,
+      "strikeOuts": 92
+    },
+    "9070614867": {
+      "plateAppearances": 386,
+      "atBats": 356,
+      "hits": 107,
+      "doubles": 18,
+      "triples": 0,
+      "homeRuns": 13,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 23,
+      "intentionalWalks": 1,
+      "hitByPitch": 5,
+      "strikeOuts": 64
+    },
+    "9070758360": {
+      "plateAppearances": 123,
+      "atBats": 110,
+      "hits": 34,
+      "doubles": 4,
+      "triples": 2,
+      "homeRuns": 2,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 7,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "strikeOuts": 18
+    },
+    "9070463881": {
+      "plateAppearances": 423,
+      "atBats": 387,
+      "hits": 111,
+      "doubles": 19,
+      "triples": 0,
+      "homeRuns": 4,
+      "stolenBases": 10,
+      "caughtStealing": 2,
+      "sacFlies": 3,
+      "baseOnBalls": 20,
+      "intentionalWalks": 2,
+      "hitByPitch": 6,
+      "strikeOuts": 73
+    },
+    "9070722080": {
+      "plateAppearances": 89,
+      "atBats": 74,
+      "hits": 18,
+      "doubles": 6,
+      "triples": 0,
+      "homeRuns": 1,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 11,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 26
+    },
+    "9070475260": {
+      "plateAppearances": 220,
+      "atBats": 186,
+      "hits": 44,
+      "doubles": 2,
+      "triples": 2,
+      "homeRuns": 0,
+      "stolenBases": 16,
+      "caughtStealing": 3,
+      "sacFlies": 2,
+      "baseOnBalls": 22,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "strikeOuts": 51
+    },
+    "9090356741": {
+      "plateAppearances": 340,
+      "atBats": 295,
+      "hits": 85,
+      "doubles": 12,
+      "triples": 1,
+      "homeRuns": 7,
+      "stolenBases": 10,
+      "caughtStealing": 3,
+      "sacFlies": 1,
+      "baseOnBalls": 34,
+      "intentionalWalks": 1,
+      "hitByPitch": 10,
+      "strikeOuts": 62
+    },
+    "9090901705": {
+      "plateAppearances": 459,
+      "atBats": 417,
+      "hits": 125,
+      "doubles": 26,
+      "triples": 1,
+      "homeRuns": 7,
+      "stolenBases": 2,
+      "caughtStealing": 2,
+      "sacFlies": 0,
+      "baseOnBalls": 36,
+      "intentionalWalks": 1,
+      "hitByPitch": 6,
+      "strikeOuts": 79
+    },
+    "9090345421": {
+      "plateAppearances": 304,
+      "atBats": 280,
+      "hits": 78,
+      "doubles": 13,
+      "triples": 1,
+      "homeRuns": 24,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 2,
+      "baseOnBalls": 17,
+      "intentionalWalks": 0,
+      "hitByPitch": 5,
+      "strikeOuts": 69
+    },
+    "9090402772": {
+      "plateAppearances": 346,
+      "atBats": 297,
+      "hits": 68,
+      "doubles": 13,
+      "triples": 0,
+      "homeRuns": 13,
+      "stolenBases": 1,
+      "caughtStealing": 0,
+      "sacFlies": 3,
+      "baseOnBalls": 41,
+      "intentionalWalks": 1,
+      "hitByPitch": 4,
+      "strikeOuts": 70
+    },
+    "9090364436": {
+      "plateAppearances": 332,
+      "atBats": 300,
+      "hits": 69,
+      "doubles": 13,
+      "triples": 0,
+      "homeRuns": 15,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 24,
+      "intentionalWalks": 1,
+      "hitByPitch": 6,
+      "strikeOuts": 83
+    },
+    "9090075679": {
+      "plateAppearances": 399,
+      "atBats": 368,
+      "hits": 98,
+      "doubles": 9,
+      "triples": 3,
+      "homeRuns": 2,
+      "stolenBases": 7,
+      "caughtStealing": 4,
+      "sacFlies": 1,
+      "baseOnBalls": 16,
+      "intentionalWalks": 1,
+      "hitByPitch": 4,
+      "strikeOuts": 62
+    },
+    "9090890329": {
+      "plateAppearances": 168,
+      "atBats": 154,
+      "hits": 38,
+      "doubles": 10,
+      "triples": 0,
+      "homeRuns": 5,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 12,
+      "intentionalWalks": 1,
+      "hitByPitch": 1,
+      "strikeOuts": 43
+    },
+    "9090123694": {
+      "plateAppearances": 95,
+      "atBats": 89,
+      "hits": 17,
+      "doubles": 2,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 0,
+      "baseOnBalls": 2,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 23
+    },
+    "9090660842": {
+      "plateAppearances": 6,
+      "atBats": 6,
+      "hits": 1,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 1
+    },
+    "9120643583": {
+      "plateAppearances": 331,
+      "atBats": 294,
+      "hits": 82,
+      "doubles": 20,
+      "triples": 2,
+      "homeRuns": 5,
+      "stolenBases": 9,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 24,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "strikeOuts": 36
+    },
+    "9120672168": {
+      "plateAppearances": 477,
+      "atBats": 420,
+      "hits": 112,
+      "doubles": 18,
+      "triples": 3,
+      "homeRuns": 10,
+      "stolenBases": 6,
+      "caughtStealing": 7,
+      "sacFlies": 3,
+      "baseOnBalls": 48,
+      "intentionalWalks": 3,
+      "hitByPitch": 5,
+      "strikeOuts": 103
+    },
+    "9120123689": {
+      "plateAppearances": 146,
+      "atBats": 131,
+      "hits": 36,
+      "doubles": 7,
+      "triples": 0,
+      "homeRuns": 4,
+      "stolenBases": 3,
+      "caughtStealing": 3,
+      "sacFlies": 1,
+      "baseOnBalls": 13,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "strikeOuts": 16
+    },
+    "9120808267": {
+      "plateAppearances": 289,
+      "atBats": 258,
+      "hits": 67,
+      "doubles": 9,
+      "triples": 1,
+      "homeRuns": 19,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 29,
+      "intentionalWalks": 1,
+      "hitByPitch": 1,
+      "strikeOuts": 100
+    },
+    "9120069956": {
+      "plateAppearances": 444,
+      "atBats": 400,
+      "hits": 108,
+      "doubles": 16,
+      "triples": 2,
+      "homeRuns": 4,
+      "stolenBases": 3,
+      "caughtStealing": 2,
+      "sacFlies": 4,
+      "baseOnBalls": 35,
+      "intentionalWalks": 5,
+      "hitByPitch": 2,
+      "strikeOuts": 66
+    },
+    "9120926735": {
+      "plateAppearances": 138,
+      "atBats": 130,
+      "hits": 40,
+      "doubles": 8,
+      "triples": 1,
+      "homeRuns": 5,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 8,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 35
+    },
+    "9120106361": {
+      "plateAppearances": 7,
+      "atBats": 6,
+      "hits": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 1,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 4
+    },
+    "9120289912": {
+      "plateAppearances": 229,
+      "atBats": 207,
+      "hits": 44,
+      "doubles": 5,
+      "triples": 0,
+      "homeRuns": 3,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 2,
+      "baseOnBalls": 16,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 59
+    },
+    "9120878718": {
+      "plateAppearances": 414,
+      "atBats": 364,
+      "hits": 88,
+      "doubles": 10,
+      "triples": 1,
+      "homeRuns": 3,
+      "stolenBases": 1,
+      "caughtStealing": 1,
+      "sacFlies": 2,
+      "baseOnBalls": 40,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "strikeOuts": 54
+    },
+    "9110095046": {
+      "plateAppearances": 224,
+      "atBats": 192,
+      "hits": 45,
+      "doubles": 2,
+      "triples": 2,
+      "homeRuns": 3,
+      "stolenBases": 17,
+      "caughtStealing": 2,
+      "sacFlies": 0,
+      "baseOnBalls": 21,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "strikeOuts": 40
+    },
+    "9110918973": {
+      "plateAppearances": 495,
+      "atBats": 462,
+      "hits": 132,
+      "doubles": 29,
+      "triples": 0,
+      "homeRuns": 10,
+      "stolenBases": 1,
+      "caughtStealing": 2,
+      "sacFlies": 3,
+      "baseOnBalls": 29,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "strikeOuts": 68
+    },
+    "9110154176": {
+      "plateAppearances": 240,
+      "atBats": 223,
+      "hits": 62,
+      "doubles": 10,
+      "triples": 3,
+      "homeRuns": 7,
+      "stolenBases": 1,
+      "caughtStealing": 2,
+      "sacFlies": 2,
+      "baseOnBalls": 9,
+      "intentionalWalks": 0,
+      "hitByPitch": 2,
+      "strikeOuts": 40
+    },
+    "9110200095": {
+      "plateAppearances": 400,
+      "atBats": 358,
+      "hits": 103,
+      "doubles": 24,
+      "triples": 1,
+      "homeRuns": 8,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 38,
+      "intentionalWalks": 1,
+      "hitByPitch": 3,
+      "strikeOuts": 82
+    },
+    "9110974543": {
+      "plateAppearances": 421,
+      "atBats": 371,
+      "hits": 99,
+      "doubles": 20,
+      "triples": 1,
+      "homeRuns": 14,
+      "stolenBases": 1,
+      "caughtStealing": 0,
+      "sacFlies": 2,
+      "baseOnBalls": 39,
+      "intentionalWalks": 2,
+      "hitByPitch": 5,
+      "strikeOuts": 61
+    },
+    "9110704681": {
+      "plateAppearances": 441,
+      "atBats": 380,
+      "hits": 89,
+      "doubles": 14,
+      "triples": 4,
+      "homeRuns": 11,
+      "stolenBases": 4,
+      "caughtStealing": 7,
+      "sacFlies": 5,
+      "baseOnBalls": 43,
+      "intentionalWalks": 0,
+      "hitByPitch": 9,
+      "strikeOuts": 70
+    },
+    "9110374128": {
+      "plateAppearances": 131,
+      "atBats": 117,
+      "hits": 26,
+      "doubles": 5,
+      "triples": 0,
+      "homeRuns": 3,
+      "stolenBases": 1,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 7,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "strikeOuts": 40
+    },
+    "9110811835": {
+      "plateAppearances": 278,
+      "atBats": 242,
+      "hits": 51,
+      "doubles": 12,
+      "triples": 1,
+      "homeRuns": 1,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 17,
+      "intentionalWalks": 2,
+      "hitByPitch": 1,
+      "strikeOuts": 51
+    },
+    "9110213506": {
+      "plateAppearances": 56,
+      "atBats": 50,
+      "hits": 8,
+      "doubles": 1,
+      "triples": 1,
+      "homeRuns": 1,
+      "stolenBases": 2,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 4,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 20
+    }
+  },
+  "leagueConstants": {
+    "season": 1002026,
+    "wOBA": 0.294,
+    "wOBAScale": 1.24,
+    "wBB": 0.69,
+    "wHBP": 0.722,
+    "w1B": 0.882,
+    "w2B": 1.256,
+    "w3B": 1.59,
+    "wHR": 2.05,
+    "runSB": 0.2,
+    "runCS": -0.4,
+    "runsPerPA": 0.097,
+    "runsPerWin": 9.6,
+    "cFIP": 2.797,
+    "lgFIP": 3.334,
+    "hrPerFB": 0.088
+  },
+  "weather": {
+    "92026082705": {
+      "temperatureC": 24.8,
+      "windSpeedKmh": 2.9,
+      "windDirectionDeg": 180,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-08-27T09:35:24.584Z"
+    },
+    "92026082706": {
+      "temperatureC": null,
+      "windSpeedKmh": null,
+      "roof": "dome"
+    },
+    "92026082704": {
+      "temperatureC": 29.5,
+      "windSpeedKmh": 3.2,
+      "windDirectionDeg": 207,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-08-27T09:35:24.747Z"
+    },
+    "92026082709": {
+      "temperatureC": 26.3,
+      "windSpeedKmh": 5.4,
+      "windDirectionDeg": 180,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-08-27T09:35:24.911Z"
+    },
+    "92026082711": {
+      "temperatureC": null,
+      "windSpeedKmh": null,
+      "roof": "dome"
+    }
+  }
+}
