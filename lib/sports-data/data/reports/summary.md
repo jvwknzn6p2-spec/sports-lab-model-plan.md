@@ -1,6 +1,6 @@
 # HandiEdge — running results
 
-**115-82** (58.4%) across 31 days, 217 PASS.
+**115-82** (58.4%) across 31 days, 222 PASS.
 
 - Handicap: 105-87 · **+7.50 units** after the cut (ROI +3.9% per bet)
 - Significance (P&L): +3.9% per bet over 192 stakes — z 0.57, **not yet distinguishable from luck**
@@ -40,7 +40,7 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 ## By day
 
-- 2026-08-28: 3-1 (4 picks, 6 PASS, Brier 0.219)
+- 2026-08-28: 3-1 (4 picks, 11 PASS, Brier 0.219)
 - 2026-08-27: 1-1 (2 picks, 5 PASS, Brier 0.272)
 - 2026-08-26: 3-2 (5 picks, 10 PASS, Brier 0.246)
 - 2026-08-25: 0-4 (4 picks, 11 PASS, Brier 0.329)

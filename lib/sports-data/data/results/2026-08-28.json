@@ -1,6 +1,6 @@
 {
   "date": "2026-08-28",
-  "fetchedAt": "2026-08-29T02:38:25.568Z",
+  "fetchedAt": "2026-08-29T06:43:02.247Z",
   "results": {
     "822691": {
       "homeScore": 9,
@@ -14,6 +14,14 @@
       "homeScore": 9,
       "awayScore": 4
     },
+    "823013": {
+      "homeScore": 4,
+      "awayScore": 1
+    },
+    "823178": {
+      "homeScore": 6,
+      "awayScore": 10
+    },
     "823504": {
       "homeScore": 1,
       "awayScore": 0
@@ -22,9 +30,17 @@
       "homeScore": 1,
       "awayScore": 3
     },
+    "823666": {
+      "homeScore": 4,
+      "awayScore": 7
+    },
     "823744": {
       "homeScore": 6,
       "awayScore": 1
+    },
+    "823985": {
+      "homeScore": 3,
+      "awayScore": 5
     },
     "824231": {
       "homeScore": 1,
@@ -41,33 +57,11 @@
     "824877": {
       "homeScore": 6,
       "awayScore": 4
+    },
+    "824960": {
+      "homeScore": 3,
+      "awayScore": 4
     }
   },
-  "pending": [
-    {
-      "gamePk": 823666,
-      "matchup": "Chicago White Sox @ Minnesota Twins",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823013,
-      "matchup": "Pittsburgh Pirates @ St. Louis Cardinals",
-      "reason": "not final (Manager challenge)"
-    },
-    {
-      "gamePk": 823985,
-      "matchup": "Philadelphia Phillies @ Los Angeles Angels",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 824960,
-      "matchup": "Baltimore Orioles @ Athletics",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823178,
-      "matchup": "Arizona Diamondbacks @ San Francisco Giants",
-      "reason": "not final (In Progress)"
-    }
-  ]
+  "pending": []
 }
