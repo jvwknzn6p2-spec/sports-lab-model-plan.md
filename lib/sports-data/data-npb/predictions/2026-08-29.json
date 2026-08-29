@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-08-28T20:11:28.011Z",
-  "updatedAt": "2026-08-28T20:11:28.011Z",
+  "updatedAt": "2026-08-29T07:44:04.509Z",
   "controlTower": {
     "date": "2026-08-29",
     "season": 1002026,
@@ -12,55 +12,55 @@
         "side": "home",
         "line": -1.5,
         "total": 8,
-        "marketHomeCover": 0.408,
-        "marketHomePayout": 1.31,
-        "marketAwayPayout": 0.619,
+        "marketHomeCover": 0.399,
+        "marketHomePayout": 1.4,
+        "marketAwayPayout": 0.588,
         "marketOver": 0.484
       },
       "92026082902": {
         "side": "home",
         "line": -1.5,
         "total": 6,
-        "marketHomeCover": 0.386,
-        "marketHomePayout": 1.465,
-        "marketAwayPayout": 0.557,
-        "marketOver": 0.508
+        "marketHomeCover": 0.393,
+        "marketHomePayout": 1.425,
+        "marketAwayPayout": 0.567,
+        "marketOver": 0.509
       },
       "92026082904": {
         "side": "home",
         "line": -1.5,
         "total": 6.5,
-        "marketHomeCover": 0.338,
-        "marketHomePayout": 1.825,
-        "marketAwayPayout": 0.445,
+        "marketHomeCover": 0.329,
+        "marketHomePayout": 1.875,
+        "marketAwayPayout": 0.435,
         "marketOver": 0.486
       },
       "92026082908": {
         "side": "home",
         "line": -1.5,
         "total": 8.5,
-        "marketHomeCover": 0.373,
-        "marketHomePayout": 1.555,
-        "marketAwayPayout": 0.52,
+        "marketHomeCover": 0.602,
+        "marketHomePayout": 0.556,
+        "marketAwayPayout": 1.35,
         "marketOver": 0.52
       },
       "92026082910": {
         "side": "home",
         "line": -1.5,
         "total": 7,
-        "marketHomeCover": 0.38,
-        "marketHomePayout": 1.5,
-        "marketAwayPayout": 0.535,
+        "marketHomeCover": 0.372,
+        "marketHomePayout": 1.55,
+        "marketAwayPayout": 0.525,
         "marketOver": 0.478
       },
       "92026082911": {
         "side": "home",
         "line": 1.5,
         "total": 7,
-        "marketHomeCover": 0.522,
-        "marketHomePayout": 0.806,
-        "marketAwayPayout": 0.98,
-        "marketOver": 0.517
+        "marketHomeCover": 0.5,
+        "marketHomePayout": 0.909,
+        "marketAwayPayout": 0.909,
+        "marketOver": 0.511
       }
     }
   },
@@ -87,25 +87,25 @@
       "pass": false,
       "predictedWinner": "横浜DeNAベイスターズ",
       "predictedLoser": "中日ドラゴンズ",
-      "winProbability": 0.574,
-      "rawWinProbability": 0.587,
+      "winProbability": 0.572,
+      "rawWinProbability": 0.584,
       "confidence": "B",
       "handicap": {
         "input": {
           "side": "home",
           "line": -1.5,
           "total": 8,
-          "marketHomeCover": 0.408,
-          "marketHomePayout": 1.31,
-          "marketAwayPayout": 0.619,
+          "marketHomeCover": 0.399,
+          "marketHomePayout": 1.4,
+          "marketAwayPayout": 0.588,
           "marketOver": 0.484
         },
         "pick": "中日ドラゴンズ +1.5",
-        "coverProbability": 0.574,
-        "rawCoverProbability": 0.587,
-        "ev": 0.091,
-        "marketProbability": 0.592,
-        "marketPriceEv": -0.071,
+        "coverProbability": 0.577,
+        "rawCoverProbability": 0.59,
+        "ev": 0.097,
+        "marketProbability": 0.601,
+        "marketPriceEv": -0.083,
         "recommendedStake": 0.03,
         "noValue": false
       },
@@ -120,19 +120,19 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.81,
-        "away": 3.08
+        "home": 3.83,
+        "away": 3.1
       },
       "reasons": [
-        "Handicap EV +9.1% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -7.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 59.2% for this side — model 57.4% (-1.8% vs market)",
+        "Handicap EV +9.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -8.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 60.1% for this side — model 57.7% (-2.4% vs market)",
         "Market consensus on the total: 51.6% for the UNDER — model 62.8% (+11.2% vs market)",
         "Offense edge: 横浜DeNAベイスターズ (wOBA 0.297 vs 0.288)",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 3.81–3.08 over 10000 sims",
+        "Expected runs 3.83–3.10 over 10000 sims",
         "away: cold bats — 3.0 R/G last 15 (season baseline 3.5)",
-        "Weather: 21°C at first pitch — run environment ×1.003"
+        "Weather: 22°C at first pitch — run environment ×1.009"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -161,17 +161,17 @@
           "side": "home",
           "line": -1.5,
           "total": 6,
-          "marketHomeCover": 0.386,
-          "marketHomePayout": 1.465,
-          "marketAwayPayout": 0.557,
-          "marketOver": 0.508
+          "marketHomeCover": 0.393,
+          "marketHomePayout": 1.425,
+          "marketAwayPayout": 0.567,
+          "marketOver": 0.509
         },
         "pick": null,
         "coverProbability": 0.586,
         "rawCoverProbability": 0.6,
         "ev": 0.113,
-        "marketProbability": 0.614,
-        "marketPriceEv": -0.088,
+        "marketProbability": 0.607,
+        "marketPriceEv": -0.082,
         "recommendedStake": null,
         "noValue": false
       },
@@ -181,7 +181,7 @@
         "pick": null,
         "probability": 0.593,
         "rawProbability": 0.61,
-        "marketProbability": 0.508,
+        "marketProbability": 0.509,
         "ev": 0.116,
         "noValue": false
       },
@@ -192,9 +192,9 @@
       "reasons": [
         "PASS: incomplete/downgraded data",
         "Handicap EV +11.3% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -8.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 61.4% for this side — model 58.6% (-2.8% vs market)",
-        "Market consensus on the total: 50.8% for the OVER — model 59.3% (+8.5% vs market)",
+        "At the market's own price this edge is worth -8.2% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 60.7% for this side — model 58.6% (-2.1% vs market)",
+        "Market consensus on the total: 50.9% for the OVER — model 59.3% (+8.4% vs market)",
         "Offense edge: 阪神タイガース (wOBA 0.301 vs 0.287)",
         "Park factor 94 (pitcher-friendly)",
         "Expected runs 3.90–3.19 over 10000 sims",
@@ -220,53 +220,53 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.508,
-      "rawWinProbability": 0.509,
+      "winProbability": 0.503,
+      "rawWinProbability": 0.503,
       "confidence": "C",
       "handicap": {
         "input": {
           "side": "home",
           "line": -1.5,
           "total": 6.5,
-          "marketHomeCover": 0.338,
-          "marketHomePayout": 1.825,
-          "marketAwayPayout": 0.445,
+          "marketHomeCover": 0.329,
+          "marketHomePayout": 1.875,
+          "marketAwayPayout": 0.435,
           "marketOver": 0.486
         },
         "pick": null,
-        "coverProbability": 0.644,
-        "rawCoverProbability": 0.668,
-        "ev": 0.223,
-        "marketProbability": 0.662,
+        "coverProbability": 0.648,
+        "rawCoverProbability": 0.673,
+        "ev": 0.232,
+        "marketProbability": 0.671,
         "marketPriceEv": -0.07,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 6.5,
-        "predicted": 6.91,
+        "predicted": 6.93,
         "pick": null,
-        "probability": 0.504,
-        "rawProbability": 0.505,
+        "probability": 0.51,
+        "rawProbability": 0.512,
         "marketProbability": 0.486,
-        "ev": -0.042,
+        "ev": -0.031,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.36,
-        "away": 3.32
+        "home": 3.38,
+        "away": 3.34
       },
       "reasons": [
-        "PASS: edge too small (win prob 50.8% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 50.3% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
-        "Handicap EV +22.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "Handicap EV +23.2% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth -7.0% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 66.2% for this side — model 64.4% (-1.8% vs market)",
-        "Market consensus on the total: 48.6% for the OVER — model 50.4% (+1.8% vs market)",
+        "Market consensus on the handicap: 67.1% for this side — model 64.8% (-2.3% vs market)",
+        "Market consensus on the total: 48.6% for the OVER — model 51.0% (+2.4% vs market)",
         "Bullpen edge: 広島東洋カープ",
         "Park factor 96 (pitcher-friendly)",
-        "Expected runs 3.36–3.32 over 10000 sims",
-        "Weather: 29°C at first pitch — run environment ×1.055"
+        "Expected runs 3.38–3.34 over 10000 sims",
+        "Weather: 30°C at first pitch — run environment ×1.060"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -347,7 +347,7 @@
         "[warn] market_disagreement"
       ],
       "lockDeadline": "2026-08-29T04:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026082910,
@@ -413,7 +413,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-08-29T07:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026082911,
@@ -431,17 +431,17 @@
           "side": "home",
           "line": 1.5,
           "total": 7,
-          "marketHomeCover": 0.522,
-          "marketHomePayout": 0.806,
-          "marketAwayPayout": 0.98,
-          "marketOver": 0.517
+          "marketHomeCover": 0.5,
+          "marketHomePayout": 0.909,
+          "marketAwayPayout": 0.909,
+          "marketOver": 0.511
         },
         "pick": null,
         "coverProbability": 0.503,
         "rawCoverProbability": 0.504,
         "ev": -0.044,
-        "marketProbability": 0.522,
-        "marketPriceEv": -0.091,
+        "marketProbability": 0.5,
+        "marketPriceEv": -0.039,
         "recommendedStake": null,
         "noValue": true
       },
@@ -451,7 +451,7 @@
         "pick": null,
         "probability": 0.651,
         "rawProbability": 0.677,
-        "marketProbability": 0.517,
+        "marketProbability": 0.511,
         "ev": 0.208,
         "noValue": true
       },
@@ -461,10 +461,10 @@
       },
       "reasons": [
         "No handicap bet: -4.4% per unit at this line (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -9.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 52.2% for this side — model 50.3% (-1.9% vs market)",
-        "No total bet: the model sits +13.4% from the market consensus on this line — disagreement this large has historically been model error, not value",
-        "Market consensus on the total: 51.7% for the OVER — model 65.1% (+13.4% vs market)",
+        "At the market's own price this edge is worth -3.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 50.0% for this side — model 50.3% (+0.3% vs market)",
+        "No total bet: the model sits +14.0% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 51.1% for the OVER — model 65.1% (+14.0% vs market)",
         "Offense edge: 福岡ソフトバンクホークス (wOBA 0.320 vs 0.294)",
         "Park factor 97 (pitcher-friendly)",
         "Expected runs 3.69–5.17 over 10000 sims",
