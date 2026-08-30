@@ -1,4 +1,4 @@
-# Phase 0 — Data Proof 検証計画
+# Vorte FT — Phase 0 Data Proof 検証計画
 
 目的: 「必要な実データを、実 API から正確かつ再現可能な形で取得・保存できること」を
 実レスポンスを根拠に証明する。Documentation に書いてあるだけでは AVAILABLE と

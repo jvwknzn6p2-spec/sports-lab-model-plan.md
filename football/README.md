@@ -1,4 +1,6 @@
-# Football Prediction Intelligence Engine（暫定名）
+# Vorte FT — Football Prediction Intelligence Engine
+
+（プロジェクト名は 2026-08-30 Founder 指示で **Vorte FT** に確定）
 
 実世界のサッカーデータのみを使い、収集 → 検証 → 特徴量 → 数理モデル →
 Score Probability Matrix → ハンデ決済 → 評価 → 改善 → 監査 → 承認昇格 の
@@ -47,6 +49,16 @@ Production Prediction Engine はまだ作らない。最初に証明するのは
 | `.github/workflows/football-probe.yml` | 実 API 検証の実行場所（workflow_dispatch）。開発サンドボックスには両 API への egress が無い |
 | `probe/football/runs/<runId>/` | 取得した生レスポンス（immutable・sha256 / timestamp 付き manifest） |
 | `probe/football/phase0-status.md` | 12 項目の最新判定（実レスポンスのみを根拠に自動生成） |
+
+## 開発体制（憲章 §15 + 2026-08-30 Founder 指示）
+
+- 使用モデルは Founder が決定する。基本は **Claude Fable 5**（Lead Engineer）。
+  総量・制限等の理由がある場合は **Claude Opus 5** で対応する
+- GPT-5.6 Sol: Chief Architect / Quant Specification / Independent Audit
+- Claude Opus 5: Code Review / Debugging / Root Cause Analysis
+- Founder: Final GO / NO-GO（Production 昇格は常に Founder 承認制）
+- GitHub が Code Source of Truth。Issue → Branch → Implementation → Tests →
+  PR → Independent Review → CI → Merge
 
 ## Secrets
 

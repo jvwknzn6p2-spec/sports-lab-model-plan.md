@@ -27,7 +27,7 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
 - `lib/db/src/schema/` — Drizzle DB schema (teams, games, pitcher/team/bullpen stats with FIP columns).
 - `lib/api-spec/openapi.yaml` — OpenAPI contract; `lib/api-zod` and `lib/api-client-react` are generated from it (Orval).
 - `artifacts/api-server/` — Express API server (MLB at `/api/*`, NPB at `/api/npb/*`); `artifacts/mockup-sandbox/` — React frontend (MLB/NPB toggle on both screens).
-- `football/` — **Football Prediction Intelligence Engine** (Phase 0 — Data Proof): charter in `football/README.md`, verification plan in `football/docs/phase0-data-proof.md`, probe engine in `lib/football-probe/`, evidence + status under `probe/football/` (written by the `football-probe.yml` workflow — the sandbox has no egress to Sportmonks / The Odds API).
+- `football/` — **Vorte FT** (Football Prediction Intelligence Engine, Phase 0 — Data Proof): charter in `football/README.md`, verification plan in `football/docs/phase0-data-proof.md`, probe engine in `lib/football-probe/`, evidence + status under `probe/football/` (written by the `football-probe.yml` workflow — the sandbox has no egress to Sportmonks / The Odds API).
 
 ## Architecture decisions
 
