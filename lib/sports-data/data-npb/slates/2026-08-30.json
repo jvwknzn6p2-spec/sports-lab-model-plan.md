@@ -1,7 +1,7 @@
 {
   "date": "2026-08-30",
   "season": 1002026,
-  "fetchedAt": "2026-08-30T12:10:09.623Z",
+  "fetchedAt": "2026-08-30T12:54:08.995Z",
   "games": [
     {
       "gamePk": 92026083003,
@@ -1067,8 +1067,8 @@
           "name": "牧"
         },
         {
-          "playerId": 9030974484,
-          "name": "佐野"
+          "playerId": 9030548041,
+          "name": "神里"
         },
         {
           "playerId": 9030213448,
@@ -1117,8 +1117,8 @@
           "name": "石川昂"
         },
         {
-          "playerId": 9060463942,
-          "name": "花田"
+          "playerId": 9060003188,
+          "name": "岡林"
         },
         {
           "playerId": 9060756379,
@@ -1207,8 +1207,8 @@
           "name": "中山"
         },
         {
-          "playerId": 9010947625,
-          "name": "田中瑛"
+          "playerId": 9010312959,
+          "name": "鈴木大"
         }
       ]
     },
@@ -1601,20 +1601,20 @@
       "hitByPitch": 3,
       "strikeOuts": 58
     },
-    "9060463942": {
-      "plateAppearances": 83,
-      "atBats": 80,
-      "hits": 20,
-      "doubles": 4,
-      "triples": 1,
-      "homeRuns": 3,
-      "stolenBases": 0,
-      "caughtStealing": 1,
-      "sacFlies": 1,
-      "baseOnBalls": 2,
-      "intentionalWalks": 0,
-      "hitByPitch": 0,
-      "strikeOuts": 26
+    "9060003188": {
+      "plateAppearances": 288,
+      "atBats": 255,
+      "hits": 59,
+      "doubles": 10,
+      "triples": 0,
+      "homeRuns": 2,
+      "stolenBases": 1,
+      "caughtStealing": 0,
+      "sacFlies": 4,
+      "baseOnBalls": 23,
+      "intentionalWalks": 3,
+      "hitByPitch": 2,
+      "strikeOuts": 31
     },
     "9060756379": {
       "plateAppearances": 324,
@@ -1691,20 +1691,20 @@
       "hitByPitch": 10,
       "strikeOuts": 60
     },
-    "9030974484": {
-      "plateAppearances": 440,
-      "atBats": 394,
-      "hits": 102,
-      "doubles": 24,
-      "triples": 0,
-      "homeRuns": 5,
-      "stolenBases": 0,
+    "9030548041": {
+      "plateAppearances": 20,
+      "atBats": 16,
+      "hits": 2,
+      "doubles": 0,
+      "triples": 1,
+      "homeRuns": 0,
+      "stolenBases": 1,
       "caughtStealing": 1,
       "sacFlies": 0,
-      "baseOnBalls": 45,
+      "baseOnBalls": 3,
       "intentionalWalks": 0,
-      "hitByPitch": 1,
-      "strikeOuts": 65
+      "hitByPitch": 0,
+      "strikeOuts": 8
     },
     "9030213448": {
       "plateAppearances": 133,
@@ -1916,20 +1916,20 @@
       "hitByPitch": 0,
       "strikeOuts": 20
     },
-    "9010947625": {
-      "plateAppearances": 0,
-      "atBats": 0,
-      "hits": 0,
+    "9010312959": {
+      "plateAppearances": 5,
+      "atBats": 5,
+      "hits": 2,
       "doubles": 0,
       "triples": 0,
       "homeRuns": 0,
-      "stolenBases": 0,
+      "stolenBases": 1,
       "caughtStealing": 0,
       "sacFlies": 0,
       "baseOnBalls": 0,
       "intentionalWalks": 0,
       "hitByPitch": 0,
-      "strikeOuts": 0
+      "strikeOuts": 1
     },
     "9020402717": {
       "plateAppearances": 289,
@@ -3167,12 +3167,12 @@
   },
   "weather": {
     "92026083003": {
-      "temperatureC": 25.4,
-      "windSpeedKmh": 2.9,
-      "windDirectionDeg": 60,
+      "temperatureC": 25.2,
+      "windSpeedKmh": 4.2,
+      "windDirectionDeg": 70,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-30T12:10:10.418Z"
+      "fetchedAt": "2026-08-30T12:54:09.539Z"
     },
     "92026083002": {
       "temperatureC": 29.6,
@@ -3180,15 +3180,15 @@
       "windDirectionDeg": 241,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-30T12:10:10.611Z"
+      "fetchedAt": "2026-08-30T12:54:09.651Z"
     },
     "92026083004": {
-      "temperatureC": 31.9,
+      "temperatureC": 32,
       "windSpeedKmh": 1,
       "windDirectionDeg": 225,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-30T12:10:10.771Z"
+      "fetchedAt": "2026-08-30T12:54:09.762Z"
     },
     "92026083008": {
       "temperatureC": 20.6,
@@ -3196,7 +3196,7 @@
       "windDirectionDeg": 173,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-08-30T12:10:10.931Z"
+      "fetchedAt": "2026-08-30T12:54:09.873Z"
     },
     "92026083010": {
       "temperatureC": null,
