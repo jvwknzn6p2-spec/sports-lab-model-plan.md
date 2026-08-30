@@ -19,8 +19,20 @@ name: Football — Phase 0 data-source probe
 # header, The Odds API's query key is redacted, and a hard secret-scan
 # refuses to write any file still containing a key (see lib/football-probe).
 
+# Two triggers:
+#  - workflow_dispatch: only registered by GitHub once this file reaches the
+#    default branch (a 2026-08-30 dispatch attempt from the feature branch
+#    404ed — GitHub does not register dispatchable workflows that exist only
+#    on a non-default branch).
+#  - push touching probe/football/RUN-REQUEST: works from ANY branch — commit
+#    a change to that file to request a probe run on that branch. The
+#    workflow's own evidence commit uses GITHUB_TOKEN, which never triggers
+#    another run, so this cannot recurse.
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - probe/football/RUN-REQUEST
 
 permissions:
   contents: write
