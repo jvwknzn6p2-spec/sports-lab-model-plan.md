@@ -1,0 +1,72 @@
+name: Football — Phase 0 data-source probe
+
+# Phase 0 — Data Proof for the Football Prediction Intelligence Engine.
+# The dev sandbox has no egress to api.sportmonks.com or api.the-odds-api.com
+# (proven 2026-08-30), so this runner is the ONLY place real API verification
+# happens — the same fixtures-first pattern as npb-probe.yml.
+#
+# It fetches real responses for the 12 Phase 0 pass-condition items around the
+# reference case (Eredivisie, Cambuur vs Twente), stores them immutably under
+# probe/football/runs/<runId>/ with hashes and timestamps, regenerates
+# probe/football/phase0-status.md, and commits both to the branch it was
+# dispatched on.
+#
+# Secrets (both optional — missing ones yield honest UNVERIFIED verdicts):
+#   SPORTMONKS_API_KEY  — Sportmonks Football API v3
+#   ODDS_API_KEY        — The Odds API v4 (already used by npb-probe/HandiEdge)
+#
+# Credentials never reach the recorded files: Sportmonks auth goes in a
+# header, The Odds API's query key is redacted, and a hard secret-scan
+# refuses to write any file still containing a key (see lib/football-probe).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: football-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The probe's own tests gate the run: a broken verdict engine must not
+      # publish a status report.
+      - name: Test probe engine
+        working-directory: lib/football-probe
+        run: pnpm run typecheck && pnpm run typecheck:test && pnpm test
+
+      - name: Run probe against real APIs
+        env:
+          SPORTMONKS_API_KEY: ${{ secrets.SPORTMONKS_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          FOOTBALL_PROBE_OUT: ${{ github.workspace }}/probe/football
+        run: pnpm --filter @workspace/football-probe run probe
+
+      - name: Commit evidence and status report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add probe/football
+          if git diff --cached --quiet; then
+            echo "No probe output to commit."
+          else
+            git commit -m "Football probe: Phase 0 data-source evidence"
+            git push
+          fi

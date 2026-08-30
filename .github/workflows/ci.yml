@@ -46,3 +46,13 @@ jobs:
       - name: Test
         working-directory: lib/sports-data
         run: pnpm test
+
+      # Football Phase 0 probe engine — same doctrine: its tests are the spec
+      # (secret redaction, snapshot immutability, verdict mapping).
+      - name: Typecheck football-probe tests
+        working-directory: lib/football-probe
+        run: pnpm run typecheck:test
+
+      - name: Test football-probe
+        working-directory: lib/football-probe
+        run: pnpm test
