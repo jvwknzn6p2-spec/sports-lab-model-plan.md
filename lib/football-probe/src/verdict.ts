@@ -25,6 +25,15 @@ export function classifyCapture(capture: Capture, extract: Extractor): Classifie
     return { capture, verdict: "UNVERIFIED", detail: `transport failure: ${capture.meta.error ?? "unknown"}` };
   }
   if (status === 401) {
+    // Some providers answer plan-level denials with 401 instead of 402/403
+    // (measured 2026-08-30: The Odds API historical endpoint returns 401 with
+    // error_code HISTORICAL_UNAVAILABLE_ON_FREE_USAGE_PLAN on a valid free
+    // key). When the body itself names an *_UNAVAILABLE_* error code, that is
+    // a real answer about the current plan, not an unverifiable auth failure.
+    const code = errorCode(capture.body);
+    if (code !== undefined && code.includes("UNAVAILABLE")) {
+      return { capture, verdict: "UNAVAILABLE", detail: `HTTP 401 — ${code} (denied on current plan)` };
+    }
     return { capture, verdict: "UNVERIFIED", detail: "HTTP 401 — credential rejected" };
   }
   if (status === 402 || status === 403 || status === 404) {
@@ -47,6 +56,19 @@ export function classifyCapture(capture: Capture, extract: Extractor): Classifie
     return { capture, verdict: "AVAILABLE", detail: `HTTP ${status}, ${count} record(s)` };
   }
   return { capture, verdict: "PARTIAL", detail: `HTTP ${status}, 0 records for reference case` };
+}
+
+function errorCode(body: string): string | undefined {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      const code = (parsed as Record<string, unknown>)["error_code"];
+      if (typeof code === "string") return code;
+    }
+  } catch {
+    // not JSON — fall through
+  }
+  return undefined;
 }
 
 const RANK: Record<Verdict, number> = { AVAILABLE: 3, PARTIAL: 2, UNAVAILABLE: 1, UNVERIFIED: 0 };

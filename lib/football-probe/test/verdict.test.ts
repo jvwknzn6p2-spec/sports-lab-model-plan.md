@@ -43,6 +43,16 @@ test("403 -> UNAVAILABLE (plan denial is a real answer)", () => {
   assert.equal(classifyCapture(cap(404, ""), smListCount).verdict, "UNAVAILABLE");
 });
 
+test("401 carrying an *_UNAVAILABLE_* error_code -> UNAVAILABLE (plan denial)", () => {
+  // Exact shape captured 2026-08-30 from The Odds API historical endpoint.
+  const body =
+    '{"message":"Historical odds are only available on paid usage plans.",' +
+    '"error_code":"HISTORICAL_UNAVAILABLE_ON_FREE_USAGE_PLAN"}';
+  const r = classifyCapture(cap(401, body), smListCount);
+  assert.equal(r.verdict, "UNAVAILABLE");
+  assert.match(r.detail, /HISTORICAL_UNAVAILABLE_ON_FREE_USAGE_PLAN/);
+});
+
 test("401 and transport failure -> UNVERIFIED (proves nothing about the data)", () => {
   assert.equal(classifyCapture(cap(401, ""), smListCount).verdict, "UNVERIFIED");
   assert.equal(classifyCapture(cap("ERR", ""), smListCount).verdict, "UNVERIFIED");
