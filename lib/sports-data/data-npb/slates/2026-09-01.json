@@ -1,0 +1,967 @@
+{
+  "date": "2026-09-01",
+  "season": 1002026,
+  "fetchedAt": "2026-08-31T15:06:06.858Z",
+  "games": [
+    {
+      "gamePk": 92026090101,
+      "gameDate": "2026-09-01T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9111,
+        "name": "京セラD大阪"
+      },
+      "home": {
+        "teamId": 901,
+        "teamName": "読売ジャイアンツ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 903,
+        "teamName": "横浜DeNAベイスターズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026090105,
+      "gameDate": "2026-09-01T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9105,
+        "name": "神 宮"
+      },
+      "home": {
+        "teamId": 905,
+        "teamName": "東京ヤクルトスワローズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 902,
+        "teamName": "阪神タイガース",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026090106,
+      "gameDate": "2026-09-01T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9106,
+        "name": "バンテリンドーム"
+      },
+      "home": {
+        "teamId": 906,
+        "teamName": "中日ドラゴンズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 904,
+        "teamName": "広島東洋カープ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026090108,
+      "gameDate": "2026-09-01T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9108,
+        "name": "エスコンＦ"
+      },
+      "home": {
+        "teamId": 908,
+        "teamName": "北海道日本ハムファイターズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 907,
+        "teamName": "福岡ソフトバンクホークス",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026090112,
+      "gameDate": "2026-09-01T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": null,
+        "name": "秋 田"
+      },
+      "home": {
+        "teamId": 912,
+        "teamName": "東北楽天ゴールデンイーグルス",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 911,
+        "teamName": "オリックス・バファローズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026090109,
+      "gameDate": "2026-09-01T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9109,
+        "name": "ZOZOマリン"
+      },
+      "home": {
+        "teamId": 909,
+        "teamName": "千葉ロッテマリーンズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 910,
+        "teamName": "埼玉西武ライオンズ",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    }
+  ],
+  "starters": {},
+  "batting": {
+    "901": {
+      "plateAppearances": 4327,
+      "atBats": 3903,
+      "hits": 919,
+      "doubles": 161,
+      "triples": 12,
+      "homeRuns": 87,
+      "stolenBases": 89,
+      "caughtStealing": 35,
+      "sacFlies": 23,
+      "baseOnBalls": 296,
+      "intentionalWalks": 18,
+      "hitByPitch": 40,
+      "strikeOuts": 997
+    },
+    "902": {
+      "plateAppearances": 4406,
+      "atBats": 3880,
+      "hits": 960,
+      "doubles": 149,
+      "triples": 10,
+      "homeRuns": 103,
+      "stolenBases": 60,
+      "caughtStealing": 23,
+      "sacFlies": 27,
+      "baseOnBalls": 358,
+      "intentionalWalks": 26,
+      "hitByPitch": 57,
+      "strikeOuts": 986
+    },
+    "903": {
+      "plateAppearances": 4417,
+      "atBats": 3979,
+      "hits": 973,
+      "doubles": 188,
+      "triples": 5,
+      "homeRuns": 98,
+      "stolenBases": 45,
+      "caughtStealing": 21,
+      "sacFlies": 18,
+      "baseOnBalls": 314,
+      "intentionalWalks": 20,
+      "hitByPitch": 52,
+      "strikeOuts": 888
+    },
+    "904": {
+      "plateAppearances": 4236,
+      "atBats": 3787,
+      "hits": 857,
+      "doubles": 118,
+      "triples": 17,
+      "homeRuns": 74,
+      "stolenBases": 66,
+      "caughtStealing": 31,
+      "sacFlies": 26,
+      "baseOnBalls": 313,
+      "intentionalWalks": 15,
+      "hitByPitch": 33,
+      "strikeOuts": 829
+    },
+    "905": {
+      "plateAppearances": 4304,
+      "atBats": 3905,
+      "hits": 920,
+      "doubles": 157,
+      "triples": 10,
+      "homeRuns": 69,
+      "stolenBases": 78,
+      "caughtStealing": 22,
+      "sacFlies": 23,
+      "baseOnBalls": 311,
+      "intentionalWalks": 24,
+      "hitByPitch": 31,
+      "strikeOuts": 936
+    },
+    "906": {
+      "plateAppearances": 4467,
+      "atBats": 3950,
+      "hits": 903,
+      "doubles": 145,
+      "triples": 16,
+      "homeRuns": 99,
+      "stolenBases": 44,
+      "caughtStealing": 17,
+      "sacFlies": 27,
+      "baseOnBalls": 375,
+      "intentionalWalks": 28,
+      "hitByPitch": 44,
+      "strikeOuts": 1032
+    },
+    "907": {
+      "plateAppearances": 4568,
+      "atBats": 3995,
+      "hits": 1030,
+      "doubles": 182,
+      "triples": 20,
+      "homeRuns": 124,
+      "stolenBases": 64,
+      "caughtStealing": 14,
+      "sacFlies": 38,
+      "baseOnBalls": 424,
+      "intentionalWalks": 16,
+      "hitByPitch": 49,
+      "strikeOuts": 916
+    },
+    "908": {
+      "plateAppearances": 4518,
+      "atBats": 4044,
+      "hits": 1015,
+      "doubles": 170,
+      "triples": 25,
+      "homeRuns": 150,
+      "stolenBases": 59,
+      "caughtStealing": 25,
+      "sacFlies": 31,
+      "baseOnBalls": 338,
+      "intentionalWalks": 17,
+      "hitByPitch": 47,
+      "strikeOuts": 957
+    },
+    "909": {
+      "plateAppearances": 4246,
+      "atBats": 3853,
+      "hits": 911,
+      "doubles": 144,
+      "triples": 9,
+      "homeRuns": 103,
+      "stolenBases": 41,
+      "caughtStealing": 18,
+      "sacFlies": 19,
+      "baseOnBalls": 292,
+      "intentionalWalks": 8,
+      "hitByPitch": 45,
+      "strikeOuts": 912
+    },
+    "910": {
+      "plateAppearances": 4541,
+      "atBats": 4085,
+      "hits": 1005,
+      "doubles": 168,
+      "triples": 23,
+      "homeRuns": 90,
+      "stolenBases": 50,
+      "caughtStealing": 27,
+      "sacFlies": 30,
+      "baseOnBalls": 307,
+      "intentionalWalks": 4,
+      "hitByPitch": 48,
+      "strikeOuts": 842
+    },
+    "911": {
+      "plateAppearances": 4400,
+      "atBats": 3952,
+      "hits": 969,
+      "doubles": 177,
+      "triples": 16,
+      "homeRuns": 80,
+      "stolenBases": 34,
+      "caughtStealing": 26,
+      "sacFlies": 29,
+      "baseOnBalls": 320,
+      "intentionalWalks": 8,
+      "hitByPitch": 40,
+      "strikeOuts": 797
+    },
+    "912": {
+      "plateAppearances": 4300,
+      "atBats": 3857,
+      "hits": 922,
+      "doubles": 151,
+      "triples": 16,
+      "homeRuns": 85,
+      "stolenBases": 54,
+      "caughtStealing": 26,
+      "sacFlies": 24,
+      "baseOnBalls": 340,
+      "intentionalWalks": 14,
+      "hitByPitch": 31,
+      "strikeOuts": 894
+    }
+  },
+  "bullpens": {
+    "901": {
+      "inningsPitched": "1060.2",
+      "battersFaced": 4412,
+      "hits": 907,
+      "homeRuns": 82,
+      "baseOnBalls": 363,
+      "hitByPitch": 56,
+      "strikeOuts": 954,
+      "runs": 379,
+      "earnedRuns": 349
+    },
+    "902": {
+      "inningsPitched": "1038",
+      "battersFaced": 4252,
+      "hits": 911,
+      "homeRuns": 94,
+      "baseOnBalls": 265,
+      "hitByPitch": 34,
+      "strikeOuts": 936,
+      "runs": 363,
+      "earnedRuns": 328
+    },
+    "903": {
+      "inningsPitched": "1047.2",
+      "battersFaced": 4439,
+      "hits": 960,
+      "homeRuns": 89,
+      "baseOnBalls": 354,
+      "hitByPitch": 40,
+      "strikeOuts": 971,
+      "runs": 445,
+      "earnedRuns": 402
+    },
+    "904": {
+      "inningsPitched": "1024.1",
+      "battersFaced": 4318,
+      "hits": 941,
+      "homeRuns": 71,
+      "baseOnBalls": 330,
+      "hitByPitch": 39,
+      "strikeOuts": 866,
+      "runs": 418,
+      "earnedRuns": 387
+    },
+    "905": {
+      "inningsPitched": "1028.1",
+      "battersFaced": 4327,
+      "hits": 926,
+      "homeRuns": 104,
+      "baseOnBalls": 328,
+      "hitByPitch": 50,
+      "strikeOuts": 910,
+      "runs": 445,
+      "earnedRuns": 403
+    },
+    "906": {
+      "inningsPitched": "1070.2",
+      "battersFaced": 4485,
+      "hits": 981,
+      "homeRuns": 102,
+      "baseOnBalls": 325,
+      "hitByPitch": 33,
+      "strikeOuts": 952,
+      "runs": 410,
+      "earnedRuns": 384
+    },
+    "907": {
+      "inningsPitched": "1056.2",
+      "battersFaced": 4375,
+      "hits": 932,
+      "homeRuns": 105,
+      "baseOnBalls": 324,
+      "hitByPitch": 50,
+      "strikeOuts": 973,
+      "runs": 389,
+      "earnedRuns": 353
+    },
+    "908": {
+      "inningsPitched": "1073.1",
+      "battersFaced": 4462,
+      "hits": 970,
+      "homeRuns": 109,
+      "baseOnBalls": 302,
+      "hitByPitch": 34,
+      "strikeOuts": 934,
+      "runs": 440,
+      "earnedRuns": 395
+    },
+    "909": {
+      "inningsPitched": "1016.1",
+      "battersFaced": 4304,
+      "hits": 940,
+      "homeRuns": 116,
+      "baseOnBalls": 336,
+      "hitByPitch": 52,
+      "strikeOuts": 769,
+      "runs": 478,
+      "earnedRuns": 438
+    },
+    "910": {
+      "inningsPitched": "1098.2",
+      "battersFaced": 4465,
+      "hits": 900,
+      "homeRuns": 84,
+      "baseOnBalls": 355,
+      "hitByPitch": 27,
+      "strikeOuts": 942,
+      "runs": 391,
+      "earnedRuns": 348
+    },
+    "911": {
+      "inningsPitched": "1052",
+      "battersFaced": 4496,
+      "hits": 1033,
+      "homeRuns": 104,
+      "baseOnBalls": 346,
+      "hitByPitch": 54,
+      "strikeOuts": 897,
+      "runs": 495,
+      "earnedRuns": 452
+    },
+    "912": {
+      "inningsPitched": "1031.1",
+      "battersFaced": 4395,
+      "hits": 983,
+      "homeRuns": 102,
+      "baseOnBalls": 360,
+      "hitByPitch": 48,
+      "strikeOuts": 882,
+      "runs": 472,
+      "earnedRuns": 431
+    }
+  },
+  "forms": {
+    "901": {
+      "games": 15,
+      "runsScoredPerGame": 3.8,
+      "runsAllowedPerGame": 2.93
+    },
+    "902": {
+      "games": 15,
+      "runsScoredPerGame": 3.07,
+      "runsAllowedPerGame": 2.6
+    },
+    "903": {
+      "games": 15,
+      "runsScoredPerGame": 3.13,
+      "runsAllowedPerGame": 3.27
+    },
+    "904": {
+      "games": 15,
+      "runsScoredPerGame": 3.4,
+      "runsAllowedPerGame": 3.6
+    },
+    "905": {
+      "games": 15,
+      "runsScoredPerGame": 3.33,
+      "runsAllowedPerGame": 3.47
+    },
+    "906": {
+      "games": 15,
+      "runsScoredPerGame": 2.93,
+      "runsAllowedPerGame": 3.47
+    },
+    "907": {
+      "games": 15,
+      "runsScoredPerGame": 4.67,
+      "runsAllowedPerGame": 3.27
+    },
+    "908": {
+      "games": 15,
+      "runsScoredPerGame": 5.73,
+      "runsAllowedPerGame": 4.6
+    },
+    "909": {
+      "games": 15,
+      "runsScoredPerGame": 3.2,
+      "runsAllowedPerGame": 5
+    },
+    "910": {
+      "games": 15,
+      "runsScoredPerGame": 3.73,
+      "runsAllowedPerGame": 2.87
+    },
+    "911": {
+      "games": 15,
+      "runsScoredPerGame": 3.8,
+      "runsAllowedPerGame": 5.33
+    },
+    "912": {
+      "games": 15,
+      "runsScoredPerGame": 3.87,
+      "runsAllowedPerGame": 3.73
+    }
+  },
+  "parkFactors": {
+    "9101": 97,
+    "9102": 94,
+    "9103": 103,
+    "9104": 96,
+    "9105": 105,
+    "9106": 98,
+    "9107": 105,
+    "9108": 107,
+    "9109": 104,
+    "9110": 95,
+    "9111": 98,
+    "9112": 101
+  },
+  "injuries": {
+    "901": [
+      {
+        "name": "代木 大和",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "笹原 操希",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "山﨑 伊織",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "小濱 佑斗",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "Ｂ．マタ",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "北浦 竜次",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "Ｓ．ハワード",
+        "position": "投手",
+        "status": "登録抹消 2026-08-29"
+      },
+      {
+        "name": "平山 功太",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "902": [
+      {
+        "name": "今朝丸 裕喜",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "Ｅ．ルーカス",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "湯浅 京己",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "嶋村 麟士朗",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "津田 淳哉",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "下村 海翔",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "木浪 聖也",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "Ｄ．ガルシア",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-28"
+      }
+    ],
+    "903": [
+      {
+        "name": "竹田 祐",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "坂本 裕哉",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "京田 陽太",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "深沢 鳳介",
+        "position": "投手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "片山 皓心",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "森 敬斗",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "小田 康一郎",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-30"
+      },
+      {
+        "name": "篠木 健太郎",
+        "position": "投手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "904": [
+      {
+        "name": "松本 竜也",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "辻 大雅",
+        "position": "投手",
+        "status": "登録抹消 2026-08-29"
+      },
+      {
+        "name": "菊地 ハルン",
+        "position": "投手",
+        "status": "登録抹消 2026-08-30"
+      }
+    ],
+    "905": [
+      {
+        "name": "増居 翔太",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "山野辺 翔",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "石川 雅規",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "奥川 恭伸",
+        "position": "投手",
+        "status": "登録抹消 2026-08-29"
+      },
+      {
+        "name": "小川 泰弘",
+        "position": "投手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "906": [
+      {
+        "name": "板山 祐太郎",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "土田 龍空",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "山本 泰寛",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "907": [
+      {
+        "name": "石塚 綜一郎",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "松本 晴",
+        "position": "投手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "908": [
+      {
+        "name": "伊藤 大海",
+        "position": "投手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "Ｓ．ラオ",
+        "position": "投手",
+        "status": "登録抹消 2026-08-29"
+      },
+      {
+        "name": "大川 慈英",
+        "position": "投手",
+        "status": "登録抹消 2026-08-30"
+      },
+      {
+        "name": "上川畑 大悟",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-31"
+      },
+      {
+        "name": "淺間 大基",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "909": [
+      {
+        "name": "吉川 悠斗",
+        "position": "投手",
+        "status": "登録抹消 2026-08-26"
+      },
+      {
+        "name": "Ｓ．ロング",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "毛利 海大",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      }
+    ],
+    "910": [
+      {
+        "name": "山田 陽翔",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "山村 崇嘉",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "佐藤 太陽",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "渡邉 勇太朗",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "蛭間 拓哉",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "西川 愛也",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "児玉 亮涼",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "佐藤 爽",
+        "position": "投手",
+        "status": "登録抹消 2026-08-30"
+      },
+      {
+        "name": "栗山 巧",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ],
+    "911": [
+      {
+        "name": "本田 仁海",
+        "position": "投手",
+        "status": "登録抹消 2026-08-23"
+      },
+      {
+        "name": "福永 奨",
+        "position": "捕手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "齋藤 響介",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "佐藤 一磨",
+        "position": "投手",
+        "status": "登録抹消 2026-08-27"
+      },
+      {
+        "name": "入山 海斗",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "Ｓ．ジェリー",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      }
+    ],
+    "912": [
+      {
+        "name": "古謝 樹",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "津留﨑 大成",
+        "position": "投手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "繁永 晟",
+        "position": "内野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "吉野 創士",
+        "position": "外野手",
+        "status": "登録抹消 2026-08-24"
+      },
+      {
+        "name": "前田 健太",
+        "position": "投手",
+        "status": "登録抹消 2026-08-28"
+      },
+      {
+        "name": "江原 雅裕",
+        "position": "投手",
+        "status": "登録抹消 2026-08-29"
+      },
+      {
+        "name": "岸 孝之",
+        "position": "投手",
+        "status": "登録抹消 2026-08-31"
+      }
+    ]
+  },
+  "lineups": {},
+  "lineupBatting": {},
+  "leagueConstants": {
+    "season": 1002026,
+    "wOBA": 0.294,
+    "wOBAScale": 1.24,
+    "wBB": 0.69,
+    "wHBP": 0.722,
+    "w1B": 0.882,
+    "w2B": 1.256,
+    "w3B": 1.59,
+    "wHR": 2.05,
+    "runSB": 0.2,
+    "runCS": -0.4,
+    "runsPerPA": 0.097,
+    "runsPerWin": 9.6,
+    "cFIP": 2.808,
+    "lgFIP": 3.336,
+    "hrPerFB": 0.088
+  },
+  "weather": {
+    "92026090101": {
+      "temperatureC": null,
+      "windSpeedKmh": null,
+      "roof": "dome"
+    },
+    "92026090105": {
+      "temperatureC": 27.6,
+      "windSpeedKmh": 5.5,
+      "windDirectionDeg": 113,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-08-31T15:06:07.422Z"
+    },
+    "92026090106": {
+      "temperatureC": null,
+      "windSpeedKmh": null,
+      "roof": "dome"
+    },
+    "92026090108": {
+      "temperatureC": 18.8,
+      "windSpeedKmh": 13.4,
+      "windDirectionDeg": 153,
+      "roof": "retractable",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-08-31T15:06:07.553Z"
+    },
+    "92026090109": {
+      "temperatureC": 27.6,
+      "windSpeedKmh": 12.9,
+      "windDirectionDeg": 108,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-08-31T15:06:07.683Z"
+    }
+  }
+}
