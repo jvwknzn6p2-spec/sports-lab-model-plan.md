@@ -47,7 +47,14 @@ async function main(): Promise<void> {
     notes.push("ODDS_API_KEY not set — The Odds API captures not attempted");
   }
 
-  const verdicts = assessRun(captures, "not attempted (credential not configured)");
+  // Items end up with zero captures either because a credential was missing
+  // or because staged discovery could not resolve the reference-case IDs
+  // (e.g. the current subscription cannot see Eredivisie) — say which.
+  const noEvidenceReason =
+    smKey.length > 0
+      ? "not attempted (reference-case discovery failed — see run notes)"
+      : "not attempted (credential not configured)";
+  const verdicts = assessRun(captures, noEvidenceReason);
   const summary: RunSummary = {
     runId,
     startedAt,

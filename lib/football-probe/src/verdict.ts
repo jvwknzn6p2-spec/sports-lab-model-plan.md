@@ -50,12 +50,23 @@ export function classifyCapture(capture: Capture, extract: Extractor): Classifie
   }
   const count = extract(parsed);
   if (count === null) {
-    return { capture, verdict: "PARTIAL", detail: `HTTP ${status} but expected shape not found` };
+    return { capture, verdict: "PARTIAL", detail: `HTTP ${status} but expected shape not found${apiMessage(parsed)}` };
   }
   if (count > 0) {
     return { capture, verdict: "AVAILABLE", detail: `HTTP ${status}, ${count} record(s)` };
   }
-  return { capture, verdict: "PARTIAL", detail: `HTTP ${status}, 0 records for reference case` };
+  return { capture, verdict: "PARTIAL", detail: `HTTP ${status}, 0 records for reference case${apiMessage(parsed)}` };
+}
+
+/** Surface the provider's own explanation for an empty answer, verbatim (truncated). */
+function apiMessage(parsed: unknown): string {
+  if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+    const msg = (parsed as Record<string, unknown>)["message"];
+    if (typeof msg === "string" && msg.length > 0) {
+      return ` — API message: "${msg.length > 140 ? msg.slice(0, 140) + "…" : msg}"`;
+    }
+  }
+  return "";
 }
 
 function errorCode(body: string): string | undefined {

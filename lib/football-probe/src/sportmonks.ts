@@ -25,6 +25,26 @@ interface Ids {
   upcomingFixture?: number;
 }
 
+function leagueNames(capture: Capture): Array<{ id: number; name: string }> | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(capture.body);
+  } catch {
+    return null;
+  }
+  const data = sportmonksData(parsed);
+  if (!Array.isArray(data)) return null;
+  const out: Array<{ id: number; name: string }> = [];
+  for (const l of data) {
+    if (typeof l !== "object" || l === null) continue;
+    const rec = l as Record<string, unknown>;
+    if (typeof rec["id"] === "number" && typeof rec["name"] === "string") {
+      out.push({ id: rec["id"], name: rec["name"] });
+    }
+  }
+  return out;
+}
+
 function firstTeamId(capture: Capture, needle: string, notes: string[]): number | undefined {
   let parsed: unknown;
   try {
@@ -98,6 +118,21 @@ export async function probeSportmonks(store: CaptureStore, apiKey: string): Prom
 
   await get("sm-leagues-search.json", "/leagues/search/{name}", `${BASE}/leagues/search/Eredivisie`);
 
+  // Control: enumerate the leagues the CURRENT subscription can actually see.
+  // Run #4 (2026-08-31) proved Sportmonks answers plan denials as HTTP 200 +
+  // empty data + an ambiguous "no results OR no access" message — this
+  // capture disambiguates: if leagues ARE listed here but Eredivisie is not
+  // among them, an empty Eredivisie search is a plan limit, not a bad query.
+  const leaguesAll = await get("sm-leagues-all.json", "/leagues", `${BASE}/leagues`);
+  const accessible = leagueNames(leaguesAll);
+  if (accessible !== null) {
+    notes.push(
+      accessible.length === 0
+        ? "control: /leagues lists NO accessible leagues on this subscription"
+        : `control: accessible leagues on this subscription: ${accessible.map((l) => l.name).join(", ")}`,
+    );
+  }
+
   const camb = await get("sm-teams-search-cambuur.json", "/teams/search/{name}", `${BASE}/teams/search/Cambuur`);
   const twen = await get("sm-teams-search-twente.json", "/teams/search/{name}", `${BASE}/teams/search/Twente`);
   const ids: Ids = {
@@ -151,5 +186,70 @@ export async function probeSportmonks(store: CaptureStore, apiKey: string): Prom
     );
   }
 
+  // Control probe (only when the reference case is out of reach): exercise
+  // the fixture-detail include mechanics on a fixture the CURRENT plan can
+  // see. This never feeds an item verdict — Phase 0 verdicts stay bound to
+  // the reference case — but it proves cheaply, before paying for a plan
+  // upgrade, whether our include hypotheses (lineups/formations/statistics/
+  // xGFixture) are the right endpoint shapes at all.
+  if (ids.pastFixture === undefined) {
+    const latest = await get("sm-control-fixtures-latest.json", "/fixtures/latest", `${BASE}/fixtures/latest`);
+    const controlId = firstFixtureId(latest);
+    if (controlId === undefined) {
+      notes.push("control: /fixtures/latest returned no usable fixture — include mechanics untested");
+    } else {
+      notes.push(`control: exercising includes on accessible fixture id=${controlId} (NOT the reference case)`);
+      const detail = await get(
+        "sm-control-fixture-detail.json",
+        "/fixtures/{id}?include=lineups;formations;statistics;events;scores;participants",
+        `${BASE}/fixtures/${controlId}?include=lineups;formations;statistics;events;scores;participants`,
+      );
+      notes.push(`control fixture detail: ${includeSummary(detail, ["lineups", "formations", "statistics", "events", "scores"])}`);
+      const xg = await get(
+        "sm-control-fixture-xg.json",
+        "/fixtures/{id}?include=xGFixture",
+        `${BASE}/fixtures/${controlId}?include=xGFixture`,
+      );
+      notes.push(`control fixture xG: ${includeSummary(xg, ["xgfixture", "xGFixture", "xg"])}`);
+    }
+  }
+
   return { captures, notes };
+}
+
+function firstFixtureId(capture: Capture): number | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(capture.body);
+  } catch {
+    return undefined;
+  }
+  const data = sportmonksData(parsed);
+  if (!Array.isArray(data)) return undefined;
+  for (const f of data) {
+    if (typeof f === "object" && f !== null && typeof (f as Record<string, unknown>)["id"] === "number") {
+      return (f as Record<string, unknown>)["id"] as number;
+    }
+  }
+  return undefined;
+}
+
+/** "lineups=22, formations=2, …" for run notes; keys absent from the body are reported as such. */
+function includeSummary(capture: Capture, keys: string[]): string {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(capture.body);
+  } catch {
+    return `unparseable body (HTTP ${capture.meta.status})`;
+  }
+  const data = sportmonksData(parsed);
+  const rec = typeof data === "object" && data !== null && !Array.isArray(data) ? (data as Record<string, unknown>) : null;
+  if (rec === null) return `no fixture object in body (HTTP ${capture.meta.status})`;
+  const parts: string[] = [];
+  for (const key of keys) {
+    if (!(key in rec)) continue;
+    const v = rec[key];
+    parts.push(`${key}=${Array.isArray(v) ? v.length : v === null || v === undefined ? "null" : "1"}`);
+  }
+  return parts.length > 0 ? parts.join(", ") : `none of [${keys.join(", ")}] present (HTTP ${capture.meta.status})`;
 }
