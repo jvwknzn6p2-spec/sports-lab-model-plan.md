@@ -1,0 +1,91 @@
+{
+  "runId": "2026-08-31T07-40-52-590Z",
+  "startedAt": "2026-08-31T07:40:52.590Z",
+  "finishedAt": "2026-08-31T07:40:57.506Z",
+  "credentials": {
+    "sportmonks": true,
+    "theOddsApi": true
+  },
+  "verdicts": [
+    {
+      "item": "fixture",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "historical_results",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "teams",
+      "verdict": "PARTIAL",
+      "reason": "sportmonks: PARTIAL (HTTP 200, 0 records for reference case — API message: \"No result(s) found matching your request. Either the query did not return any results or you don't have access to it via your current subscr…\"); sportmonks: PARTIAL (HTTP 200, 0 records for reference case — API message: \"No result(s) found matching your request. Either the query did not return any results or you don't have access to it via your current subscr…\")",
+      "evidence": [
+        "sm-teams-search-cambuur.json",
+        "sm-teams-search-twente.json"
+      ]
+    },
+    {
+      "item": "players",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "lineups",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "formation",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "injuries_suspensions",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "match_statistics",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "xg",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    },
+    {
+      "item": "odds",
+      "verdict": "AVAILABLE",
+      "reason": "the-odds-api: AVAILABLE (HTTP 200, 21 record(s)); the-odds-api: AVAILABLE (HTTP 200, 1 record(s))",
+      "evidence": [
+        "oa-eredivisie-odds.json",
+        "oa-sports.json"
+      ]
+    },
+    {
+      "item": "historical_odds",
+      "verdict": "UNAVAILABLE",
+      "reason": "the-odds-api: UNAVAILABLE (HTTP 401 — HISTORICAL_UNAVAILABLE_ON_FREE_USAGE_PLAN (denied on current plan))",
+      "evidence": [
+        "oa-historical-odds.json"
+      ]
+    },
+    {
+      "item": "final_result",
+      "verdict": "UNVERIFIED",
+      "reason": "not attempted (reference-case discovery failed — see run notes)",
+      "evidence": []
+    }
+  ]
+}
