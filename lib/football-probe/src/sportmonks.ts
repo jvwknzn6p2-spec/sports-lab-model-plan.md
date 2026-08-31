@@ -193,10 +193,19 @@ export async function probeSportmonks(store: CaptureStore, apiKey: string): Prom
   // upgrade, whether our include hypotheses (lineups/formations/statistics/
   // xGFixture) are the right endpoint shapes at all.
   if (ids.pastFixture === undefined) {
-    const latest = await get("sm-control-fixtures-latest.json", "/fixtures/latest", `${BASE}/fixtures/latest`);
-    const controlId = firstFixtureId(latest);
+    // /fixtures/latest only returns fixtures updated in the last moments and
+    // came back empty on run #5 — a recent date window is the reliable way
+    // to reach a finished fixture the plan can see.
+    const to = new Date().toISOString().slice(0, 10);
+    const from = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const recent = await get(
+      "sm-control-fixtures-recent.json",
+      "/fixtures/between/{from}/{to}",
+      `${BASE}/fixtures/between/${from}/${to}`,
+    );
+    const controlId = lastFinishedFixtureId(recent);
     if (controlId === undefined) {
-      notes.push("control: /fixtures/latest returned no usable fixture — include mechanics untested");
+      notes.push(`control: no finished fixture between ${from} and ${to} on this subscription — include mechanics untested`);
     } else {
       notes.push(`control: exercising includes on accessible fixture id=${controlId} (NOT the reference case)`);
       const detail = await get(
@@ -217,7 +226,8 @@ export async function probeSportmonks(store: CaptureStore, apiKey: string): Prom
   return { captures, notes };
 }
 
-function firstFixtureId(capture: Capture): number | undefined {
+/** Latest fixture in the capture whose kickoff is already in the past. */
+function lastFinishedFixtureId(capture: Capture): number | undefined {
   let parsed: unknown;
   try {
     parsed = JSON.parse(capture.body);
@@ -226,12 +236,18 @@ function firstFixtureId(capture: Capture): number | undefined {
   }
   const data = sportmonksData(parsed);
   if (!Array.isArray(data)) return undefined;
+  const now = Date.now();
+  let best: { id: number; at: number } | undefined;
   for (const f of data) {
-    if (typeof f === "object" && f !== null && typeof (f as Record<string, unknown>)["id"] === "number") {
-      return (f as Record<string, unknown>)["id"] as number;
-    }
+    if (typeof f !== "object" || f === null) continue;
+    const rec = f as Record<string, unknown>;
+    const id = typeof rec["id"] === "number" ? rec["id"] : undefined;
+    const at = typeof rec["starting_at"] === "string" ? parseUtc(rec["starting_at"]) : NaN;
+    if (id === undefined || Number.isNaN(at)) continue;
+    // Leave a 3h margin so the picked control fixture has actually finished.
+    if (at < now - 3 * 3600 * 1000 && (best === undefined || at > best.at)) best = { id, at };
   }
-  return undefined;
+  return best?.id;
 }
 
 /** "lineups=22, formations=2, …" for run notes; keys absent from the body are reported as such. */
