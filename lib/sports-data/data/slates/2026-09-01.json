@@ -97,8 +97,8 @@
       "away": {
         "teamId": 141,
         "teamName": "Toronto Blue Jays",
-        "probablePitcherId": 681293,
-        "probablePitcherName": "Spencer Arrighetti",
+        "probablePitcherId": 693686,
+        "probablePitcherName": "Spencer Miles",
         "score": null
       }
     },
@@ -115,8 +115,8 @@
       "home": {
         "teamId": 111,
         "teamName": "Boston Red Sox",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 699151,
+        "probablePitcherName": "Jedixson Paez",
         "score": null
       },
       "away": {
@@ -652,19 +652,6 @@
       "atBats": 470,
       "sacFlies": 6
     },
-    "681293": {
-      "inningsPitched": "95.1",
-      "battersFaced": 421,
-      "strikeOuts": 95,
-      "baseOnBalls": 54,
-      "hitByPitch": 14,
-      "homeRuns": 14,
-      "hits": 76,
-      "earnedRuns": 51,
-      "runs": 54,
-      "atBats": 347,
-      "sacFlies": 4
-    },
     "687312": {
       "inningsPitched": "47.2",
       "battersFaced": 211,
@@ -704,6 +691,19 @@
       "atBats": 540,
       "sacFlies": 4
     },
+    "693686": {
+      "inningsPitched": "83.1",
+      "battersFaced": 336,
+      "strikeOuts": 77,
+      "baseOnBalls": 21,
+      "hitByPitch": 1,
+      "homeRuns": 5,
+      "hits": 70,
+      "earnedRuns": 27,
+      "runs": 29,
+      "atBats": 312,
+      "sacFlies": 1
+    },
     "694973": {
       "inningsPitched": "145.0",
       "battersFaced": 594,
@@ -716,6 +716,19 @@
       "runs": 69,
       "atBats": 536,
       "sacFlies": 5
+    },
+    "699151": {
+      "inningsPitched": "3.0",
+      "battersFaced": 16,
+      "strikeOuts": 0,
+      "baseOnBalls": 3,
+      "hitByPitch": 0,
+      "homeRuns": 2,
+      "hits": 4,
+      "earnedRuns": 6,
+      "runs": 6,
+      "atBats": 12,
+      "sacFlies": 1
     },
     "700241": {
       "inningsPitched": "142.1",
@@ -1712,7 +1725,7 @@
   },
   "lineups": {},
   "lineupBatting": {},
-  "fetchedAt": "2026-09-01T11:33:32.896Z",
+  "fetchedAt": "2026-09-01T15:32:23.354Z",
   "forms": {
     "108": {
       "games": 15,
@@ -2019,13 +2032,13 @@
         "status": "Injured 10-Day"
       },
       {
-        "name": "Garrett Crochet",
+        "name": "Eduardo Rivera",
         "position": "P",
         "status": "Injured 60-Day"
       },
       {
-        "name": "Isiah Kiner-Falefa",
-        "position": "2B",
+        "name": "Garrett Crochet",
+        "position": "P",
         "status": "Injured 60-Day"
       },
       {
@@ -3150,7 +3163,7 @@
       {
         "name": "Robert Suarez",
         "position": "P",
-        "status": "Injured 15-Day"
+        "status": "Injured 60-Day"
       },
       {
         "name": "Spencer Schwellenbach",
@@ -3354,20 +3367,20 @@
   },
   "weather": {
     "822687": {
-      "temperatureC": 34.5,
-      "windSpeedKmh": 7.9,
-      "windDirectionDeg": 246,
+      "temperatureC": 34.2,
+      "windSpeedKmh": 7.4,
+      "windDirectionDeg": 247,
       "roof": "outdoor",
       "cfBearingDeg": 28,
-      "fetchedAt": "2026-09-01T11:33:35.801Z"
+      "fetchedAt": "2026-09-01T15:32:33.625Z"
     },
     "822854": {
-      "temperatureC": 36.5,
-      "windSpeedKmh": 10.4,
-      "windDirectionDeg": 136,
+      "temperatureC": 36.4,
+      "windSpeedKmh": 9.7,
+      "windDirectionDeg": 138,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-01T11:33:36.201Z"
+      "fetchedAt": "2026-09-01T15:32:34.255Z"
     },
     "822929": {
       "temperatureC": null,
@@ -3375,100 +3388,100 @@
       "roof": "dome"
     },
     "823340": {
-      "temperatureC": 30.6,
-      "windSpeedKmh": 12.1,
-      "windDirectionDeg": 258,
+      "temperatureC": 31.3,
+      "windSpeedKmh": 13.6,
+      "windDirectionDeg": 253,
       "roof": "outdoor",
       "cfBearingDeg": 116,
-      "fetchedAt": "2026-09-01T11:33:35.501Z"
+      "fetchedAt": "2026-09-01T15:32:33.155Z"
     },
     "823661": {
-      "temperatureC": 30.9,
-      "windSpeedKmh": 5.2,
-      "windDirectionDeg": 236,
+      "temperatureC": 29,
+      "windSpeedKmh": 8.8,
+      "windDirectionDeg": 261,
       "roof": "outdoor",
       "cfBearingDeg": 129,
-      "fetchedAt": "2026-09-01T11:33:35.901Z"
+      "fetchedAt": "2026-09-01T15:32:33.784Z"
     },
     "823908": {
-      "temperatureC": 26.1,
-      "windSpeedKmh": 14.8,
-      "windDirectionDeg": 244,
+      "temperatureC": 25.5,
+      "windSpeedKmh": 15.4,
+      "windDirectionDeg": 249,
       "roof": "outdoor",
       "cfBearingDeg": 26,
-      "fetchedAt": "2026-09-01T11:33:36.700Z"
+      "fetchedAt": "2026-09-01T15:32:35.044Z"
     },
     "823984": {
-      "temperatureC": 26.5,
-      "windSpeedKmh": 14.9,
-      "windDirectionDeg": 238,
+      "temperatureC": 26.6,
+      "windSpeedKmh": 14.7,
+      "windDirectionDeg": 239,
       "roof": "outdoor",
       "cfBearingDeg": 43.61,
-      "fetchedAt": "2026-09-01T11:33:36.499Z"
+      "fetchedAt": "2026-09-01T15:32:34.728Z"
     },
     "824070": {
-      "temperatureC": 37.5,
-      "windSpeedKmh": 17.8,
-      "windDirectionDeg": 216,
+      "temperatureC": 37.7,
+      "windSpeedKmh": 16.4,
+      "windDirectionDeg": 206,
       "roof": "outdoor",
       "cfBearingDeg": 46,
-      "fetchedAt": "2026-09-01T11:33:36.001Z"
+      "fetchedAt": "2026-09-01T15:32:33.941Z"
     },
     "824148": {
-      "temperatureC": 25.9,
-      "windSpeedKmh": 7.6,
-      "windDirectionDeg": 315,
+      "temperatureC": 30.1,
+      "windSpeedKmh": 4.8,
+      "windDirectionDeg": 347,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-01T11:33:36.301Z"
+      "fetchedAt": "2026-09-01T15:32:34.410Z"
     },
     "824313": {
-      "temperatureC": 30.2,
-      "windSpeedKmh": 14.5,
-      "windDirectionDeg": 55,
+      "temperatureC": 31.1,
+      "windSpeedKmh": 12.3,
+      "windDirectionDeg": 111,
       "roof": "outdoor",
       "cfBearingDeg": 4,
-      "fetchedAt": "2026-09-01T11:33:36.399Z"
+      "fetchedAt": "2026-09-01T15:32:34.566Z"
     },
     "824391": {
-      "temperatureC": 31.8,
-      "windSpeedKmh": 11.8,
-      "windDirectionDeg": 258,
+      "temperatureC": 31.9,
+      "windSpeedKmh": 14.8,
+      "windDirectionDeg": 267,
       "roof": "outdoor",
       "cfBearingDeg": 0,
-      "fetchedAt": "2026-09-01T11:33:35.601Z"
+      "fetchedAt": "2026-09-01T15:32:33.312Z"
     },
     "824472": {
-      "temperatureC": 35.1,
-      "windSpeedKmh": 6.8,
-      "windDirectionDeg": 238,
+      "temperatureC": 34.9,
+      "windSpeedKmh": 7.6,
+      "windDirectionDeg": 245,
       "roof": "outdoor",
       "cfBearingDeg": 122,
-      "fetchedAt": "2026-09-01T11:33:35.401Z"
+      "fetchedAt": "2026-09-01T15:32:32.999Z"
     },
     "824633": {
-      "temperatureC": 31,
-      "windSpeedKmh": 1.5,
-      "windDirectionDeg": 194,
+      "temperatureC": 33.2,
+      "windSpeedKmh": 12,
+      "windDirectionDeg": 231,
       "roof": "outdoor",
       "cfBearingDeg": 37,
-      "fetchedAt": "2026-09-01T11:33:36.100Z"
+      "fetchedAt": "2026-09-01T15:32:34.098Z"
     },
     "824716": {
-      "temperatureC": 18,
-      "windSpeedKmh": 9.7,
-      "windDirectionDeg": 86,
+      "temperatureC": 17.4,
+      "windSpeedKmh": 10.7,
+      "windDirectionDeg": 76,
       "roof": "outdoor",
       "cfBearingDeg": 45,
-      "fetchedAt": "2026-09-01T11:33:35.701Z"
+      "fetchedAt": "2026-09-01T15:32:33.468Z"
     },
     "825038": {
-      "temperatureC": 38.6,
-      "windSpeedKmh": 8.2,
-      "windDirectionDeg": 229,
+      "temperatureC": 38.4,
+      "windSpeedKmh": 6.9,
+      "windDirectionDeg": 186,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-01T11:33:36.600Z"
+      "fetchedAt": "2026-09-01T15:32:34.888Z"
     }
   }
 }
