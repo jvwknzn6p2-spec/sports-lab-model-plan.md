@@ -1,0 +1,3474 @@
+{
+  "date": "2026-09-01",
+  "season": 2026,
+  "games": [
+    {
+      "gamePk": 824472,
+      "gameDate": "2026-09-01T22:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 2602,
+        "name": "Great American Ball Park"
+      },
+      "home": {
+        "teamId": 113,
+        "teamName": "Cincinnati Reds",
+        "probablePitcherId": 666157,
+        "probablePitcherName": "Nick Lodolo",
+        "score": null
+      },
+      "away": {
+        "teamId": 135,
+        "teamName": "San Diego Padres",
+        "probablePitcherId": 681190,
+        "probablePitcherName": "Randy Vásquez",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 823340,
+      "gameDate": "2026-09-01T22:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 31,
+        "name": "PNC Park"
+      },
+      "home": {
+        "teamId": 134,
+        "teamName": "Pittsburgh Pirates",
+        "probablePitcherId": 694973,
+        "probablePitcherName": "Paul Skenes",
+        "score": null
+      },
+      "away": {
+        "teamId": 137,
+        "teamName": "San Francisco Giants",
+        "probablePitcherId": 657277,
+        "probablePitcherName": "Logan Webb",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 822929,
+      "gameDate": "2026-09-01T22:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 12,
+        "name": "Tropicana Field"
+      },
+      "home": {
+        "teamId": 139,
+        "teamName": "Tampa Bay Rays",
+        "probablePitcherId": 642547,
+        "probablePitcherName": "Freddy Peralta",
+        "score": null
+      },
+      "away": {
+        "teamId": 121,
+        "teamName": "New York Mets",
+        "probablePitcherId": 640455,
+        "probablePitcherName": "Sean Manaea",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 824391,
+      "gameDate": "2026-09-01T22:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 5,
+        "name": "Progressive Field"
+      },
+      "home": {
+        "teamId": 114,
+        "teamName": "Cleveland Guardians",
+        "probablePitcherId": 668909,
+        "probablePitcherName": "Gavin Williams",
+        "score": null
+      },
+      "away": {
+        "teamId": 141,
+        "teamName": "Toronto Blue Jays",
+        "probablePitcherId": 681293,
+        "probablePitcherName": "Spencer Arrighetti",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 824716,
+      "gameDate": "2026-09-01T22:45:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 3,
+        "name": "Fenway Park"
+      },
+      "home": {
+        "teamId": 111,
+        "teamName": "Boston Red Sox",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      },
+      "away": {
+        "teamId": 136,
+        "teamName": "Seattle Mariners",
+        "probablePitcherId": 693433,
+        "probablePitcherName": "Bryan Woo",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 822687,
+      "gameDate": "2026-09-01T22:45:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 3309,
+        "name": "Nationals Park"
+      },
+      "home": {
+        "teamId": 120,
+        "teamName": "Washington Nationals",
+        "probablePitcherId": 663623,
+        "probablePitcherName": "Jake Irvin",
+        "score": null
+      },
+      "away": {
+        "teamId": 144,
+        "teamName": "Atlanta Braves",
+        "probablePitcherId": 700363,
+        "probablePitcherName": "AJ Smith-Shawver",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 823661,
+      "gameDate": "2026-09-01T23:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 3312,
+        "name": "Target Field"
+      },
+      "home": {
+        "teamId": 142,
+        "teamName": "Minnesota Twins",
+        "probablePitcherId": 702193,
+        "probablePitcherName": "Andrew Morris",
+        "score": null
+      },
+      "away": {
+        "teamId": 116,
+        "teamName": "Detroit Tigers",
+        "probablePitcherId": 675512,
+        "probablePitcherName": "Troy Melton",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 824070,
+      "gameDate": "2026-09-01T23:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 7,
+        "name": "Kauffman Stadium"
+      },
+      "home": {
+        "teamId": 118,
+        "teamName": "Kansas City Royals",
+        "probablePitcherId": 677976,
+        "probablePitcherName": "Randy Dobnak",
+        "score": null
+      },
+      "away": {
+        "teamId": 146,
+        "teamName": "Miami Marlins",
+        "probablePitcherId": 663969,
+        "probablePitcherName": "Tyler Phillips",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 824633,
+      "gameDate": "2026-09-01T23:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 17,
+        "name": "Wrigley Field"
+      },
+      "home": {
+        "teamId": 112,
+        "teamName": "Chicago Cubs",
+        "probablePitcherId": 571510,
+        "probablePitcherName": "Matthew Boyd",
+        "score": null
+      },
+      "away": {
+        "teamId": 158,
+        "teamName": "Milwaukee Brewers",
+        "probablePitcherId": 688107,
+        "probablePitcherName": "Robert Gasser",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 822854,
+      "gameDate": "2026-09-02T00:05:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 5325,
+        "name": "Globe Life Field"
+      },
+      "home": {
+        "teamId": 140,
+        "teamName": "Texas Rangers",
+        "probablePitcherId": 669022,
+        "probablePitcherName": "MacKenzie Gore",
+        "score": null
+      },
+      "away": {
+        "teamId": 133,
+        "teamName": "Athletics",
+        "probablePitcherId": 669620,
+        "probablePitcherName": "Brady Basso",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 824148,
+      "gameDate": "2026-09-02T00:10:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 2392,
+        "name": "Daikin Park"
+      },
+      "home": {
+        "teamId": 117,
+        "teamName": "Houston Astros",
+        "probablePitcherId": 669854,
+        "probablePitcherName": "Ronel Blanco",
+        "score": null
+      },
+      "away": {
+        "teamId": 145,
+        "teamName": "Chicago White Sox",
+        "probablePitcherId": 680732,
+        "probablePitcherName": "Sean Burke",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 824313,
+      "gameDate": "2026-09-02T00:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 19,
+        "name": "Coors Field"
+      },
+      "home": {
+        "teamId": 115,
+        "teamName": "Colorado Rockies",
+        "probablePitcherId": 687312,
+        "probablePitcherName": "Gabriel Hughes",
+        "score": null
+      },
+      "away": {
+        "teamId": 110,
+        "teamName": "Baltimore Orioles",
+        "probablePitcherId": 680694,
+        "probablePitcherName": "Kyle Bradish",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 823984,
+      "gameDate": "2026-09-02T01:38:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 1,
+        "name": "Angel Stadium"
+      },
+      "home": {
+        "teamId": 108,
+        "teamName": "Los Angeles Angels",
+        "probablePitcherId": 680570,
+        "probablePitcherName": "Grayson Rodriguez",
+        "score": null
+      },
+      "away": {
+        "teamId": 147,
+        "teamName": "New York Yankees",
+        "probablePitcherId": 543037,
+        "probablePitcherName": "Gerrit Cole",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 825038,
+      "gameDate": "2026-09-02T01:40:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 15,
+        "name": "Chase Field"
+      },
+      "home": {
+        "teamId": 109,
+        "teamName": "Arizona Diamondbacks",
+        "probablePitcherId": 593958,
+        "probablePitcherName": "Eduardo Rodriguez",
+        "score": null
+      },
+      "away": {
+        "teamId": 143,
+        "teamName": "Philadelphia Phillies",
+        "probablePitcherId": 666200,
+        "probablePitcherName": "Jesús Luzardo",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 823908,
+      "gameDate": "2026-09-02T02:10:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 22,
+        "name": "UNIQLO Field at Dodger Stadium"
+      },
+      "home": {
+        "teamId": 119,
+        "teamName": "Los Angeles Dodgers",
+        "probablePitcherId": 641778,
+        "probablePitcherName": "Eric Lauer",
+        "score": null
+      },
+      "away": {
+        "teamId": 138,
+        "teamName": "St. Louis Cardinals",
+        "probablePitcherId": 700241,
+        "probablePitcherName": "Michael McGreevy",
+        "score": null
+      }
+    }
+  ],
+  "starters": {
+    "543037": {
+      "inningsPitched": "98.2",
+      "battersFaced": 402,
+      "strikeOuts": 105,
+      "baseOnBalls": 21,
+      "hitByPitch": 2,
+      "homeRuns": 13,
+      "hits": 85,
+      "earnedRuns": 35,
+      "runs": 36,
+      "atBats": 377,
+      "sacFlies": 0
+    },
+    "571510": {
+      "inningsPitched": "97.0",
+      "battersFaced": 401,
+      "strikeOuts": 76,
+      "baseOnBalls": 30,
+      "hitByPitch": 7,
+      "homeRuns": 15,
+      "hits": 88,
+      "earnedRuns": 43,
+      "runs": 46,
+      "atBats": 364,
+      "sacFlies": 0
+    },
+    "593958": {
+      "inningsPitched": "162.0",
+      "battersFaced": 661,
+      "strikeOuts": 119,
+      "baseOnBalls": 52,
+      "hitByPitch": 0,
+      "homeRuns": 14,
+      "hits": 140,
+      "earnedRuns": 45,
+      "runs": 49,
+      "atBats": 606,
+      "sacFlies": 0
+    },
+    "640455": {
+      "inningsPitched": "122.2",
+      "battersFaced": 533,
+      "strikeOuts": 120,
+      "baseOnBalls": 40,
+      "hitByPitch": 14,
+      "homeRuns": 20,
+      "hits": 122,
+      "earnedRuns": 62,
+      "runs": 69,
+      "atBats": 472,
+      "sacFlies": 5
+    },
+    "641778": {
+      "inningsPitched": "105.1",
+      "battersFaced": 448,
+      "strikeOuts": 70,
+      "baseOnBalls": 34,
+      "hitByPitch": 4,
+      "homeRuns": 24,
+      "hits": 99,
+      "earnedRuns": 56,
+      "runs": 57,
+      "atBats": 403,
+      "sacFlies": 3
+    },
+    "642547": {
+      "inningsPitched": "141.0",
+      "battersFaced": 621,
+      "strikeOuts": 133,
+      "baseOnBalls": 54,
+      "hitByPitch": 7,
+      "homeRuns": 22,
+      "hits": 145,
+      "earnedRuns": 80,
+      "runs": 88,
+      "atBats": 555,
+      "sacFlies": 3
+    },
+    "657277": {
+      "inningsPitched": "147.2",
+      "battersFaced": 603,
+      "strikeOuts": 118,
+      "baseOnBalls": 36,
+      "hitByPitch": 9,
+      "homeRuns": 11,
+      "hits": 127,
+      "earnedRuns": 61,
+      "runs": 64,
+      "atBats": 554,
+      "sacFlies": 1
+    },
+    "663623": {
+      "inningsPitched": "81.2",
+      "battersFaced": 362,
+      "strikeOuts": 82,
+      "baseOnBalls": 39,
+      "hitByPitch": 9,
+      "homeRuns": 14,
+      "hits": 75,
+      "earnedRuns": 51,
+      "runs": 55,
+      "atBats": 310,
+      "sacFlies": 4
+    },
+    "663969": {
+      "inningsPitched": "105.1",
+      "battersFaced": 454,
+      "strikeOuts": 86,
+      "baseOnBalls": 45,
+      "hitByPitch": 3,
+      "homeRuns": 14,
+      "hits": 99,
+      "earnedRuns": 42,
+      "runs": 45,
+      "atBats": 404,
+      "sacFlies": 0
+    },
+    "666157": {
+      "inningsPitched": "79.0",
+      "battersFaced": 359,
+      "strikeOuts": 64,
+      "baseOnBalls": 33,
+      "hitByPitch": 11,
+      "homeRuns": 15,
+      "hits": 89,
+      "earnedRuns": 46,
+      "runs": 46,
+      "atBats": 306,
+      "sacFlies": 7
+    },
+    "666200": {
+      "inningsPitched": "163.0",
+      "battersFaced": 670,
+      "strikeOuts": 203,
+      "baseOnBalls": 50,
+      "hitByPitch": 9,
+      "homeRuns": 14,
+      "hits": 133,
+      "earnedRuns": 56,
+      "runs": 64,
+      "atBats": 604,
+      "sacFlies": 3
+    },
+    "668909": {
+      "inningsPitched": "156.0",
+      "battersFaced": 632,
+      "strikeOuts": 204,
+      "baseOnBalls": 49,
+      "hitByPitch": 3,
+      "homeRuns": 27,
+      "hits": 126,
+      "earnedRuns": 69,
+      "runs": 72,
+      "atBats": 577,
+      "sacFlies": 0
+    },
+    "669022": {
+      "inningsPitched": "149.1",
+      "battersFaced": 639,
+      "strikeOuts": 165,
+      "baseOnBalls": 56,
+      "hitByPitch": 7,
+      "homeRuns": 18,
+      "hits": 135,
+      "earnedRuns": 73,
+      "runs": 73,
+      "atBats": 571,
+      "sacFlies": 3
+    },
+    "669620": {
+      "inningsPitched": "28.0",
+      "battersFaced": 123,
+      "strikeOuts": 22,
+      "baseOnBalls": 4,
+      "hitByPitch": 0,
+      "homeRuns": 3,
+      "hits": 35,
+      "earnedRuns": 14,
+      "runs": 15,
+      "atBats": 117,
+      "sacFlies": 2
+    },
+    "669854": {
+      "inningsPitched": "23.1",
+      "battersFaced": 101,
+      "strikeOuts": 20,
+      "baseOnBalls": 12,
+      "hitByPitch": 1,
+      "homeRuns": 7,
+      "hits": 22,
+      "earnedRuns": 20,
+      "runs": 20,
+      "atBats": 87,
+      "sacFlies": 0
+    },
+    "675512": {
+      "inningsPitched": "97.0",
+      "battersFaced": 382,
+      "strikeOuts": 80,
+      "baseOnBalls": 28,
+      "hitByPitch": 3,
+      "homeRuns": 10,
+      "hits": 70,
+      "earnedRuns": 20,
+      "runs": 24,
+      "atBats": 348,
+      "sacFlies": 2
+    },
+    "677976": {
+      "inningsPitched": "51.2",
+      "battersFaced": 221,
+      "strikeOuts": 34,
+      "baseOnBalls": 21,
+      "hitByPitch": 0,
+      "homeRuns": 3,
+      "hits": 50,
+      "earnedRuns": 11,
+      "runs": 11,
+      "atBats": 197,
+      "sacFlies": 2
+    },
+    "680570": {
+      "inningsPitched": "71.2",
+      "battersFaced": 322,
+      "strikeOuts": 65,
+      "baseOnBalls": 31,
+      "hitByPitch": 6,
+      "homeRuns": 10,
+      "hits": 78,
+      "earnedRuns": 48,
+      "runs": 53,
+      "atBats": 279,
+      "sacFlies": 6
+    },
+    "680694": {
+      "inningsPitched": "143.0",
+      "battersFaced": 610,
+      "strikeOuts": 133,
+      "baseOnBalls": 62,
+      "hitByPitch": 3,
+      "homeRuns": 16,
+      "hits": 140,
+      "earnedRuns": 64,
+      "runs": 73,
+      "atBats": 540,
+      "sacFlies": 5
+    },
+    "680732": {
+      "inningsPitched": "149.0",
+      "battersFaced": 613,
+      "strikeOuts": 161,
+      "baseOnBalls": 50,
+      "hitByPitch": 8,
+      "homeRuns": 18,
+      "hits": 122,
+      "earnedRuns": 55,
+      "runs": 57,
+      "atBats": 550,
+      "sacFlies": 2
+    },
+    "681190": {
+      "inningsPitched": "123.0",
+      "battersFaced": 516,
+      "strikeOuts": 76,
+      "baseOnBalls": 34,
+      "hitByPitch": 5,
+      "homeRuns": 15,
+      "hits": 124,
+      "earnedRuns": 55,
+      "runs": 59,
+      "atBats": 470,
+      "sacFlies": 6
+    },
+    "681293": {
+      "inningsPitched": "95.1",
+      "battersFaced": 421,
+      "strikeOuts": 95,
+      "baseOnBalls": 54,
+      "hitByPitch": 14,
+      "homeRuns": 14,
+      "hits": 76,
+      "earnedRuns": 51,
+      "runs": 54,
+      "atBats": 347,
+      "sacFlies": 4
+    },
+    "687312": {
+      "inningsPitched": "47.2",
+      "battersFaced": 211,
+      "strikeOuts": 38,
+      "baseOnBalls": 19,
+      "hitByPitch": 2,
+      "homeRuns": 5,
+      "hits": 50,
+      "earnedRuns": 35,
+      "runs": 35,
+      "atBats": 185,
+      "sacFlies": 3
+    },
+    "688107": {
+      "inningsPitched": "82.1",
+      "battersFaced": 358,
+      "strikeOuts": 78,
+      "baseOnBalls": 25,
+      "hitByPitch": 8,
+      "homeRuns": 13,
+      "hits": 82,
+      "earnedRuns": 42,
+      "runs": 43,
+      "atBats": 322,
+      "sacFlies": 1
+    },
+    "693433": {
+      "inningsPitched": "142.1",
+      "battersFaced": 581,
+      "strikeOuts": 142,
+      "baseOnBalls": 30,
+      "hitByPitch": 7,
+      "homeRuns": 17,
+      "hits": 126,
+      "earnedRuns": 69,
+      "runs": 73,
+      "atBats": 540,
+      "sacFlies": 4
+    },
+    "694973": {
+      "inningsPitched": "145.0",
+      "battersFaced": 594,
+      "strikeOuts": 175,
+      "baseOnBalls": 41,
+      "hitByPitch": 9,
+      "homeRuns": 14,
+      "hits": 121,
+      "earnedRuns": 61,
+      "runs": 69,
+      "atBats": 536,
+      "sacFlies": 5
+    },
+    "700241": {
+      "inningsPitched": "142.1",
+      "battersFaced": 586,
+      "strikeOuts": 98,
+      "baseOnBalls": 38,
+      "hitByPitch": 1,
+      "homeRuns": 20,
+      "hits": 140,
+      "earnedRuns": 61,
+      "runs": 65,
+      "atBats": 543,
+      "sacFlies": 4
+    },
+    "700363": {
+      "inningsPitched": "13.2",
+      "battersFaced": 63,
+      "strikeOuts": 10,
+      "baseOnBalls": 8,
+      "hitByPitch": 0,
+      "homeRuns": 1,
+      "hits": 14,
+      "earnedRuns": 9,
+      "runs": 9,
+      "atBats": 54,
+      "sacFlies": 1
+    },
+    "702193": {
+      "inningsPitched": "63.2",
+      "battersFaced": 275,
+      "strikeOuts": 59,
+      "baseOnBalls": 22,
+      "hitByPitch": 2,
+      "homeRuns": 4,
+      "hits": 63,
+      "earnedRuns": 27,
+      "runs": 33,
+      "atBats": 247,
+      "sacFlies": 2
+    }
+  },
+  "batting": {
+    "108": {
+      "plateAppearances": 5181,
+      "atBats": 4610,
+      "hits": 1081,
+      "doubles": 209,
+      "triples": 12,
+      "homeRuns": 133,
+      "baseOnBalls": 432,
+      "intentionalWalks": 15,
+      "hitByPitch": 84,
+      "sacFlies": 27,
+      "strikeOuts": 1301,
+      "stolenBases": 76,
+      "caughtStealing": 22
+    },
+    "109": {
+      "plateAppearances": 5250,
+      "atBats": 4657,
+      "hits": 1136,
+      "doubles": 235,
+      "triples": 35,
+      "homeRuns": 136,
+      "baseOnBalls": 465,
+      "intentionalWalks": 12,
+      "hitByPitch": 48,
+      "sacFlies": 44,
+      "strikeOuts": 1008,
+      "stolenBases": 96,
+      "caughtStealing": 23
+    },
+    "110": {
+      "plateAppearances": 5215,
+      "atBats": 4594,
+      "hits": 1081,
+      "doubles": 203,
+      "triples": 19,
+      "homeRuns": 168,
+      "baseOnBalls": 517,
+      "intentionalWalks": 18,
+      "hitByPitch": 52,
+      "sacFlies": 33,
+      "strikeOuts": 1272,
+      "stolenBases": 71,
+      "caughtStealing": 31
+    },
+    "111": {
+      "plateAppearances": 5234,
+      "atBats": 4627,
+      "hits": 1154,
+      "doubles": 250,
+      "triples": 24,
+      "homeRuns": 140,
+      "baseOnBalls": 445,
+      "intentionalWalks": 12,
+      "hitByPitch": 82,
+      "sacFlies": 46,
+      "strikeOuts": 1111,
+      "stolenBases": 97,
+      "caughtStealing": 37
+    },
+    "112": {
+      "plateAppearances": 5465,
+      "atBats": 4766,
+      "hits": 1205,
+      "doubles": 234,
+      "triples": 21,
+      "homeRuns": 196,
+      "baseOnBalls": 583,
+      "intentionalWalks": 20,
+      "hitByPitch": 71,
+      "sacFlies": 38,
+      "strikeOuts": 1171,
+      "stolenBases": 101,
+      "caughtStealing": 18
+    },
+    "113": {
+      "plateAppearances": 5184,
+      "atBats": 4593,
+      "hits": 1046,
+      "doubles": 194,
+      "triples": 12,
+      "homeRuns": 183,
+      "baseOnBalls": 493,
+      "intentionalWalks": 10,
+      "hitByPitch": 47,
+      "sacFlies": 33,
+      "strikeOuts": 1315,
+      "stolenBases": 93,
+      "caughtStealing": 30
+    },
+    "114": {
+      "plateAppearances": 5173,
+      "atBats": 4569,
+      "hits": 1081,
+      "doubles": 208,
+      "triples": 13,
+      "homeRuns": 127,
+      "baseOnBalls": 495,
+      "intentionalWalks": 13,
+      "hitByPitch": 44,
+      "sacFlies": 39,
+      "strikeOuts": 1108,
+      "stolenBases": 129,
+      "caughtStealing": 27
+    },
+    "115": {
+      "plateAppearances": 5260,
+      "atBats": 4684,
+      "hits": 1182,
+      "doubles": 247,
+      "triples": 26,
+      "homeRuns": 152,
+      "baseOnBalls": 443,
+      "intentionalWalks": 7,
+      "hitByPitch": 69,
+      "sacFlies": 47,
+      "strikeOuts": 1197,
+      "stolenBases": 95,
+      "caughtStealing": 37
+    },
+    "116": {
+      "plateAppearances": 5184,
+      "atBats": 4601,
+      "hits": 1093,
+      "doubles": 208,
+      "triples": 28,
+      "homeRuns": 156,
+      "baseOnBalls": 478,
+      "intentionalWalks": 9,
+      "hitByPitch": 54,
+      "sacFlies": 38,
+      "strikeOuts": 1175,
+      "stolenBases": 40,
+      "caughtStealing": 19
+    },
+    "117": {
+      "plateAppearances": 5218,
+      "atBats": 4641,
+      "hits": 1119,
+      "doubles": 202,
+      "triples": 16,
+      "homeRuns": 183,
+      "baseOnBalls": 458,
+      "intentionalWalks": 36,
+      "hitByPitch": 65,
+      "sacFlies": 35,
+      "strikeOuts": 1130,
+      "stolenBases": 41,
+      "caughtStealing": 19
+    },
+    "118": {
+      "plateAppearances": 5182,
+      "atBats": 4632,
+      "hits": 1148,
+      "doubles": 249,
+      "triples": 18,
+      "homeRuns": 141,
+      "baseOnBalls": 434,
+      "intentionalWalks": 16,
+      "hitByPitch": 48,
+      "sacFlies": 42,
+      "strikeOuts": 1085,
+      "stolenBases": 109,
+      "caughtStealing": 29
+    },
+    "119": {
+      "plateAppearances": 5237,
+      "atBats": 4617,
+      "hits": 1189,
+      "doubles": 222,
+      "triples": 15,
+      "homeRuns": 169,
+      "baseOnBalls": 509,
+      "intentionalWalks": 29,
+      "hitByPitch": 51,
+      "sacFlies": 43,
+      "strikeOuts": 1076,
+      "stolenBases": 55,
+      "caughtStealing": 18
+    },
+    "120": {
+      "plateAppearances": 5385,
+      "atBats": 4779,
+      "hits": 1188,
+      "doubles": 238,
+      "triples": 28,
+      "homeRuns": 192,
+      "baseOnBalls": 489,
+      "intentionalWalks": 15,
+      "hitByPitch": 65,
+      "sacFlies": 31,
+      "strikeOuts": 1160,
+      "stolenBases": 148,
+      "caughtStealing": 34
+    },
+    "121": {
+      "plateAppearances": 5166,
+      "atBats": 4637,
+      "hits": 1094,
+      "doubles": 175,
+      "triples": 18,
+      "homeRuns": 166,
+      "baseOnBalls": 435,
+      "intentionalWalks": 11,
+      "hitByPitch": 42,
+      "sacFlies": 31,
+      "strikeOuts": 1175,
+      "stolenBases": 73,
+      "caughtStealing": 29
+    },
+    "133": {
+      "plateAppearances": 5235,
+      "atBats": 4677,
+      "hits": 1146,
+      "doubles": 215,
+      "triples": 13,
+      "homeRuns": 160,
+      "baseOnBalls": 452,
+      "intentionalWalks": 18,
+      "hitByPitch": 61,
+      "sacFlies": 24,
+      "strikeOuts": 1180,
+      "stolenBases": 71,
+      "caughtStealing": 27
+    },
+    "134": {
+      "plateAppearances": 5356,
+      "atBats": 4753,
+      "hits": 1197,
+      "doubles": 207,
+      "triples": 14,
+      "homeRuns": 162,
+      "baseOnBalls": 489,
+      "intentionalWalks": 10,
+      "hitByPitch": 73,
+      "sacFlies": 30,
+      "strikeOuts": 1317,
+      "stolenBases": 113,
+      "caughtStealing": 22
+    },
+    "135": {
+      "plateAppearances": 5143,
+      "atBats": 4554,
+      "hits": 1082,
+      "doubles": 200,
+      "triples": 12,
+      "homeRuns": 150,
+      "baseOnBalls": 477,
+      "intentionalWalks": 18,
+      "hitByPitch": 52,
+      "sacFlies": 37,
+      "strikeOuts": 1119,
+      "stolenBases": 135,
+      "caughtStealing": 37
+    },
+    "136": {
+      "plateAppearances": 5145,
+      "atBats": 4558,
+      "hits": 1035,
+      "doubles": 163,
+      "triples": 14,
+      "homeRuns": 159,
+      "baseOnBalls": 462,
+      "intentionalWalks": 10,
+      "hitByPitch": 82,
+      "sacFlies": 31,
+      "strikeOuts": 1204,
+      "stolenBases": 93,
+      "caughtStealing": 35
+    },
+    "137": {
+      "plateAppearances": 5160,
+      "atBats": 4674,
+      "hits": 1156,
+      "doubles": 227,
+      "triples": 25,
+      "homeRuns": 155,
+      "baseOnBalls": 372,
+      "intentionalWalks": 16,
+      "hitByPitch": 48,
+      "sacFlies": 38,
+      "strikeOuts": 1102,
+      "stolenBases": 66,
+      "caughtStealing": 19
+    },
+    "138": {
+      "plateAppearances": 5230,
+      "atBats": 4639,
+      "hits": 1115,
+      "doubles": 194,
+      "triples": 14,
+      "homeRuns": 143,
+      "baseOnBalls": 441,
+      "intentionalWalks": 15,
+      "hitByPitch": 85,
+      "sacFlies": 44,
+      "strikeOuts": 1081,
+      "stolenBases": 87,
+      "caughtStealing": 22
+    },
+    "139": {
+      "plateAppearances": 5173,
+      "atBats": 4602,
+      "hits": 1197,
+      "doubles": 190,
+      "triples": 20,
+      "homeRuns": 142,
+      "baseOnBalls": 441,
+      "intentionalWalks": 23,
+      "hitByPitch": 50,
+      "sacFlies": 37,
+      "strikeOuts": 959,
+      "stolenBases": 137,
+      "caughtStealing": 48
+    },
+    "140": {
+      "plateAppearances": 5155,
+      "atBats": 4584,
+      "hits": 1109,
+      "doubles": 202,
+      "triples": 21,
+      "homeRuns": 155,
+      "baseOnBalls": 451,
+      "intentionalWalks": 10,
+      "hitByPitch": 65,
+      "sacFlies": 28,
+      "strikeOuts": 1169,
+      "stolenBases": 65,
+      "caughtStealing": 20
+    },
+    "141": {
+      "plateAppearances": 5143,
+      "atBats": 4644,
+      "hits": 1142,
+      "doubles": 221,
+      "triples": 8,
+      "homeRuns": 131,
+      "baseOnBalls": 381,
+      "intentionalWalks": 15,
+      "hitByPitch": 50,
+      "sacFlies": 43,
+      "strikeOuts": 990,
+      "stolenBases": 69,
+      "caughtStealing": 14
+    },
+    "142": {
+      "plateAppearances": 5213,
+      "atBats": 4645,
+      "hits": 1143,
+      "doubles": 226,
+      "triples": 19,
+      "homeRuns": 162,
+      "baseOnBalls": 444,
+      "intentionalWalks": 8,
+      "hitByPitch": 74,
+      "sacFlies": 40,
+      "strikeOuts": 1094,
+      "stolenBases": 80,
+      "caughtStealing": 32
+    },
+    "143": {
+      "plateAppearances": 5188,
+      "atBats": 4630,
+      "hits": 1123,
+      "doubles": 199,
+      "triples": 21,
+      "homeRuns": 165,
+      "baseOnBalls": 443,
+      "intentionalWalks": 16,
+      "hitByPitch": 54,
+      "sacFlies": 47,
+      "strikeOuts": 1146,
+      "stolenBases": 96,
+      "caughtStealing": 18
+    },
+    "144": {
+      "plateAppearances": 5163,
+      "atBats": 4662,
+      "hits": 1158,
+      "doubles": 220,
+      "triples": 9,
+      "homeRuns": 174,
+      "baseOnBalls": 400,
+      "intentionalWalks": 12,
+      "hitByPitch": 50,
+      "sacFlies": 39,
+      "strikeOuts": 1119,
+      "stolenBases": 75,
+      "caughtStealing": 21
+    },
+    "145": {
+      "plateAppearances": 5233,
+      "atBats": 4607,
+      "hits": 1094,
+      "doubles": 217,
+      "triples": 13,
+      "homeRuns": 181,
+      "baseOnBalls": 491,
+      "intentionalWalks": 19,
+      "hitByPitch": 77,
+      "sacFlies": 30,
+      "strikeOuts": 1247,
+      "stolenBases": 74,
+      "caughtStealing": 33
+    },
+    "146": {
+      "plateAppearances": 5197,
+      "atBats": 4580,
+      "hits": 1135,
+      "doubles": 213,
+      "triples": 28,
+      "homeRuns": 137,
+      "baseOnBalls": 478,
+      "intentionalWalks": 11,
+      "hitByPitch": 74,
+      "sacFlies": 43,
+      "strikeOuts": 1131,
+      "stolenBases": 146,
+      "caughtStealing": 43
+    },
+    "147": {
+      "plateAppearances": 5132,
+      "atBats": 4553,
+      "hits": 1057,
+      "doubles": 199,
+      "triples": 17,
+      "homeRuns": 190,
+      "baseOnBalls": 497,
+      "intentionalWalks": 18,
+      "hitByPitch": 35,
+      "sacFlies": 35,
+      "strikeOuts": 1265,
+      "stolenBases": 135,
+      "caughtStealing": 43
+    },
+    "158": {
+      "plateAppearances": 5355,
+      "atBats": 4676,
+      "hits": 1194,
+      "doubles": 241,
+      "triples": 22,
+      "homeRuns": 127,
+      "baseOnBalls": 568,
+      "intentionalWalks": 25,
+      "hitByPitch": 36,
+      "sacFlies": 38,
+      "strikeOuts": 1152,
+      "stolenBases": 135,
+      "caughtStealing": 43
+    }
+  },
+  "bullpens": {
+    "108": {
+      "inningsPitched": "515.0",
+      "battersFaced": 2251,
+      "strikeOuts": 566,
+      "baseOnBalls": 245,
+      "hitByPitch": 35,
+      "homeRuns": 62,
+      "hits": 466,
+      "earnedRuns": 246,
+      "runs": 282,
+      "atBats": 1952,
+      "sacFlies": 10
+    },
+    "109": {
+      "inningsPitched": "476.1",
+      "battersFaced": 2010,
+      "strikeOuts": 404,
+      "baseOnBalls": 165,
+      "hitByPitch": 26,
+      "homeRuns": 55,
+      "hits": 430,
+      "earnedRuns": 218,
+      "runs": 245,
+      "atBats": 1780,
+      "sacFlies": 26
+    },
+    "110": {
+      "inningsPitched": "491.0",
+      "battersFaced": 2088,
+      "strikeOuts": 456,
+      "baseOnBalls": 182,
+      "hitByPitch": 18,
+      "homeRuns": 51,
+      "hits": 439,
+      "earnedRuns": 213,
+      "runs": 252,
+      "atBats": 1860,
+      "sacFlies": 17
+    },
+    "111": {
+      "inningsPitched": "518.2",
+      "battersFaced": 2145,
+      "strikeOuts": 492,
+      "baseOnBalls": 170,
+      "hitByPitch": 22,
+      "homeRuns": 51,
+      "hits": 434,
+      "earnedRuns": 181,
+      "runs": 206,
+      "atBats": 1922,
+      "sacFlies": 16
+    },
+    "112": {
+      "inningsPitched": "510.1",
+      "battersFaced": 2152,
+      "strikeOuts": 453,
+      "baseOnBalls": 187,
+      "hitByPitch": 28,
+      "homeRuns": 79,
+      "hits": 463,
+      "earnedRuns": 223,
+      "runs": 242,
+      "atBats": 1912,
+      "sacFlies": 13
+    },
+    "113": {
+      "inningsPitched": "514.0",
+      "battersFaced": 2294,
+      "strikeOuts": 487,
+      "baseOnBalls": 277,
+      "hitByPitch": 35,
+      "homeRuns": 72,
+      "hits": 467,
+      "earnedRuns": 268,
+      "runs": 297,
+      "atBats": 1945,
+      "sacFlies": 20
+    },
+    "114": {
+      "inningsPitched": "464.1",
+      "battersFaced": 2015,
+      "strikeOuts": 526,
+      "baseOnBalls": 195,
+      "hitByPitch": 40,
+      "homeRuns": 52,
+      "hits": 409,
+      "earnedRuns": 195,
+      "runs": 220,
+      "atBats": 1752,
+      "sacFlies": 19
+    },
+    "115": {
+      "inningsPitched": "562.0",
+      "battersFaced": 2486,
+      "strikeOuts": 470,
+      "baseOnBalls": 230,
+      "hitByPitch": 27,
+      "homeRuns": 67,
+      "hits": 599,
+      "earnedRuns": 296,
+      "runs": 322,
+      "atBats": 2181,
+      "sacFlies": 30
+    },
+    "116": {
+      "inningsPitched": "502.1",
+      "battersFaced": 2135,
+      "strikeOuts": 470,
+      "baseOnBalls": 211,
+      "hitByPitch": 24,
+      "homeRuns": 64,
+      "hits": 444,
+      "earnedRuns": 218,
+      "runs": 242,
+      "atBats": 1874,
+      "sacFlies": 9
+    },
+    "117": {
+      "inningsPitched": "558.1",
+      "battersFaced": 2368,
+      "strikeOuts": 564,
+      "baseOnBalls": 230,
+      "hitByPitch": 27,
+      "homeRuns": 76,
+      "hits": 483,
+      "earnedRuns": 252,
+      "runs": 274,
+      "atBats": 2078,
+      "sacFlies": 20
+    },
+    "118": {
+      "inningsPitched": "484.2",
+      "battersFaced": 2148,
+      "strikeOuts": 400,
+      "baseOnBalls": 243,
+      "hitByPitch": 31,
+      "homeRuns": 75,
+      "hits": 491,
+      "earnedRuns": 274,
+      "runs": 293,
+      "atBats": 1860,
+      "sacFlies": 10
+    },
+    "119": {
+      "inningsPitched": "454.2",
+      "battersFaced": 1937,
+      "strikeOuts": 492,
+      "baseOnBalls": 210,
+      "hitByPitch": 21,
+      "homeRuns": 50,
+      "hits": 368,
+      "earnedRuns": 197,
+      "runs": 214,
+      "atBats": 1690,
+      "sacFlies": 5
+    },
+    "120": {
+      "inningsPitched": "627.1",
+      "battersFaced": 2779,
+      "strikeOuts": 526,
+      "baseOnBalls": 284,
+      "hitByPitch": 32,
+      "homeRuns": 94,
+      "hits": 631,
+      "earnedRuns": 344,
+      "runs": 375,
+      "atBats": 2415,
+      "sacFlies": 28
+    },
+    "121": {
+      "inningsPitched": "561.1",
+      "battersFaced": 2366,
+      "strikeOuts": 559,
+      "baseOnBalls": 211,
+      "hitByPitch": 20,
+      "homeRuns": 69,
+      "hits": 488,
+      "earnedRuns": 231,
+      "runs": 260,
+      "atBats": 2108,
+      "sacFlies": 13
+    },
+    "133": {
+      "inningsPitched": "553.0",
+      "battersFaced": 2485,
+      "strikeOuts": 539,
+      "baseOnBalls": 248,
+      "hitByPitch": 38,
+      "homeRuns": 80,
+      "hits": 584,
+      "earnedRuns": 341,
+      "runs": 367,
+      "atBats": 2163,
+      "sacFlies": 27
+    },
+    "134": {
+      "inningsPitched": "545.1",
+      "battersFaced": 2386,
+      "strikeOuts": 586,
+      "baseOnBalls": 266,
+      "hitByPitch": 40,
+      "homeRuns": 57,
+      "hits": 476,
+      "earnedRuns": 245,
+      "runs": 285,
+      "atBats": 2061,
+      "sacFlies": 10
+    },
+    "135": {
+      "inningsPitched": "582.2",
+      "battersFaced": 2450,
+      "strikeOuts": 601,
+      "baseOnBalls": 216,
+      "hitByPitch": 28,
+      "homeRuns": 60,
+      "hits": 511,
+      "earnedRuns": 225,
+      "runs": 251,
+      "atBats": 2181,
+      "sacFlies": 16
+    },
+    "136": {
+      "inningsPitched": "436.0",
+      "battersFaced": 1900,
+      "strikeOuts": 430,
+      "baseOnBalls": 168,
+      "hitByPitch": 33,
+      "homeRuns": 51,
+      "hits": 430,
+      "earnedRuns": 215,
+      "runs": 240,
+      "atBats": 1660,
+      "sacFlies": 23
+    },
+    "137": {
+      "inningsPitched": "491.1",
+      "battersFaced": 2142,
+      "strikeOuts": 427,
+      "baseOnBalls": 229,
+      "hitByPitch": 23,
+      "homeRuns": 48,
+      "hits": 464,
+      "earnedRuns": 231,
+      "runs": 255,
+      "atBats": 1857,
+      "sacFlies": 22
+    },
+    "138": {
+      "inningsPitched": "515.0",
+      "battersFaced": 2242,
+      "strikeOuts": 462,
+      "baseOnBalls": 236,
+      "hitByPitch": 34,
+      "homeRuns": 57,
+      "hits": 473,
+      "earnedRuns": 257,
+      "runs": 286,
+      "atBats": 1939,
+      "sacFlies": 23
+    },
+    "139": {
+      "inningsPitched": "541.1",
+      "battersFaced": 2270,
+      "strikeOuts": 502,
+      "baseOnBalls": 181,
+      "hitByPitch": 25,
+      "homeRuns": 82,
+      "hits": 469,
+      "earnedRuns": 243,
+      "runs": 271,
+      "atBats": 2025,
+      "sacFlies": 26
+    },
+    "140": {
+      "inningsPitched": "495.2",
+      "battersFaced": 2153,
+      "strikeOuts": 435,
+      "baseOnBalls": 187,
+      "hitByPitch": 28,
+      "homeRuns": 63,
+      "hits": 487,
+      "earnedRuns": 241,
+      "runs": 263,
+      "atBats": 1910,
+      "sacFlies": 16
+    },
+    "141": {
+      "inningsPitched": "575.1",
+      "battersFaced": 2449,
+      "strikeOuts": 556,
+      "baseOnBalls": 242,
+      "hitByPitch": 19,
+      "homeRuns": 62,
+      "hits": 519,
+      "earnedRuns": 242,
+      "runs": 285,
+      "atBats": 2147,
+      "sacFlies": 24
+    },
+    "142": {
+      "inningsPitched": "485.2",
+      "battersFaced": 2190,
+      "strikeOuts": 455,
+      "baseOnBalls": 250,
+      "hitByPitch": 29,
+      "homeRuns": 52,
+      "hits": 483,
+      "earnedRuns": 261,
+      "runs": 284,
+      "atBats": 1871,
+      "sacFlies": 23
+    },
+    "143": {
+      "inningsPitched": "480.1",
+      "battersFaced": 2087,
+      "strikeOuts": 528,
+      "baseOnBalls": 185,
+      "hitByPitch": 35,
+      "homeRuns": 57,
+      "hits": 452,
+      "earnedRuns": 225,
+      "runs": 251,
+      "atBats": 1840,
+      "sacFlies": 18
+    },
+    "144": {
+      "inningsPitched": "505.2",
+      "battersFaced": 2101,
+      "strikeOuts": 499,
+      "baseOnBalls": 190,
+      "hitByPitch": 21,
+      "homeRuns": 57,
+      "hits": 418,
+      "earnedRuns": 191,
+      "runs": 205,
+      "atBats": 1862,
+      "sacFlies": 13
+    },
+    "145": {
+      "inningsPitched": "639.0",
+      "battersFaced": 2717,
+      "strikeOuts": 607,
+      "baseOnBalls": 281,
+      "hitByPitch": 28,
+      "homeRuns": 71,
+      "hits": 548,
+      "earnedRuns": 265,
+      "runs": 300,
+      "atBats": 2366,
+      "sacFlies": 26
+    },
+    "146": {
+      "inningsPitched": "503.0",
+      "battersFaced": 2134,
+      "strikeOuts": 506,
+      "baseOnBalls": 221,
+      "hitByPitch": 36,
+      "homeRuns": 52,
+      "hits": 402,
+      "earnedRuns": 224,
+      "runs": 254,
+      "atBats": 1854,
+      "sacFlies": 15
+    },
+    "147": {
+      "inningsPitched": "495.1",
+      "battersFaced": 2074,
+      "strikeOuts": 471,
+      "baseOnBalls": 184,
+      "hitByPitch": 26,
+      "homeRuns": 50,
+      "hits": 411,
+      "earnedRuns": 171,
+      "runs": 209,
+      "atBats": 1842,
+      "sacFlies": 13
+    },
+    "158": {
+      "inningsPitched": "533.0",
+      "battersFaced": 2234,
+      "strikeOuts": 534,
+      "baseOnBalls": 219,
+      "hitByPitch": 15,
+      "homeRuns": 53,
+      "hits": 446,
+      "earnedRuns": 199,
+      "runs": 225,
+      "atBats": 1983,
+      "sacFlies": 9
+    }
+  },
+  "workloads": {
+    "108": {
+      "last3DaysIP": 9
+    },
+    "109": {
+      "last3DaysIP": 8.7
+    },
+    "110": {
+      "last3DaysIP": 10.7
+    },
+    "111": {
+      "last3DaysIP": 16.7
+    },
+    "112": {
+      "last3DaysIP": 11
+    },
+    "113": {
+      "last3DaysIP": 13
+    },
+    "114": {
+      "last3DaysIP": 7
+    },
+    "115": {
+      "last3DaysIP": 13.3
+    },
+    "116": {
+      "last3DaysIP": 9.7
+    },
+    "117": {
+      "last3DaysIP": 15.7
+    },
+    "118": {
+      "last3DaysIP": 10
+    },
+    "119": {
+      "last3DaysIP": 5.3
+    },
+    "120": {
+      "last3DaysIP": 15
+    },
+    "121": {
+      "last3DaysIP": 9.7
+    },
+    "133": {
+      "last3DaysIP": 12
+    },
+    "134": {
+      "last3DaysIP": 10.7
+    },
+    "135": {
+      "last3DaysIP": 10.3
+    },
+    "136": {
+      "last3DaysIP": 11
+    },
+    "137": {
+      "last3DaysIP": 11.3
+    },
+    "138": {
+      "last3DaysIP": 9.3
+    },
+    "139": {
+      "last3DaysIP": 10.7
+    },
+    "140": {
+      "last3DaysIP": 10
+    },
+    "141": {
+      "last3DaysIP": 4
+    },
+    "142": {
+      "last3DaysIP": 6.7
+    },
+    "143": {
+      "last3DaysIP": 10
+    },
+    "144": {
+      "last3DaysIP": 10.3
+    },
+    "145": {
+      "last3DaysIP": 14.7
+    },
+    "146": {
+      "last3DaysIP": 11.7
+    },
+    "147": {
+      "last3DaysIP": 16
+    },
+    "158": {
+      "last3DaysIP": 13
+    }
+  },
+  "parkFactors": {
+    "1": 100,
+    "3": 107,
+    "5": 98,
+    "7": 102,
+    "12": 96,
+    "15": 103,
+    "17": 100,
+    "19": 112,
+    "22": 99,
+    "31": 97,
+    "2392": 99,
+    "2602": 106,
+    "3309": 101,
+    "3312": 99,
+    "5325": 99
+  },
+  "lineups": {},
+  "lineupBatting": {},
+  "fetchedAt": "2026-09-01T11:33:32.896Z",
+  "forms": {
+    "108": {
+      "games": 15,
+      "runsScoredPerGame": 3.93,
+      "runsAllowedPerGame": 3.2
+    },
+    "109": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 5.2
+    },
+    "110": {
+      "games": 15,
+      "runsScoredPerGame": 5,
+      "runsAllowedPerGame": 3.87
+    },
+    "111": {
+      "games": 15,
+      "runsScoredPerGame": 4.8,
+      "runsAllowedPerGame": 4.87
+    },
+    "112": {
+      "games": 15,
+      "runsScoredPerGame": 7,
+      "runsAllowedPerGame": 5
+    },
+    "113": {
+      "games": 15,
+      "runsScoredPerGame": 4.53,
+      "runsAllowedPerGame": 6.33
+    },
+    "114": {
+      "games": 15,
+      "runsScoredPerGame": 4.93,
+      "runsAllowedPerGame": 3.07
+    },
+    "115": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 5.73
+    },
+    "116": {
+      "games": 15,
+      "runsScoredPerGame": 2.67,
+      "runsAllowedPerGame": 4.73
+    },
+    "117": {
+      "games": 15,
+      "runsScoredPerGame": 4.07,
+      "runsAllowedPerGame": 5.13
+    },
+    "118": {
+      "games": 15,
+      "runsScoredPerGame": 5.33,
+      "runsAllowedPerGame": 3.33
+    },
+    "119": {
+      "games": 15,
+      "runsScoredPerGame": 4,
+      "runsAllowedPerGame": 3.2
+    },
+    "120": {
+      "games": 15,
+      "runsScoredPerGame": 3.93,
+      "runsAllowedPerGame": 3.93
+    },
+    "121": {
+      "games": 15,
+      "runsScoredPerGame": 3.4,
+      "runsAllowedPerGame": 3.93
+    },
+    "133": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 5.53
+    },
+    "134": {
+      "games": 15,
+      "runsScoredPerGame": 3.47,
+      "runsAllowedPerGame": 3.4
+    },
+    "135": {
+      "games": 15,
+      "runsScoredPerGame": 3.93,
+      "runsAllowedPerGame": 3.13
+    },
+    "136": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 7.07
+    },
+    "137": {
+      "games": 15,
+      "runsScoredPerGame": 4.33,
+      "runsAllowedPerGame": 4.93
+    },
+    "138": {
+      "games": 15,
+      "runsScoredPerGame": 4.87,
+      "runsAllowedPerGame": 5.87
+    },
+    "139": {
+      "games": 15,
+      "runsScoredPerGame": 4.07,
+      "runsAllowedPerGame": 4.53
+    },
+    "140": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 4
+    },
+    "141": {
+      "games": 15,
+      "runsScoredPerGame": 4.4,
+      "runsAllowedPerGame": 3.67
+    },
+    "142": {
+      "games": 15,
+      "runsScoredPerGame": 4.33,
+      "runsAllowedPerGame": 4.87
+    },
+    "143": {
+      "games": 15,
+      "runsScoredPerGame": 5.47,
+      "runsAllowedPerGame": 3.33
+    },
+    "144": {
+      "games": 15,
+      "runsScoredPerGame": 3,
+      "runsAllowedPerGame": 3.13
+    },
+    "145": {
+      "games": 15,
+      "runsScoredPerGame": 4.53,
+      "runsAllowedPerGame": 4.8
+    },
+    "146": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 4
+    },
+    "147": {
+      "games": 15,
+      "runsScoredPerGame": 5.07,
+      "runsAllowedPerGame": 3.47
+    },
+    "158": {
+      "games": 15,
+      "runsScoredPerGame": 5.87,
+      "runsAllowedPerGame": 3.6
+    }
+  },
+  "injuries": {
+    "108": [
+      {
+        "name": "Anthony Rendon",
+        "position": "3B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "George Klassen",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Gustavo Campero",
+        "position": "OF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Jack Kochanowicz",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Nolan Schanuel",
+        "position": "1B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Robert Stephenson",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Sam Bachman",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Samy Natera Jr.",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Yoán Moncada",
+        "position": "3B",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "109": [
+      {
+        "name": "A.J. Puk",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Andrew Saalfrank",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Blake Walston",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Corbin Burnes",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Cristian Mena",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Lourdes Gurriel Jr.",
+        "position": "LF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Michael Soroka",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Ryan Thompson",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Ryne Nelson",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tommy Troy",
+        "position": "LF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Zac Gallen",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "110": [
+      {
+        "name": "Colin Selby",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Félix Bautista",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jordan Westburg",
+        "position": "3B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Keegan Akin",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ryan Helsley",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ryan Mountcastle",
+        "position": "1B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tyler O'Neill",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Zach Eflin",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "111": [
+      {
+        "name": "Curtis Mead",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Garrett Crochet",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Isiah Kiner-Falefa",
+        "position": "2B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Johan Oviedo",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Justin Slaten",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Kutter Crawford",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Masataka Yoshida",
+        "position": "DH",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Tanner Houck",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Triston Casas",
+        "position": "1B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Willson Contreras",
+        "position": "1B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Zack Kelly",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "112": [
+      {
+        "name": "Ben Brown",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Cade Horton",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Dansby Swanson",
+        "position": "SS",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Edward Cabrera",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Gavin Hollowell",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Hunter Harvey",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Justin Steele",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Phil Maton",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Porter Hodge",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Riley Martin",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Shelby Miller",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tyler Austin",
+        "position": "1B",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "113": [
+      {
+        "name": "Blake Dunn",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brandon Williamson",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Graham Ashcraft",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Hunter Greene",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ke'Bryan Hayes",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Michael Toglia",
+        "position": "1B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Spencer Steer",
+        "position": "1B",
+        "status": "Injured 10-Day"
+      }
+    ],
+    "114": [
+      {
+        "name": "Rhys Hoskins",
+        "position": "1B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Shawn Armstrong",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Slade Cecconi",
+        "position": "P",
+        "status": "Injured 15-Day"
+      }
+    ],
+    "115": [
+      {
+        "name": "Chase Dollander",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jose Quintana",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Kris Bryant",
+        "position": "DH",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Kyle Freeland",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Kyle Karros",
+        "position": "3B",
+        "status": "Injured 7-Day"
+      },
+      {
+        "name": "McCade Brown",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Pierson Ohl",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Sean Sullivan",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Welinton Herrera",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "116": [
+      {
+        "name": "Bailey Horn",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brant Hurter",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Burch Smith",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jack Flaherty",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Justin Verlander",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Kerry Carpenter",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Matt Vierling",
+        "position": "CF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Parker Meadows",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Reese Olson",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Riley Greene",
+        "position": "LF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Trey Sweeney",
+        "position": "SS",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Wenceel Pérez",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Will Vest",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "117": [
+      {
+        "name": "Brandon Walter",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brice Matthews",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Carlos Correa",
+        "position": "SS",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Mike Burrows",
+        "position": "P",
+        "status": "Injured 15-Day"
+      }
+    ],
+    "118": [
+      {
+        "name": "Alec Marsh",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Beck Way",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Carlos Estévez",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Cole Ragans",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Connor Seabold",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "James McArthur",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jonathan India",
+        "position": "2B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Luinder Avila",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Maikel Garcia",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Michael Massey",
+        "position": "2B",
+        "status": "Injured 7-Day"
+      },
+      {
+        "name": "Nick Mears",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Stephen Kolek",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tony Gonsolin",
+        "position": "P",
+        "status": "Injured 15-Day"
+      }
+    ],
+    "119": [
+      {
+        "name": "Andy Pages",
+        "position": "CF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Ben Casparius",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Blake Treinen",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Bobby Miller",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brusdar Graterol",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Dalton Rushing",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Edwin Díaz",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Gavin Stone",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jake Cousins",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Justin Wrobleski",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Kris Bubic",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Roki Sasaki",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Will Klein",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Will Smith",
+        "position": "C",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "120": [
+      {
+        "name": "Connelly Early",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "DJ Herz",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Drew Millas",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "James Wood",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Josiah Gray",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ken Waldichuk",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Mitchell Parker",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "PJ Poulin",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Richard Lovelady",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "121": [
+      {
+        "name": "Cionel Pérez",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Devin Williams",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Jorge Polanco",
+        "position": "DH",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Justin Hagenman",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Reed Garrett",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tylor Megill",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "133": [
+      {
+        "name": "Brent Rooker",
+        "position": "DH",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brooks Kriske",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Denzel Clarke",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Gunnar Hoglund",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jacob Wilson",
+        "position": "SS",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Joshua Kuroda-Grauer",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Justin Sterner",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Luis Severino",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Mark Leiter Jr.",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Nick Kurtz",
+        "position": "1B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Shea Langeliers",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Tyler Soderstrom",
+        "position": "LF",
+        "status": "Injured 10-Day"
+      }
+    ],
+    "134": [
+      {
+        "name": "Endy Rodríguez",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Konnor Griffin",
+        "position": "SS",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Mitch Keller",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ryan O'Hearn",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      }
+    ],
+    "135": [
+      {
+        "name": "Bryan Hoeing",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Gavin Sheets",
+        "position": "1B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Jason Adam",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jeremiah Estrada",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Joe Musgrove",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Lucas Giolito",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Luis Rengifo",
+        "position": "LF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Miguel Andujar",
+        "position": "DH",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Nick Pivetta",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ramón Laureano",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "136": [
+      {
+        "name": "Brendan Donovan",
+        "position": "3B",
+        "status": "Injured 7-Day"
+      },
+      {
+        "name": "Cole Wilcox",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Colt Emerson",
+        "position": "SS",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Emerson Hancock",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Logan Evans",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Luke Raley",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Matt Brash",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Nick Davila",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Will Wilson",
+        "position": "3B",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "137": [
+      {
+        "name": "Adrian Houser",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Carson Whisenhunt",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Casey Schmitt",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Daniel Susac",
+        "position": "C",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Harrison Bader",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Hayden Birdsong",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "JT Brubaker",
+        "position": "P",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Jesus Rodriguez",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Joel Peguero",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "José Buttó",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Keaton Winn",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Marcelo Mayer",
+        "position": "2B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Matt Chapman",
+        "position": "3B",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Matt Gage",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Randy Rodríguez",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Rowan Wick",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Sam Hentges",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Trevor McDonald",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Victor Bericoto",
+        "position": "LF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Willy Adames",
+        "position": "SS",
+        "status": "Injured 10-Day"
+      }
+    ],
+    "138": [
+      {
+        "name": "Andre Pallante",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Blaze Jordan",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Everson Pereira",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Hunter Dobbins",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "JJ Wetherholt",
+        "position": "2B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Masyn Winn",
+        "position": "SS",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Max Rajcic",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Peter Strzelecki",
+        "position": "P",
+        "status": "Injured 15-Day"
+      }
+    ],
+    "139": [
+      {
+        "name": "Ben Williamson",
+        "position": "2B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Cole Sulser",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Edwin Uceta",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Gavin Lux",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Griffin Jax",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Jake Fraley",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jonathan Heasley",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ryan Pepiot",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Victor Mesa Jr.",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      }
+    ],
+    "140": [
+      {
+        "name": "Carter Baumler",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Cole Winn",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Jack Leiter",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jalen Beeks",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jose Corniell",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Josh Jung",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Kyle Higashioka",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Michael Helman",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Nathan Eovaldi",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Peyton Gray",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Robert Garcia",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "141": [
+      {
+        "name": "Addison Barger",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Anthony Santander",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Bowden Francis",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Cody Ponce",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jake Bloss",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jameson Taillon",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Joe Mantiply",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jonatan Clase",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "José Berríos",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Josh Smith",
+        "position": "2B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Luis Urías",
+        "position": "2B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Patrick Corbin",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Shane Bieber",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Trey Yesavage",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Yimi García",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "142": [
+      {
+        "name": "Anthony Banda",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Austin Martin",
+        "position": "RF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Byron Buxton",
+        "position": "CF",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Cole Sands",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "David Festa",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Joe Ryan",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Mick Abel",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Mike Paredes",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Pablo López",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "143": [
+      {
+        "name": "Adolis García",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brad Keller",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Caleb Kilian",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Felix Reyes",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Johan Rojas",
+        "position": "CF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Rafael Marchán",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Tanner Banks",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "144": [
+      {
+        "name": "Joe Jiménez",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Joey Wentz",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Reynaldo López",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Robert Suarez",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Spencer Schwellenbach",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Spencer Strider",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "145": [
+      {
+        "name": "Brooks Baldwin",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Chris Murphy",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Davis Martin",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Drew Thorpe",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Huascar Brazobán",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Joey Bart",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Jordan Leasure",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ky Bush",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Kyle Teel",
+        "position": "C",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Mike Vasil",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Prelander Berroa",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tanner Murray",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "146": [
+      {
+        "name": "Adam Mazur",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Andrew Nardi",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Anthony Bender",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Max Meyer",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Pete Fairbanks",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Robby Snelling",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ronny Henriquez",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "William Kempner",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Xavier Edwards",
+        "position": "2B",
+        "status": "Injured 10-Day"
+      }
+    ],
+    "147": [
+      {
+        "name": "Aaron Judge",
+        "position": "RF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Clarke Schmidt",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Fernando Cruz",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Giancarlo Stanton",
+        "position": "DH",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Kervin Castro",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ryan McMahon",
+        "position": "3B",
+        "status": "Injured 10-Day"
+      },
+      {
+        "name": "Ryan Weathers",
+        "position": "P",
+        "status": "Injured 15-Day"
+      }
+    ],
+    "158": [
+      {
+        "name": "Angel Zerpa",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brandon Woodruff",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Brian Fitzpatrick",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Bryse Wilson",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "JoJo Romero",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Joel Kuhnel",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Quinn Priester",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Rob Zastryzny",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ]
+  },
+  "weather": {
+    "822687": {
+      "temperatureC": 34.5,
+      "windSpeedKmh": 7.9,
+      "windDirectionDeg": 246,
+      "roof": "outdoor",
+      "cfBearingDeg": 28,
+      "fetchedAt": "2026-09-01T11:33:35.801Z"
+    },
+    "822854": {
+      "temperatureC": 36.5,
+      "windSpeedKmh": 10.4,
+      "windDirectionDeg": 136,
+      "roof": "retractable",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-09-01T11:33:36.201Z"
+    },
+    "822929": {
+      "temperatureC": null,
+      "windSpeedKmh": null,
+      "roof": "dome"
+    },
+    "823340": {
+      "temperatureC": 30.6,
+      "windSpeedKmh": 12.1,
+      "windDirectionDeg": 258,
+      "roof": "outdoor",
+      "cfBearingDeg": 116,
+      "fetchedAt": "2026-09-01T11:33:35.501Z"
+    },
+    "823661": {
+      "temperatureC": 30.9,
+      "windSpeedKmh": 5.2,
+      "windDirectionDeg": 236,
+      "roof": "outdoor",
+      "cfBearingDeg": 129,
+      "fetchedAt": "2026-09-01T11:33:35.901Z"
+    },
+    "823908": {
+      "temperatureC": 26.1,
+      "windSpeedKmh": 14.8,
+      "windDirectionDeg": 244,
+      "roof": "outdoor",
+      "cfBearingDeg": 26,
+      "fetchedAt": "2026-09-01T11:33:36.700Z"
+    },
+    "823984": {
+      "temperatureC": 26.5,
+      "windSpeedKmh": 14.9,
+      "windDirectionDeg": 238,
+      "roof": "outdoor",
+      "cfBearingDeg": 43.61,
+      "fetchedAt": "2026-09-01T11:33:36.499Z"
+    },
+    "824070": {
+      "temperatureC": 37.5,
+      "windSpeedKmh": 17.8,
+      "windDirectionDeg": 216,
+      "roof": "outdoor",
+      "cfBearingDeg": 46,
+      "fetchedAt": "2026-09-01T11:33:36.001Z"
+    },
+    "824148": {
+      "temperatureC": 25.9,
+      "windSpeedKmh": 7.6,
+      "windDirectionDeg": 315,
+      "roof": "retractable",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-09-01T11:33:36.301Z"
+    },
+    "824313": {
+      "temperatureC": 30.2,
+      "windSpeedKmh": 14.5,
+      "windDirectionDeg": 55,
+      "roof": "outdoor",
+      "cfBearingDeg": 4,
+      "fetchedAt": "2026-09-01T11:33:36.399Z"
+    },
+    "824391": {
+      "temperatureC": 31.8,
+      "windSpeedKmh": 11.8,
+      "windDirectionDeg": 258,
+      "roof": "outdoor",
+      "cfBearingDeg": 0,
+      "fetchedAt": "2026-09-01T11:33:35.601Z"
+    },
+    "824472": {
+      "temperatureC": 35.1,
+      "windSpeedKmh": 6.8,
+      "windDirectionDeg": 238,
+      "roof": "outdoor",
+      "cfBearingDeg": 122,
+      "fetchedAt": "2026-09-01T11:33:35.401Z"
+    },
+    "824633": {
+      "temperatureC": 31,
+      "windSpeedKmh": 1.5,
+      "windDirectionDeg": 194,
+      "roof": "outdoor",
+      "cfBearingDeg": 37,
+      "fetchedAt": "2026-09-01T11:33:36.100Z"
+    },
+    "824716": {
+      "temperatureC": 18,
+      "windSpeedKmh": 9.7,
+      "windDirectionDeg": 86,
+      "roof": "outdoor",
+      "cfBearingDeg": 45,
+      "fetchedAt": "2026-09-01T11:33:35.701Z"
+    },
+    "825038": {
+      "temperatureC": 38.6,
+      "windSpeedKmh": 8.2,
+      "windDirectionDeg": 229,
+      "roof": "retractable",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-09-01T11:33:36.600Z"
+    }
+  }
+}
