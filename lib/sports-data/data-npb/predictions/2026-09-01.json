@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-01T07:56:43.467Z",
-  "updatedAt": "2026-09-01T07:56:43.467Z",
+  "updatedAt": "2026-09-01T08:49:45.674Z",
   "controlTower": {
     "date": "2026-09-01",
     "season": 1002026,
@@ -12,37 +12,37 @@
         "side": "home",
         "line": 1.5,
         "total": 6,
-        "marketHomeCover": 0.659,
-        "marketHomePayout": 0.455,
-        "marketAwayPayout": 1.79,
+        "marketHomeCover": 0.635,
+        "marketHomePayout": 0.506,
+        "marketAwayPayout": 1.645,
         "marketOver": 0.5
       },
       "92026090105": {
         "side": "home",
         "line": 1.5,
         "total": 7.5,
-        "marketHomeCover": 0.429,
-        "marketHomePayout": 1.2,
-        "marketAwayPayout": 0.69,
-        "marketOver": 0.466
+        "marketHomeCover": 0.447,
+        "marketHomePayout": 1.13,
+        "marketAwayPayout": 0.709,
+        "marketOver": 0.477
       },
       "92026090106": {
         "side": "home",
         "line": -1.5,
         "total": 6.5,
-        "marketHomeCover": 0.387,
-        "marketHomePayout": 1.455,
-        "marketAwayPayout": 0.548,
-        "marketOver": 0.48
+        "marketHomeCover": 0.411,
+        "marketHomePayout": 1.31,
+        "marketAwayPayout": 0.608,
+        "marketOver": 0.496
       },
       "92026090108": {
         "side": "home",
         "line": 1.5,
         "total": 7.5,
-        "marketHomeCover": 0.516,
-        "marketHomePayout": 0.833,
-        "marketAwayPayout": 0.952,
-        "marketOver": 0.468
+        "marketHomeCover": 0.498,
+        "marketHomePayout": 0.909,
+        "marketAwayPayout": 0.87,
+        "marketOver": 0.474
       },
       "92026090112": {
         "side": "home",
@@ -51,15 +51,15 @@
         "marketHomeCover": 0.497,
         "marketHomePayout": 0.87,
         "marketAwayPayout": 0.847,
-        "marketOver": 0.536
+        "marketOver": 0.531
       },
       "92026090109": {
         "side": "home",
         "line": 1.5,
         "total": 6.5,
-        "marketHomeCover": 0.585,
-        "marketHomePayout": 0.621,
-        "marketAwayPayout": 1.3,
+        "marketHomeCover": 0.573,
+        "marketHomePayout": 0.667,
+        "marketAwayPayout": 1.26,
         "marketOver": 0.526
       }
     }
@@ -144,7 +144,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-01T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026090105,
@@ -213,7 +213,7 @@
         "[warn] market_disagreement"
       ],
       "lockDeadline": "2026-09-01T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026090106,
@@ -280,7 +280,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-01T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026090108,
@@ -348,7 +348,7 @@
         "[warn] total_market_disagreement"
       ],
       "lockDeadline": "2026-09-01T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026090112,
@@ -413,7 +413,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-01T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026090109,
@@ -480,7 +480,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-01T08:27:00.000Z",
-      "final": false
+      "final": true
     }
   ]
 }
