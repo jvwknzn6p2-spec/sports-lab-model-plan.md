@@ -23,6 +23,8 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
 ## Where things live
 
 - `sports-lab/model-plan.md` — the technical plan and implementation status (source of truth for scope).
+- `sports-lab/football-model-plan.md` — サッカー予想モデルの計画（Dixon-Coles・RPS・データ候補・実装状況）。
+- `lib/football-model/` — サッカーのスコア分布（Dixon-Coles）・最尤推定・RPS 採点・ウォークフォワード評価。純関数のみ、外部依存なし。`node --experimental-strip-types --test test/*.test.ts` で検証。
 - `lib/sports-data/` — **Step 2** package: sabermetrics (FIP-family, wOBA), MLB Stats API client, feature builders, orchestrator, persistence mappers. See its `README.md`.
 - `lib/db/src/schema/` — Drizzle DB schema (teams, games, pitcher/team/bullpen stats with FIP columns).
 - `lib/api-spec/openapi.yaml` — OpenAPI contract; `lib/api-zod` and `lib/api-client-react` are generated from it (Orval).
