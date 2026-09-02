@@ -1,32 +1,32 @@
 # HandiEdge — running results
 
-**126-86** (59.4%) across 34 days, 250 PASS.
+**131-89** (59.5%) across 35 days, 254 PASS.
 
-- Handicap: 111-93 · **+6.90 units** after the cut (ROI +3.4% per bet)
-- Significance (P&L): +3.4% per bet over 204 stakes — z 0.51, **not yet distinguishable from luck**
-- Hit rate: 54.4% over 204 bets (95% CI 47.6%–61.1%) vs 52.6% full-unit break-even
-- Total: 17-18
-- Mean Brier: 0.247 (0.25 = coin flip, lower is better)
-- Calibration: says 60.2%, actually 59.4% — overconfident by 0.8pt
-- Handicap calibration: says 59.5%, actually 54.4% over 204 bets (Brier 0.252)
-- Total calibration: says 57.8%, actually 48.6% over 35 bets (Brier 0.268)
-- Mean margin error: 3.445 runs
-- Mean total error: 3.637 runs
-- Learned shrink (core/tail/far) — moneyline 0.903/0.697/0.647, handicap 0.83/0.641/0.64, total 0.818/0.859/0.833 (212 games)
+- Handicap: 115-97 · **+6.50 units** after the cut (ROI +3.1% per bet)
+- Significance (P&L): +3.1% per bet over 212 stakes — z 0.47, **not yet distinguishable from luck**
+- Hit rate: 54.2% over 212 bets (95% CI 47.5%–60.8%) vs 52.6% full-unit break-even
+- Total: 20-19
+- Mean Brier: 0.246 (0.25 = coin flip, lower is better)
+- Calibration: says 60.1%, actually 59.5% — overconfident by 0.6pt
+- Handicap calibration: says 59.5%, actually 54.2% over 212 bets (Brier 0.253)
+- Total calibration: says 57.5%, actually 51.3% over 39 bets (Brier 0.263)
+- Mean margin error: 3.462 runs
+- Mean total error: 3.686 runs
+- Learned shrink (core/tail/far) — moneyline 0.907/0.697/0.647, handicap 0.826/0.626/0.626, total 0.826/0.859/0.833 (220 games)
 
 ## Calibration by band (handicap)
 
 _The headline gap can sit near zero while one band runs hot and another collapses — this is the table that shows it._
 
-- 50.0%–55.0%: said 53.8%, hit 33.3% over 18 (gap -20.5pt) ⚠️ overconfident
-- 55.0%–60.0%: said 57.2%, hit 57.7% over 111 (gap 0.5pt)
-- 60.0%–65.0%: said 62.2%, hit 62.2% over 45 (gap 0.0pt)
-- 65.0%–70.0%: said 66.4%, hit 40.0% over 25 (gap -26.4pt) ⚠️ overconfident
+- 50.0%–55.0%: said 53.9%, hit 36.8% over 19 (gap -17.0pt) ⚠️ overconfident
+- 55.0%–60.0%: said 57.1%, hit 56.9% over 116 (gap -0.2pt)
+- 60.0%–65.0%: said 62.2%, hit 60.9% over 46 (gap -1.4pt)
+- 65.0%–70.0%: said 66.5%, hit 42.3% over 26 (gap -24.2pt) ⚠️ overconfident
 - 70.0%–100.0%: said 73.5%, hit 60.0% over 5 (gap -13.5pt)
 
 ## Calibration by band (winner)
 
-- 55.0%–60.0%: said 57.3%, hit 62.5% over 120 (gap 5.2pt)
+- 55.0%–60.0%: said 57.2%, hit 62.5% over 128 (gap 5.3pt)
 - 60.0%–65.0%: said 62.1%, hit 62.1% over 58 (gap 0.0pt)
 - 65.0%–70.0%: said 66.4%, hit 41.4% over 29 (gap -25.0pt) ⚠️ overconfident
 - 70.0%–100.0%: said 73.5%, hit 60.0% over 5 (gap -13.5pt)
@@ -35,11 +35,12 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 - S: 10-13 (43.5%, -4.00 units over 23 stake(s), n=23 decided)
 - A: 23-14 (62.2%, +6.10 units over 30 stake(s), n=37 decided)
-- B: 93-59 (61.2%, +7.80 units over 148 stake(s), n=152 decided)
+- B: 98-62 (61.3%, +7.40 units over 156 stake(s), n=160 decided)
 - C: 0-0 (no decided winner bet, -3.00 units over 3 stake(s), n=0 decided)
 
 ## By day
 
+- 2026-09-01: 5-3 (8 picks, 4 PASS, Brier 0.234)
 - 2026-08-31: 3-1 (4 picks, 8 PASS, Brier 0.21)
 - 2026-08-30: 3-3 (6 picks, 8 PASS, Brier 0.289)
 - 2026-08-29: 5-0 (5 picks, 12 PASS, Brier 0.156)
