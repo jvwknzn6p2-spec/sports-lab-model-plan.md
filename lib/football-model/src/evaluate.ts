@@ -17,6 +17,12 @@ import type { Outcome, ProbabilityTriple, ScoreSummary } from "./scoring.ts";
 export interface WalkForwardOptions extends Omit<FitOptions, "asOf"> {
   /** 学習に最低これだけの試合が溜まるまで評価しない（初期値の区間を混ぜない） */
   warmup?: number;
+  /**
+   * 学習に使う過去の日数（asOf から遡る窓）。省略で全履歴。
+   * 時間減衰 ξ=0.0065 では 1500 日前の重みは e^-9.75 ≈ 6e-5 で、窓で切っても
+   * 結果はほぼ変わらず、十数季ぶんの再学習が現実的な時間で終わる
+   */
+  windowDays?: number;
 }
 
 export interface WalkForwardRow {
@@ -66,7 +72,12 @@ export function walkForward(
     const train = sorted.slice(0, i);
     if (train.length >= warmup) {
       const asOf = `${day}T00:00:00Z`;
-      const trainKnown = train.filter((m) => Date.parse(m.date) < Date.parse(asOf));
+      const asOfMs = Date.parse(asOf);
+      const fromMs = opts.windowDays ? asOfMs - opts.windowDays * 86_400_000 : -Infinity;
+      const trainKnown = train.filter((m) => {
+        const t = Date.parse(m.date);
+        return t < asOfMs && t >= fromMs;
+      });
       if (trainKnown.length >= warmup) {
         const fit = fitDixonColes(trainKnown, { ...opts, asOf });
         refits++;

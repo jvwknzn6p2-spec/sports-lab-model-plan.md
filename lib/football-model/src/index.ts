@@ -22,5 +22,8 @@ export type { Outcome, ProbabilityTriple, ScoreSummary } from "./scoring.ts";
 export { fitDixonColes, predictMatch } from "./fit.ts";
 export type { MatchRecord, FitOptions, FitResult, MatchPrediction } from "./fit.ts";
 
+export { impliedProbabilities, loadMatches, parseCsv } from "./footballData.ts";
+export type { MatchWithOdds, LoadOptions } from "./footballData.ts";
+
 export { walkForward, chronological } from "./evaluate.ts";
 export type { WalkForwardOptions, WalkForwardResult, WalkForwardRow } from "./evaluate.ts";
