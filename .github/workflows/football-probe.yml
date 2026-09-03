@@ -1,0 +1,86 @@
+name: Football — data-source probe
+
+# サッカー用データ源の到達性調査（npb-probe と同じ型）。開発サンドボックスからは
+# football-data.co.uk 等へ出られない（プロキシ 403・2026-09-02 実測）ので、
+# Actions のランナーから実際に取得し、probe/football/ にサンプルと manifest を残す。
+# 取込パーサはこのサンプルを fixture にして作る。書き込み先は probe/football/ のみ。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: football-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch samples
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -u
+          DIR=probe/football
+          mkdir -p "$DIR"
+          MANIFEST="$DIR/manifest.txt"
+          : > "$MANIFEST"
+          echo "fetched_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$MANIFEST"
+
+          fetch () { # fetch <name> <url>（manifest に鍵は書かない）
+            local name="$1" url="$2" code
+            local shown="${url%%\?*}"
+            code=$(curl -sSL --max-time 40 --max-filesize 6000000 \
+              -A "Mozilla/5.0 (compatible; VorteFootballProbe/1.0)" \
+              -o "$DIR/$name" -w "%{http_code}" "$url" || echo "ERR")
+            local bytes=0
+            [ -f "$DIR/$name" ] && bytes=$(wc -c < "$DIR/$name")
+            echo "$code $bytes $name $shown" | tee -a "$MANIFEST"
+            if [ "$code" != "200" ] || [ "$bytes" -lt 200 ]; then rm -f "$DIR/$name"; fi
+          }
+
+          # --- football-data.co.uk: 今季の結果 CSV と今後の日程（fixtures.csv・欧州のみ）
+          fetch fd-fixtures.csv      "https://www.football-data.co.uk/fixtures.csv"
+          fetch fd-E0-2526.csv       "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
+          fetch fd-E0-2627.csv       "https://www.football-data.co.uk/mmz4281/2627/E0.csv"
+          fetch fd-JPN.csv           "https://www.football-data.co.uk/new/JPN.csv"
+          fetch fd-japan.html        "https://www.football-data.co.uk/japan.php"
+
+          # --- J リーグ公式（日程・結果の一次情報）
+          fetch jleague-match.html   "https://www.jleague.jp/match/"
+          fetch jleague-j1-standing.html "https://www.jleague.jp/standings/j1/"
+          fetch jdata-search.html    "https://data.j-league.or.jp/SFMS01/search?competition_years=2026&competition_frame_ids=1&tv_relay_station_name="
+
+          # --- xG（規約確認前・到達性だけ）
+          fetch understat-epl.html   "https://understat.com/league/EPL"
+          fetch fbref-j1.html        "https://fbref.com/en/comps/25/J1-League-Stats"
+
+          # --- The Odds API: サッカーのキー一覧（鍵があるときだけ・使用量ヘッダも記録）
+          if [ -n "${ODDS_API_KEY:-}" ]; then
+            code=$(curl -sS --max-time 30 -o "$DIR/odds-sports.json" -D "$DIR/odds-headers.txt" -w "%{http_code}" \
+              "https://api.the-odds-api.com/v4/sports/?apiKey=$ODDS_API_KEY" || echo ERR)
+            echo "$code $(wc -c < "$DIR/odds-sports.json" 2>/dev/null || echo 0) odds-sports.json https://api.the-odds-api.com/v4/sports/" | tee -a "$MANIFEST"
+            grep -i "x-requests-" "$DIR/odds-headers.txt" | tr -d '\r' >> "$MANIFEST" || true
+            rm -f "$DIR/odds-headers.txt"
+            python3 - <<'PY' >> "$MANIFEST" 2>/dev/null || true
+          import json
+          d=json.load(open('probe/football/odds-sports.json'))
+          print("soccer_keys=" + ",".join(sorted(x['key'] for x in d if x.get('key','').startswith('soccer'))))
+          PY
+          else
+            echo "ODDS_API_KEY unset — skipped odds probe" | tee -a "$MANIFEST"
+          fi
+
+      - name: Commit samples
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add probe/football
+          git diff --cached --quiet && { echo "no changes"; exit 0; }
+          git commit -m "football probe: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
