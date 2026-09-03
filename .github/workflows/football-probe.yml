@@ -49,6 +49,22 @@ jobs:
           fetch fd-E0-2526.csv       "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
           fetch fd-E0-2627.csv       "https://www.football-data.co.uk/mmz4281/2627/E0.csv"
           fetch fd-JPN.csv           "https://www.football-data.co.uk/new/JPN.csv"
+          fetch fd-I1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/I1.csv"
+          fetch fd-I1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/I1.csv"
+          fetch fd-SP1-2526.csv  "https://www.football-data.co.uk/mmz4281/2526/SP1.csv"
+          fetch fd-SP1-2627.csv  "https://www.football-data.co.uk/mmz4281/2627/SP1.csv"
+          fetch fd-D1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/D1.csv"
+          fetch fd-D1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/D1.csv"
+          fetch fd-N1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/N1.csv"
+          fetch fd-N1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/N1.csv"
+          fetch fd-F1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/F1.csv"
+          fetch fd-F1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/F1.csv"
+          fetch fd-P1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/P1.csv"
+          fetch fd-P1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/P1.csv"
+          fetch fd-B1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/B1.csv"
+          fetch fd-B1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/B1.csv"
+          fetch fd-SC0-2526.csv  "https://www.football-data.co.uk/mmz4281/2526/SC0.csv"
+          fetch fd-SC0-2627.csv  "https://www.football-data.co.uk/mmz4281/2627/SC0.csv"
           fetch fd-japan.html        "https://www.football-data.co.uk/japan.php"
 
           # --- J リーグ公式（日程・結果の一次情報）
@@ -67,8 +83,11 @@ jobs:
             echo "$code $(wc -c < "$DIR/odds-sports.json" 2>/dev/null || echo 0) odds-sports.json https://api.the-odds-api.com/v4/sports/" | tee -a "$MANIFEST"
             grep -i "x-requests-" "$DIR/odds-headers.txt" | tr -d '\r' >> "$MANIFEST" || true
             rm -f "$DIR/odds-headers.txt"
-            # 今後の試合と h2h オッズ（J1 と EPL・各 1 クレジット）。日程の一次情報にもなる
-            for sport in soccer_japan_j_league soccer_epl; do
+            # 今後の試合と h2h オッズ（海外 12 競技 + J1・各 1 クレジット）。日程の一次情報にもなる
+            for sport in soccer_epl soccer_italy_serie_a soccer_spain_la_liga soccer_germany_bundesliga \
+                         soccer_netherlands_eredivisie soccer_france_ligue_one soccer_portugal_primeira_liga \
+                         soccer_belgium_first_div soccer_spl soccer_uefa_champs_league soccer_uefa_europa_league \
+                         soccer_uefa_europa_conference_league soccer_japan_j_league; do
               code=$(curl -sS --max-time 30 -o "$DIR/odds-$sport.json" -w "%{http_code}" \
                 "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY" || echo ERR)
               echo "$code $(wc -c < "$DIR/odds-$sport.json" 2>/dev/null || echo 0) odds-$sport.json https://api.the-odds-api.com/v4/sports/$sport/odds" | tee -a "$MANIFEST"
