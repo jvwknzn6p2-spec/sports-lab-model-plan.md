@@ -55,3 +55,6 @@ Thumbs.db
 
 # Backtest raw-response cache (real API pulls, rebuilt on demand; results in data/backtest/ are committed)
 lib/sports-data/data/backtest-cache/
+
+# サッカー日次パイプラインの取得キャッシュ（football-daily.yml）。台帳は football/ledger に commit する
+football/cache/

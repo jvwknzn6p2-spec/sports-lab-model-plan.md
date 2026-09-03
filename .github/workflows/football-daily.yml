@@ -1,0 +1,77 @@
+name: Football — daily ledger
+
+# サッカーの日次パイプライン。毎日 03:05 UTC（12:05 JST）に 1 回:
+#   1. football-data.co.uk から結果 CSV（J1 は new/JPN.csv、EPL は 4 季）を cache へ取得
+#   2. The Odds API から J1 / EPL の今後の試合と h2h オッズを cache へ取得（2 クレジット/日）
+#   3. lib/football-model の CLI が 日程 → 封緘前の予想発行（キックオフ 36h 以内・
+#      封緘は kickoff−60 分）→ 結果の取込 → 決済 → reports/summary.md
+#   4. football/ を commit（台帳は追記のみ。cache は commit しない）
+# ネットワークは curl だけ。CLI はファイルしか読まない（取得時刻はファイル名に残る）。
+# ODDS_API_KEY が無い間は日程・予想を出さず、結果と決済だけ動く。
+
+on:
+  schedule:
+    - cron: "5 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: football-daily
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: 結果 CSV を取得（football-data.co.uk）
+        run: |
+          set -u
+          mkdir -p football/cache
+          get () { curl -sSL --max-time 60 -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "football/cache/$1" "$2" && echo "ok $1 $(wc -c < football/cache/$1)" || echo "FAIL $1"; }
+          get JPN.csv     "https://www.football-data.co.uk/new/JPN.csv"
+          get E0-2324.csv "https://www.football-data.co.uk/mmz4281/2324/E0.csv"
+          get E0-2425.csv "https://www.football-data.co.uk/mmz4281/2425/E0.csv"
+          get E0-2526.csv "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
+          get E0-2627.csv "https://www.football-data.co.uk/mmz4281/2627/E0.csv"
+
+      - name: 日程とオッズを取得（The Odds API・鍵が無ければ飛ばす）
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -u
+          if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi
+          ts=$(date -u +%Y%m%dT%H%M%SZ)
+          for sport in soccer_japan_j_league soccer_epl; do
+            mkdir -p "football/cache/odds/$sport"
+            code=$(curl -sS --max-time 30 -o "football/cache/odds/$sport/$ts.json" -D /tmp/h.txt -w "%{http_code}" \
+              "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
+            echo "$sport HTTP $code $(grep -i x-requests-remaining /tmp/h.txt | tr -d '\r')"
+            if [ "$code" != "200" ]; then rm -f "football/cache/odds/$sport/$ts.json"; fi
+          done
+
+      - name: 日次パイプライン
+        run: node --experimental-strip-types lib/football-model/src/cli/football.ts daily --root football --cache football/cache --leagues JAP,E0
+
+      - name: コミット（台帳・市場の写し・レポート）
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add football/ledger football/market football/reports
+          if git diff --cached --quiet; then echo "変更なし"; exit 0; fi
+          git commit -m "football: $(date -u +%Y-%m-%dT%H:%MZ) ledger"
+          for i in 1 2 3; do
+            if git push origin HEAD; then exit 0; fi
+            git fetch origin && git rebase origin/main
+          done
+          git push origin HEAD

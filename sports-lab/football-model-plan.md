@@ -118,9 +118,9 @@ W/D/L と任意スコアを同時に導ける Dixon-Coles が業界標準で、O
 | ウォークフォワード評価と頻度基準（`evaluate.ts`・学習窓つき） | ✅（合成データで基準より RPS が良いことを固定） |
 | 履歴データの読み込み（`footballData.ts`）と測定 CLI（`cli/walkforward.ts`） | ✅ J1 + 欧州（xgabora の Matches.csv） |
 | 実データでのウォークフォワード測定 | ✅ J1（§4.1）。欧州は同節に追記 |
-| 当日データの取り込み経路（運用） | ⬜ football-data.co.uk が実行環境から到達不可。要確認 |
+| 当日データの取り込み経路（運用） | ✅ Actions から到達可（probe 2026-09-03）。結果 = football-data.co.uk（JPN.csv / E0）、日程・市場 = The Odds API（soccer_japan_j_league / soccer_epl） |
 | xG 層 / 市場ブレンド | ⬜（測ってから） |
-| 台帳・封緘・決済（3 値） | 🟡 設計と初期 migration（`football-ledger/`）。Supabase プロジェクト作成待ち・未適用 |
+| 台帳・封緘・決済（3 値） | ✅ リポジトリ内の追記専用 NDJSON（`football/`・`src/ledger.ts`）。日次は `football-daily.yml`。Supabase 版（`football-ledger/`）は設計のまま保留（Replit/Actions 方針により不要） |
 | 実績カードの 3 値対応 | ⬜ |
 
 実行:
