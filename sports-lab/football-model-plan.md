@@ -102,9 +102,11 @@ W/D/L と任意スコアを同時に導ける Dixon-Coles が業界標準で、O
 
 ## 5. 台帳と公開（Month 2–3）
 
-- 予想の台帳・封緘・決済・実績カードは VORTE EV の機構（`handiedge`）を流用する。
-  サッカー用に必要な差分: 3 値の結果（W/D/L）、90 分（延長・PK を除く）基準の決済、
-  RPS 集計ビュー、カードの 3 値表示
+- 台帳は**自分名義の Supabase**に置く（Founder 承認 2026-09-03）。設計と初期
+  マイグレーションは `football-ledger/README.md` と
+  `football-ledger/supabase/migrations/0001_ledger.sql`（封緘 kickoff−60 分・
+  FT90 の 3 値決済・追記専用・正準レジストリ・RLS。SQL 構文検査済み・未適用）
+- 実績カード・検証ページは VORTE EV の機構（`handiedge`）を 3 値表示に拡張して流用する
 - 公開は野球と同じ経路（archive ブランチ `publish/`、note / X）。1 日 1 カード、外れも出す
 
 ## 6. 実装状況
@@ -118,7 +120,7 @@ W/D/L と任意スコアを同時に導ける Dixon-Coles が業界標準で、O
 | 実データでのウォークフォワード測定 | ✅ J1（§4.1）。欧州は同節に追記 |
 | 当日データの取り込み経路（運用） | ⬜ football-data.co.uk が実行環境から到達不可。要確認 |
 | xG 層 / 市場ブレンド | ⬜（測ってから） |
-| 台帳・封緘・決済（3 値） | ⬜ |
+| 台帳・封緘・決済（3 値） | 🟡 設計と初期 migration（`football-ledger/`）。Supabase プロジェクト作成待ち・未適用 |
 | 実績カードの 3 値対応 | ⬜ |
 
 実行:
