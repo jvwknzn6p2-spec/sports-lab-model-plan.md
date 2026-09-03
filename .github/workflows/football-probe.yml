@@ -67,6 +67,12 @@ jobs:
             echo "$code $(wc -c < "$DIR/odds-sports.json" 2>/dev/null || echo 0) odds-sports.json https://api.the-odds-api.com/v4/sports/" | tee -a "$MANIFEST"
             grep -i "x-requests-" "$DIR/odds-headers.txt" | tr -d '\r' >> "$MANIFEST" || true
             rm -f "$DIR/odds-headers.txt"
+            # 今後の試合と h2h オッズ（J1 と EPL・各 1 クレジット）。日程の一次情報にもなる
+            for sport in soccer_japan_j_league soccer_epl; do
+              code=$(curl -sS --max-time 30 -o "$DIR/odds-$sport.json" -w "%{http_code}" \
+                "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY" || echo ERR)
+              echo "$code $(wc -c < "$DIR/odds-$sport.json" 2>/dev/null || echo 0) odds-$sport.json https://api.the-odds-api.com/v4/sports/$sport/odds" | tee -a "$MANIFEST"
+            done
             python3 - <<'PY' >> "$MANIFEST" 2>/dev/null || true
           import json
           d=json.load(open('probe/football/odds-sports.json'))
