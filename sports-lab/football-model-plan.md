@@ -7,8 +7,10 @@ Founder 承認プラン（2026-09-02）の Month 2–3 に当たる「サッカ�
 
 ## 1. 目的と対象
 
-- 対象: **J1 / J2**（日本市場の穴。Ocup の構造化 10 リーグに日本は無い）と
-  **欧州 5 大リーグ**（プレミア / ラ・リーガ / セリエ A / ブンデス / リーグ・アン）
+- 対象（**海外優先**・Founder 指示 2026-09-03）: プレミア / セリエ A / ラ・リーガ /
+  ブンデス / エールディヴィジ / リーグ・アン / プリメイラ / ベルギー / スコットランドの
+  9 リーグを先に、**J1** を末尾に置く（対象表は `football/README.md`）。
+  CL / EL / ECL は結果の一次情報（機械可読）が無く決済できないため未対応
 - 出力（Ocup の固定 8 項目を踏襲し、数字は本物のモデルから出す）:
   1. 最も可能性の高い結果と見通し
   2. 勝ち / 引き分け / 負け の確率（W/D/L）
@@ -118,7 +120,7 @@ W/D/L と任意スコアを同時に導ける Dixon-Coles が業界標準で、O
 | ウォークフォワード評価と頻度基準（`evaluate.ts`・学習窓つき） | ✅（合成データで基準より RPS が良いことを固定） |
 | 履歴データの読み込み（`footballData.ts`）と測定 CLI（`cli/walkforward.ts`） | ✅ J1 + 欧州（xgabora の Matches.csv） |
 | 実データでのウォークフォワード測定 | ✅ J1（§4.1）。欧州は同節に追記 |
-| 当日データの取り込み経路（運用） | ✅ Actions から到達可（probe 2026-09-03）。結果 = football-data.co.uk（JPN.csv / E0）、日程・市場 = The Odds API（soccer_japan_j_league / soccer_epl） |
+| 当日データの取り込み経路（運用） | ✅ Actions から到達可（probe 2026-09-03・海外 8 リーグ分も全て 200）。結果 = football-data.co.uk（海外 9 リーグ × 4 季 + JPN.csv）、日程・市場 = The Odds API（10 競技）。チーム名対応は `teamAliases.ts`（実データのテストで全チーム解決を固定） |
 | xG 層 / 市場ブレンド | ⬜（測ってから） |
 | 台帳・封緘・決済（3 値） | ✅ リポジトリ内の追記専用 NDJSON（`football/`・`src/ledger.ts`）。日次は `football-daily.yml`。Supabase 版（`football-ledger/`）は設計のまま保留（Replit/Actions 方針により不要） |
 | 実績カードの 3 値対応 | ⬜ |

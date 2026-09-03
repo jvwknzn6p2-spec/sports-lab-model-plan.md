@@ -36,9 +36,19 @@ const MIN_TRAIN = 300;
 const MIN_TEAM_MATCHES = 5;
 
 /** リーグ → football-data の CSV（cache 内の名前）と Odds API の sport キー */
+// 海外リーグ優先（Founder 指示 2026-09-03）。順序は表示順でもある。CL/EL/ECL は
+// football-data.co.uk に結果 CSV が無く決済できないため対象外（README 参照）
 const SOURCES: Record<string, { csv: string[]; sport: string }> = {
-  JAP: { csv: ["JPN.csv"], sport: "soccer_japan_j_league" },
   E0: { csv: ["E0-2324.csv", "E0-2425.csv", "E0-2526.csv", "E0-2627.csv"], sport: "soccer_epl" },
+  I1: { csv: ["I1-2324.csv", "I1-2425.csv", "I1-2526.csv", "I1-2627.csv"], sport: "soccer_italy_serie_a" },
+  SP1: { csv: ["SP1-2324.csv", "SP1-2425.csv", "SP1-2526.csv", "SP1-2627.csv"], sport: "soccer_spain_la_liga" },
+  D1: { csv: ["D1-2324.csv", "D1-2425.csv", "D1-2526.csv", "D1-2627.csv"], sport: "soccer_germany_bundesliga" },
+  N1: { csv: ["N1-2324.csv", "N1-2425.csv", "N1-2526.csv", "N1-2627.csv"], sport: "soccer_netherlands_eredivisie" },
+  F1: { csv: ["F1-2324.csv", "F1-2425.csv", "F1-2526.csv", "F1-2627.csv"], sport: "soccer_france_ligue_one" },
+  P1: { csv: ["P1-2324.csv", "P1-2425.csv", "P1-2526.csv", "P1-2627.csv"], sport: "soccer_portugal_primeira_liga" },
+  B1: { csv: ["B1-2324.csv", "B1-2425.csv", "B1-2526.csv", "B1-2627.csv"], sport: "soccer_belgium_first_div" },
+  SC0: { csv: ["SC0-2324.csv", "SC0-2425.csv", "SC0-2526.csv", "SC0-2627.csv"], sport: "soccer_spl" },
+  JAP: { csv: ["JPN.csv"], sport: "soccer_japan_j_league" },
 };
 
 function loadHistory(league: string): MatchWithOdds[] {

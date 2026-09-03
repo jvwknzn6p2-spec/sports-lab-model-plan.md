@@ -71,3 +71,25 @@ test("市場確率は各ブックの含意確率の中央値", () => {
   assert.equal(f.bookmakers, 3);
   assert.ok(Math.abs(f.market![0] - 0.5) < 1e-9); // 中央値は b1/b2 の 0.5
 });
+
+// 海外 8 リーグ（Founder 指示 2026-09-03・J1 より優先）。probe 2026-09-03 の実データで、
+// Odds API に出た全チームが今季 CSV（2627）の名前へ解決することを固定する
+const OVERSEAS: Array<[string, string]> = [
+  ["I1", "soccer_italy_serie_a"],
+  ["SP1", "soccer_spain_la_liga"],
+  ["D1", "soccer_germany_bundesliga"],
+  ["N1", "soccer_netherlands_eredivisie"],
+  ["F1", "soccer_france_ligue_one"],
+  ["P1", "soccer_portugal_primeira_liga"],
+  ["B1", "soccer_belgium_first_div"],
+  ["SC0", "soccer_spl"],
+];
+for (const [div, sport] of OVERSEAS) {
+  test(`${div}: Odds API の全チームが ${div}-2627.csv の名前へ解決する`, () => {
+    const resolve = buildTeamResolver(namesOf(fx(`fd-${div}-2627.csv`)));
+    const fixtures = parseOddsEvents(json(`odds-${sport}.json`), resolve);
+    assert.ok(fixtures.length > 0, "サンプルに試合が無い");
+    const unresolved = fixtures.filter((f) => !f.resolved).map((f) => `${f.home} v ${f.away}`);
+    assert.deepEqual(unresolved, []);
+  });
+}

@@ -54,7 +54,18 @@ export function summarizeLeague(league: string, predictions: LedgerPrediction[],
   };
 }
 
-const NAMES: Record<string, string> = { JAP: "J1", E0: "プレミアリーグ" };
+const NAMES: Record<string, string> = {
+  E0: "プレミアリーグ",
+  I1: "セリエA",
+  SP1: "ラ・リーガ",
+  D1: "ブンデスリーガ",
+  N1: "エールディヴィジ",
+  F1: "リーグ・アン",
+  P1: "プリメイラ・リーガ",
+  B1: "ベルギー",
+  SC0: "スコットランド",
+  JAP: "J1",
+};
 
 export function renderSummary(leagues: string[], predictions: LedgerPrediction[], evaluations: LedgerEvaluation[], matches: Map<string, LedgerMatch>, nowIso: string): string {
   const out: string[] = [
