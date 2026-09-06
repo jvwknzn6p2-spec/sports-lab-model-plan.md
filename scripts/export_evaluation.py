@@ -15,8 +15,9 @@ game — PASS games included — sits on one fixed axis:
   settlement_result WIN / LOSS / PUSH      (PUSH = level baseball score; excluded from scoring)
 
 Timestamps (see .ai/ASTRA_REVIEW_POLICY.md, Appendix A.2): `prediction_timestamp`
-is the LATEST instant the pick could still have changed — never earlier than
-the truth — so a leak check against `event_start_time` is conservative.
+is the pick's own `predictedAt` stamp when the lock has one, else the LATEST
+instant the pick could still have changed — never earlier than the truth — so
+a leak check against `event_start_time` is conservative.
 
 A manifest with per-sport counts and every exclusion reason is written next to
 the CSV (default reports/evaluation_export.json). Nothing is guessed: a game
@@ -74,6 +75,27 @@ SETTLEMENT_RULES = {
     "SOCCER": "SOCCER_FULL_TIME_90_PLUS_STOPPAGE_NO_ET_NO_PENS",
 }
 
+# league -> (store directory under lib/sports-data, result source)
+BASEBALL = {
+    "MLB": ("data", "statsapi.mlb.com"),
+    "NPB": ("data-npb", "npb.jp"),
+}
+
+EXCLUSION_REASONS = {
+    "excluded_no_result": "no stored final score for the game (pending, cancelled, or never fetched)",
+    "excluded_no_start_time": "the prediction carries no event start time",
+    "excluded_unverifiable_timestamp": (
+        "late pick in a legacy lock (no predictedAt, no updatedAt): nothing in the record bounds "
+        "when it was produced"
+    ),
+    "excluded_prediction_bound_not_before_start": (
+        "the latest VERIFIABLE bound of the pick's production time is not before first pitch; "
+        "the pick may have been made earlier but that cannot be shown from the record, so it is "
+        "excluded fail-closed"
+    ),
+    "excluded_no_candidate_replay": "replay directory given but has no row for this game",
+}
+
 
 def parse_ts(s: str | None) -> datetime | None:
     if not s:
@@ -103,13 +125,13 @@ def read_json(path: Path) -> Any:
 def read_ndjson(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
-    out = []
     with path.open(encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                out.append(json.loads(line))
-    return out
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def under(root: Path, p: str) -> Path:
+    q = Path(p)
+    return q if q.is_absolute() else root / q
 
 
 # ---------------------------------------------------------------- baseball
@@ -118,10 +140,10 @@ def read_ndjson(path: Path) -> list[dict[str, Any]]:
 def home_probabilities(p: dict[str, Any]) -> tuple[float, float, str]:
     """(calibrated P(home), raw P(home), basis).
 
-    Locks written after this exporter was introduced carry `homeWinProbability`
-    directly. Older locks only state the FAVOURED side's probability, so the
-    side is recovered from `predictedWinner` (exact) or, for PASS games, from
-    expected runs (the simulator's favourite; documented as a fallback).
+    Locks written since the exporter exists carry `homeWinProbability` directly.
+    Older locks only state the FAVOURED side's probability, so the side is
+    recovered from `predictedWinner` (exact) or, for PASS games, from expected
+    runs (the simulator's favourite; documented as a fallback).
     """
     if p.get("homeWinProbability") is not None and p.get("rawHomeWinProbability") is not None:
         return float(p["homeWinProbability"]), float(p["rawHomeWinProbability"]), "stored_home_probability"
@@ -138,59 +160,25 @@ def home_probabilities(p: dict[str, Any]) -> tuple[float, float, str]:
     return (cal if home_fav else 1 - cal), (raw if home_fav else 1 - raw), basis
 
 
-def git_last_commit_time(root: Path, path: Path) -> datetime | None:
-    """Committer time of the last commit touching `path`, or None (no git / shallow clone).
-
-    The repository IS the runtime (locks are written by Actions and committed
-    immediately), so the last commit touching a lock file is a verifiable
-    upper bound of when its contents were last produced.
-    """
-    try:
-        rel = path.resolve().relative_to(root.resolve())
-        out = subprocess.run(
-            ["git", "-C", str(root), "log", "-1", "--format=%cI", "--", str(rel)],
-            capture_output=True, text=True, check=True,
-        ).stdout.strip()
-        return parse_ts(out) if out else None
-    except Exception:  # noqa: BLE001 — provenance fallback only
-        return None
-
-
-def prediction_timestamp(
-    lock: dict[str, Any], p: dict[str, Any], committed_at: datetime | None = None
-) -> tuple[datetime | None, str, int]:
-    """Conservative upper bound of when this pick was last (re)computed."""
+def prediction_timestamp(lock: dict[str, Any], p: dict[str, Any]) -> tuple[datetime | None, str, int]:
+    """When the pick was made: its own stamp, else a conservative upper bound."""
     late = int(LATE_FLAG in (p.get("flags") or []))
-    deadline = parse_ts(p.get("lockDeadline"))
-    updated = parse_ts(lock.get("updatedAt"))
-    locked = parse_ts(lock.get("lockedAt"))
+    if p.get("predictedAt"):
+        return parse_ts(p["predictedAt"]), "predicted_at", late
+    # Legacy locks (before predictedAt): a pick made in time was frozen at its
+    # deadline; a late pick was produced by some later run, no later than the
+    # lock's last update — and without `updatedAt` nothing bounds it at all.
     if not late:
-        # Frozen at its deadline; a pick that was never late was produced by a
-        # run that started before the deadline.
-        if deadline is not None:
-            return deadline, "lock_deadline", late
-        if updated is not None:
-            return updated, "lock_updated_at", late
-        return locked, "lock_locked_at", late
-    # Late pick: produced by some run at/after the deadline, no later than the
-    # lock's last update. Legacy locks lack `updatedAt`; the file's last commit
-    # time is the next verifiable bound, and without git the bound is unknown.
-    if updated is not None:
-        return updated, "lock_updated_at", late
-    if committed_at is not None:
-        return committed_at, "git_last_commit", late
+        return parse_ts(p.get("lockDeadline") or lock.get("updatedAt") or lock.get("lockedAt")), "lock_deadline", late
+    if lock.get("updatedAt"):
+        return parse_ts(lock["updatedAt"]), "lock_updated_at", late
     return None, "unverifiable", late
 
 
-def export_baseball(
-    league: str,
-    pred_dir: Path,
-    results_dir: Path,
-    candidate_dir: Path | None,
-    counts: Counter,
-    source: str,
-    root: Path,
-) -> list[dict[str, str]]:
+def export_baseball(league: str, sd: Path, candidate_dir: Path | None, counts: Counter) -> list[dict[str, str]]:
+    store, source = BASEBALL[league]
+    pred_dir = sd / store / "predictions"
+    results_dir = sd / store / "results"
     rows: list[dict[str, str]] = []
     if not pred_dir.is_dir():
         counts["missing_prediction_dir"] += 1
@@ -199,17 +187,12 @@ def export_baseball(
         date = lock_path.stem
         lock = read_json(lock_path)
         results_path = results_dir / f"{date}.json"
-        results = read_json(results_path) if results_path.exists() else None
-        result_map = (results or {}).get("results") or {}
-        fetched_at = (results or {}).get("fetchedAt") or ""
-        cand_lock = None
-        if candidate_dir is not None:
-            cp = candidate_dir / f"{date}.json"
-            cand_lock = read_json(cp) if cp.exists() else None
-        cand_by_pk = {str(c["gamePk"]): c for c in (cand_lock or {}).get("predictions", [])}
-        committed_at = None
-        if "updatedAt" not in lock and any(LATE_FLAG in (p.get("flags") or []) for p in lock.get("predictions", [])):
-            committed_at = git_last_commit_time(root, lock_path)
+        results = read_json(results_path) if results_path.exists() else {}
+        result_map = results.get("results") or {}
+        fetched_at = results.get("fetchedAt") or ""
+        cand_by_pk: dict[str, dict[str, Any]] = {}
+        if candidate_dir is not None and (candidate_dir / f"{date}.json").exists():
+            cand_by_pk = {str(c["gamePk"]): c for c in read_json(candidate_dir / f"{date}.json").get("predictions", [])}
 
         for p in lock.get("predictions", []):
             counts["total"] += 1
@@ -222,7 +205,7 @@ def export_baseball(
             if start is None:
                 counts["excluded_no_start_time"] += 1
                 continue
-            ts, basis, late = prediction_timestamp(lock, p, committed_at)
+            ts, basis, late = prediction_timestamp(lock, p)
             if ts is None:
                 counts["excluded_unverifiable_timestamp"] += 1
                 continue
@@ -248,13 +231,10 @@ def export_baseball(
             if hs == as_:
                 outcome, settled = "", "PUSH"
                 counts["push"] += 1
-            elif hs > as_:
-                outcome, settled = "1", "WIN"
             else:
-                outcome, settled = "0", "LOSS"
+                outcome, settled = ("1", "WIN") if hs > as_ else ("0", "LOSS")
             counts["exported"] += 1
-            if late:
-                counts["exported_late_but_pre_start"] += 1
+            counts["exported_late_but_pre_start"] += late
             rows.append(
                 {
                     "sport": "baseball",
@@ -293,15 +273,13 @@ def export_baseball(
 
 def export_soccer(ledger_dir: Path, counts: Counter) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    preds = read_ndjson(ledger_dir / "predictions.ndjson")
-    if not preds:
-        counts["missing_prediction_dir"] += int(not (ledger_dir / "predictions.ndjson").exists())
+    pred_path = ledger_dir / "predictions.ndjson"
+    if not pred_path.exists():
+        counts["missing_prediction_dir"] += 1
         return rows
     evals = {e["predictionId"]: e for e in read_ndjson(ledger_dir / "evaluations.ndjson")}
-    matches: dict[str, dict[str, Any]] = {}
-    for m in read_ndjson(ledger_dir / "matches.ndjson"):
-        matches[m["providerId"]] = m  # last row per providerId is current
-    for p in preds:
+    matches = {m["providerId"]: m for m in read_ndjson(ledger_dir / "matches.ndjson")}  # last row wins
+    for p in read_ndjson(pred_path):
         counts["total"] += 1
         e = evals.get(p["id"])
         if e is None:
@@ -320,8 +298,7 @@ def export_soccer(ledger_dir: Path, counts: Counter) -> list[dict[str, str]]:
         base = float(market[0]) if isinstance(market, list) and len(market) == 3 else None
         res = e["result"]
         counts["exported"] += 1
-        if res == "D":
-            counts["draws_in_denominator"] += 1
+        counts["draws_in_denominator"] += res == "D"
         rows.append(
             {
                 "sport": "soccer",
@@ -377,32 +354,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--candidate-npb-dir", help="directory of replayed NPB lock files (candidate)")
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()
-    out = Path(a.output)
-    if not out.is_absolute():
-        out = root / out
-    manifest_path = Path(a.manifest)
-    if not manifest_path.is_absolute():
-        manifest_path = root / manifest_path
-    sports = {s.strip().lower() for s in a.sports.split(",") if s.strip()}
+    out = under(root, a.output)
+    manifest_path = under(root, a.manifest)
+    sports = {s.strip().upper() for s in a.sports.split(",") if s.strip()}
+    candidate_dirs = {"MLB": a.candidate_mlb_dir, "NPB": a.candidate_npb_dir}
 
     rows: list[dict[str, str]] = []
     per_sport: dict[str, Counter] = {}
-    sd = root / "lib" / "sports-data"
-    if "mlb" in sports:
-        c = per_sport.setdefault("MLB", Counter())
-        rows += export_baseball(
-            "MLB", sd / "data" / "predictions", sd / "data" / "results",
-            Path(a.candidate_mlb_dir) if a.candidate_mlb_dir else None, c, "statsapi.mlb.com", root,
-        )
-    if "npb" in sports:
-        c = per_sport.setdefault("NPB", Counter())
-        rows += export_baseball(
-            "NPB", sd / "data-npb" / "predictions", sd / "data-npb" / "results",
-            Path(a.candidate_npb_dir) if a.candidate_npb_dir else None, c, "npb.jp", root,
-        )
-    if "soccer" in sports:
-        c = per_sport.setdefault("SOCCER", Counter())
-        rows += export_soccer(root / "football" / "ledger", c)
+    for league in BASEBALL:
+        if league in sports:
+            per_sport[league] = Counter()
+            cand = candidate_dirs[league]
+            rows += export_baseball(league, root / "lib" / "sports-data", Path(cand) if cand else None, per_sport[league])
+    if "SOCCER" in sports:
+        per_sport["SOCCER"] = Counter()
+        rows += export_soccer(root / "football" / "ledger", per_sport["SOCCER"])
 
     rows.sort(key=lambda r: (r["sport"], r["league"], r["event_start_time"], r["event_id"]))
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -417,26 +383,16 @@ def main(argv: list[str] | None = None) -> int:
         "output": str(out.relative_to(root)) if out.is_relative_to(root) else str(out),
         "rows": len(rows),
         "candidate_source": {
-            "MLB": "replay" if a.candidate_mlb_dir else "production_lock_calibrated_vs_raw",
-            "NPB": "replay" if a.candidate_npb_dir else "production_lock_calibrated_vs_raw",
+            **{lg: ("replay" if candidate_dirs[lg] else "production_lock_calibrated_vs_raw") for lg in BASEBALL},
             "SOCCER": "ledger_pHome_vs_market",
         },
         "settlement_rules": SETTLEMENT_RULES,
         "counts": {k: dict(sorted(v.items())) for k, v in per_sport.items()},
-        "exclusion_reasons": {
-            "excluded_no_result": "no stored final score for the game (pending, cancelled, or never fetched)",
-            "excluded_no_start_time": "the prediction carries no event start time",
-            "excluded_unverifiable_timestamp": "late pick in a legacy lock without updatedAt and without git history to bound it",
-            "excluded_prediction_bound_not_before_start": (
-                "the latest VERIFIABLE bound of the pick's production time (lock deadline / updatedAt / "
-                "last commit of the lock file) is not before first pitch; the pick may have been made "
-                "earlier but that cannot be shown from the record, so it is excluded fail-closed"
-            ),
-            "excluded_no_candidate_replay": "replay directory given but has no row for this game",
-        },
+        "exclusion_reasons": EXCLUSION_REASONS,
         "timestamp_policy": (
-            "prediction_timestamp is an upper bound of when the pick was last (re)computed "
-            "(.ai/ASTRA_REVIEW_POLICY.md Appendix A.2); the true time is never later than the exported one"
+            "prediction_timestamp is the pick's predictedAt stamp when present, else an upper bound of when "
+            "the pick was last (re)computed (.ai/ASTRA_REVIEW_POLICY.md Appendix A.2); the true time is never "
+            "later than the exported one"
         ),
     }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)

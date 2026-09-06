@@ -29,7 +29,7 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
 - `lib/db/src/schema/` — Drizzle DB schema (teams, games, pitcher/team/bullpen stats with FIP columns).
 - `lib/api-spec/openapi.yaml` — OpenAPI contract; `lib/api-zod` and `lib/api-client-react` are generated from it (Orval).
 - `artifacts/api-server/` — Express API server (MLB at `/api/*`, NPB at `/api/npb/*`); `artifacts/mockup-sandbox/` — React frontend (MLB/NPB toggle on both screens).
-- `.ai/ASTRA_REVIEW_POLICY.md` — the Astra audit loop (Claude Code → PR → tests → real-data evaluation → GPT-6 Astra audit → optional Claude repair ≤3 rounds → human-only merge). `scripts/export_evaluation.py` turns the committed ledgers into `data/evaluation/predictions_eval.csv`, `scripts/evaluate_model.py` scores it (Brier / log loss / ECE, paired bootstrap vs baseline), `.github/workflows/ai-development-loop.yml` runs both on every PR and asks Astra. Required GitHub settings: `.ai/ASTRA_LOOP_SETUP.md`. Python tests in `tests/` (`python3 -m pytest -q tests`).
+- `.ai/` — the Astra audit loop that gates every PR (policy in `ASTRA_REVIEW_POLICY.md`, GitHub setup and how the pieces fit in `ASTRA_LOOP_SETUP.md`).
 
 ## Architecture decisions
 

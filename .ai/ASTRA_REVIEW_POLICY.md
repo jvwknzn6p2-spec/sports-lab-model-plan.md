@@ -125,24 +125,22 @@ Nothing in the export is fabricated: a game without a stored result is
 excluded and counted, never guessed.
 
 ### A.2 Prediction timestamps (what `prediction_timestamp` means here)
-- **MLB / NPB**: a lock file carries `lockedAt` (first commit of the slate) and
-  `updatedAt` (last re-run). A pick is frozen at its own `lockDeadline`
-  (MLB: 22:59 JST the evening before; NPB: 33 minutes before first pitch), and
-  later runs carry it through unchanged. The exporter therefore uses the
-  **latest instant the pick could still have changed** as
-  `prediction_timestamp`: the `lockDeadline` for picks made in time, and
-  `updatedAt` for picks flagged `[warn] predicted_after_deadline`. This is a
-  conservative upper bound — the true time is never later than the exported
-  one. For late picks in legacy locks without `updatedAt` the last git commit
-  touching the lock file is the next verifiable bound. Rows whose bound is not
-  before `event_start_time` are excluded fail-closed and counted
-  (`excluded_prediction_bound_not_before_start`) — the pick may well have
-  been made before first pitch, but the record cannot show it. Rows with no
-  bound at all are excluded and counted (`excluded_unverifiable_timestamp`).
-  Note: the repository history was flattened on 2026-08-31 (every lock before
-  that date has a single commit dated 2026-08-31), so legacy late picks from
-  2026-07-28 … 2026-08-30 are excluded by this rule; the exporter's manifest
-  shows the count.
+- **MLB / NPB**: every pick written since this policy landed carries its own
+  `predictedAt` (stamped by `handiedge predict`; a pick carried through by a
+  later run keeps its original stamp). That is `prediction_timestamp`, exactly.
+  Legacy locks (before `predictedAt`) only carry `lockedAt` / `updatedAt` at
+  the file level, so the exporter falls back to the **latest instant the pick
+  could still have changed**: its `lockDeadline` (MLB 22:59 JST the evening
+  before; NPB 33 minutes before first pitch — a pick made in time is frozen
+  there) or, for picks flagged `[warn] predicted_after_deadline`, the lock's
+  `updatedAt`. Both are upper bounds, never earlier than the truth. Rows whose
+  bound is not before `event_start_time` are excluded fail-closed and counted
+  (`excluded_prediction_bound_not_before_start`); late legacy picks with no
+  `updatedAt` at all are excluded and counted
+  (`excluded_unverifiable_timestamp`) — git history is *not* used as a bound,
+  because the repository history was flattened on 2026-08-31 and commit
+  metadata is not append-only. The `prediction_timestamp_basis` column names
+  which rule produced each row.
 - **Soccer**: `publishedAt` is exact (the ledger refuses a prediction issued
   at or after `cutoffAt` = kickoff − 60 min), so it is used as is.
 - Late-but-pre-start baseball picks are **eligible** for scoring (no post-start

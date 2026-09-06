@@ -56,22 +56,25 @@ def pct(xs,q):
     return xs[lo] if lo==hi else xs[lo]*(hi-pos)+xs[hi]*(pos-lo)
 
 def boot(y,c,b,fn,n,seed):
+    # Per-row losses are fixed across resamples, so compute them once and sum
+    # the resampled rows in draw order: same RNG stream, same summation order,
+    # same numbers as re-scoring the resampled lists — at a third of the cost.
     rng=random.Random(seed); d=[]; m=len(y)
+    lc=[fn([a],[p]) for a,p in zip(y,c)]; lb=[fn([a],[p]) for a,p in zip(y,b)]
     for _ in range(n):
         idx=[rng.randrange(m) for __ in range(m)]
-        yy=[y[i] for i in idx]; cc=[c[i] for i in idx]; bb=[b[i] for i in idx]
-        d.append(fn(yy,cc)-fn(yy,bb))
+        d.append(sum(lc[i] for i in idx)/m-sum(lb[i] for i in idx)/m)
     point=fn(y,c)-fn(y,b)
     return {'delta_candidate_minus_baseline':round(point,8),'ci95_low':round(pct(d,.025),8),'ci95_high':round(pct(d,.975),8)}
 
-def main():
+def main(argv=None):
     ap=argparse.ArgumentParser()
     ap.add_argument('--input',default='data/evaluation/predictions_eval.csv')
     ap.add_argument('--output',default='reports/latest_evaluation.json')
     ap.add_argument('--bootstrap-samples',type=int,default=2000)
     ap.add_argument('--min-gate-samples',type=int,default=200)
     ap.add_argument('--seed',type=int,default=42)
-    a=ap.parse_args(); inp=Path(a.input); out=Path(a.output); out.parent.mkdir(parents=True,exist_ok=True)
+    a=ap.parse_args(argv); inp=Path(a.input); out=Path(a.output); out.parent.mkdir(parents=True,exist_ok=True)
     rep={'schema_version':'1.0','input':str(inp),'status':'UNKNOWN','gate':{'passed':False,'reasons':[]},'counts':{},'data_integrity':{},'overall':{},'segments':{}}
     if not inp.exists():
         rep['status']='NOT_RUN';rep['gate']['reasons']=[f'evaluation input not found: {inp}'];out.write_text(json.dumps(rep,indent=2),encoding='utf-8');return 2

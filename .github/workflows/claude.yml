@@ -1,14 +1,16 @@
 name: Claude Code
 
 # The repair leg of the Astra loop (.ai/ASTRA_REVIEW_POLICY.md §7): when a
-# repository owner/collaborator mentions @claude on a PR or issue, Claude Code
-# works on that PR and pushes to its branch. This is the minimum official
-# workflow from anthropics/claude-code-action, with two deliberate limits:
+# repository owner/member/collaborator mentions @claude on a PR or issue,
+# Claude Code works on that PR and pushes to its branch. This is the minimum
+# official workflow from anthropics/claude-code-action, with two limits:
 #
 #   - only OWNER / MEMBER / COLLABORATOR mentions trigger it (the repository
-#     is public; nobody else may spend the API key or push code);
-#   - it can never merge, force-push, or write to main: pushes go to the PR's
-#     own branch through the action's tooling, and merging stays human-only.
+#     is public). `author_association` is the published template's guard, not
+#     a proof of write access — the action's own actor check and, ideally, a
+#     protected `main` are what actually keep the loop from merging anything;
+#   - it can never merge or force-push: pushes go to the PR's own branch
+#     through the action's tooling, and merging stays human-only.
 #
 # Needs the repository secret ANTHROPIC_API_KEY (already used by the reviewer
 # panel in handiedge-review.yml). See .ai/ASTRA_LOOP_SETUP.md.
@@ -24,11 +26,8 @@ on:
 jobs:
   claude:
     if: |
-      (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
-      ) && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association)
+      contains(github.event.comment.body || github.event.review.body, '@claude')
+      && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association)
     runs-on: ubuntu-latest
     permissions:
       contents: write
