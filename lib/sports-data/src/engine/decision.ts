@@ -168,6 +168,11 @@ export interface CalibrationState {
   totalFarTailShrink: number;
   gamesSettled: number;
   brierSum: number;
+  /**
+   * Learning paused: `settle` keeps this state as is and writes what learning
+   * would have produced to calibration-shadow.json (PR #33, judgment 3).
+   */
+  frozen?: { since: string; reason: string };
   updatedAt: string | null;
 }
 
@@ -271,6 +276,7 @@ export function normalizeCalibration(
     gamesSettled: raw.gamesSettled ?? 0,
     brierSum: raw.brierSum ?? 0,
     updatedAt: raw.updatedAt ?? null,
+    ...(raw.frozen ? { frozen: raw.frozen } : {}),
   };
 }
 
@@ -378,6 +384,8 @@ export interface GamePrediction {
    * Optional because locks written before this field existed lack it.
    */
   predictedAt?: string;
+  /** sha256 of the slate file this pick was computed from (see predictedAt). */
+  inputSha256?: string;
   confidence: Confidence;
   handicap: {
     input: HandicapInput | null;

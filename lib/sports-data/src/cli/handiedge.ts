@@ -62,8 +62,19 @@ import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { execSync } from "node:child_process";
 
 import { distributionCheck, runAudit, type AuditDay } from "../engine/audit";
+import {
+  newRecords,
+  reevaluateDate,
+  summarizeReevaluations,
+  type ReevaluationRecord,
+  type RegulationScore,
+  type RegulationScoreFile,
+} from "../engine/reevaluate";
+import { replayLock, sha256, type ReplayOutput } from "../engine/replay";
+import { productionRule, ruleById, ruleTag } from "../engine/settlement-rules";
 import {
   walkForward,
   type BacktestDay,
@@ -157,6 +168,9 @@ let RESULTS_DIR = join(DATA_DIR, "results");
 let CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
 let HISTORY_PATH = join(DATA_DIR, "history.jsonl");
 let REPORTS_DIR = join(DATA_DIR, "reports");
+let REGULATION_DIR = join(DATA_DIR, "regulation-scores");
+let REEVAL_PATH = join(DATA_DIR, "reevaluations.jsonl");
+let CALIBRATION_SHADOW_PATH = join(DATA_DIR, "calibration-shadow.json");
 const DEFAULT_SLATE = join(PKG_ROOT, "fixtures", "2024-slate.json");
 
 function setLeague(cfg: LeagueConfig): void {
@@ -169,6 +183,39 @@ function setLeague(cfg: LeagueConfig): void {
   CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
   HISTORY_PATH = join(DATA_DIR, "history.jsonl");
   REPORTS_DIR = join(DATA_DIR, "reports");
+  REGULATION_DIR = join(DATA_DIR, "regulation-scores");
+  REEVAL_PATH = join(DATA_DIR, "reevaluations.jsonl");
+  CALIBRATION_SHADOW_PATH = join(DATA_DIR, "calibration-shadow.json");
+}
+
+/**
+ * Point every store path at another league data directory (the replay reads
+ * the PR head's committed locks and slates while running the BASE checkout's
+ * code — inputs must be identical on both sides, only the code differs).
+ */
+function setDataDir(dir: string): void {
+  DATA_DIR = resolve(dir);
+  PRED_DIR = join(DATA_DIR, "predictions");
+  SLATE_DIR = join(DATA_DIR, "slates");
+  CT_DIR = join(DATA_DIR, "control-towers");
+  RESULTS_DIR = join(DATA_DIR, "results");
+  CALIBRATION_PATH = join(DATA_DIR, "calibration.json");
+  HISTORY_PATH = join(DATA_DIR, "history.jsonl");
+  REPORTS_DIR = join(DATA_DIR, "reports");
+  REGULATION_DIR = join(DATA_DIR, "regulation-scores");
+  REEVAL_PATH = join(DATA_DIR, "reevaluations.jsonl");
+  CALIBRATION_SHADOW_PATH = join(DATA_DIR, "calibration-shadow.json");
+}
+
+/** The code version stamped on evaluations: the checkout's git commit. */
+function codeVersion(): string {
+  const fromEnv = process.env["HANDIEDGE_CODE_VERSION"];
+  if (fromEnv) return fromEnv;
+  try {
+    return execSync("git rev-parse HEAD", { cwd: PKG_ROOT, encoding: "utf8" }).trim();
+  } catch {
+    return "unknown";
+  }
 }
 
 interface ControlTower {
@@ -607,7 +654,13 @@ async function cmdPredict(args: {
   const slatePath = resolve(
     args.slate ?? (existsSync(fetchedSlate) ? fetchedSlate : DEFAULT_SLATE),
   );
-  const bundle = await readJson<FixtureBundle>(slatePath);
+  const bundleText = await readFile(slatePath, "utf8");
+  const bundle = JSON.parse(bundleText) as FixtureBundle;
+  // Identity of the input snapshot every pick of this run is computed from.
+  // A later --force re-fetch overwrites the slate file, so without this hash
+  // a replay cannot tell whether the committed slate is what a frozen pick
+  // actually saw (judgment 2: input snapshot identity).
+  const inputSha256 = sha256(bundleText);
   // A slate built against a derived environment (NPB) carries its constants;
   // registering them here means the lock is scored with the exact numbers
   // the slate was built from — reproducible across processes.
@@ -683,6 +736,7 @@ async function cmdPredict(args: {
     // so the lock records when each bet was actually made — not when the
     // file was last rewritten.
     p.predictedAt = now.toISOString();
+    p.inputSha256 = inputSha256;
     if (gameLocked) {
       // Produced after this game's cut-off — recorded as such rather than
       // passed off as a pick that was made in time.
@@ -937,13 +991,23 @@ async function runSettle(payload: {
   ].sort((a, b) => a.date.localeCompare(b.date));
   const relearned = recalibrateFromHistory(merged, DEFAULT_CALIBRATION, now);
 
+  // Learning paused (Astra judgment 3, PR #33): the active state stays as it
+  // is and what learning WOULD have produced is recorded beside it, so the
+  // two can be compared later without either having steered the picks.
+  const frozen = calibration.frozen;
+  const { frozen: _drop, ...shadow } = relearned;
   const report = {
     ...scored,
     calibrationBefore: calibration,
-    calibrationAfter: relearned,
+    calibrationAfter: frozen ? calibration : relearned,
+    ...(frozen ? { calibrationShadowAfter: shadow } : {}),
   };
   await saveHistory(merged.map((r) => (r.date === report.date ? report : r)));
-  await saveJson(CALIBRATION_PATH, relearned);
+  if (frozen) {
+    await saveJson(CALIBRATION_SHADOW_PATH, { ...shadow, shadowOf: CALIBRATION_PATH, frozenSince: frozen.since });
+  } else {
+    await saveJson(CALIBRATION_PATH, relearned);
+  }
   await saveMarkdown(
     join(REPORTS_DIR, `${report.date}-settled.md`),
     settlementToMarkdown(report),
@@ -997,6 +1061,12 @@ async function runSettle(payload: {
       `far tail ${report.calibrationBefore.farTailShrink} → ${report.calibrationAfter.farTailShrink} ` +
       `(${report.calibrationAfter.gamesSettled} games settled lifetime)`,
   );
+  if (frozen) {
+    console.log(
+      `  Calibration FROZEN since ${frozen.since} (${frozen.reason}); ` +
+        `learning recorded to ${CALIBRATION_SHADOW_PATH} only.`,
+    );
+  }
   console.log(`  History appended → ${HISTORY_PATH}`);
 }
 
@@ -1605,6 +1675,221 @@ async function cmdBacktest(args: {
   console.log(`  Reports → ${outDir}/${tag}-summary.md`);
 }
 
+// ---------------------------------------------------------------------------
+// Settlement-rule versioning: regulation-score store, re-evaluation, replay
+// (.ai/ASTRA_REVIEW_POLICY.md Appendix A; PR #33 judgments 1–3).
+// ---------------------------------------------------------------------------
+
+async function loadReevaluations(): Promise<ReevaluationRecord[]> {
+  if (!existsSync(REEVAL_PATH)) return [];
+  const raw = await readFile(REEVAL_PATH, "utf8");
+  return raw
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .map((line) => JSON.parse(line) as ReevaluationRecord);
+}
+
+async function readNdjson<T>(path: string): Promise<T[]> {
+  const raw = await readFile(path, "utf8");
+  return raw
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .map((line) => JSON.parse(line) as T);
+}
+
+/**
+ * Import end-of-9th scores from a VORTE EV archive checkout (the sister
+ * project derives them from npb.jp score pages, with a self-check that games
+ * ending in ≤ 9 innings match their final score). Joined on (date, home
+ * team name); only dates with a prediction lock are imported. Files are
+ * append-only: an existing date is verified identical, never rewritten.
+ */
+async function cmdImportRegulationScores(args: {
+  from?: string;
+  "provenance-commit"?: string;
+}): Promise<void> {
+  if (LEAGUE.dataDirName !== "data-npb") throw new Error("import-regulation-scores is NPB only (--league npb)");
+  if (!args.from) throw new Error("import-regulation-scores requires --from <dir with games/teams/leagues/game_regulation_scores.ndjson>");
+  if (!args["provenance-commit"]) throw new Error("import-regulation-scores requires --provenance-commit <archive commit sha>");
+  const dir = resolve(args.from);
+  type Team = { id: string; league_id: string; name: string };
+  type League = { id: string; name: string; is_official?: boolean };
+  type Game = { id: string; league_id: string; game_date: string; home_team_id: string; away_team_id: string };
+  type Reg = {
+    id: string; game_id: string; home_score_reg: number; away_score_reg: number; regulation_innings: number;
+    innings_played: number; source: string; url: string; supersedes_id: string | null; observed_at: string;
+  };
+  const leagues = await readNdjson<League>(join(dir, "leagues.ndjson"));
+  const npb = new Set(leagues.filter((l) => l.is_official && /nippon professional baseball|^NPB$/i.test(l.name)).map((l) => l.id));
+  if (npb.size === 0) throw new Error("no official NPB league in leagues.ndjson");
+  const teams = new Map((await readNdjson<Team>(join(dir, "teams.ndjson"))).map((t) => [t.id, t]));
+  const games = new Map((await readNdjson<Game>(join(dir, "games.ndjson"))).filter((g) => npb.has(g.league_id)).map((g) => [g.id, g]));
+  const regs = (await readNdjson<Reg>(join(dir, "game_regulation_scores.ndjson"))).sort((a, b) => a.observed_at.localeCompare(b.observed_at));
+  // Latest observation per game wins (VORTE supersedes by appending).
+  const byKey = new Map<string, { reg: Reg; game: Game }>();
+  for (const r of regs) {
+    const g = games.get(r.game_id);
+    if (!g) continue;
+    byKey.set(`${g.game_date}|${teams.get(g.home_team_id)?.name ?? "?"}`, { reg: r, game: g });
+  }
+  const rule = ruleById("NPB_REGULATION_9");
+  const now = new Date().toISOString();
+  let written = 0;
+  let verified = 0;
+  let missing = 0;
+  for (const f of (await import("node:fs")).readdirSync(PRED_DIR).filter((x) => x.endsWith(".json")).sort()) {
+    const date = f.slice(0, -5);
+    const lock = await readJson<PredictionLock>(join(PRED_DIR, f));
+    const file: RegulationScoreFile = {
+      date,
+      rule: ruleTag(rule),
+      importedAt: now,
+      provenance: {
+        kind: "vorte-ev-archive",
+        commit: args["provenance-commit"],
+        note: "game_regulation_scores.ndjson joined to games/teams on (game_date, home team name); each row keeps npb.jp score-page url and observed_at",
+      },
+      games: {},
+    };
+    for (const p of lock.predictions) {
+      const hit = byKey.get(`${date}|${p.home}`);
+      if (!hit) { missing++; continue; }
+      const awayName = teams.get(hit.game.away_team_id)?.name;
+      if (awayName !== p.away) { missing++; console.warn(`  ${date} ${p.away} @ ${p.home}: away team mismatch in archive (${awayName}) — skipped`); continue; }
+      const r = hit.reg;
+      const score: RegulationScore = {
+        homeScore: r.home_score_reg, awayScore: r.away_score_reg, regulationInnings: r.regulation_innings,
+        inningsPlayed: r.innings_played, source: r.source, url: r.url, observedAt: r.observed_at,
+      };
+      file.games[String(p.gamePk)] = score;
+    }
+    const path = join(REGULATION_DIR, `${date}.json`);
+    if (existsSync(path)) {
+      const existing = await readJson<RegulationScoreFile>(path);
+      if (JSON.stringify(existing.games) !== JSON.stringify(file.games)) {
+        throw new Error(`${path} exists with different scores; the store is append-only — investigate before importing (no file was changed)`);
+      }
+      verified++;
+      continue;
+    }
+    await saveJson(path, file);
+    written++;
+    console.log(`  ${date}: ${Object.keys(file.games).length}/${lock.predictions.length} games → ${path}`);
+  }
+  console.log(`Regulation scores: ${written} date file(s) written, ${verified} verified unchanged, ${missing} game(s) without a score.`);
+}
+
+/**
+ * Re-evaluate every locked pick under another settlement rule and APPEND the
+ * records to reevaluations.jsonl. history.jsonl and calibration.json are not
+ * touched; the report shows original vs re-evaluated side by side.
+ */
+async function cmdReevaluate(args: { rule?: string }): Promise<void> {
+  if (!args.rule) throw new Error("reevaluate requires --rule <SETTLEMENT_RULE_ID>");
+  const rule = ruleById(args.rule);
+  const league: "mlb" | "npb" = LEAGUE.dataDirName === "data-npb" ? "npb" : "mlb";
+  if (rule.league !== league) throw new Error(`${rule.id} is a ${rule.league} rule; run with --league ${rule.league}`);
+  if (rule.status === "production") throw new Error(`${rule.id} is the production rule; reevaluate is for other rules`);
+  const originalRule = productionRule(league);
+  const history = new Map((await loadHistory()).map((r) => [r.date, r]));
+  const existing = await loadReevaluations();
+  const version = codeVersion();
+  const now = new Date();
+  const appended: ReevaluationRecord[] = [];
+  const unevaluated: { date: string; matchup: string; reason: string }[] = [];
+  for (const f of (await import("node:fs")).readdirSync(PRED_DIR).filter((x) => x.endsWith(".json")).sort()) {
+    const date = f.slice(0, -5);
+    if (rule.appliesFrom && date < rule.appliesFrom) continue;
+    const lock = await readJson<PredictionLock>(join(PRED_DIR, f));
+    const regPath = join(REGULATION_DIR, `${date}.json`);
+    const regulation = existsSync(regPath) ? await readJson<RegulationScoreFile>(regPath) : null;
+    const out = reevaluateDate({
+      league, date, predictions: lock.predictions, calibration: lock.calibration, regulation,
+      original: history.get(date) ?? null, rule, originalRule, codeVersion: version, now,
+      reason: `${ruleTag(rule)} is the handicap market's basis; history.jsonl was scored under ${ruleTag(originalRule)}`,
+    });
+    for (const u of out.unevaluated) unevaluated.push({ date, matchup: u.matchup, reason: u.reason });
+    appended.push(...newRecords([...existing, ...appended], out.records));
+  }
+  if (appended.length > 0) {
+    await mkdir(DATA_DIR, { recursive: true });
+    await appendFile(REEVAL_PATH, appended.map((r) => JSON.stringify(r)).join("\n") + "\n", "utf8");
+  }
+  const all = [...existing, ...appended].filter((r) => r.rule.id === rule.id && r.rule.version === rule.version);
+  const s = summarizeReevaluations(all);
+  const md: string[] = [];
+  md.push(`# Re-evaluation under ${ruleTag(rule)} (original: ${ruleTag(originalRule)})`);
+  md.push("");
+  md.push(`_Appended to ${REEVAL_PATH}; history.jsonl and calibration.json unchanged. Records are keyed by prediction + rule version + result observation, so re-runs append nothing new. Basis: ${rule.basis}._`);
+  md.push("");
+  md.push(`- records: ${s.records} (with an original evaluation: ${s.withOriginal}); appended this run: ${appended.length}`);
+  md.push(`- changed vs original — winner: ${s.changedWinner}, handicap: ${s.changedHandicap}, total: ${s.changedTotal}, handicap profit: ${s.changedProfit}`);
+  md.push(`- unevaluated (no regulation score; never filled from the posted final): ${unevaluated.length}`);
+  md.push("");
+  md.push("| date | game | original (final posted) | re-evaluated (regulation) | changed |");
+  md.push("|---|---|---|---|---|");
+  md.push(...s.rows);
+  if (unevaluated.length > 0) {
+    md.push("");
+    md.push("## Unevaluated");
+    for (const u of unevaluated) md.push(`- ${u.date} ${u.matchup}: ${u.reason}`);
+  }
+  md.push("");
+  md.push(`_Evaluator code version ${version}; generated ${now.toISOString()}._`);
+  await saveMarkdown(join(REPORTS_DIR, `reevaluation-${rule.id}.md`), md.join("\n") + "\n");
+  console.log(`Re-evaluated ${s.records} pick(s) under ${ruleTag(rule)}: ${appended.length} new record(s), ${unevaluated.length} unevaluated.`);
+}
+
+/**
+ * Replay every lock from its committed slate with the current code and seal
+ * the outputs (judgment 2). --data-dir lets the BASE checkout's code read the
+ * HEAD's data so both sides see identical inputs.
+ */
+async function cmdReplay(args: {
+  out?: string;
+  "data-dir"?: string;
+  from?: string;
+  to?: string;
+  dispersion?: string;
+  "env-sd"?: string;
+}): Promise<void> {
+  if (!args.out) throw new Error("replay requires --out <dir>");
+  const league: "mlb" | "npb" = LEAGUE.dataDirName === "data-npb" ? "npb" : "mlb";
+  const simParams: { dispersion?: number; envSd?: number } = {};
+  if (args.dispersion !== undefined) simParams.dispersion = numericArg("--dispersion", args.dispersion, NaN, { min: 0, exclusiveMin: true, allowInfinite: true });
+  if (args["env-sd"] !== undefined) simParams.envSd = numericArg("--env-sd", args["env-sd"], NaN, { min: 0 });
+  const outDir = resolve(args.out);
+  await mkdir(outDir, { recursive: true });
+  const history = await loadHistory();
+  const version = codeVersion();
+  const now = new Date();
+  const manifest: {
+    source: "replay"; league: string; codeVersion: string; replayedAt: string; dataDir: string; simParams: typeof simParams;
+    dates: { date: string; file: string; sha256: string; predictionsSha256: string; reproduction: ReplayOutput["reproduction"]; calibrationAsOf: boolean | null; slateFetchedAt: string | null }[];
+    skipped: { date: string; reason: string }[];
+  } = { source: "replay", league, codeVersion: version, replayedAt: now.toISOString(), dataDir: DATA_DIR, simParams, dates: [], skipped: [] };
+  for (const f of (await import("node:fs")).readdirSync(PRED_DIR).filter((x) => x.endsWith(".json")).sort()) {
+    const date = f.slice(0, -5);
+    if ((args.from && date < args.from) || (args.to && date > args.to)) continue;
+    const slatePath = join(SLATE_DIR, `${date}.json`);
+    if (!existsSync(slatePath)) { manifest.skipped.push({ date, reason: "no committed slate" }); continue; }
+    const lock = await readJson<PredictionLock>(join(PRED_DIR, f));
+    const bundleText = await readFile(slatePath, "utf8");
+    const bundle = JSON.parse(bundleText) as FixtureBundle;
+    if (bundle.date !== date) { manifest.skipped.push({ date, reason: `slate is for ${bundle.date}` }); continue; }
+    const out = await replayLock({ league, lock, bundle, bundleText, history, codeVersion: version, now, simParams });
+    const text = JSON.stringify(out, null, 2);
+    await writeFile(join(outDir, `${date}.json`), text, "utf8");
+    manifest.dates.push({
+      date, file: `${date}.json`, sha256: sha256(text), predictionsSha256: out.predictionsSha256,
+      reproduction: out.reproduction, calibrationAsOf: out.calibrationAsOf.verified, slateFetchedAt: out.input.slateFetchedAt,
+    });
+    console.log(`  ${date}: ${out.predictions.length} replayed, reproduced ${out.reproduction.matched}/${out.reproduction.compared}, calibration as-of ${out.calibrationAsOf.verified}`);
+  }
+  await writeFile(join(outDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+  console.log(`Replay (${version}) → ${outDir}: ${manifest.dates.length} date(s), ${manifest.skipped.length} skipped.`);
+}
+
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -1628,10 +1913,16 @@ async function main(): Promise<void> {
       "skip-weather": { type: "boolean", default: false },
       "skip-injuries": { type: "boolean", default: false },
       league: { type: "string" },
+      "data-dir": { type: "string" },
+      rule: { type: "string" },
+      "provenance-commit": { type: "string" },
     },
   });
   // League first: every path and deadline the commands read derives from it.
   setLeague(resolveLeague(values.league ?? process.env["HANDIEDGE_LEAGUE"]));
+  // Any command can be pointed at another store (tests, and the replay of
+  // the PR head's data by the base checkout's code).
+  if (values["data-dir"]) setDataDir(values["data-dir"]);
   const cmd = positionals[0];
   if (cmd === "fetch-slate") await cmdFetchSlate(values);
   else if (cmd === "fetch-results") await cmdFetchResults(values);
@@ -1641,6 +1932,9 @@ async function main(): Promise<void> {
   else if (cmd === "review") await cmdReview(values);
   else if (cmd === "audit") await cmdAudit();
   else if (cmd === "backtest") await cmdBacktest(values);
+  else if (cmd === "import-regulation-scores") await cmdImportRegulationScores(values);
+  else if (cmd === "reevaluate") await cmdReevaluate(values);
+  else if (cmd === "replay") await cmdReplay(values);
   else {
     console.log("Usage:");
     console.log(
@@ -1658,6 +1952,9 @@ async function main(): Promise<void> {
       "  handiedge review        [--date YYYY-MM-DD]   (needs ANTHROPIC_API_KEY)",
     );
     console.log("  handiedge audit");
+    console.log("  handiedge replay        --out <dir> [--data-dir <league data dir>] [--from/--to] [--dispersion r] [--env-sd s]");
+    console.log("  handiedge reevaluate    --rule NPB_REGULATION_9   (--league npb; appends reevaluations.jsonl)");
+    console.log("  handiedge import-regulation-scores --from <vorte archive dir> --provenance-commit <sha>   (--league npb)");
     console.log(
       "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",
     );
