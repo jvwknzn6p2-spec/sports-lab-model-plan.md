@@ -1,0 +1,57 @@
+{
+  "date": "2026-08-27",
+  "rule": "NPB_REGULATION_9/v1",
+  "importedAt": "2026-09-06T17:47:20.692Z",
+  "provenance": {
+    "kind": "vorte-ev-archive",
+    "commit": "d06d6d42706694ec2397203cd0e8e4e9e16fb521",
+    "note": "game_regulation_scores.ndjson joined to games/teams on (game_date, home team name); each row keeps npb.jp score-page url and observed_at"
+  },
+  "games": {
+    "92026082705": {
+      "homeScore": 2,
+      "awayScore": 9,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0827/s-g-22/",
+      "observedAt": "2026-08-27T12:38:00.084597+00:00"
+    },
+    "92026082706": {
+      "homeScore": 3,
+      "awayScore": 4,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0827/d-t-22/",
+      "observedAt": "2026-08-27T12:53:00.107977+00:00"
+    },
+    "92026082704": {
+      "homeScore": 1,
+      "awayScore": 6,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0827/c-db-21/",
+      "observedAt": "2026-08-27T12:23:00.092529+00:00"
+    },
+    "92026082709": {
+      "homeScore": 2,
+      "awayScore": 4,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0827/m-h-20/",
+      "observedAt": "2026-08-27T12:38:00.084597+00:00"
+    },
+    "92026082711": {
+      "homeScore": 4,
+      "awayScore": 12,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0827/b-e-21/",
+      "observedAt": "2026-08-27T12:53:00.107977+00:00"
+    }
+  }
+}

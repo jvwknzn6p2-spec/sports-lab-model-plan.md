@@ -29,6 +29,7 @@ _An MLB **and NPB** game-prediction and betting-value decision-support system: f
 - `lib/db/src/schema/` — Drizzle DB schema (teams, games, pitcher/team/bullpen stats with FIP columns).
 - `lib/api-spec/openapi.yaml` — OpenAPI contract; `lib/api-zod` and `lib/api-client-react` are generated from it (Orval).
 - `artifacts/api-server/` — Express API server (MLB at `/api/*`, NPB at `/api/npb/*`); `artifacts/mockup-sandbox/` — React frontend (MLB/NPB toggle on both screens).
+- `.ai/` — the Astra audit loop that gates every PR (policy in `ASTRA_REVIEW_POLICY.md`, GitHub setup and how the pieces fit in `ASTRA_LOOP_SETUP.md`).
 
 ## Architecture decisions
 

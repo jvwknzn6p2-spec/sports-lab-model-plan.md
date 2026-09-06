@@ -168,6 +168,11 @@ export interface CalibrationState {
   totalFarTailShrink: number;
   gamesSettled: number;
   brierSum: number;
+  /**
+   * Learning paused: `settle` keeps this state as is and writes what learning
+   * would have produced to calibration-shadow.json (PR #33, judgment 3).
+   */
+  frozen?: { since: string; reason: string };
   updatedAt: string | null;
 }
 
@@ -271,6 +276,7 @@ export function normalizeCalibration(
     gamesSettled: raw.gamesSettled ?? 0,
     brierSum: raw.brierSum ?? 0,
     updatedAt: raw.updatedAt ?? null,
+    ...(raw.frozen ? { frozen: raw.frozen } : {}),
   };
 }
 
@@ -362,6 +368,24 @@ export interface GamePrediction {
   predictedLoser: string | null;
   winProbability: number; // calibrated, for the predicted winner
   rawWinProbability: number;
+  /**
+   * The same two probabilities stated for the HOME side, so an evaluator can
+   * score every game (PASS included) on one fixed axis without inferring
+   * which side `winProbability` refers to. Optional because locks written
+   * before this field existed lack it — the exporter then falls back to
+   * `predictedWinner` / expected runs and records that basis.
+   */
+  homeWinProbability?: number;
+  rawHomeWinProbability?: number;
+  /**
+   * ISO instant at which this pick was computed (stamped by the predict
+   * command; a carried-through pick keeps its original stamp). This is the
+   * `prediction_timestamp` the evaluation export uses for its leakage check.
+   * Optional because locks written before this field existed lack it.
+   */
+  predictedAt?: string;
+  /** sha256 of the slate file this pick was computed from (see predictedAt). */
+  inputSha256?: string;
   confidence: Confidence;
   handicap: {
     input: HandicapInput | null;
@@ -940,6 +964,8 @@ export function decide(
     predictedLoser: pass ? null : loser,
     winProbability: round3(pWinner),
     rawWinProbability: round3(homeFavored ? sim.pHomeWin : sim.pAwayWin),
+    homeWinProbability: round3(pHomeCal),
+    rawHomeWinProbability: round3(sim.pHomeWin),
     confidence: confidenceCapped,
     handicap: {
       input: handicap,

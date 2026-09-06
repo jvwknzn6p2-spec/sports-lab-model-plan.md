@@ -1,0 +1,66 @@
+{
+  "date": "2026-08-23",
+  "rule": "NPB_REGULATION_9/v1",
+  "importedAt": "2026-09-06T17:47:20.692Z",
+  "provenance": {
+    "kind": "vorte-ev-archive",
+    "commit": "d06d6d42706694ec2397203cd0e8e4e9e16fb521",
+    "note": "game_regulation_scores.ndjson joined to games/teams on (game_date, home team name); each row keeps npb.jp score-page url and observed_at"
+  },
+  "games": {
+    "92026082301": {
+      "homeScore": 2,
+      "awayScore": 3,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0823/g-c-17/",
+      "observedAt": "2026-08-23T08:38:00.082359+00:00"
+    },
+    "92026082303": {
+      "homeScore": 3,
+      "awayScore": 5,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0823/db-t-18/",
+      "observedAt": "2026-08-23T12:53:00.129328+00:00"
+    },
+    "92026082306": {
+      "homeScore": 3,
+      "awayScore": 2,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0823/d-s-19/",
+      "observedAt": "2026-08-23T08:08:00.102658+00:00"
+    },
+    "92026082312": {
+      "homeScore": 1,
+      "awayScore": 1,
+      "regulationInnings": 9,
+      "inningsPlayed": 11,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0823/e-l-19/",
+      "observedAt": "2026-08-23T11:23:00.510648+00:00"
+    },
+    "92026082309": {
+      "homeScore": 3,
+      "awayScore": 2,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0823/m-f-18/",
+      "observedAt": "2026-08-23T11:38:00.07599+00:00"
+    },
+    "92026082307": {
+      "homeScore": 0,
+      "awayScore": 3,
+      "regulationInnings": 9,
+      "inningsPlayed": 9,
+      "source": "npb.jp score page",
+      "url": "https://npb.jp/scores/2026/0823/h-b-17/",
+      "observedAt": "2026-08-23T07:08:00.093952+00:00"
+    }
+  }
+}

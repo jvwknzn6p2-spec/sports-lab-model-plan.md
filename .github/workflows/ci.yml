@@ -39,10 +39,11 @@ jobs:
       # The tests are the spec, so they get type-checked too — tsx strips
       # types without checking them, and a type error confined to a test can
       # silently stop it asserting what it appears to assert.
+      # Both scripts fan out to every package that defines them (root
+      # package.json), so a new package's suite joins CI by declaring a `test`
+      # script — and the Astra audit runs the very same list.
       - name: Typecheck tests
-        working-directory: lib/sports-data
         run: pnpm run typecheck:test
 
       - name: Test
-        working-directory: lib/sports-data
         run: pnpm test
