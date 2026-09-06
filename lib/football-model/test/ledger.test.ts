@@ -1,18 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { Ledger, cutoffOf } from "../src/ledger.ts";
+import { readFileSync } from "node:fs";
+import { cutoffOf } from "../src/ledger.ts";
 import { parseOddsEvents, type OddsEvent } from "../src/oddsApi.ts";
 import { parseFootballDataRaw } from "../src/footballDataRaw.ts";
 import { buildTeamResolver } from "../src/teamAliases.ts";
 
 const fx = (name: string) => readFileSync(new URL(`../fixtures/${name}`, import.meta.url), "utf8");
 
-function fresh(): Ledger {
-  return new Ledger(mkdtempSync(join(tmpdir(), "ledger-")));
-}
+import { fresh } from "./helpers.ts";
 
 const j1 = () => {
   const names = new Set<string>();

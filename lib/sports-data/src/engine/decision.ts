@@ -371,6 +371,13 @@ export interface GamePrediction {
    */
   homeWinProbability?: number;
   rawHomeWinProbability?: number;
+  /**
+   * ISO instant at which this pick was computed (stamped by the predict
+   * command; a carried-through pick keeps its original stamp). This is the
+   * `prediction_timestamp` the evaluation export uses for its leakage check.
+   * Optional because locks written before this field existed lack it.
+   */
+  predictedAt?: string;
   confidence: Confidence;
   handicap: {
     input: HandicapInput | null;

@@ -678,6 +678,11 @@ async function cmdPredict(args: {
     const gameLocked = now.getTime() >= deadline.getTime();
     p.lockDeadline = deadline.toISOString();
     p.final = gameLocked;
+    // The instant THIS pick was computed. A pick carried through by a later
+    // run keeps its original stamp (the `{ ...p, final: true }` spread above),
+    // so the lock records when each bet was actually made — not when the
+    // file was last rewritten.
+    p.predictedAt = now.toISOString();
     if (gameLocked) {
       // Produced after this game's cut-off — recorded as such rather than
       // passed off as a pick that was made in time.
