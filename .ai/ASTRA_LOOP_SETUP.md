@@ -13,13 +13,18 @@ Claude Code ──► PR (feature branch, never main)
    .github/workflows/ai-development-loop.yml   (read-only job)
      1. scripts/export_evaluation.py  → data/evaluation/predictions_eval.csv (+ manifest)
      2. scripts/evaluate_model.py     → reports/latest_evaluation.json
-     3. the same suite list as ci.yml (`pnpm run typecheck`, `pnpm run typecheck:test`,
+     3. `handiedge replay` on the PR head AND on the base SHA (git worktree) over the
+        same committed MLB slates → sealed outputs → head-vs-base export → evaluation
+        with a date-block bootstrap (the PR's own performance evidence; policy A.4)
+     4. the same suite list as ci.yml (`pnpm run typecheck`, `pnpm run typecheck:test`,
         `pnpm test` — root package.json fans them out to every package) + pytest,
         each recorded rather than failing fast, so Astra gets the whole log
-     4. GPT-6 Astra reads policy + tests + evidence + diff → DECISION: PASS | FIX_REQUIRED | REJECT
-     5. audit posted as a PR comment (and in the run summary)
-     6. FIX_REQUIRED + AUTO_CLAUDE_FIX=true → "@claude …" comment (round N of 3)
-     7. Enforce gate: tests PASS ∧ evaluator exit 0 ∧ Astra PASS, else the check is red
+     5. GPT-6 Astra reads policy + tests + both evaluations + diff → DECISION: PASS | FIX_REQUIRED | REJECT
+     6. audit posted as a PR comment (and in the run summary)
+     7. FIX_REQUIRED + AUTO_CLAUDE_FIX=true → "@claude …" comment (round N of 3)
+     8. Enforce gate: tests PASS ∧ record evaluation valid ∧ PR replay evaluation exit 0
+        ∧ Astra PASS, else the check is red. A PR whose base has no `replay` command
+        (the first one) cannot pass this gate: that is fail-closed, not a bug
                  │
                  ▼
    .github/workflows/claude.yml   (only on @claude by owner/member/collaborator)
@@ -82,6 +87,11 @@ pip install -r requirements-dev.txt            # pytest (the scripts themselves 
 python3 scripts/export_evaluation.py           # → data/evaluation/predictions_eval.csv, reports/evaluation_export.json
 python3 scripts/evaluate_model.py              # → reports/latest_evaluation.json (exit 0 PASS / 2 invalid / 3 regression)
 python3 -m pytest -q tests                     # evaluator + exporter tests (synthetic + real-data smoke)
+(cd lib/sports-data && pnpm exec tsx src/cli/handiedge.ts replay --out /tmp/replay-head)          # judgment 2: candidate side
+python3 scripts/export_evaluation.py --sports mlb --candidate-mlb-dir /tmp/replay-head             # replay vs production lock
+(cd lib/sports-data && pnpm exec tsx src/cli/handiedge.ts reevaluate --league npb --rule NPB_REGULATION_9)  # judgment 1
+python3 scripts/export_evaluation.py --sports npb --npb-rule NPB_REGULATION_9                      # NPB rows on the regulation basis
+python3 scripts/calibration_power.py                                                               # judgment 3: sample-size design
 pnpm run typecheck && pnpm run typecheck:test && pnpm test   # the node suites, same list as CI
 ```
 

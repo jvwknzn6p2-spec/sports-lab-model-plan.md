@@ -148,49 +148,112 @@ excluded and counted, never guessed.
   deadline discipline itself is graded by the standing audit
   (`handiedge audit`), not by the evaluator.
 
-### A.3 Settlement rules as implemented today (read before judging §2)
-- **MLB** — `results/<date>.json` stores the MLB Stats API final score of a
-  `Final` game, extra innings included. The engine settles on that score.
-  A level final score (feed glitch, suspended game) settles as a **push**
-  rather than being invented into a win. ✅ matches §2.
-- **NPB** — `fetchNpbResults` reads the score posted on npb.jp's month
-  schedule page. That is the **final posted score** (NPB plays up to the 12th
-  inning; a tie after 12 is a real result and settles as a **push**). The
-  regulation-9 basis required by §2 is **not what this repository's ledger
-  records today**; no `regulation score` source exists in this repository
-  (the sister project VORTE EV derives it from npb.jp linescores). Astra must
-  treat the current NPB basis as *the documented status quo*: a PR that
-  silently changes it in either direction is a §2 violation, and a PR that
-  moves NPB to regulation-9 must say so explicitly, add the data source, keep
-  the old evaluations untouched (append-only), and be reviewed as a
-  settlement change. The exporter stamps every NPB row with
-  `settlement_rule=NPB_FINAL_POSTED_SCORE_TIE_PUSH` so the basis is visible in
-  the evidence.
-- **Soccer** — results come from football-data.co.uk `FTHG`/`FTAG` (full time
-  = 90 minutes + stoppage; extra time and penalties are not in those columns).
-  A draw is a real outcome, stays in the denominator, and is scored (3-way
-  RPS in the ledger; the binary export projects "home win" and keeps
-  `p_draw`/`p_away`/`result_3way` columns alongside). ✅ matches §2.
+### A.3 Settlement rules: versioned, and the NPB basis (judgment 1)
+Rules are objects in `lib/sports-data/src/engine/settlement-rules.ts`
+(`id/vN`, basis, PUSH-on-tie, status, applies-from date, edge-case notes).
+Every export row carries the tag of the rule that scored it; two tags are
+never mixed in one comparison.
 
-### A.4 Candidate vs baseline in `predictions_eval.csv`
-- Default export (no replay available): `candidate_prob` = the **calibrated**
-  home-win probability that was locked; `baseline_prob` = the **raw
-  (uncalibrated)** simulator probability from the same lock. This measures the
-  production record and the value of the calibration layer. It does **not**
-  measure the code in the PR unless the PR changes what gets locked.
-- To evaluate a code change on the same games, replay the engine
-  (`handiedge backtest`, or any run that writes lock-shaped files) into a
-  directory and pass `--candidate-mlb-dir` / `--candidate-npb-dir` to the
-  exporter: the replay becomes `candidate_prob` and the stored production lock
-  becomes `baseline_prob`, joined on `gamePk`. Astra must check that the
-  replay was point-in-time (no look-ahead) before trusting such a comparison.
-- Soccer: `candidate_prob` = ledger `pHome` (Dixon-Coles), `baseline_prob` =
-  the normalised market home probability captured at issue time
-  (`market[0]`), when present.
+| rule | status | basis |
+|---|---|---|
+| `MLB_FINAL_SCORE/v1` | production | MLB Stats API final of a `Final` game, extras included ✅ §2 |
+| `NPB_FINAL_POSTED_SCORE/v1` | production (what `history.jsonl` holds) | npb.jp month-page final (up to the 12th); tie = PUSH |
+| `NPB_REGULATION_9/v1` | re-evaluation (applies from 2026-08-22) | score at the end of the 9th from the score page's inning line; the handicap market's basis ✅ §2 |
+| `SOCCER_FULL_TIME_90/v1` | production | football-data.co.uk FTHG/FTAG (90' + stoppage) ✅ §2 |
 
-### A.5 Sample sizes (honesty note)
+How the NPB regulation-9 basis is realised without touching the ledger:
+- **Store**: `data-npb/regulation-scores/<date>.json` — one file per slate
+  date, one entry per game: end-of-9th score, innings played, source URL
+  (npb.jp score page), `observedAt`, and the import provenance. Files are
+  append-only: an import verifies an existing date is identical and refuses
+  to rewrite it. Current source: the VORTE EV archive
+  (`game_regulation_scores`, derived by its parser from npb.jp score pages
+  with a self-check that games ending in ≤ 9 innings equal their final);
+  joined on (date, home team name). A direct npb.jp fetch is a later change.
+- **Re-evaluation stream**: `handiedge reevaluate --league npb --rule
+  NPB_REGULATION_9` appends to `data-npb/reevaluations.jsonl` one record per
+  pick: prediction id, rule id+version, original rule, the ORIGINAL settled
+  game verbatim, the re-settled game, the result data with provenance
+  (`observedAt`, URL, import commit), the evaluator code version, reason,
+  evidence, what changed, and an idempotency key. `history.jsonl` and
+  `calibration.json` are never modified. A game without a regulation score
+  is listed as *unevaluated* — never filled from the posted final.
+- **No double counting**: `report`/`audit`/calibration read `history.jsonl`
+  only; the re-evaluation report (`reports/reevaluation-NPB_REGULATION_9.md`)
+  reads `reevaluations.jsonl` only and shows original vs re-evaluated side by
+  side. Any aggregate must name which stream it read.
+- **Edge cases** (rule notes; UNKNOWN items are marked as such): bottom of
+  the 9th not played → final = regulation; sayonara in the 9th → counted;
+  called game before the 9th → score at the call, `inningsPlayed < 9`; extra
+  innings → first 9 only, a level score after 9 is a PUSH; cancelled games
+  have no score under any rule. Whether every book reads called/shortened
+  games exactly this way is UNKNOWN; the Founder-confirmed market rule is
+  "decided at the end of the 9th".
+- **Promotion to production** (switching `handiedge settle` for NPB to the
+  regulation rule) is a separate, explicit change: it adds a fetch from
+  npb.jp, keeps `NPB_FINAL_POSTED_SCORE/v1` history intact, and starts a new
+  rule version in `history.jsonl` rows from its applies-from date.
+
+**What "win probability" means and how PUSH is scored.** `candidate_prob`
+is the model's probability that the HOME team is the *decided* winner under
+the row's settlement rule (the simulator produces no ties; for NPB under the
+regulation rule it is therefore conditional on the 9-inning score not being
+level). A PUSH row (level score under the rule) is excluded from Brier/log
+loss and counted; the scored probability is thus a conditional one, and the
+push rate is reported next to it, never folded into the binary metrics. The
+handicap *cover* probability is a different quantity and is not exported.
+
+### A.4 Candidate vs baseline (judgment 2)
+- **Operating record (monitor)**: `candidate_prob` = the locked *calibrated*
+  home-win probability, `baseline_prob` = the locked *raw* one. Measures the
+  production record and the calibration layer, not the diff. In CI only its
+  validity gates.
+- **PR evaluation (the diff's evidence)**: `handiedge replay` recomputes
+  every committed MLB lock from its committed slate with the checked-out
+  code, using the lock's own calibration state and handicap lines and the
+  production seeds, and seals the output (`source: "replay"`, `codeVersion`,
+  slate sha256, predictions sha256, `sealedAt`, no `predictedAt`). CI runs it
+  on the PR head and, in a worktree, on the base SHA against the *same* data
+  files, verifies both manifests (code version = expected SHA, per-file
+  hashes), exports head as candidate and base as baseline on the common
+  rows, and evaluates with a date-block bootstrap. Rows missing on either
+  side are excluded and counted (`excluded_no_candidate_replay`,
+  `excluded_no_baseline_replay`). The exporter refuses a directory whose
+  files are not replay outputs, so a stale production lock can never pose as
+  a candidate.
+- **As-of guarantees of a replay row**: inputs are the committed slate
+  (`prediction_timestamp` = the slate's `fetchedAt`, the latest instant any
+  input could have been observed; rows whose slate fetch is not before first
+  pitch are excluded); calibration is the lock's state, cross-checked
+  against a recomputation from history rows strictly before the date
+  (`calibration_asof`; mismatches excluded); new locks stamp `inputSha256`
+  so the replay can report whether the committed slate is provably the input
+  a frozen pick saw (`input_snapshot_matched`).
+- **What a replay does not prove**: that the production pick was made in
+  time (that is `predictedAt`'s job), or that the slate itself contained
+  nothing post-deadline (the slate is a snapshot taken when `fetch-slate`
+  ran; a late refresh is bounded by its `fetchedAt`, not excused).
+- **Not connected**: NPB (replay command works, not wired in CI) and soccer
+  (no replay; its ledger predictions are immutable at issue time).
+- Soccer operating record: `candidate_prob` = ledger `pHome`,
+  `baseline_prob` = normalised market home probability at issue time.
+
+### A.5 Sample sizes and what the gate's 200 means
 The official record started 2026-07-28 (MLB), 2026-08-22 (NPB) and
-2026-09-03 (soccer). Segment-level comparisons will be *descriptive only*
-until the gate's minimum sample (`--min-gate-samples`, default 200) is met;
-the evaluator says so in `gate.reasons`. A PASS on a descriptive-only cohort
-is a PASS on evidence quality, not on model quality.
+2026-09-03 (soccer). The gate's minimum (`--min-gate-samples`, default 200)
+is a *promotion limit*, not a sufficiency claim: below it a regression cannot
+block on statistics (data-quality violations and leaks still do); at or above
+it the block bootstrap by date (`--cluster-by event_date`) gates, and passing
+it is not an automatic approval. Per-sport segments are always reported so
+an all-sport total cannot hide one sport's deterioration; NPB and soccer
+performance claims are not made at their current sizes. Sample-size design
+from the measured paired-loss variance is in `.ai/CALIBRATION_EVAL_PLAN.md`
+(`scripts/calibration_power.py`).
+
+### A.6 Calibration layer (judgment 3)
+Learning is **paused** (`calibration.json` → `frozen`, both leagues):
+`settle` keeps the active parameters and writes what learning would have
+produced to `calibration-shadow.json`; raw and calibrated probabilities are
+recorded on every pick. The pre-registered decision plan, metrics, MDE,
+looks and the verification of past as-of behaviour are in
+`.ai/CALIBRATION_EVAL_PLAN.md`.
