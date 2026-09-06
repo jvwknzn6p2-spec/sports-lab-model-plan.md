@@ -362,6 +362,15 @@ export interface GamePrediction {
   predictedLoser: string | null;
   winProbability: number; // calibrated, for the predicted winner
   rawWinProbability: number;
+  /**
+   * The same two probabilities stated for the HOME side, so an evaluator can
+   * score every game (PASS included) on one fixed axis without inferring
+   * which side `winProbability` refers to. Optional because locks written
+   * before this field existed lack it — the exporter then falls back to
+   * `predictedWinner` / expected runs and records that basis.
+   */
+  homeWinProbability?: number;
+  rawHomeWinProbability?: number;
   confidence: Confidence;
   handicap: {
     input: HandicapInput | null;
@@ -940,6 +949,8 @@ export function decide(
     predictedLoser: pass ? null : loser,
     winProbability: round3(pWinner),
     rawWinProbability: round3(homeFavored ? sim.pHomeWin : sim.pAwayWin),
+    homeWinProbability: round3(pHomeCal),
+    rawHomeWinProbability: round3(sim.pHomeWin),
     confidence: confidenceCapped,
     handicap: {
       input: handicap,
