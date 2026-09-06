@@ -26,10 +26,11 @@ test("every rule carries id, version, basis, PUSH-on-tie and a league; productio
     assert.ok(r.notes.length >= 1);
   }
   assert.equal(productionRule("mlb").id, "MLB_FINAL_SCORE");
-  // NPB production is the posted final — the policy's regulation-9 basis is a
-  // re-evaluation rule until it is promoted by an explicit, reviewed change.
-  assert.equal(productionRule("npb").id, "NPB_FINAL_POSTED_SCORE");
-  assert.equal(ruleById("NPB_REGULATION_9").status, "reevaluation");
+  // NPB: the posted final is the basis of every history row before the
+  // production cutover; from the cutover the regulation-9 rule settles.
+  assert.equal(productionRule("npb", "2026-09-02").id, "NPB_FINAL_POSTED_SCORE");
+  assert.equal(productionRule("npb").id, "NPB_REGULATION_9");
+  assert.equal(ruleById("NPB_REGULATION_9").status, "production");
   assert.throws(() => ruleById("NPB_SOMETHING_ELSE"));
 });
 
@@ -54,7 +55,7 @@ test("re-evaluation keeps the original, scores the regulation score, and flags w
   });
   const out = reevaluateDate({
     league: "npb", date: "2024-07-25", predictions: [pred], calibration: DEFAULT_CALIBRATION, regulation: reg,
-    original, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb"), codeVersion: "abc", now: NOW, reason: "test",
+    original, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb", "2024-07-25"), codeVersion: "abc", now: NOW, reason: "test",
   });
   assert.equal(out.unevaluated.length, 0);
   assert.equal(out.records.length, 1);
@@ -73,7 +74,7 @@ test("re-evaluation keeps the original, scores the regulation score, and flags w
   const again = reevaluateDate({ ...{
     league: "npb" as const, date: "2024-07-25", predictions: [pred], calibration: DEFAULT_CALIBRATION,
     regulation: regulation({ [pk]: { ...reg.games[pk]!, observedAt: "2026-08-12T00:00:00Z" } }),
-    original, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb"), codeVersion: "abc", now: NOW, reason: "test",
+    original, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb", "2024-07-25"), codeVersion: "abc", now: NOW, reason: "test",
   } });
   assert.equal(newRecords(out.records, again.records).length, 1);
   const s = summarizeReevaluations(out.records);
@@ -85,14 +86,14 @@ test("a game without a regulation score is unevaluated — never filled from the
   const pred = await demoPrediction();
   const out = reevaluateDate({
     league: "npb", date: "2024-07-25", predictions: [pred], calibration: DEFAULT_CALIBRATION, regulation: regulation({}),
-    original: null, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb"), codeVersion: "abc", now: NOW, reason: "test",
+    original: null, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb", "2024-07-25"), codeVersion: "abc", now: NOW, reason: "test",
   });
   assert.equal(out.records.length, 0);
   assert.equal(out.unevaluated.length, 1);
   assert.match(out.unevaluated[0]!.reason, /no regulation score/);
   const none = reevaluateDate({
     league: "npb", date: "2024-07-25", predictions: [pred], calibration: DEFAULT_CALIBRATION, regulation: null,
-    original: null, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb"), codeVersion: "abc", now: NOW, reason: "test",
+    original: null, rule: ruleById("NPB_REGULATION_9"), originalRule: productionRule("npb", "2024-07-25"), codeVersion: "abc", now: NOW, reason: "test",
   });
   assert.match(none.unevaluated[0]!.reason, /no regulation-score file/);
 });

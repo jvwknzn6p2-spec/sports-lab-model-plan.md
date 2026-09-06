@@ -70,7 +70,10 @@ jobs:
             exit 0
           fi
           if [ -f "$RESULTS" ]; then
-            PENDING=$(node -e "console.log((JSON.parse(require('fs').readFileSync('$RESULTS','utf8')).pending||[]).length)")
+            # From NPB_PRODUCTION_CUTOVER the settlement basis is the end-of-9th
+            # score (regulation-scores/), so a game whose final is known but whose
+            # regulation score is not yet stored is still pending.
+            PENDING=$(node -e "const r=JSON.parse(require('fs').readFileSync('$RESULTS','utf8'));console.log((r.pending||[]).length+(r.regulationPending||[]).length)")
             if [ "$PENDING" -eq 0 ]; then
               echo "$DATE is already fully settled."
               echo "run=false" >> "$GITHUB_OUTPUT"

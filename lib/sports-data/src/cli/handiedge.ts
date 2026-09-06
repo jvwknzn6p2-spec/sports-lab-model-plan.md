@@ -74,7 +74,9 @@ import {
   type RegulationScoreFile,
 } from "../engine/reevaluate";
 import { replayLock, sha256, type ReplayOutput } from "../engine/replay";
-import { productionRule, ruleById, ruleTag } from "../engine/settlement-rules";
+import { NPB_PRODUCTION_CUTOVER, productionRule, ruleById, ruleTag } from "../engine/settlement-rules";
+import { fetchNpbRegulationScores } from "../npb/regulation";
+import { fetchNpbPage } from "../npb/slate";
 import {
   walkForward,
   type BacktestDay,
@@ -844,19 +846,41 @@ async function cmdFetchResultsNpb(
     );
   }
 
+  // The observed final score is always kept as observed. From the cutover
+  // date the SETTLEMENT reads the end-of-9th score instead, so those games
+  // are settled only once their regulation score is stored (fail-closed).
+  const regulation = productionRule("npb", date).id === "NPB_REGULATION_9";
+  let settleResults = report.results;
+  let regulationPending: string[] = [];
+  if (regulation) {
+    const lockPath = join(PRED_DIR, `${date}.json`);
+    const lock = existsSync(lockPath) ? await readJson<PredictionLock>(lockPath) : null;
+    const reg = await storeRegulationScores(date, lock?.predictions ?? []);
+    settleResults = Object.fromEntries(
+      Object.entries(reg.games).map(([pk, g]) => [pk, { homeScore: g.homeScore, awayScore: g.awayScore }]),
+    );
+    regulationPending = reg.pending;
+    console.log(`  Settlement basis ${ruleTag(productionRule("npb", date))}: ${Object.keys(settleResults).length} game(s) with a regulation score, ${regulationPending.length} pending`);
+  }
+
   const payload = {
     date,
     fetchedAt: new Date().toISOString(),
     results: report.results,
     pending: report.pending,
     cancelled: report.cancelled,
+    ...(regulation ? { settlementRule: ruleTag(productionRule("npb", date)), regulationPending } : {}),
   };
   await saveJson(outPath, payload);
   console.log(`  Results written → ${outPath}`);
 
   if (args.settle) {
     console.log("");
-    await runSettle(payload);
+    if (regulation && Object.keys(settleResults).length === 0) {
+      console.log(`No regulation scores for ${date} yet (${regulationPending.length} pending) — nothing settled; the next poll will pick them up.`);
+      return;
+    }
+    await runSettle({ date, results: settleResults });
   } else {
     console.log("");
     console.log(`Next: pnpm run handiedge settle --results ${outPath}`);
@@ -996,8 +1020,10 @@ async function runSettle(payload: {
   // two can be compared later without either having steered the picks.
   const frozen = calibration.frozen;
   const { frozen: _drop, ...shadow } = relearned;
+  const league: "mlb" | "npb" = LEAGUE.dataDirName === "data-npb" ? "npb" : "mlb";
   const report = {
     ...scored,
+    settlementRule: ruleTag(productionRule(league, payload.date)),
     calibrationBefore: calibration,
     calibrationAfter: frozen ? calibration : relearned,
     ...(frozen ? { calibrationShadowAfter: shadow } : {}),
@@ -1225,7 +1251,7 @@ async function cmdReport(): Promise<void> {
     );
     return;
   }
-  const s = aggregateHistory(await loadHistory());
+  const s = aggregateHistory(await loadHistory(), LEAGUE.dataDirName === "data-npb" ? "npb" : "mlb");
   const calibration = await loadCalibration();
   const summaryPath = join(REPORTS_DIR, "summary.md");
   await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration));
@@ -1780,6 +1806,59 @@ async function cmdImportRegulationScores(args: {
 }
 
 /**
+ * Fetch end-of-9th scores from npb.jp for the lock's games and merge them
+ * into data-npb/regulation-scores/<date>.json. Append-only: a game already
+ * stored is verified identical, never rewritten; new games are added.
+ */
+async function storeRegulationScores(
+  date: string,
+  predictions: GamePrediction[],
+): Promise<{ games: RegulationScoreFile["games"]; pending: string[]; added: number }> {
+  const path = join(REGULATION_DIR, `${date}.json`);
+  const existing = existsSync(path) ? await readJson<RegulationScoreFile>(path) : null;
+  const rule = ruleById("NPB_REGULATION_9");
+  const todo = predictions.filter((p) => !existing?.games[String(p.gamePk)]);
+  const fetched = todo.length === 0
+    ? { scores: {}, pending: [] }
+    : await fetchNpbRegulationScores({
+        date,
+        games: todo.map((p) => ({ gamePk: p.gamePk, home: p.home, away: p.away })),
+        fetchPage: (url) => fetchNpbPage(url),
+      });
+  const games: RegulationScoreFile["games"] = { ...(existing?.games ?? {}) };
+  for (const [pk, s] of Object.entries(fetched.scores)) {
+    games[pk] = {
+      homeScore: s.homeScore, awayScore: s.awayScore, regulationInnings: s.regulationInnings,
+      inningsPlayed: s.inningsPlayed, source: s.source, url: s.url, observedAt: s.observedAt,
+    };
+    console.log(`  ${pk}: regulation ${s.awayScore}-${s.homeScore} after ${s.inningsPlayed} inn (final ${s.finalAway}-${s.finalHome}) ← ${s.url}`);
+  }
+  for (const p of fetched.pending) console.log(`  ${p.gamePk} ${p.matchup}: regulation score PENDING — ${p.reason}`);
+  const added = Object.keys(fetched.scores).length;
+  if (added > 0 || !existing) {
+    const file: RegulationScoreFile = {
+      date,
+      rule: ruleTag(rule),
+      importedAt: existing?.importedAt ?? new Date().toISOString(),
+      provenance: existing?.provenance ?? { kind: "npb.jp", commit: "", note: "fetched by handiedge fetch-results/fetch-regulation-scores from npb.jp game pages (inning line, ≤9-inning self-check)" },
+      games,
+    };
+    await saveJson(path, file);
+  }
+  return { games, pending: fetched.pending.map((p) => p.matchup), added };
+}
+
+async function cmdFetchRegulationScores(args: { date?: string }): Promise<void> {
+  if (LEAGUE.dataDirName !== "data-npb") throw new Error("fetch-regulation-scores is NPB only (--league npb)");
+  const date = args.date ?? new Date().toISOString().slice(0, 10);
+  const lockPath = join(PRED_DIR, `${date}.json`);
+  if (!existsSync(lockPath)) throw new Error(`No NPB prediction lock for ${date} (${lockPath}); nothing to look up.`);
+  const lock = await readJson<PredictionLock>(lockPath);
+  const out = await storeRegulationScores(date, lock.predictions);
+  console.log(`Regulation scores for ${date}: ${Object.keys(out.games).length} stored (${out.added} new), ${out.pending.length} pending.`);
+}
+
+/**
  * Re-evaluate every locked pick under another settlement rule and APPEND the
  * records to reevaluations.jsonl. history.jsonl and calibration.json are not
  * touched; the report shows original vs re-evaluated side by side.
@@ -1790,7 +1869,7 @@ async function cmdReevaluate(args: { rule?: string }): Promise<void> {
   const league: "mlb" | "npb" = LEAGUE.dataDirName === "data-npb" ? "npb" : "mlb";
   if (rule.league !== league) throw new Error(`${rule.id} is a ${rule.league} rule; run with --league ${rule.league}`);
   if (rule.status === "production") throw new Error(`${rule.id} is the production rule; reevaluate is for other rules`);
-  const originalRule = productionRule(league);
+  const originalRule = productionRule(league, rule.appliesFrom ?? undefined);
   const history = new Map((await loadHistory()).map((r) => [r.date, r]));
   const existing = await loadReevaluations();
   const version = codeVersion();
@@ -1800,12 +1879,14 @@ async function cmdReevaluate(args: { rule?: string }): Promise<void> {
   for (const f of (await import("node:fs")).readdirSync(PRED_DIR).filter((x) => x.endsWith(".json")).sort()) {
     const date = f.slice(0, -5);
     if (rule.appliesFrom && date < rule.appliesFrom) continue;
+    const dateRule = productionRule(league, date);
+    if (dateRule.id === rule.id) continue; // already settled under this rule in production — nothing to re-evaluate
     const lock = await readJson<PredictionLock>(join(PRED_DIR, f));
     const regPath = join(REGULATION_DIR, `${date}.json`);
     const regulation = existsSync(regPath) ? await readJson<RegulationScoreFile>(regPath) : null;
     const out = reevaluateDate({
       league, date, predictions: lock.predictions, calibration: lock.calibration, regulation,
-      original: history.get(date) ?? null, rule, originalRule, codeVersion: version, now,
+      original: history.get(date) ?? null, rule, originalRule: dateRule, codeVersion: version, now,
       reason: `${ruleTag(rule)} is the handicap market's basis; history.jsonl was scored under ${ruleTag(originalRule)}`,
     });
     for (const u of out.unevaluated) unevaluated.push({ date, matchup: u.matchup, reason: u.reason });
@@ -1934,6 +2015,7 @@ async function main(): Promise<void> {
   else if (cmd === "backtest") await cmdBacktest(values);
   else if (cmd === "import-regulation-scores") await cmdImportRegulationScores(values);
   else if (cmd === "reevaluate") await cmdReevaluate(values);
+  else if (cmd === "fetch-regulation-scores") await cmdFetchRegulationScores(values);
   else if (cmd === "replay") await cmdReplay(values);
   else {
     console.log("Usage:");
@@ -1954,6 +2036,7 @@ async function main(): Promise<void> {
     console.log("  handiedge audit");
     console.log("  handiedge replay        --out <dir> [--data-dir <league data dir>] [--from/--to] [--dispersion r] [--env-sd s]");
     console.log("  handiedge reevaluate    --rule NPB_REGULATION_9   (--league npb; appends reevaluations.jsonl)");
+    console.log(`  handiedge fetch-regulation-scores [--date YYYY-MM-DD]   (--league npb; end-of-9th scores from npb.jp; production basis from ${NPB_PRODUCTION_CUTOVER})`);
     console.log("  handiedge import-regulation-scores --from <vorte archive dir> --provenance-commit <sha>   (--league npb)");
     console.log(
       "  handiedge backtest      --from YYYY-MM-DD --to YYYY-MM-DD [--season YYYY] [--sims N] [--dispersion R] [--env-sd S]",
