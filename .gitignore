@@ -58,3 +58,12 @@ lib/sports-data/data/backtest-cache/
 
 # サッカー日次パイプラインの取得キャッシュ（football-daily.yml）。台帳は football/ledger に commit する
 football/cache/
+
+# Astra audit loop (.github/workflows/ai-development-loop.yml): the evaluation
+# export and its report are regenerated from the committed ledgers on every run
+# and uploaded as workflow artifacts — never committed (they would go stale the
+# next time a lock or result lands).
+/data/evaluation/
+/reports/
+__pycache__/
+.pytest_cache/

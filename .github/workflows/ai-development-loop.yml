@@ -1,0 +1,217 @@
+name: AI Sports Log — Astra Audit
+
+# The guarded development loop (.ai/ASTRA_REVIEW_POLICY.md):
+#
+#   Claude Code → PR → tests → real-data evaluation → GPT-6 Astra audit
+#   → optional Claude repair (max 3 rounds) → HUMAN-ONLY final merge
+#
+# Every gate here is read-only with respect to the repository: this workflow
+# never pushes, never merges, never touches secrets, never writes to the
+# ledgers. Its only writes are PR comments (the audit, and — only when the
+# repository variable AUTO_CLAUDE_FIX is "true" — an @claude repair request).
+#
+# Evidence handed to Astra is generated on the PR head from the COMMITTED
+# ledgers (scripts/export_evaluation.py → scripts/evaluate_model.py); nothing
+# is fabricated and nothing is fetched from the network for the evaluation.
+#
+# Required GitHub configuration: .ai/ASTRA_LOOP_SETUP.md
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: astra-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  PYTHON_VERSION: "3.12"
+  MAX_AI_REPAIR_ROUNDS: "3"
+
+jobs:
+  audit:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history: the exporter uses the last commit touching a lock
+          # file as a verifiable prediction-time bound for legacy locks, and
+          # the diff below is taken against the base branch.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest
+
+      # The repository's own suites are the spec (ci.yml runs the same
+      # typecheck + sports-data tests on every PR); the football-model suite
+      # and the Python evaluator/exporter tests are added here. The step never
+      # fails on its own — the outcome is recorded and enforced by the gate at
+      # the end, so Astra always receives the full test log.
+      - name: Run tests
+        id: tests
+        run: |
+          # The block runs in a pipeline (a subshell), so the verdict is passed
+          # out through a file — a plain variable would never leave the block.
+          verdict=$(mktemp); echo PASS > "$verdict"
+          {
+            echo "## pnpm run typecheck"
+            pnpm run typecheck || echo FAIL > "$verdict"
+            echo "## lib/sports-data typecheck:test + test"
+            (cd lib/sports-data && pnpm run typecheck:test && pnpm test) || echo FAIL > "$verdict"
+            echo "## lib/football-model typecheck:test + test"
+            (cd lib/football-model && pnpm run typecheck:test && pnpm test) || echo FAIL > "$verdict"
+            echo "## pytest (evaluator + exporter)"
+            python -m pytest -q tests || echo FAIL > "$verdict"
+          } 2>&1 | tee /tmp/pytest.txt
+          status=$(cat "$verdict")
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "Tests: $status"
+
+      # Real stored predictions/results → one CSV. Read-only over the
+      # committed ledgers (no network, no fabrication); the manifest lists
+      # every exclusion reason.
+      - name: Export evaluation data
+        id: export
+        continue-on-error: true
+        run: |
+          mkdir -p reports data/evaluation
+          python scripts/export_evaluation.py \
+            --output data/evaluation/predictions_eval.csv \
+            --manifest reports/evaluation_export.json 2>&1 | tee /tmp/export.txt
+
+      - name: Evaluate candidate
+        id: evaluation
+        continue-on-error: true
+        run: |
+          mkdir -p reports
+          set +e
+          python scripts/evaluate_model.py --input data/evaluation/predictions_eval.csv --output reports/latest_evaluation.json 2>&1 | tee /tmp/evaluation.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Upload evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: astra-evidence-${{ github.run_id }}
+          path: |
+            reports/
+            data/evaluation/
+            /tmp/pytest.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Prepare diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1 || true
+            git diff --no-color "origin/${{ github.base_ref }}...HEAD" | head -c 120000 > /tmp/pr.diff || true
+          else
+            git show --no-color --stat --patch HEAD | head -c 120000 > /tmp/pr.diff || true
+          fi
+
+      - name: Verify Astra API secret
+        id: openai
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then echo "configured=true" >> "$GITHUB_OUTPUT"; else echo "configured=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Astra audit
+        id: astra
+        if: steps.openai.outputs.configured == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # The evaluator always writes a report (NOT_RUN / INVALID / PASS /
+          # REGRESSION); a missing file means the evaluator itself crashed.
+          [ -f reports/latest_evaluation.json ] || echo '{"status":"EVALUATOR_CRASHED"}' > reports/latest_evaluation.json
+          [ -f reports/evaluation_export.json ] || echo '{"status":"EXPORT_NOT_RUN"}' > reports/evaluation_export.json
+          jq -n \
+            --rawfile policy .ai/ASTRA_REVIEW_POLICY.md \
+            --rawfile tests /tmp/pytest.txt \
+            --rawfile evaluation reports/latest_evaluation.json \
+            --rawfile manifest reports/evaluation_export.json \
+            --rawfile diff /tmp/pr.diff \
+            '{model:"gpt-6-astra", reasoning:{effort:"high"}, max_output_tokens:12000, input:("You are the Chief Model Auditor for AI Sports Log. Follow the policy exactly. Never invent evidence. A PASS is forbidden if tests failed, evaluation is invalid/regressed, leakage is credible, or settlement semantics are corrupted.\n\nREVIEW POLICY:\n"+$policy+"\n\nTEST RESULTS:\n"+$tests+"\n\nEVALUATION EXPORT MANIFEST (counts and exclusion reasons):\n"+$manifest+"\n\nEVALUATION REPORT:\n"+$evaluation+"\n\nPR DIFF:\n"+$diff+"\n\nReturn the policy-required format; first line must be DECISION: PASS, DECISION: FIX_REQUIRED, or DECISION: REJECT.")}' \
+            > /tmp/astra_request.json
+
+          code=$(curl -sS -o /tmp/astra_response.json -w "%{http_code}" https://api.openai.com/v1/responses \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/astra_request.json)
+          test "$code" -ge 200 -a "$code" -lt 300 || { cat /tmp/astra_response.json; exit 1; }
+
+          jq -r '[.output[]? | select(.type=="message") | .content[]? | select(.type=="output_text") | .text] | join("\n")' /tmp/astra_response.json > /tmp/astra_review.md
+          test -s /tmp/astra_review.md || { echo "No Astra output_text"; exit 1; }
+          head -n 1 /tmp/astra_review.md | sed 's/^DECISION: //' > /tmp/astra_decision.txt
+          decision=$(cat /tmp/astra_decision.txt)
+          case "$decision" in PASS|FIX_REQUIRED|REJECT) ;; *) echo "Invalid Astra decision: $decision"; exit 1;; esac
+          echo "decision=$decision" >> "$GITHUB_OUTPUT"
+          { echo "## GPT-6 Astra audit"; echo; cat /tmp/astra_review.md; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment audit on PR
+        if: github.event_name == 'pull_request' && steps.openai.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo '<!-- astra-audit -->'; echo '## GPT-6 Astra audit'; echo; cat /tmp/astra_review.md; echo; echo '---'; echo 'Tests: `${{ steps.tests.outputs.status }}`'; echo 'Evaluator exit: `${{ steps.evaluation.outputs.exit_code }}`'; } > /tmp/comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/comment.md
+
+      # A comment posted with GITHUB_TOKEN never triggers another workflow, so
+      # the @claude request must be posted with a token that does (repository
+      # secret AI_LOOP_PAT — see .ai/ASTRA_LOOP_SETUP.md). Without it the
+      # request is still recorded on the PR for a human to forward.
+      - name: Optional Claude repair request
+        if: github.event_name == 'pull_request' && steps.openai.outputs.configured == 'true' && steps.astra.outputs.decision == 'FIX_REQUIRED' && vars.AUTO_CLAUDE_FIX == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AI_LOOP_PAT || github.token }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          prior=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" --paginate --jq '[.[] | select(.body | contains("<!-- ai-loop-round:"))] | length' | awk '{s+=$1} END{print s+0}')
+          round=$((prior+1))
+          if [ "$round" -gt "$MAX_AI_REPAIR_ROUNDS" ]; then gh pr comment "$PR" --body "AI repair loop stopped after $MAX_AI_REPAIR_ROUNDS rounds. Founder review required."; exit 1; fi
+          { echo "<!-- ai-loop-round:$round -->"; echo '@claude Astra returned FIX_REQUIRED. Repair this PR without changing unrelated code. Add/update tests, preserve settlement rules, re-run evaluation, do not merge/force-push/delete data/modify secrets, and push to this same PR.'; echo; cat /tmp/astra_review.md; } > /tmp/claude_request.md
+          gh pr comment "$PR" --body-file /tmp/claude_request.md
+
+      - name: Enforce gate
+        env:
+          ASTRA_CONFIGURED: ${{ steps.openai.outputs.configured }}
+          ASTRA_DECISION: ${{ steps.astra.outputs.decision }}
+          TEST_STATUS: ${{ steps.tests.outputs.status }}
+          EVAL_EXIT: ${{ steps.evaluation.outputs.exit_code }}
+        run: |
+          test "$TEST_STATUS" = "PASS" || { echo "Tests not PASS"; exit 1; }
+          test "${EVAL_EXIT:-2}" = "0" || { echo "Evaluation gate failed"; exit 1; }
+          test "$ASTRA_CONFIGURED" = "true" || { echo "OPENAI_API_KEY missing"; exit 1; }
+          test "$ASTRA_DECISION" = "PASS" || { echo "Astra did not PASS"; exit 1; }
+          echo "All automated gates passed. Human merge approval remains required."
