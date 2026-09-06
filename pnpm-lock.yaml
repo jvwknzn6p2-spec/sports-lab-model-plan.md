@@ -442,6 +442,12 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
+  lib/football-model:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.4
+
   lib/sports-data:
     dependencies:
       '@anthropic-ai/sdk':
