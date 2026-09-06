@@ -53,6 +53,7 @@ test("frozen: calibration.json is untouched, the shadow records the would-be sta
   assert.equal(shadow.frozenSince, "2026-09-06T00:00:00Z");
   const [report] = readFileSync(join(dir, "history.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
   assert.equal(report.calibrationAfter.shrink, DEFAULT_CALIBRATION.shrink);
+  assert.equal(report.settlementRule, "MLB_FINAL_SCORE/v1"); // every new history row names its rule
   assert.ok(report.calibrationAfter.frozen);
   assert.equal(report.calibrationShadowAfter.gamesSettled, 1);
 });

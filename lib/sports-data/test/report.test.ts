@@ -356,3 +356,24 @@ test("a confidence band with money but no decided bet survives the breakdown", (
   const banded = s.byConfidence.reduce((acc, c) => acc + c.profit, 0);
   assert.equal(Math.round(banded * 1000) / 1000, s.handicapProfitTotal);
 });
+
+test("history is sliced by settlement rule; rows without a tag are the league's original basis", async () => {
+  const { slicesByRule } = await import("../src/engine/report");
+  const day = (date: string, settlementRule?: string) => ({
+    ...reportWith(date, []),
+    ...(settlementRule ? { settlementRule } : {}),
+    gamesSettled: 2,
+    winnerRecord: { wins: 1, losses: 1 },
+    handicapRecord: { wins: 1, losses: 0 },
+    handicapProfit: 0.9,
+  });
+  const slices = slicesByRule(
+    [day("2026-09-01"), day("2026-09-02"), day("2026-09-08", "NPB_REGULATION_9/v1"), day("2026-09-08", "NPB_REGULATION_9/v1")],
+    "npb",
+  );
+  assert.deepEqual(slices.map((s) => [s.rule, s.dates, s.gamesSettled, s.handicapProfitTotal]), [
+    ["NPB_FINAL_POSTED_SCORE/v1", 2, 4, 1.8],
+    ["NPB_REGULATION_9/v1", 1, 2, 0.9], // the re-settle of 09-08 supersedes, not adds
+  ]);
+  assert.equal(slicesByRule([day("2026-09-01")], "mlb")[0]!.rule, "MLB_FINAL_SCORE/v1");
+});

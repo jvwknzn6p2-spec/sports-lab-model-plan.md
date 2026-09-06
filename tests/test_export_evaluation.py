@@ -307,3 +307,30 @@ def test_real_repository_export_is_valid_for_the_evaluator(tmp_path: Path):
     assert rep["data_integrity"]["errors"] == []
     assert rep["data_integrity"]["naive_timestamp_fields"] == 0
     assert code in (0, 3)
+
+
+def test_npb_production_rule_follows_the_cutover_date(tmp_path: Path):
+    """Before NPB_PRODUCTION_CUTOVER the posted final scores rows; from it the regulation store does."""
+    root = fake_repo(tmp_path / "repo")
+    npb = root / "lib" / "sports-data" / "data-npb"
+    cut = ex.NPB_PRODUCTION_CUTOVER
+    write_json(npb / "predictions" / f"{cut}.json", {
+        "lockedAt": f"{cut}T02:30:00.000Z", "updatedAt": f"{cut}T08:00:00.000Z",
+        "predictions": [_pred(9202609080101, "読売ジャイアンツ", "広島東洋カープ", f"{cut}T09:00:00.000Z", 0.6, 0.6, "読売ジャイアンツ",
+                              lockDeadline=f"{cut}T08:27:00.000Z", predictedAt=f"{cut}T08:00:00.000Z")],
+    })
+    # Observed final 5-4 in the 10th; regulation 4-4 → PUSH under the production rule of that date.
+    write_json(npb / "results" / f"{cut}.json", {"date": cut, "fetchedAt": f"{cut}T23:00:00.000Z", "results": {"9202609080101": {"homeScore": 5, "awayScore": 4}}, "pending": [], "cancelled": []})
+    write_json(npb / "regulation-scores" / f"{cut}.json", {
+        "date": cut, "rule": "NPB_REGULATION_9/v1", "importedAt": f"{cut}T23:05:00.000Z",
+        "provenance": {"kind": "npb.jp", "commit": "", "note": ""},
+        "games": {"9202609080101": {"homeScore": 4, "awayScore": 4, "regulationInnings": 9, "inningsPlayed": 10, "source": "npb.jp score page", "url": "https://npb.jp/scores/x/", "observedAt": f"{cut}T23:05:00.000Z"}},
+    })
+    e, man = run_export(root, "--sports", "npb")
+    assert man["npb_rule"] == "production"
+    assert e["NPB:9202608220102"]["settlement_rule"] == "NPB_FINAL_POSTED_SCORE/v1"  # before the cutover
+    r = e["NPB:9202609080101"]
+    assert (r["settlement_rule"], r["settlement_result"]) == ("NPB_REGULATION_9/v1", "PUSH")
+    # Forcing the posted-final rule on every date scores the same game as a home WIN.
+    e2, _ = run_export(root, "--sports", "npb", "--npb-rule", "NPB_FINAL_POSTED_SCORE")
+    assert (e2["NPB:9202609080101"]["settlement_rule"], e2["NPB:9202609080101"]["settlement_result"]) == ("NPB_FINAL_POSTED_SCORE/v1", "WIN")
