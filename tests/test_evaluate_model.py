@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import evaluate_model as ev  # noqa: E402
 
 FIELDS = [
-    "event_id", "market_id", "sport", "league", "prediction_timestamp", "event_start_time",
+    "event_id", "market_id", "sport", "league", "prediction_timestamp", "event_start_time", "event_date",
     "candidate_prob", "baseline_prob", "actual_outcome", "settlement_result",
 ]
 
@@ -44,6 +44,7 @@ def evaluate(tmp_path: Path, rows: list[dict], *extra: str) -> tuple[int, dict]:
 
 
 def synthetic_rows(n: int, seed: int, candidate_noise: float, baseline_noise: float) -> list[dict]:
+    """Rows are dated in blocks of 15 (event_date) so block-bootstrap tests have clusters."""
     rng = random.Random(seed)
     rows = []
     for i in range(n):
@@ -54,6 +55,7 @@ def synthetic_rows(n: int, seed: int, candidate_noise: float, baseline_noise: fl
         rows.append({
             "event_id": f"E{i}", "market_id": "home", "sport": "baseball", "league": "MLB" if i % 2 else "NPB",
             "prediction_timestamp": "2026-08-01T10:00:00Z", "event_start_time": "2026-08-01T18:00:00Z",
+            "event_date": f"2026-08-{1 + i // 15:02d}",
             "candidate_prob": f"{c:.4f}", "baseline_prob": f"{b:.4f}", "actual_outcome": str(y),
         })
     return rows
@@ -165,3 +167,41 @@ def test_settlement_result_labels(tmp_path: Path, label: str, expected_accuracy:
     assert code == 0
     assert rep["counts"]["scored_rows"] == 1
     assert rep["overall"]["candidate"]["accuracy_0_5"] == expected_accuracy
+
+
+def test_block_bootstrap_by_date_gates_and_reports_clusters(tmp_path: Path):
+    rows = synthetic_rows(600, 12, candidate_noise=0.25, baseline_noise=0.01)
+    code, rep = evaluate(tmp_path, rows, "--min-gate-samples", "200", "--cluster-by", "event_date")
+    assert code == 3
+    block = rep["overall"]["comparison_block"]
+    assert block["cluster_by"] == "event_date"
+    assert block["brier"]["clusters"] == 40
+    assert block["brier"]["ci95_low"] > 0
+    assert "block bootstrap" in " ".join(rep["gate"]["reasons"])
+    # The row-wise comparison is still reported alongside.
+    assert "comparison" in rep["overall"]
+
+
+def test_diagnostics_reliability_bins_and_calibration_line(tmp_path: Path):
+    rows = synthetic_rows(300, 13, 0.02, 0.02)
+    code, rep = evaluate(tmp_path, rows)
+    assert code == 0
+    d = rep["diagnostics"]["candidate"]
+    assert sum(b["n"] for b in d["reliability_10bin"]) == 300
+    for b in d["reliability_10bin"]:
+        assert 0 <= b["obs_ci95"][0] <= b["obs_rate"] <= b["obs_ci95"][1] <= 1
+    # Near-truthful probabilities recalibrate close to slope 1 / intercept 0.
+    assert abs(d["calibration_line"]["slope"] - 1) < 0.5
+    assert abs(d["calibration_line"]["intercept"]) < 0.5
+
+
+def test_calibration_power_script_reports_variance_and_required_rows(tmp_path: Path):
+    import calibration_power as cp  # noqa: PLC0415
+    inp = write_csv(tmp_path / "in.csv", synthetic_rows(300, 14, 0.1, 0.1))
+    out = tmp_path / "power.json"
+    assert cp.main(["--input", str(inp), "--output", str(out), "--deltas", "0.002"]) == 0
+    rep = json.loads(out.read_text())
+    m = rep["metrics"]["brier"]
+    assert m["n"] == 300 and m["days"] == 20
+    assert m["var_diff"] > 0
+    assert m["rows_required_80pct_power_alpha05"]["0.002"]["rows_independent"] > 0

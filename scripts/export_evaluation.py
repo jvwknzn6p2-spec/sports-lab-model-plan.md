@@ -19,6 +19,19 @@ is the pick's own `predictedAt` stamp when the lock has one, else the LATEST
 instant the pick could still have changed — never earlier than the truth — so
 a leak check against `event_start_time` is conservative.
 
+Candidate / baseline sources (policy Appendix A.4):
+  default                 candidate = locked calibrated P(home), baseline = locked raw P(home)
+  --candidate-mlb-dir D   candidate = replay output in D (`handiedge replay`, source "replay");
+                          baseline = the production lock, or the replay in --baseline-mlb-dir
+                          when given (base SHA vs head SHA on identical inputs).
+A replay row's prediction_timestamp is the SLATE's fetchedAt — the latest
+instant any input to the replay could have been observed — and rows whose lock
+calibration cannot be shown to predate the date are excluded.
+
+Settlement basis: --npb-rule NPB_REGULATION_9 scores NPB rows from
+data-npb/regulation-scores/ (end of 9th) instead of the posted final; games
+without a regulation score are excluded and counted, never filled.
+
 A manifest with per-sport counts and every exclusion reason is written next to
 the CSV (default reports/evaluation_export.json). Nothing is guessed: a game
 without a stored result is excluded and counted.
@@ -50,11 +63,16 @@ COLUMNS = [
     "prediction_timestamp_basis",
     "predicted_after_deadline",
     "lock_deadline",
+    "event_date",
     "candidate_prob",
     "candidate_model",
+    "candidate_code_version",
     "baseline_prob",
     "baseline_model",
+    "baseline_code_version",
     "favored_side_basis",
+    "calibration_asof",
+    "input_snapshot_matched",
     "home_score",
     "away_score",
     "actual_outcome",
@@ -67,12 +85,14 @@ COLUMNS = [
     "result_3way",
 ]
 
+# Rule tags mirror lib/sports-data/src/engine/settlement-rules.ts (id/vN).
 SETTLEMENT_RULES = {
-    "MLB": "MLB_FINAL_SCORE_INCL_EXTRA_INNINGS",
+    "MLB": "MLB_FINAL_SCORE/v1",
     # npb.jp's month page posts the final score (up to the 12th inning); a tie is a push.
-    # This is the repository's current basis — see policy Appendix A.3.
-    "NPB": "NPB_FINAL_POSTED_SCORE_TIE_PUSH",
-    "SOCCER": "SOCCER_FULL_TIME_90_PLUS_STOPPAGE_NO_ET_NO_PENS",
+    # This is the production basis of history.jsonl — see policy Appendix A.3.
+    "NPB": "NPB_FINAL_POSTED_SCORE/v1",
+    "NPB_REGULATION_9": "NPB_REGULATION_9/v1",
+    "SOCCER": "SOCCER_FULL_TIME_90/v1",
 }
 
 # league -> (store directory under lib/sports-data, result source)
@@ -94,7 +114,28 @@ EXCLUSION_REASONS = {
         "excluded fail-closed"
     ),
     "excluded_no_candidate_replay": "replay directory given but has no row for this game",
+    "excluded_no_baseline_replay": "baseline replay directory given but has no row for this game",
+    "excluded_no_regulation_score": "NPB regulation-9 rule requested and no end-of-9th score is stored for the game",
+    "excluded_calibration_not_asof": (
+        "the lock's calibration state does not equal what history rows before the date produce, so it cannot be "
+        "shown to predate the date's results (replay rows only; policy judgment 3)"
+    ),
 }
+
+
+def load_replay_dir(d: Path | None, what: str) -> dict[str, dict[str, Any]]:
+    """{date: ReplayOutput}; refuses anything that is not a `handiedge replay` output."""
+    if d is None:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for f in sorted(d.glob("*.json")):
+        if f.name == "manifest.json":
+            continue
+        obj = read_json(f)
+        if obj.get("source") != "replay" or "predictionsSha256" not in obj:
+            raise SystemExit(f"{what}: {f} is not a replay output (source != 'replay'); a production lock must never stand in for a replay")
+        out[obj["date"]] = obj
+    return out
 
 
 def parse_ts(s: str | None) -> datetime | None:
@@ -175,37 +216,67 @@ def prediction_timestamp(lock: dict[str, Any], p: dict[str, Any]) -> tuple[datet
     return None, "unverifiable", late
 
 
-def export_baseball(league: str, sd: Path, candidate_dir: Path | None, counts: Counter) -> list[dict[str, str]]:
+def export_baseball(
+    league: str,
+    sd: Path,
+    candidate_dir: Path | None,
+    baseline_dir: Path | None,
+    npb_rule: str | None,
+    counts: Counter,
+) -> list[dict[str, str]]:
     store, source = BASEBALL[league]
     pred_dir = sd / store / "predictions"
-    results_dir = sd / store / "results"
     rows: list[dict[str, str]] = []
     if not pred_dir.is_dir():
         counts["missing_prediction_dir"] += 1
         return rows
+    regulation = league == "NPB" and npb_rule == "NPB_REGULATION_9"
+    rule_tag = SETTLEMENT_RULES["NPB_REGULATION_9"] if regulation else SETTLEMENT_RULES[league]
+    candidates = load_replay_dir(candidate_dir, "--candidate dir")
+    baselines = load_replay_dir(baseline_dir, "--baseline dir")
     for lock_path in sorted(pred_dir.glob("*.json")):
         date = lock_path.stem
         lock = read_json(lock_path)
-        results_path = results_dir / f"{date}.json"
-        results = read_json(results_path) if results_path.exists() else {}
-        result_map = results.get("results") or {}
-        fetched_at = results.get("fetchedAt") or ""
-        cand_by_pk: dict[str, dict[str, Any]] = {}
-        if candidate_dir is not None and (candidate_dir / f"{date}.json").exists():
-            cand_by_pk = {str(c["gamePk"]): c for c in read_json(candidate_dir / f"{date}.json").get("predictions", [])}
+        if regulation:
+            reg_path = sd / store / "regulation-scores" / f"{date}.json"
+            reg = read_json(reg_path) if reg_path.exists() else {}
+            result_map = {k: {"homeScore": v["homeScore"], "awayScore": v["awayScore"], "fetchedAt": v.get("observedAt", "")}
+                          for k, v in (reg.get("games") or {}).items()}
+            source_label = f"{source} (regulation score via {reg.get('provenance', {}).get('kind', '?')})"
+        else:
+            results_path = sd / store / "results" / f"{date}.json"
+            results = read_json(results_path) if results_path.exists() else {}
+            result_map = {k: {**v, "fetchedAt": results.get("fetchedAt") or ""} for k, v in (results.get("results") or {}).items()}
+            source_label = source
+        cand_rep = candidates.get(date)
+        base_rep = baselines.get(date)
+        cand_by_pk = {str(c["gamePk"]): c for c in (cand_rep or {}).get("predictions", [])}
+        base_by_pk = {str(c["gamePk"]): c for c in (base_rep or {}).get("predictions", [])}
 
         for p in lock.get("predictions", []):
             counts["total"] += 1
             pk = str(p["gamePk"])
             r = result_map.get(pk)
             if r is None:
-                counts["excluded_no_result"] += 1
+                counts["excluded_no_regulation_score" if regulation else "excluded_no_result"] += 1
                 continue
             start = parse_ts(p.get("gameDate"))
             if start is None:
                 counts["excluded_no_start_time"] += 1
                 continue
             ts, basis, late = prediction_timestamp(lock, p)
+            asof = ""
+            snapshot = ""
+            if candidate_dir is not None:
+                # Replay rows: the input snapshot's fetch time bounds every input of the
+                # replay. When the baseline is the PRODUCTION pick its own bound must
+                # still exist (a pick nothing dates cannot be compared against).
+                slate_at = parse_ts((cand_rep or {}).get("input", {}).get("slateFetchedAt"))
+                if slate_at is not None and (ts is not None or baseline_dir is not None):
+                    ts, basis = (max(ts, slate_at) if ts is not None else slate_at), "slate_fetched_at"
+                verified = (cand_rep or {}).get("calibrationAsOf", {}).get("verified")
+                asof = "verified" if verified is True else "unverified" if verified is False else "no_history"
+                snapshot = "" if p.get("inputSha256") is None else str(int(p["inputSha256"] == (cand_rep or {}).get("input", {}).get("slateSha256")))
             if ts is None:
                 counts["excluded_unverifiable_timestamp"] += 1
                 continue
@@ -214,15 +285,31 @@ def export_baseball(league: str, sd: Path, candidate_dir: Path | None, counts: C
                 continue
 
             prod_cal, prod_raw, side_basis = home_probabilities(p)
+            cand_ver = base_ver = ""
             if candidate_dir is not None:
                 c = cand_by_pk.get(pk)
                 if c is None:
                     counts["excluded_no_candidate_replay"] += 1
                     continue
-                cand, _, cand_basis = home_probabilities(c)
-                base = prod_cal
-                cand_model, base_model = "replay_calibrated", "production_lock_calibrated"
-                side_basis = f"{side_basis}/{cand_basis}"
+                if asof == "unverified":
+                    counts["excluded_calibration_not_asof"] += 1
+                    continue
+                cand_p, _, cand_basis = home_probabilities(c)
+                cand_ver = str((cand_rep or {}).get("codeVersion", ""))
+                if baseline_dir is not None:
+                    b = base_by_pk.get(pk)
+                    if b is None:
+                        counts["excluded_no_baseline_replay"] += 1
+                        continue
+                    base, _, base_basis = home_probabilities(b)
+                    base_ver = str((base_rep or {}).get("codeVersion", ""))
+                    cand_model, base_model = "replay_head", "replay_base"
+                    side_basis = f"{cand_basis}/{base_basis}"
+                else:
+                    base = prod_cal
+                    cand_model, base_model = "replay_calibrated", "production_lock_calibrated"
+                    side_basis = f"{side_basis}/{cand_basis}"
+                cand = cand_p
             else:
                 cand, base = prod_cal, prod_raw
                 cand_model, base_model = "production_lock_calibrated", "production_lock_raw"
@@ -248,18 +335,23 @@ def export_baseball(league: str, sd: Path, candidate_dir: Path | None, counts: C
                     "prediction_timestamp_basis": basis,
                     "predicted_after_deadline": str(late),
                     "lock_deadline": p.get("lockDeadline") or "",
+                    "event_date": date,
                     "candidate_prob": fmt(cand),
                     "candidate_model": cand_model,
+                    "candidate_code_version": cand_ver,
                     "baseline_prob": fmt(base),
                     "baseline_model": base_model,
+                    "baseline_code_version": base_ver,
                     "favored_side_basis": side_basis,
+                    "calibration_asof": asof,
+                    "input_snapshot_matched": snapshot,
                     "home_score": str(hs),
                     "away_score": str(as_),
                     "actual_outcome": outcome,
                     "settlement_result": settled,
-                    "settlement_rule": SETTLEMENT_RULES[league],
-                    "result_source": source,
-                    "result_fetched_at": fetched_at,
+                    "settlement_rule": rule_tag,
+                    "result_source": source_label,
+                    "result_fetched_at": r.get("fetchedAt", ""),
                     "p_draw": "",
                     "p_away": "",
                     "result_3way": "",
@@ -312,11 +404,16 @@ def export_soccer(ledger_dir: Path, counts: Counter) -> list[dict[str, str]]:
                 "prediction_timestamp_basis": "published_at",
                 "predicted_after_deadline": "0",
                 "lock_deadline": p.get("cutoffAt") or "",
+                "event_date": iso(start)[:10],
                 "candidate_prob": fmt(float(p["pHome"])),
                 "candidate_model": str(p.get("model") or ""),
+                "candidate_code_version": "",
                 "baseline_prob": fmt(base),
                 "baseline_model": "market_implied_normalised" if base is not None else "",
+                "baseline_code_version": "",
                 "favored_side_basis": "stored_home_probability",
+                "calibration_asof": "",
+                "input_snapshot_matched": "",
                 "home_score": str(e["homeGoals"]),
                 "away_score": str(e["awayGoals"]),
                 "actual_outcome": "1" if res == "H" else "0",
@@ -352,20 +449,31 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sports", default="mlb,npb,soccer", help="comma-separated subset of mlb,npb,soccer")
     ap.add_argument("--candidate-mlb-dir", help="directory of replayed MLB lock files (candidate); the stored lock becomes the baseline")
     ap.add_argument("--candidate-npb-dir", help="directory of replayed NPB lock files (candidate)")
+    ap.add_argument("--baseline-mlb-dir", help="directory of BASE-SHA replayed MLB locks (baseline); requires --candidate-mlb-dir")
+    ap.add_argument("--baseline-npb-dir", help="directory of BASE-SHA replayed NPB locks (baseline); requires --candidate-npb-dir")
+    ap.add_argument("--npb-rule", choices=["NPB_FINAL_POSTED_SCORE", "NPB_REGULATION_9"], default="NPB_FINAL_POSTED_SCORE",
+                    help="settlement basis for NPB rows (regulation-9 reads data-npb/regulation-scores/)")
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()
     out = under(root, a.output)
     manifest_path = under(root, a.manifest)
     sports = {s.strip().upper() for s in a.sports.split(",") if s.strip()}
     candidate_dirs = {"MLB": a.candidate_mlb_dir, "NPB": a.candidate_npb_dir}
+    baseline_dirs = {"MLB": a.baseline_mlb_dir, "NPB": a.baseline_npb_dir}
+    for lg in BASEBALL:
+        if baseline_dirs[lg] and not candidate_dirs[lg]:
+            ap.error(f"--baseline-{lg.lower()}-dir requires --candidate-{lg.lower()}-dir")
 
     rows: list[dict[str, str]] = []
     per_sport: dict[str, Counter] = {}
     for league in BASEBALL:
         if league in sports:
             per_sport[league] = Counter()
-            cand = candidate_dirs[league]
-            rows += export_baseball(league, root / "lib" / "sports-data", Path(cand) if cand else None, per_sport[league])
+            cand, base = candidate_dirs[league], baseline_dirs[league]
+            rows += export_baseball(
+                league, root / "lib" / "sports-data", Path(cand) if cand else None, Path(base) if base else None,
+                a.npb_rule, per_sport[league],
+            )
     if "SOCCER" in sports:
         per_sport["SOCCER"] = Counter()
         rows += export_soccer(root / "football" / "ledger", per_sport["SOCCER"])
@@ -383,9 +491,10 @@ def main(argv: list[str] | None = None) -> int:
         "output": str(out.relative_to(root)) if out.is_relative_to(root) else str(out),
         "rows": len(rows),
         "candidate_source": {
-            **{lg: ("replay" if candidate_dirs[lg] else "production_lock_calibrated_vs_raw") for lg in BASEBALL},
+            **{lg: ("replay_head_vs_replay_base" if baseline_dirs[lg] else "replay_vs_production_lock" if candidate_dirs[lg] else "production_lock_calibrated_vs_raw") for lg in BASEBALL},
             "SOCCER": "ledger_pHome_vs_market",
         },
+        "npb_rule": SETTLEMENT_RULES["NPB_REGULATION_9"] if a.npb_rule == "NPB_REGULATION_9" else SETTLEMENT_RULES["NPB"],
         "settlement_rules": SETTLEMENT_RULES,
         "counts": {k: dict(sorted(v.items())) for k, v in per_sport.items()},
         "exclusion_reasons": EXCLUSION_REASONS,

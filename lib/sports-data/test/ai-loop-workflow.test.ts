@@ -35,7 +35,6 @@ test("the audit gate fails closed and caps the repair loop at 3 rounds", () => {
   const y = read(AUDIT);
   assert.match(y, /MAX_AI_REPAIR_ROUNDS:\s*"3"/);
   assert.match(y, /test "\$TEST_STATUS" = "PASS"/);
-  assert.match(y, /test "\$\{EVAL_EXIT:-2\}" = "0"/);
   assert.match(y, /test "\$ASTRA_DECISION" = "PASS"/);
   // Automatic repair is opt-in through a repository variable, off by default.
   assert.match(y, /vars\.AUTO_CLAUDE_FIX == 'true'/);
@@ -54,6 +53,17 @@ test("the audit runs the same suite list as CI, plus the evidence pipeline", () 
   for (const cmd of ["python -m pytest", "scripts/export_evaluation.py", "scripts/evaluate_model.py"]) {
     assert.ok(y.includes(cmd), `${AUDIT} must run ${cmd}`);
   }
+  // Judgment 2: the PR's own evidence is head vs base replayed on identical
+  // inputs, provenance-checked, and gated; the operating-record evaluation
+  // only gates on validity.
+  assert.match(y, /handiedge\.ts replay --out "\$GITHUB_WORKSPACE\/reports\/replay\/head"/);
+  assert.match(y, /git worktree add --detach \/tmp\/base "\$BASE_SHA"/);
+  assert.match(y, /--data-dir "\$GITHUB_WORKSPACE\/lib\/sports-data\/data"/);
+  assert.match(y, /--candidate-mlb-dir reports\/replay\/head --baseline-mlb-dir reports\/replay\/base/);
+  assert.match(y, /test "\$h" = "\$HEAD_SHA"/);
+  assert.match(y, /test "\$\{REPLAY_EXIT:-2\}" = "0"/);
+  assert.match(y, /case "\$\{EVAL_EXIT:-2\}" in 0\|3\)/);
+  assert.match(y, /--cluster-by event_date/);
   // Astra reads the policy file, not a paraphrase of it.
   assert.match(y, /--rawfile policy \.ai\/ASTRA_REVIEW_POLICY\.md/);
 });

@@ -134,7 +134,7 @@ def test_mlb_rows_are_home_axis_with_conservative_timestamps(exported):
     assert (r1["candidate_prob"], r1["baseline_prob"]) == ("0.6000", "0.6200")
     assert (r1["prediction_timestamp_basis"], r1["prediction_timestamp"]) == ("lock_deadline", "2026-08-10T13:59:00.000Z")
     assert (r1["actual_outcome"], r1["settlement_result"]) == ("1", "WIN")
-    assert r1["settlement_rule"] == "MLB_FINAL_SCORE_INCL_EXTRA_INNINGS"
+    assert r1["settlement_rule"] == "MLB_FINAL_SCORE/v1"
     # Away favoured: flipped to the home axis.
     r2 = e["MLB:2"]
     assert (r2["candidate_prob"], r2["baseline_prob"], r2["favored_side_basis"]) == ("0.4500", "0.4300", "predicted_winner")
@@ -162,7 +162,7 @@ def test_npb_tie_is_push_and_rule_is_stamped(exported):
     e, man = exported
     tie = e["NPB:9202608220101"]
     assert (tie["settlement_result"], tie["actual_outcome"]) == ("PUSH", "")
-    assert tie["settlement_rule"] == "NPB_FINAL_POSTED_SCORE_TIE_PUSH"
+    assert tie["settlement_rule"] == "NPB_FINAL_POSTED_SCORE/v1"
     assert tie["prediction_timestamp"] == "2026-08-22T08:27:00.000Z"
     win = e["NPB:9202608220102"]
     assert (win["candidate_prob"], win["actual_outcome"]) == ("0.6100", "1")
@@ -177,21 +177,95 @@ def test_soccer_draw_stays_in_denominator_and_unsettled_is_excluded(exported):
     h = e["SOCCER:m1"]
     assert (h["candidate_prob"], h["baseline_prob"], h["actual_outcome"]) == ("0.5000", "0.4500", "1")
     assert h["prediction_timestamp"] == "2026-09-04T03:10:00.000Z"
-    assert h["settlement_rule"].startswith("SOCCER_FULL_TIME_90")
+    assert h["settlement_rule"] == "SOCCER_FULL_TIME_90/v1"
     assert "SOCCER:m3" not in e
     assert man["counts"]["SOCCER"] == {"draws_in_denominator": 1, "excluded_no_result": 1, "exported": 2, "total": 3}
+
+
+def replay_file(preds, *, code="headsha", fetched="2026-08-10T12:00:00Z", asof=True, slate_sha="slate-a"):
+    return {
+        "source": "replay", "league": "mlb", "date": "2026-08-10", "replayedAt": "2026-09-06T00:00:00Z", "codeVersion": code,
+        "replayOf": {"lockedAt": "2026-08-10T12:30:00.000Z", "updatedAt": None, "predictions": len(preds)},
+        "input": {"slateFetchedAt": fetched, "slateSha256": slate_sha},
+        "calibration": {}, "calibrationAsOf": {"verified": asof, "historyRowsBefore": 3, "differences": []},
+        "engine": {"sims": 10000, "passThreshold": 0.55, "minEv": 0, "simParams": {}},
+        "reproduction": {"matched": 0, "compared": len(preds), "inputMatched": None},
+        "predictionsSha256": "x" * 64, "sealedAt": "2026-09-06T00:00:00Z", "predictions": preds,
+    }
 
 
 def test_replay_directory_becomes_candidate_and_lock_becomes_baseline(tmp_path: Path):
     root = fake_repo(tmp_path / "repo")
     replay = tmp_path / "replay"
-    write_json(replay / "2026-08-10.json", {"predictions": [_pred(1, "H1", "A1", "2026-08-10T17:05:00Z", 0.66, 0.64, "H1")]})
+    write_json(replay / "2026-08-10.json", replay_file([_pred(1, "H1", "A1", "2026-08-10T17:05:00Z", 0.66, 0.64, "H1")]))
     e, man = run_export(root, "--sports", "mlb", "--candidate-mlb-dir", str(replay))
     assert list(e) == ["MLB:1"]  # games without a replay row are excluded, not padded
-    assert (e["MLB:1"]["candidate_prob"], e["MLB:1"]["baseline_prob"]) == ("0.6600", "0.6000")
-    assert e["MLB:1"]["candidate_model"] == "replay_calibrated"
-    assert man["candidate_source"]["MLB"] == "replay"
+    r = e["MLB:1"]
+    assert (r["candidate_prob"], r["baseline_prob"]) == ("0.6600", "0.6000")
+    assert (r["candidate_model"], r["candidate_code_version"]) == ("replay_calibrated", "headsha")
+    # The replay's inputs are bounded by the slate fetch, later than the deadline bound.
+    assert (r["prediction_timestamp_basis"], r["prediction_timestamp"]) == ("slate_fetched_at", "2026-08-10T13:59:00.000Z")
+    assert r["calibration_asof"] == "verified"
+    assert man["candidate_source"]["MLB"] == "replay_vs_production_lock"
     assert man["counts"]["MLB"]["excluded_no_candidate_replay"] == 4
+
+
+def test_head_vs_base_replay_compares_two_code_versions_on_identical_inputs(tmp_path: Path):
+    root = fake_repo(tmp_path / "repo")
+    head, base = tmp_path / "head", tmp_path / "base"
+    write_json(head / "2026-08-10.json", replay_file([
+        _pred(1, "H1", "A1", "2026-08-10T17:05:00Z", 0.66, 0.64, "H1"),
+        _pred(2, "H2", "A2", "2026-08-10T18:05:00Z", 0.55, 0.57, "A2"),
+        _pred(7, "H7", "A7", "2026-08-10T21:00:00Z", 0.6, 0.6, "H7"),
+    ], code="headsha"))
+    write_json(base / "2026-08-10.json", replay_file([
+        _pred(1, "H1", "A1", "2026-08-10T17:05:00Z", 0.61, 0.62, "H1"),
+        _pred(7, "H7", "A7", "2026-08-10T21:00:00Z", 0.6, 0.6, "H7"),
+    ], code="basesha"))
+    e, man = run_export(root, "--sports", "mlb", "--candidate-mlb-dir", str(head), "--baseline-mlb-dir", str(base))
+    assert sorted(e) == ["MLB:1", "MLB:7"]  # game 2 has no base row → excluded and counted
+    r = e["MLB:1"]
+    assert (r["candidate_prob"], r["baseline_prob"]) == ("0.6600", "0.6100")
+    assert (r["candidate_model"], r["baseline_model"]) == ("replay_head", "replay_base")
+    assert (r["candidate_code_version"], r["baseline_code_version"]) == ("headsha", "basesha")
+    assert man["candidate_source"]["MLB"] == "replay_head_vs_replay_base"
+    assert man["counts"]["MLB"]["excluded_no_baseline_replay"] == 1
+    # The production pick's own timing no longer matters: game 7 was a late legacy pick.
+    assert e["MLB:7"]["prediction_timestamp_basis"] == "slate_fetched_at"
+
+
+def test_replay_rows_with_unverified_calibration_are_excluded(tmp_path: Path):
+    root = fake_repo(tmp_path / "repo")
+    replay = tmp_path / "replay"
+    write_json(replay / "2026-08-10.json", replay_file([_pred(1, "H1", "A1", "2026-08-10T17:05:00Z", 0.66, 0.64, "H1")], asof=False))
+    e, man = run_export(root, "--sports", "mlb", "--candidate-mlb-dir", str(replay))
+    assert e == {}
+    assert man["counts"]["MLB"]["excluded_calibration_not_asof"] == 1
+
+
+def test_a_production_lock_is_refused_as_a_replay(tmp_path: Path):
+    root = fake_repo(tmp_path / "repo")
+    fake = tmp_path / "notreplay"
+    write_json(fake / "2026-08-10.json", {"predictions": [_pred(1, "H1", "A1", "2026-08-10T17:05:00Z", 0.66, 0.64, "H1")]})
+    with pytest.raises(SystemExit):
+        run_export(root, "--sports", "mlb", "--candidate-mlb-dir", str(fake))
+
+
+def test_npb_regulation_rule_reads_the_regulation_store_and_never_fills(tmp_path: Path):
+    root = fake_repo(tmp_path / "repo")
+    write_json(root / "lib" / "sports-data" / "data-npb" / "regulation-scores" / "2026-08-22.json", {
+        "date": "2026-08-22", "rule": "NPB_REGULATION_9/v1", "importedAt": "2026-09-06T00:00:00Z",
+        "provenance": {"kind": "vorte-ev-archive", "commit": "abc", "note": ""},
+        # game ...02 was 4-1 final but 1-1 after nine → PUSH under regulation-9; game ...01 has no regulation score
+        "games": {"9202608220102": {"homeScore": 1, "awayScore": 1, "regulationInnings": 9, "inningsPlayed": 12, "source": "npb.jp score page", "url": "https://npb.jp/scores/x/", "observedAt": "2026-08-23T00:00:00Z"}},
+    })
+    e, man = run_export(root, "--sports", "npb", "--npb-rule", "NPB_REGULATION_9")
+    assert list(e) == ["NPB:9202608220102"]
+    r = e["NPB:9202608220102"]
+    assert (r["settlement_result"], r["settlement_rule"]) == ("PUSH", "NPB_REGULATION_9/v1")
+    assert r["result_fetched_at"] == "2026-08-23T00:00:00Z"
+    assert man["counts"]["NPB"]["excluded_no_regulation_score"] == 1
+    assert man["npb_rule"] == "NPB_REGULATION_9/v1"
 
 
 def test_legacy_lock_without_updated_at_excludes_late_picks(tmp_path: Path):

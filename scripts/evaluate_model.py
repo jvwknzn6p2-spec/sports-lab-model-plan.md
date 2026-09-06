@@ -55,17 +55,61 @@ def pct(xs,q):
     xs=sorted(xs); pos=(len(xs)-1)*q; lo=int(math.floor(pos)); hi=int(math.ceil(pos))
     return xs[lo] if lo==hi else xs[lo]*(hi-pos)+xs[hi]*(pos-lo)
 
-def boot(y,c,b,fn,n,seed):
+def wilson(k,n,z=1.96):
+    if n==0:return (0.0,0.0)
+    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d
+    return (round(c-h,8),round(c+h,8))
+
+def reliability(y,p,bins=10):
+    # Fixed equal-width bins on the stated probability (same bins as ece()); per-bin
+    # counts and a Wilson 95% interval on the observed rate so a bin with 3 rows is not
+    # read as a calibration finding.
+    groups=[[] for _ in range(bins)]
+    for a,b in zip(y,p):groups[min(int(b*bins),bins-1)].append((a,b))
+    out=[]
+    for i,g in enumerate(groups):
+        if not g:continue
+        k=sum(a for a,_ in g); lo,hi=wilson(k,len(g))
+        out.append({'bin':f'[{i/bins:.1f},{(i+1)/bins:.1f})','n':len(g),'mean_pred':round(sum(b for _,b in g)/len(g),8),'obs_rate':round(k/len(g),8),'obs_ci95':[lo,hi]})
+    return out
+
+def calibration_line(y,p,iters=25):
+    # Logistic recalibration y ~ a + b*logit(p) by Newton-Raphson; b=1,a=0 is perfect
+    # calibration (b<1 overconfident, b>1 underconfident). Descriptive only.
+    xs=[math.log(min(max(q,EPS),1-EPS)/(1-min(max(q,EPS),1-EPS))) for q in p]; a=0.0;b=1.0
+    for _ in range(iters):
+        g0=g1=h00=h01=h11=0.0
+        for x,t in zip(xs,y):
+            z=max(-30.0,min(30.0,a+b*x)); m=1/(1+math.exp(-z)); w=m*(1-m); g0+=t-m; g1+=(t-m)*x; h00+=w; h01+=w*x; h11+=w*x*x
+        det=h00*h11-h01*h01
+        if det<=0:break
+        da=(h11*g0-h01*g1)/det; db=(h00*g1-h01*g0)/det; da=max(-2.0,min(2.0,da)); db=max(-2.0,min(2.0,db)); a+=da; b+=db
+        if abs(da)<1e-10 and abs(db)<1e-10:break
+    return {'intercept':round(a,8),'slope':round(b,8)}
+
+def boot(y,c,b,fn,n,seed,clusters=None):
     # Per-row losses are fixed across resamples, so compute them once and sum
     # the resampled rows in draw order: same RNG stream, same summation order,
     # same numbers as re-scoring the resampled lists — at a third of the cost.
     rng=random.Random(seed); d=[]; m=len(y)
     lc=[fn([a],[p]) for a,p in zip(y,c)]; lb=[fn([a],[p]) for a,p in zip(y,b)]
-    for _ in range(n):
-        idx=[rng.randrange(m) for __ in range(m)]
-        d.append(sum(lc[i] for i in idx)/m-sum(lb[i] for i in idx)/m)
+    if clusters is None:
+        for _ in range(n):
+            idx=[rng.randrange(m) for __ in range(m)]
+            d.append(sum(lc[i] for i in idx)/m-sum(lb[i] for i in idx)/m)
+    else:
+        # Block bootstrap: resample whole clusters (e.g. event dates) so rows that share a
+        # day — same weather, same news, same slate fetch — are not treated as independent.
+        groups={}
+        for i,k in enumerate(clusters):groups.setdefault(k,[]).append(i)
+        keys=sorted(groups); g=len(keys)
+        for _ in range(n):
+            idx=[i for __ in range(g) for i in groups[keys[rng.randrange(g)]]]
+            d.append(sum(lc[i] for i in idx)/len(idx)-sum(lb[i] for i in idx)/len(idx))
     point=fn(y,c)-fn(y,b)
-    return {'delta_candidate_minus_baseline':round(point,8),'ci95_low':round(pct(d,.025),8),'ci95_high':round(pct(d,.975),8)}
+    out={'delta_candidate_minus_baseline':round(point,8),'ci95_low':round(pct(d,.025),8),'ci95_high':round(pct(d,.975),8)}
+    if clusters is not None:out['clusters']=len(set(clusters))
+    return out
 
 def main(argv=None):
     ap=argparse.ArgumentParser()
@@ -74,6 +118,7 @@ def main(argv=None):
     ap.add_argument('--bootstrap-samples',type=int,default=2000)
     ap.add_argument('--min-gate-samples',type=int,default=200)
     ap.add_argument('--seed',type=int,default=42)
+    ap.add_argument('--cluster-by',default='',help='column whose equal values form bootstrap blocks (e.g. event_date); the block CI then gates instead of the row CI')
     a=ap.parse_args(argv); inp=Path(a.input); out=Path(a.output); out.parent.mkdir(parents=True,exist_ok=True)
     rep={'schema_version':'1.0','input':str(inp),'status':'UNKNOWN','gate':{'passed':False,'reasons':[]},'counts':{},'data_integrity':{},'overall':{},'segments':{}}
     if not inp.exists():
@@ -97,7 +142,7 @@ def main(argv=None):
                 key=eid+'|'+mid
                 if key in seen:dups.append(key)
                 seen.add(key)
-            scored.append({'y':y,'candidate':c,'baseline':b,'sport':r.get('sport') or 'UNKNOWN','league':r.get('league') or 'UNKNOWN'})
+            scored.append({'y':y,'candidate':c,'baseline':b,'sport':r.get('sport') or 'UNKNOWN','league':r.get('league') or 'UNKNOWN','cluster':(r.get(a.cluster_by) or '') if a.cluster_by else None})
         except Exception as e:errors.append(f'row {i}: {e}')
     rep['counts']={'raw_rows':len(rows),'scored_rows':len(scored),'push_rows_excluded':push,'invalid_rows':len(errors)}
     rep['data_integrity']={'errors':errors[:100],'prediction_at_or_after_start_rows':leaks[:100],'duplicate_event_market_keys':sorted(set(dups))[:100],'naive_timestamp_fields':naive}
@@ -108,15 +153,22 @@ def main(argv=None):
         if not scored:rep['gate']['reasons'].append('no scoreable rows')
         rep['status']='INVALID';out.write_text(json.dumps(rep,indent=2),encoding='utf-8');return 2
     y=[r['y'] for r in scored]; c=[r['candidate'] for r in scored]; rep['overall']['candidate']=metrics(y,c)
+    rep['diagnostics']={'candidate':{'reliability_10bin':reliability(y,c),'calibration_line':calibration_line(y,c)}}
+    if a.cluster_by and any(r['cluster']=='' for r in scored):rep['gate']['reasons'].append(f'cluster column {a.cluster_by} empty on some rows; block CI not computed');a.cluster_by=''
+    cl=[r['cluster'] for r in scored] if a.cluster_by else None
     all_b=all(r['baseline'] is not None for r in scored); some_b=any(r['baseline'] is not None for r in scored); regress=False
     if some_b and not all_b:rep['data_integrity']['warning']='partial baseline_prob; comparison skipped'
     if all_b:
         b=[r['baseline'] for r in scored]; rep['overall']['baseline']=metrics(y,b)
+        rep['diagnostics']['baseline']={'reliability_10bin':reliability(y,b),'calibration_line':calibration_line(y,b)}
         comp={'brier':boot(y,c,b,brier,a.bootstrap_samples,a.seed),'log_loss':boot(y,c,b,logloss,a.bootstrap_samples,a.seed+1),'gate_min_samples':a.min_gate_samples};rep['overall']['comparison']=comp
+        gate=comp
+        if cl is not None:
+            gate={'brier':boot(y,c,b,brier,a.bootstrap_samples,a.seed,cl),'log_loss':boot(y,c,b,logloss,a.bootstrap_samples,a.seed+1,cl),'cluster_by':a.cluster_by};rep['overall']['comparison_block']=gate
         if len(y)>=a.min_gate_samples:
             for m in ('brier','log_loss'):
-                if comp[m]['ci95_low']>0:
-                    regress=True;rep['gate']['reasons'].append(f'candidate {m} statistically worse than baseline (paired-bootstrap 95% CI > 0)')
+                if gate[m]['ci95_low']>0:
+                    regress=True;rep['gate']['reasons'].append(f'candidate {m} statistically worse than baseline (paired {"block " if cl is not None else ""}bootstrap 95% CI > 0)')
         else:rep['gate']['reasons'].append(f'baseline comparison descriptive only: n={len(y)} < {a.min_gate_samples}')
     for field in ('sport','league'):
         groups=defaultdict(list)
