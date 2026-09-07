@@ -1,6 +1,6 @@
 # VORTE EV Football — 台帳の要約
 
-更新 2026-09-06 07:50 UTC。予想はキックオフ 60 分前に封緘し、以後は変更しない（`football/ledger/predictions.ndjson`）。
+更新 2026-09-07 08:11 UTC。予想はキックオフ 60 分前に封緘し、以後は変更しない（`football/ledger/predictions.ndjson`）。
 主指標は RPS（小さいほど良い）。的中率は件数と Wilson 95% 区間つきで、単独では読まない。市場は The Odds API の h2h（各ブックの中央値）で、発行時点の値。
 
 | リーグ | 発行 | 決着 | モデル RPS | 市場 RPS（同一集合） | モデル RPS（同一集合） | 的中率（モデル） |
