@@ -1,9 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { parseFootballDataRaw, parseUkDate } from "../src/footballDataRaw.ts";
+import { assertFootballDataCsv, parseFootballDataRaw, parseUkDate } from "../src/footballDataRaw.ts";
 
 const fx = (name: string) => readFileSync(new URL(`../fixtures/${name}`, import.meta.url), "utf8");
+
+test("assertFootballDataCsv: 本物の CSV は通り、エラーページは例外（2026-09-07 の 503 を再現）", () => {
+  assert.doesNotThrow(() => assertFootballDataCsv(fx("fd-E0-2627.csv"), "E0-2627.csv")); // BOM 付き Div,
+  assert.doesNotThrow(() => assertFootballDataCsv(fx("fd-JPN.csv"), "JPN.csv")); // Country,
+  const html = "<!DOCTYPE html>\n<html><head><title>503 Service Unavailable</title></head><body>Service Unavailable</body></html>\n";
+  assert.throws(() => assertFootballDataCsv(html, "E0-2627.csv"), /E0-2627\.csv は football-data の CSV ではない/);
+  assert.throws(() => assertFootballDataCsv("", "D1-2425.csv"), /CSV ではない/);
+  // エラーページを CSV として読むと 0 行になる = 「試合が無かった」と区別が付かない（守る理由）
+  assert.equal(parseFootballDataRaw(html).matches.length, 0);
+});
 
 test("parseUkDate", () => {
   assert.equal(parseUkDate("21/08/2026"), "2026-08-21");

@@ -31,6 +31,22 @@ export interface RawParseResult {
   dropped: number;
 }
 
+/**
+ * 取得したファイルが football-data の CSV であることを確かめる（フェイルクローズ）。
+ *
+ * 2026-09-06〜07 に football-data.co.uk が Actions のランナーへ HTTP 503（489 バイトの
+ * エラーページ）を返し、`curl -o` はそれを CSV として保存した。パーサは見出し行が無いので
+ * 0 行を返し、日次は「学習データ 0 件」「results recorded 0」のまま緑で終わっていた
+ * （2 日間、49 試合が決済されず・予想も 0 件。実測）。0 行は「試合が無かった」と
+ * 区別が付かないため、CSV でないものは例外にして日次を止める。
+ */
+export function assertFootballDataCsv(text: string, name: string): void {
+  const head = text.replace(/^﻿/, "").slice(0, 200);
+  if (/^(Div|Country),/.test(head)) return;
+  const shown = head.split(/\r?\n/)[0].slice(0, 80);
+  throw new Error(`${name} は football-data の CSV ではない（先頭: ${JSON.stringify(shown)}）。取得失敗（HTTP エラーページ等）の疑い`);
+}
+
 function num(s: string | undefined): number | null {
   if (s === undefined || s.trim() === "") return null;
   const n = Number(s);
