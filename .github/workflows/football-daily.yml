@@ -40,7 +40,28 @@ jobs:
         run: |
           set -u
           mkdir -p football/cache
-          get () { curl -sSL --max-time 60 -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "football/cache/$1" "$2" && echo "ok $1 $(wc -c < football/cache/$1)" || echo "FAIL $1"; }
+          # フェイルクローズ（2026-09-07 実測から）: football-data.co.uk が 2026-09-06〜07 に
+          # HTTP 503 のエラーページ（489 バイト）を返し、旧実装（curl -o のみ）はそれを
+          # 「ok 489」として保存、パーサは 0 行を返し、日次は緑のまま 2 日間「予想 0 件・
+          # 決済 0 件」だった。HTTP 200 かつ見出しが Div,/Country, で始まるものだけを受理し、
+          # 4 回（5/10/20 秒待ち）で取れなければジョブを落とす。欠けた季で学習した予想を
+          # 黙って発行しないため、1 ファイルでも欠ければ全体を止める（結果の取込・決済も
+          # この後の日次に任せる。台帳は追記専用なので翌日に取り直せば欠落しない）。
+          failed=0
+          get () {
+            local name="$1" url="$2" out="football/cache/$1" code attempt
+            for attempt in 1 2 3 4; do
+              code=$(curl -sSL --max-time 60 -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "$out" -w "%{http_code}" "$url" || echo ERR)
+              if [ "$code" = "200" ] && head -c 200 "$out" | sed '1s/^\xef\xbb\xbf//' | head -1 | grep -qE '^(Div|Country),'; then
+                echo "ok $name $(wc -c < "$out")"; return 0
+              fi
+              echo "retry $attempt $name HTTP $code $( [ -f "$out" ] && wc -c < "$out" || echo 0) bytes"
+              rm -f "$out"
+              [ "$attempt" -lt 4 ] && sleep $((5 * (1 << (attempt - 1))))
+            done
+            echo "::error::FAIL $name HTTP $code（football-data.co.uk から CSV を取得できない）"
+            failed=1
+          }
           # 海外 9 リーグ × 4 季（Founder 指示 2026-09-03・J1 より優先）
           for div in E0 I1 SP1 D1 N1 F1 P1 B1 SC0; do
             for season in 2324 2425 2526 2627; do
@@ -48,6 +69,10 @@ jobs:
             done
           done
           get JPN.csv     "https://www.football-data.co.uk/new/JPN.csv"
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::結果 CSV が揃わないため日次を止める（予想の発行・決済・コミットを行わない）"
+            exit 1
+          fi
 
       - name: 日程とオッズを取得（The Odds API・鍵が無ければ飛ばす）
         env:
