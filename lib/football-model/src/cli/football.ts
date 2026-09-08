@@ -30,7 +30,7 @@ const NOW = arg("now", new Date().toISOString())!;
 const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
 const MODEL = "dc-v1"; // Dixon-Coles・ξ=0.0065・窓 1500 日
 const WINDOW_DAYS = 1500;
-const HORIZON_HOURS = Number(arg("horizon", "36"));
+const HORIZON_HOURS = Number(arg("horizon", "48")); // 封緘は前日 20:00 JST。翌日（JST）の試合を全て拾う
 /** 学習データが薄いと確率が極端になる（20 試合で 98/2/0 を実測）。足りなければ発行しない */
 const MIN_TRAIN = 300;
 const MIN_TEAM_MATCHES = 5;
@@ -106,7 +106,7 @@ function daily(): void {
       log.push(`${league}: odds が無い（予想は発行しない）`);
     }
 
-    // 2) 予想（封緘前・未発行・36h 以内）
+    // 2) 予想（封緘前・未発行・48h 以内）
     const todo = selectToPredict(L.currentMatches().values(), L.predictions(), NOW, HORIZON_HOURS).filter((m) => m.league === league);
     if (todo.length > 0) {
       const train = history.filter((m) => Date.parse(m.date) < Date.parse(NOW) && Date.parse(m.date) >= Date.parse(NOW) - WINDOW_DAYS * 86_400_000);

@@ -1,12 +1,12 @@
 # football — サッカーの台帳（リポジトリ内・追記専用）
 
-`.github/workflows/football-daily.yml` が毎日 12:05 JST に更新する。実装は
+`.github/workflows/football-daily.yml` が毎日 07:05 JST（着地は遅れて 12:00 前後）に更新する。実装は
 `lib/football-model/src/ledger.ts`（台帳）と `src/cli/football.ts`（日次）。
 
 | パス | 中身 |
 |---|---|
 | `ledger/matches.ndjson` | 日程（The Odds API 由来・providerId ごとに最新行が有効） |
-| `ledger/predictions.ndjson` | 予想（1 試合 1 行・封緘 kickoff−60 分より前に発行・以後不変） |
+| `ledger/predictions.ndjson` | 予想（1 試合 1 行・封緘＝試合日（JST）の前日 20:00 JST より前に発行・以後不変。2026-09-08 以前の行は旧規則 kickoff−60 分の cutoffAt を持つ） |
 | `ledger/results.ndjson` | 結果（football-data.co.uk・直近 30 日ぶん） |
 | `ledger/evaluations.ndjson` | 決済（RPS / Brier / log loss・市場 RPS） |
 | `market/<sport>/<取得時刻>.json` | 発行に使った市場確率の写し（取得時刻つき） |

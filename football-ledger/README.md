@@ -33,7 +33,9 @@ VORTE EV（野球）の Supabase は Lovable Cloud 管理で、DB URL も servic
 
 - **決済は 90 分（FT90）の 3 値**（H / D / A）。延長・PK の結果は `outcomes.basis`
   （AET / PEN）として別行で残せるが、決済には使わない（カップ戦を扱うときに再検討）
-- **封緘は kickoff − 60 分**。多くのリーグでスタメン発表が 60〜75 分前なので、
+- **封緘は kickoff − 60 分**（この設計案の値。運用中の NDJSON 台帳は 2026-09-09 Founder 確定で
+  **試合日（JST）の前日 20:00 JST** に変更済み。この案を実装するときは同じ値にする）。
+  多くのリーグでスタメン発表が 60〜75 分前なので、
   「スタメンを見てから」の予想はできない側に倒している。野球（前日 22:21 / 開始 39 分前）
   と同じく、動かすなら Founder 承認と CLAUDE.md 相当の記録が要る
 - 採点は `score_prediction`（RPS / 多値 Brier / log loss）。`lib/football-model/src/scoring.ts`
