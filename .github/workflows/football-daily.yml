@@ -1,22 +1,32 @@
 name: Football — daily ledger
 
 # サッカーの日次パイプライン。毎日 22:05 UTC（07:05 JST）に 1 回:
-#   1. football-data.co.uk から結果 CSV（海外 9 リーグは各 4 季、J1 は new/JPN.csv）を cache へ取得
+#   1. 結果の取得（どれが欠けても止めない。学習データは football/history が権威）:
+#      a. football-data.co.uk の結果 CSV（海外 9 リーグは各 4 季、J1 は new/JPN.csv）
+#         ホストは **www. 無し**（https://football-data.co.uk/…）を先に叩き、失敗したら www. を試す。
+#         2026-09-06〜09 に www. ホストの前段（nginx）が全 URL に 503（489 バイト）を返す一方、
+#         www. 無し（Apache 直）は 200 だった（probe 2026-09-09 実測）
+#      b. GitHub の写し（xgabora/Club-Football-Match-Data・football-data.co.uk 由来・不定期更新）
+#      c. The Odds API の scores（結果の速報・2 クレジット/競技）。未決済の予想があり、その
+#         キックオフから 2 時間〜3 日の競技だけ要求する（毎日 10 競技だと月 600 で無料枠 500 を超える）
 #   2. The Odds API から 10 競技の今後の試合と h2h オッズを cache へ取得（10 クレジット/日・
 #      月 300。odds.yml の MLB 分と合わせても無料枠 500/月 に収まる）
-#   対象は海外優先（Founder 指示 2026-09-03）: E0 I1 SP1 D1 N1 F1 P1 B1 SC0 → JAP。
-#   CL / EL / ECL は結果 CSV の一次情報が無く決済できないため未対応
-#   3. lib/football-model の CLI が 日程 → 封緘前の予想発行（キックオフ 48h 以内・
-#      封緘は試合日（JST）の前日 20:00 JST・Founder 確定 2026-09-09）→ 結果の取込 → 決済
-#      → reports/summary.md
+#      対象は海外優先（Founder 指示 2026-09-03）: E0 I1 SP1 D1 N1 F1 P1 B1 SC0 → JAP。
+#      CL / EL / ECL は結果 CSV の一次情報が無く決済できないため未対応
+#   3. lib/football-model の CLI が 履歴の更新（football/history・差分の追記）→ 日程 →
+#      封緘前の予想発行（キックオフ 48h 以内・封緘は試合日（JST）の前日 20:00 JST・
+#      Founder 確定 2026-09-09）→ 結果の取込 → 決済 → reports/summary.md
 #   実行時刻を 07:05 JST にしているのは、このアカウントの schedule 実行が実測で
 #   4.5〜5 時間遅れて着地するため（9/3〜9/8 の 6 回: 4h30m〜5h06m）。12:05 JST では
 #   着地が 17:00 前後になり、封緘 20:00 JST までの余裕が 3 時間を切る。07:05 なら
 #   着地は 12:00 前後で、翌日（JST）の試合の封緘まで 8 時間ある。
 #   窓が 48h なのは、着地時刻から翌日（JST）の最終試合（最大 41h 先）を全て拾うため
-#   4. football/ を commit（台帳は追記のみ。cache は commit しない）
+#   4. football/ を commit（台帳は追記のみ・履歴は差分更新。cache は commit しない）
 # ネットワークは curl だけ。CLI はファイルしか読まない（取得時刻はファイル名に残る）。
 # ODDS_API_KEY が無い間は日程・予想を出さず、結果と決済だけ動く。
+# 取得元が全て落ちた日も、前日までの履歴で予想は出る（予想行の historyAsOf /
+# historyMissing に鮮度が残る）。「予想は試合前に必ず出す」（Founder 指示 2026-09-09）
+# を取得元の生死から切り離すための設計で、2026-09-06〜09 に 4 日間 1 件も出なかった実発生から
 
 on:
   schedule:
@@ -42,42 +52,51 @@ jobs:
         with:
           node-version: "24"
 
-      - name: 結果 CSV を取得（football-data.co.uk）
+      - name: 結果 CSV を取得（football-data.co.uk・欠けても止めない）
         run: |
           set -u
           mkdir -p football/cache
-          # フェイルクローズ（2026-09-07 実測から）: football-data.co.uk が 2026-09-06〜07 に
-          # HTTP 503 のエラーページ（489 バイト）を返し、旧実装（curl -o のみ）はそれを
-          # 「ok 489」として保存、パーサは 0 行を返し、日次は緑のまま 2 日間「予想 0 件・
-          # 決済 0 件」だった。HTTP 200 かつ見出しが Div,/Country, で始まるものだけを受理し、
-          # 4 回（5/10/20 秒待ち）で取れなければジョブを落とす。欠けた季で学習した予想を
-          # 黙って発行しないため、1 ファイルでも欠ければ全体を止める（結果の取込・決済も
-          # この後の日次に任せる。台帳は追記専用なので翌日に取り直せば欠落しない）。
+          # HTTP 200 かつ見出しが Div,/Country, で始まるものだけを受理する（2026-09-06〜07 に
+          # 503 のエラーページを CSV として保存し、日次が緑のまま予想 0 件だった実発生から）。
+          # 取れなかったファイルは cache に置かない（CLI は無い分を飛ばし、履歴で学習する）。
+          # ホストは www. 無しを先に（www. の前段 nginx が 503 を返す間も Apache 直は 200・2026-09-09 実測）
           failed=0
           get () {
-            local name="$1" url="$2" out="football/cache/$1" code attempt
-            for attempt in 1 2 3 4; do
-              code=$(curl -sSL --max-time 60 -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "$out" -w "%{http_code}" "$url" || echo ERR)
-              if [ "$code" = "200" ] && head -c 200 "$out" | sed '1s/^\xef\xbb\xbf//' | head -1 | grep -qE '^(Div|Country),'; then
-                echo "ok $name $(wc -c < "$out")"; return 0
-              fi
-              echo "retry $attempt $name HTTP $code $( [ -f "$out" ] && wc -c < "$out" || echo 0) bytes"
-              rm -f "$out"
-              [ "$attempt" -lt 4 ] && sleep $((5 * (1 << (attempt - 1))))
+            local name="$1" path="$2" out="football/cache/$1" code host attempt
+            for host in football-data.co.uk www.football-data.co.uk; do
+              for attempt in 1 2; do
+                code=$(curl -sSL --max-time 60 -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "$out" -w "%{http_code}" "https://$host/$path" || echo ERR)
+                if [ "$code" = "200" ] && head -c 200 "$out" | sed '1s/^\xef\xbb\xbf//' | head -1 | grep -qE '^(Div|Country),'; then
+                  echo "ok $name $(wc -c < "$out") via $host"; return 0
+                fi
+                echo "retry $host $attempt $name HTTP $code $( [ -f "$out" ] && wc -c < "$out" || echo 0) bytes"
+                rm -f "$out"
+                [ "$attempt" -lt 2 ] && sleep 5
+              done
             done
-            echo "::error::FAIL $name HTTP $code（football-data.co.uk から CSV を取得できない）"
-            failed=1
+            echo "::warning::FAIL $name HTTP $code（football-data.co.uk から取得できない。履歴と他の取得元で進む）"
+            failed=$((failed + 1))
           }
           # 海外 9 リーグ × 4 季（Founder 指示 2026-09-03・J1 より優先）
           for div in E0 I1 SP1 D1 N1 F1 P1 B1 SC0; do
             for season in 2324 2425 2526 2627; do
-              get "$div-$season.csv" "https://www.football-data.co.uk/mmz4281/$season/$div.csv"
+              get "$div-$season.csv" "mmz4281/$season/$div.csv"
             done
           done
-          get JPN.csv     "https://www.football-data.co.uk/new/JPN.csv"
-          if [ "$failed" -ne 0 ]; then
-            echo "::error::結果 CSV が揃わないため日次を止める（予想の発行・決済・コミットを行わない）"
-            exit 1
+          get JPN.csv "new/JPN.csv"
+          echo "football-data: failed $failed / 37"
+          if [ "$failed" -eq 37 ]; then echo "::warning::football-data.co.uk が全滅（両ホスト）。履歴・写し・Odds API scores で進む"; fi
+
+      - name: 結果の写しを取得（GitHub・xgabora/Club-Football-Match-Data・欠けても止めない）
+        run: |
+          set -u
+          out=football/cache/mirror-Matches.csv
+          code=$(curl -sSL --max-time 300 -o "$out" -w "%{http_code}" \
+            "https://raw.githubusercontent.com/xgabora/Club-Football-Match-Data-2000-2025/main/data/Matches.csv" || echo ERR)
+          if [ "$code" = "200" ] && head -c 100 "$out" | grep -q '^Division,MatchDate'; then
+            echo "ok mirror $(wc -c < "$out") bytes, last row: $(tail -1 "$out" | cut -d, -f1-5)"
+          else
+            echo "::warning::mirror HTTP $code（写しが取れない。履歴と他の取得元で進む）"; rm -f "$out"
           fi
 
       - name: 日程とオッズを取得（The Odds API・鍵が無ければ飛ばす）
@@ -95,7 +114,31 @@ jobs:
               "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
             echo "$sport HTTP $code $(grep -i x-requests-remaining /tmp/h.txt | tr -d '\r')"
             if [ "$code" != "200" ]; then rm -f "football/cache/odds/$sport/$ts.json"; fi
+            grep -i '^x-requests-remaining:' /tmp/h.txt | tr -d '\r' | awk '{print $2}' > football/cache/odds-remaining.txt || true
           done
+
+      - name: 結果の速報を取得（The Odds API scores・必要な競技だけ・鍵が無ければ飛ばす）
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -u
+          if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi
+          # 未決済の予想があり、キックオフから 2 時間〜3 日の競技（CLI が台帳から決める）。
+          # daysFrom=3 は 2 クレジット/競技。残りが 40 を切ったら翌日の日程・オッズ（10/日）を守るため飛ばす
+          remaining=$(cat football/cache/odds-remaining.txt 2>/dev/null || echo 999)
+          ts=$(date -u +%Y%m%dT%H%M%SZ)
+          node --experimental-strip-types lib/football-model/src/cli/football.ts scores-needed --root football --leagues E0,I1,SP1,D1,N1,F1,P1,B1,SC0,JAP > /tmp/scores-needed.txt
+          echo "scores needed: $(tr '\n' ' ' < /tmp/scores-needed.txt) (remaining $remaining)"
+          while read -r sport; do
+            [ -z "$sport" ] && continue
+            if [ "$remaining" -lt 40 ] 2>/dev/null; then echo "::warning::クレジット残 $remaining < 40 のため scores を飛ばす（$sport）"; continue; fi
+            mkdir -p "football/cache/scores/$sport"
+            code=$(curl -sS --max-time 30 -o "football/cache/scores/$sport/$ts.json" -D /tmp/h.txt -w "%{http_code}" \
+              "https://api.the-odds-api.com/v4/sports/$sport/scores?daysFrom=3&dateFormat=iso&apiKey=$ODDS_API_KEY")
+            echo "$sport scores HTTP $code $(grep -i x-requests- /tmp/h.txt | tr -d '\r' | tr '\n' ' ')"
+            if [ "$code" != "200" ]; then rm -f "football/cache/scores/$sport/$ts.json"; fi
+            remaining=$(grep -i '^x-requests-remaining:' /tmp/h.txt | tr -d '\r' | awk '{print $2}' || echo "$remaining")
+          done < /tmp/scores-needed.txt
 
       - name: 日次パイプライン
         run: node --experimental-strip-types lib/football-model/src/cli/football.ts daily --root football --cache football/cache --leagues E0,I1,SP1,D1,N1,F1,P1,B1,SC0,JAP
@@ -105,7 +148,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add football/ledger football/market football/reports
+          git add football/ledger football/history football/market football/reports
           if git diff --cached --quiet; then echo "変更なし"; exit 0; fi
           git commit -m "football: $(date -u +%Y-%m-%dT%H:%MZ) ledger"
           for i in 1 2 3; do
