@@ -2,7 +2,7 @@
  * サッカー台帳（リポジトリ内の NDJSON・追記専用）。
  *
  * VORTE EV の不変条件をファイルで実現する:
- *   - 予想は 1 試合 1 回だけ、封緘（kickoff − 60 分）より前に発行し、以後は変更しない
+ *   - 予想は 1 試合 1 回だけ、封緘（試合日（JST）の前日 20:00 JST）より前に発行し、以後は変更しない
  *   - 台帳は追記のみ（このモジュールは append しか持たない。書き換え API は無い）
  *   - 結果が無い試合は決済しない。名前が解決できない試合は予想しない（推測で埋めない）
  *   - 市場確率は取得時刻つきで予想と同じ行に残す（リーク判別・ベンチマーク）
@@ -21,7 +21,13 @@ import type { MatchWithOdds } from "./footballData.ts";
 import type { ProbabilityTriple } from "./scoring.ts";
 import { outcomeOf, rps, multiclassBrier, logLoss } from "./scoring.ts";
 
-export const CUTOFF_MINUTES = 60;
+/**
+ * 封緘の規則（Founder 確定 2026-09-09）: **試合日（JST）の前日 20:00 JST**。
+ * 2026-09-08 以前に登録・発行した行は旧規則（kickoff − 60 分）の cutoffAt を持ったまま
+ * 台帳に残る（追記専用・行は書き換えない）。判定は常に行自身の cutoffAt で行う。
+ */
+export const CUTOFF_JST_HOUR = 20;
+const JST_OFFSET_MS = 9 * 3_600_000;
 
 export interface LedgerMatch {
   providerId: string;
@@ -78,8 +84,11 @@ export interface LedgerEvaluation {
   evaluatedAt: string;
 }
 
+/** キックオフの JST 日付の前日 20:00 JST を UTC の ISO で返す */
 export function cutoffOf(kickoffAt: string): string {
-  return new Date(Date.parse(kickoffAt) - CUTOFF_MINUTES * 60_000).toISOString();
+  const jstDay = Math.floor((Date.parse(kickoffAt) + JST_OFFSET_MS) / 86_400_000);
+  const cutoffJstMs = (jstDay - 1) * 86_400_000 + CUTOFF_JST_HOUR * 3_600_000;
+  return new Date(cutoffJstMs - JST_OFFSET_MS).toISOString();
 }
 
 export function readNdjson<T>(path: string): T[] {
@@ -125,7 +134,7 @@ export class Ledger {
     return readNdjson<LedgerEvaluation>(this.p("evaluations"));
   }
 
-  /** 日程の取り込み。解決できない名前の試合は入れない。既知と同じ内容なら追記しない */
+  /** 日程の取り込み。解決できない名前の試合は入れない。既知と同じ内容（封緘時刻を含む）なら追記しない */
   recordFixtures(fixtures: MarketFixture[], league: string, nowIso: string): { added: number; unresolved: number } {
     const cur = this.currentMatches();
     const rows: LedgerMatch[] = [];
@@ -136,7 +145,9 @@ export class Ledger {
         continue;
       }
       const prev = cur.get(f.providerId);
-      if (prev && prev.kickoffAt === f.kickoffAt && prev.home === f.home && prev.away === f.away) continue;
+      // 封緘規則が変わった試合（cutoffAt が現行規則と違う）は行を足して更新する。
+      // 既存行は書き換えない（追記専用）。発行済みの予想は自分の cutoffAt を持つので影響しない
+      if (prev && prev.kickoffAt === f.kickoffAt && prev.home === f.home && prev.away === f.away && prev.cutoffAt === cutoffOf(f.kickoffAt)) continue;
       rows.push({
         providerId: f.providerId,
         league,

@@ -7,12 +7,14 @@ import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "./ledger.t
 /**
  * 予想を発行する試合: 未発行・封緘前・キックオフが horizon 時間以内。
  * 早すぎる発行（何日も前）は市場も情報も薄いので horizon で絞る。
+ * 封緘は試合日（JST）の前日 20:00 JST なので、日次（07:05 JST 予定・実測では
+ * 着地が数時間遅れる）が翌日（JST）の試合を全て拾えるよう既定は 48 時間。
  */
 export function selectToPredict(
   matches: Iterable<LedgerMatch>,
   predictions: LedgerPrediction[],
   nowIso: string,
-  horizonHours = 36,
+  horizonHours = 48,
 ): LedgerMatch[] {
   const done = new Set(predictions.map((p) => p.providerId));
   const now = Date.parse(nowIso);
@@ -71,7 +73,7 @@ export function renderSummary(leagues: string[], predictions: LedgerPrediction[]
   const out: string[] = [
     "# VORTE EV Football — 台帳の要約",
     "",
-    `更新 ${nowIso.slice(0, 16).replace("T", " ")} UTC。予想はキックオフ 60 分前に封緘し、以後は変更しない（\`football/ledger/predictions.ndjson\`）。`,
+    `更新 ${nowIso.slice(0, 16).replace("T", " ")} UTC。予想は試合日（JST）の前日 20:00 JST に封緘し、以後は変更しない（2026-09-08 以前の発行分はキックオフ 60 分前）（\`football/ledger/predictions.ndjson\`）。`,
     "主指標は RPS（小さいほど良い）。的中率は件数と Wilson 95% 区間つきで、単独では読まない。市場は The Odds API の h2h（各ブックの中央値）で、発行時点の値。",
     "",
     "| リーグ | 発行 | 決着 | モデル RPS | 市場 RPS（同一集合） | モデル RPS（同一集合） | 的中率（モデル） |",

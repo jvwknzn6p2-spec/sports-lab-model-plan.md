@@ -1,15 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { renderSummary, selectToPredict, summarizeLeague } from "../src/pipeline.ts";
-import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "../src/ledger.ts";
+import { cutoffOf, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../src/ledger.ts";
 
-const m = (id: string, kickoffAt: string): LedgerMatch => ({ providerId: id, league: "JAP", kickoffAt, cutoffAt: new Date(Date.parse(kickoffAt) - 3_600_000).toISOString(), home: "A", away: "B", recordedAt: "t" });
-const now = "2026-09-04T03:00:00Z";
+const m = (id: string, kickoffAt: string): LedgerMatch => ({ providerId: id, league: "JAP", kickoffAt, cutoffAt: cutoffOf(kickoffAt), home: "A", away: "B", recordedAt: "t" });
+const now = "2026-09-04T03:00:00Z"; // JST 9/4 12:00
 
-test("selectToPredict: 未発行・封緘前・36h 以内だけ、キックオフ順", () => {
-  const ms = [m("late", "2026-09-06T10:00:00Z"), m("soon", "2026-09-04T10:00:00Z"), m("started", "2026-09-04T02:00:00Z"), m("sealed", "2026-09-04T03:30:00Z"), m("done", "2026-09-04T12:00:00Z"), m("tmrw", "2026-09-05T09:00:00Z")];
+test("selectToPredict: 未発行・封緘前（前日 20:00 JST）・48h 以内だけ、キックオフ順", () => {
+  const ms = [
+    m("late", "2026-09-06T10:00:00Z"), // JST 9/6 19:00・封緘 9/5 20:00 は未来だが 55h 先 → 対象外
+    m("soon", "2026-09-04T15:00:00Z"), // JST 9/5 00:00・封緘 9/4 20:00 JST は未来 → 対象
+    m("started", "2026-09-04T02:00:00Z"), // 開始済み
+    m("sealed", "2026-09-04T10:00:00Z"), // JST 9/4 19:00・封緘 9/3 20:00 JST は経過 → 対象外（当日の試合は当日には出せない）
+    m("done", "2026-09-05T12:00:00Z"), // 発行済み
+    m("tmrw", "2026-09-05T09:00:00Z"), // JST 9/5 18:00・封緘 9/4 20:00 JST → 対象
+    m("dayafter", "2026-09-05T20:00:00Z"), // JST 9/6 05:00（欧州の夜）・封緘 9/5 20:00 JST・41h 先 → 48h 窓で対象（36h では落ちていた）
+  ];
   const preds = [{ providerId: "done" } as LedgerPrediction];
-  assert.deepEqual(selectToPredict(ms, preds, now).map((x) => x.providerId), ["soon", "tmrw"]);
+  assert.deepEqual(selectToPredict(ms, preds, now).map((x) => x.providerId), ["soon", "tmrw", "dayafter"]);
+  assert.deepEqual(selectToPredict(ms, preds, now, 36).map((x) => x.providerId), ["soon", "tmrw"]);
 });
 
 test("summarizeLeague / renderSummary: 同一集合で市場と比べ、件数と区間が出る", () => {
