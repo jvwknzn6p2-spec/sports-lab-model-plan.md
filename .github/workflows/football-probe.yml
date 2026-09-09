@@ -138,7 +138,7 @@ jobs:
             for ep in "events?dateFormat=iso" "scores?daysFrom=3&dateFormat=iso"; do
               name=$(echo "$ep" | cut -d? -f1)
               code=$(curl -sS --max-time 30 -o "$DIR/odds-$name-soccer_epl.json" -D /tmp/oh.txt -w "%{http_code}" \
-                "https://api.the-odds-api.com/v4/sports/soccer_epl/$name?${ep#*?}&apiKey=$ODDS_API_KEY" || echo ERR)
+                "https://api.the-odds-api.com/v4/sports/soccer_epl/$name?${ep#*\?}&apiKey=$ODDS_API_KEY" || echo ERR)
               echo "$code $(wc -c < "$DIR/odds-$name-soccer_epl.json" 2>/dev/null || echo 0) odds-$name-soccer_epl.json $(grep -i 'x-requests-' /tmp/oh.txt | tr -d '\r' | tr '\n' ' ')" | tee -a "$OUT"
             done
           fi
