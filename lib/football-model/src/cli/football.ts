@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from "node:path";
 import { fitDixonColes, predictMatch } from "../fit.ts";
 import type { MatchWithOdds } from "../footballData.ts";
-import { parseFootballDataRaw } from "../footballDataRaw.ts";
+import { assertFootballDataCsv, parseFootballDataRaw } from "../footballDataRaw.ts";
 import { Ledger } from "../ledger.ts";
 import { parseOddsEvents, type OddsEvent } from "../oddsApi.ts";
 import { renderSummary, selectToPredict } from "../pipeline.ts";
@@ -111,7 +111,11 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
     const p = join(CACHE, f);
     if (!existsSync(p)) continue;
     fdFiles++;
-    const r = mergeHistory(rows, historyFromFootballData(readFileSync(p, "utf8"), [league], NOW).filter((x) => x.date >= sinceIso));
+    const text = readFileSync(p, "utf8");
+    // 503 のエラーページ等を CSV として読むと 0 行になり「試合が無かった」と区別が付かない。
+    // workflow 側でも検査するが、cache を手で置いた場合の二重の守り（2026-09-07 の実測から）
+    assertFootballDataCsv(text, f);
+    const r = mergeHistory(rows, historyFromFootballData(text, [league], NOW).filter((x) => x.date >= sinceIso));
     rows = r.rows;
     if (r.stats.added || r.stats.replaced || r.stats.conflicts) notes.push(fmtStats(f, r.stats));
   }
