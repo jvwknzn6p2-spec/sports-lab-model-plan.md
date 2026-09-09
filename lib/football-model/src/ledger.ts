@@ -57,6 +57,13 @@ export interface LedgerPrediction {
   market: ProbabilityTriple | null;
   marketFetchedAt: string | null;
   fingerprint: string;
+  /**
+   * 学習に使った履歴の最新の試合日（YYYY-MM-DD）と、台帳が知る「開始済みなのに履歴に結果が無い
+   * 試合」の数（src/history.ts）。取得元が止まったまま出した予想を後から見分けるための鮮度の記録。
+   * 2026-09-09 以前の行には無い（任意）
+   */
+  historyAsOf?: string;
+  historyMissing?: number;
 }
 
 export interface LedgerResult {
@@ -181,16 +188,29 @@ export class Ledger {
     return { ok: true, row };
   }
 
-  /** 結果の取り込み（league+date+home+away で重複を除く） */
-  recordResults(matches: MatchWithOdds[], source: string, nowIso: string): number {
-    const seen = new Set(this.results().map((r) => `${r.league}|${r.date}|${r.home}|${r.away}`));
+  /**
+   * 結果の取り込み（league+home+away で日付 ±1 日以内を同じ試合とみなして重複を除く。
+   * 取得元によって日付が現地 / UTC でずれうるため。source は行にあればそれを優先する）
+   */
+  recordResults(matches: Array<MatchWithOdds & { source?: string }>, source: string, nowIso: string): number {
+    const seen = new Map<string, string[]>();
+    const mark = (league: string, home: string, away: string, date: string) => {
+      const k = `${league}|${home}|${away}`;
+      const list = seen.get(k);
+      if (list) list.push(date);
+      else seen.set(k, [date]);
+    };
+    const known = (league: string, home: string, away: string, date: string) => {
+      const d = Date.parse(date + "T00:00:00Z");
+      return (seen.get(`${league}|${home}|${away}`) ?? []).some((x) => Math.abs(Date.parse(x + "T00:00:00Z") - d) <= 86_400_000);
+    };
+    for (const r of this.results()) mark(r.league, r.home, r.away, r.date);
     const rows: LedgerResult[] = [];
     for (const m of matches) {
       const date = m.date.slice(0, 10);
-      const key = `${m.division}|${date}|${m.home}|${m.away}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      rows.push({ league: m.division, date, home: m.home, away: m.away, homeGoals: m.homeGoals, awayGoals: m.awayGoals, source, recordedAt: nowIso });
+      if (known(m.division, m.home, m.away, date)) continue;
+      mark(m.division, m.home, m.away, date);
+      rows.push({ league: m.division, date, home: m.home, away: m.away, homeGoals: m.homeGoals, awayGoals: m.awayGoals, source: m.source ?? source, recordedAt: nowIso });
     }
     append(this.p("results"), rows);
     return rows.length;

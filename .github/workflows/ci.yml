@@ -46,3 +46,12 @@ jobs:
       - name: Test
         working-directory: lib/sports-data
         run: pnpm test
+
+      # サッカーの台帳・履歴・封緘のテスト（football-daily.yml が毎日呼ぶ CLI の仕様）
+      - name: Typecheck tests (football-model)
+        working-directory: lib/football-model
+        run: pnpm run typecheck:test
+
+      - name: Test (football-model)
+        working-directory: lib/football-model
+        run: pnpm test

@@ -70,7 +70,7 @@ W/D/L と任意スコアを同時に導ける Dixon-Coles が業界標準で、O
 | 用途 | 採用 / 候補 | 備考 |
 |---|---|---|
 | 試合結果 + 試合前オッズ（J1・欧州） | **xgabora/Club-Football-Match-Data-2000-2025**（GitHub・football-data.co.uk 由来を 1 表に正規化） | `data/Matches.csv`（43MB・約 23 万行・2000〜2025-05）。J1 は Division=`JAP`（2012〜2024・4,089 試合・全試合に Bet365 オッズ）。読み込みは `src/footballData.ts`、測定は `src/cli/walkforward.ts` |
-| 試合結果（当日・運用） | football-data.co.uk 直接 / Jリーグ公式 | 実行環境からは football-data.co.uk が到達不可（プロキシ 403）だったため、日次の取り込み経路は別途要確認 |
+| 試合結果（当日・運用） | **リポジトリ内の履歴 `football/history/`** を権威に、football-data.co.uk（www. 無しホスト）→ GitHub の写し（xgabora）→ The Odds API scores の 3 源から差分で更新 | 2026-09-06〜09 に football-data.co.uk の www. ホストが Actions に 503 を返し 4 日間 予想 0 件だった実発生から（`football/README.md`「結果の取得元は 3 つ」）。開発サンドボックスからは football-data.co.uk へ出られない（プロキシ 403） |
 | xG | Understat（欧州 5 大）/ FBref（Opta 提供） | 利用規約の確認必須。J の xG は入手性 UNKNOWN |
 | 当日情報 | Web 検索（エージェント層） | モデルの確率には入れない。説明にのみ使う |
 | オッズ（封緘前） | The Odds API（野球の odds.yml と同じ） | soccer_* キー。無料枠との兼ね合いで対象リーグを絞る |
@@ -120,7 +120,7 @@ W/D/L と任意スコアを同時に導ける Dixon-Coles が業界標準で、O
 | ウォークフォワード評価と頻度基準（`evaluate.ts`・学習窓つき） | ✅（合成データで基準より RPS が良いことを固定） |
 | 履歴データの読み込み（`footballData.ts`）と測定 CLI（`cli/walkforward.ts`） | ✅ J1 + 欧州（xgabora の Matches.csv） |
 | 実データでのウォークフォワード測定 | ✅ J1（§4.1）。欧州は同節に追記 |
-| 当日データの取り込み経路（運用） | ✅ Actions から到達可（probe 2026-09-03・海外 8 リーグ分も全て 200）。結果 = football-data.co.uk（海外 9 リーグ × 4 季 + JPN.csv）、日程・市場 = The Odds API（10 競技）。チーム名対応は `teamAliases.ts`（実データのテストで全チーム解決を固定） |
+| 当日データの取り込み経路（運用） | ✅ 結果 = `football/history/`（3 源から差分更新・`src/history.ts`・2026-09-09）、日程・市場 = The Odds API（10 競技）。チーム名対応は `teamAliases.ts`（実データのテストで全チーム解決を固定） |
 | xG 層 / 市場ブレンド | ⬜（測ってから） |
 | 台帳・封緘・決済（3 値） | ✅ リポジトリ内の追記専用 NDJSON（`football/`・`src/ledger.ts`）。日次は `football-daily.yml`。Supabase 版（`football-ledger/`）は設計のまま保留（Replit/Actions 方針により不要） |
 | 実績カードの 3 値対応 | ⬜ |
