@@ -7,6 +7,11 @@ name: Football — data-source probe
 
 on:
   workflow_dispatch:
+    inputs:
+      diag_only:
+        description: "診断ステップだけ実行する（Odds API のクレジット 13 を使う本体のサンプル取得を飛ばす）"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,6 +27,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fetch samples
+        if: ${{ !inputs.diag_only }}
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: |
