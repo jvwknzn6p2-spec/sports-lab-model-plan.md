@@ -1,4 +1,4 @@
-fetched_at=2026-09-09T15:07:29Z
+fetched_at=2026-09-09T15:09:25Z
 503 489 bot-ua https://www.football-data.co.uk/mmz4281/2627/E0.csv [server: nginx]
 503 489 curl-ua https://www.football-data.co.uk/mmz4281/2627/E0.csv [server: nginx]
 503 489 chrome-ua https://www.football-data.co.uk/mmz4281/2627/E0.csv [server: nginx]
@@ -7,5 +7,5 @@ fetched_at=2026-09-09T15:07:29Z
 503 489 http1.1 https://www.football-data.co.uk/mmz4281/2627/E0.csv [Server: nginx]
 503 489 top-page https://www.football-data.co.uk/ [server: nginx]
 200 19917 mirror-readme https://raw.githubusercontent.com/xgabora/Club-Football-Match-Data-2000-2025/main/README.md []
-400 16 odds-events-soccer_epl.json 
-400 16 odds-scores-soccer_epl.json 
+200 3608 odds-events-soccer_epl.json x-requests-remaining: 329 x-requests-last: 0 x-requests-used: 171 
+200 4925 odds-scores-soccer_epl.json x-requests-remaining: 327 x-requests-last: 2 x-requests-used: 173 
