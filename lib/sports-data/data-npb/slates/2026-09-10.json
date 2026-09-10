@@ -1,7 +1,7 @@
 {
   "date": "2026-09-10",
   "season": 1002026,
-  "fetchedAt": "2026-09-10T05:42:45.260Z",
+  "fetchedAt": "2026-09-10T07:28:02.206Z",
   "games": [
     {
       "gamePk": 92026091001,
@@ -639,11 +639,6 @@
   "injuries": {
     "901": [
       {
-        "name": "井上 温大",
-        "position": "投手",
-        "status": "登録抹消 2026-09-01"
-      },
-      {
         "name": "赤星 優志",
         "position": "投手",
         "status": "登録抹消 2026-09-04"
@@ -672,6 +667,11 @@
         "name": "Ｊ．ティマ",
         "position": "外野手",
         "status": "登録抹消 2026-09-09"
+      },
+      {
+        "name": "Ｂ．マタ",
+        "position": "投手",
+        "status": "登録抹消 2026-09-10"
       }
     ],
     "902": [
@@ -701,6 +701,16 @@
         "name": "平良 拳太郎",
         "position": "投手",
         "status": "登録抹消 2026-09-01"
+      },
+      {
+        "name": "馬場 皐輔",
+        "position": "投手",
+        "status": "登録抹消 2026-09-10"
+      },
+      {
+        "name": "勝又 温史",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-10"
       }
     ],
     "904": [
@@ -764,6 +774,11 @@
         "name": "中村 晃",
         "position": "内野手",
         "status": "登録抹消 2026-09-09"
+      },
+      {
+        "name": "大津 亮介",
+        "position": "投手",
+        "status": "登録抹消 2026-09-10"
       }
     ],
     "908": [
@@ -859,6 +874,11 @@
         "name": "前田 健太",
         "position": "投手",
         "status": "登録抹消 2026-09-09"
+      },
+      {
+        "name": "佐藤 直樹",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-10"
       }
     ]
   },
@@ -889,36 +909,36 @@
       "roof": "dome"
     },
     "92026091003": {
-      "temperatureC": 20.4,
-      "windSpeedKmh": 7.3,
-      "windDirectionDeg": 351,
+      "temperatureC": 20.3,
+      "windSpeedKmh": 6.8,
+      "windDirectionDeg": 357,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-10T05:42:45.976Z"
+      "fetchedAt": "2026-09-10T07:28:02.918Z"
     },
     "92026091002": {
-      "temperatureC": 24.5,
-      "windSpeedKmh": 9.6,
-      "windDirectionDeg": 34,
+      "temperatureC": 23,
+      "windSpeedKmh": 11,
+      "windDirectionDeg": 41,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-10T05:42:46.137Z"
+      "fetchedAt": "2026-09-10T07:28:03.064Z"
     },
     "92026091009": {
-      "temperatureC": 20.8,
-      "windSpeedKmh": 9.5,
-      "windDirectionDeg": 9,
+      "temperatureC": 20.7,
+      "windSpeedKmh": 12.2,
+      "windDirectionDeg": 28,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-10T05:42:46.299Z"
+      "fetchedAt": "2026-09-10T07:28:03.210Z"
     },
     "92026091007": {
-      "temperatureC": 25.4,
-      "windSpeedKmh": 13.3,
-      "windDirectionDeg": 49,
+      "temperatureC": 24.6,
+      "windSpeedKmh": 12.5,
+      "windDirectionDeg": 39,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-10T05:42:46.460Z"
+      "fetchedAt": "2026-09-10T07:28:03.357Z"
     }
   }
 }
