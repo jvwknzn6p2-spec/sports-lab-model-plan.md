@@ -1,9 +1,21 @@
 {
   "date": "2026-09-10",
-  "fetchedAt": "2026-09-10T22:10:10.974Z",
+  "fetchedAt": "2026-09-11T04:10:17.670Z",
   "results": {
+    "823088": {
+      "homeScore": 4,
+      "awayScore": 3
+    },
     "823413": {
       "homeScore": 1,
+      "awayScore": 2
+    },
+    "823499": {
+      "homeScore": 10,
+      "awayScore": 3
+    },
+    "824550": {
+      "homeScore": 0,
       "awayScore": 2
     },
     "824872": {
@@ -11,21 +23,5 @@
       "awayScore": 1
     }
   },
-  "pending": [
-    {
-      "gamePk": 823088,
-      "matchup": "Texas Rangers @ Seattle Mariners",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823499,
-      "matchup": "Colorado Rockies @ New York Yankees",
-      "reason": "not final (Pre-Game)"
-    },
-    {
-      "gamePk": 824550,
-      "matchup": "Pittsburgh Pirates @ Chicago White Sox",
-      "reason": "not final (Pre-Game)"
-    }
-  ]
+  "pending": []
 }
