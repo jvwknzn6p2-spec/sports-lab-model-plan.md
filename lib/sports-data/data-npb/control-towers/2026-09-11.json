@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-11",
+  "season": 1002026,
+  "sims": 10000,
+  "passThreshold": 0.55,
+  "minEv": 0,
+  "handicaps": {
+    "92026091104": {
+      "side": "home",
+      "line": 1.5,
+      "total": 6.5,
+      "marketHomeCover": 0.611,
+      "marketHomePayout": 0.552,
+      "marketAwayPayout": 1.46,
+      "marketOver": 0.519
+    },
+    "92026091111": {
+      "side": "home",
+      "line": 1.5,
+      "total": 7,
+      "marketHomeCover": 0.596,
+      "marketHomePayout": 0.606,
+      "marketAwayPayout": 1.37,
+      "marketOver": 0.5
+    },
+    "92026091107": {
+      "side": "home",
+      "line": -1.5,
+      "total": 7.5,
+      "marketHomeCover": 0.523,
+      "marketHomePayout": 0.817,
+      "marketAwayPayout": 0.99,
+      "marketOver": 0.495
+    }
+  }
+}
