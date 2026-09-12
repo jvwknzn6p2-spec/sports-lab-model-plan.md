@@ -1,6 +1,6 @@
 {
   "date": "2026-09-11",
-  "fetchedAt": "2026-09-12T04:09:40.301Z",
+  "fetchedAt": "2026-09-12T10:29:09.674Z",
   "results": {
     "822684": {
       "homeScore": 4,
@@ -13,6 +13,14 @@
     "822930": {
       "homeScore": 3,
       "awayScore": 1
+    },
+    "823012": {
+      "homeScore": 7,
+      "awayScore": 3
+    },
+    "823173": {
+      "homeScore": 5,
+      "awayScore": 7
     },
     "823498": {
       "homeScore": 6,
@@ -45,28 +53,15 @@
     "824873": {
       "homeScore": 6,
       "awayScore": 5
+    },
+    "824954": {
+      "homeScore": 6,
+      "awayScore": 5
+    },
+    "825036": {
+      "homeScore": 9,
+      "awayScore": 1
     }
   },
-  "pending": [
-    {
-      "gamePk": 823012,
-      "matchup": "Chicago White Sox @ St. Louis Cardinals",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 824954,
-      "matchup": "Seattle Mariners @ Athletics",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 825036,
-      "matchup": "Texas Rangers @ Arizona Diamondbacks",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823173,
-      "matchup": "San Diego Padres @ San Francisco Giants",
-      "reason": "not final (In Progress)"
-    }
-  ]
+  "pending": []
 }
