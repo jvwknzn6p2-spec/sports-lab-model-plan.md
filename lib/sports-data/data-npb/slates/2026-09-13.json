@@ -1,7 +1,7 @@
 {
   "date": "2026-09-13",
   "season": 1002026,
-  "fetchedAt": "2026-09-13T04:41:43.787Z",
+  "fetchedAt": "2026-09-13T05:45:25.804Z",
   "games": [
     {
       "gamePk": 92026091305,
@@ -897,8 +897,8 @@
           "name": "佐藤"
         },
         {
-          "playerId": 9090890329,
-          "name": "安田"
+          "playerId": 9090289975,
+          "name": "上田"
         },
         {
           "playerId": 9090008856,
@@ -980,20 +980,20 @@
       "hitByPitch": 5,
       "strikeOuts": 82
     },
-    "9090890329": {
-      "plateAppearances": 206,
-      "atBats": 189,
-      "hits": 51,
-      "doubles": 15,
+    "9090289975": {
+      "plateAppearances": 157,
+      "atBats": 146,
+      "hits": 33,
+      "doubles": 5,
       "triples": 0,
-      "homeRuns": 6,
+      "homeRuns": 7,
       "stolenBases": 0,
-      "caughtStealing": 0,
-      "sacFlies": 1,
-      "baseOnBalls": 15,
-      "intentionalWalks": 1,
-      "hitByPitch": 1,
-      "strikeOuts": 51
+      "caughtStealing": 1,
+      "sacFlies": 0,
+      "baseOnBalls": 11,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 35
     },
     "9090008856": {
       "plateAppearances": 316,
@@ -1211,28 +1211,28 @@
   },
   "weather": {
     "92026091305": {
-      "temperatureC": 25.4,
+      "temperatureC": 24.8,
+      "windSpeedKmh": 2.3,
+      "windDirectionDeg": 141,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-09-13T05:45:26.395Z"
+    },
+    "92026091303": {
+      "temperatureC": 24.7,
       "windSpeedKmh": 3.3,
       "windDirectionDeg": 167,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-13T04:41:43.861Z"
-    },
-    "92026091303": {
-      "temperatureC": 25.4,
-      "windSpeedKmh": 6.3,
-      "windDirectionDeg": 204,
-      "roof": "outdoor",
-      "cfBearingDeg": null,
-      "fetchedAt": "2026-09-13T04:41:43.879Z"
+      "fetchedAt": "2026-09-13T05:45:26.533Z"
     },
     "92026091302": {
-      "temperatureC": 27.8,
-      "windSpeedKmh": 15.9,
-      "windDirectionDeg": 245,
+      "temperatureC": 27.6,
+      "windSpeedKmh": 14.8,
+      "windDirectionDeg": 241,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-13T04:41:43.895Z"
+      "fetchedAt": "2026-09-13T05:45:26.671Z"
     },
     "92026091310": {
       "temperatureC": null,
@@ -1242,10 +1242,10 @@
     "92026091307": {
       "temperatureC": 27.3,
       "windSpeedKmh": 7.7,
-      "windDirectionDeg": 319,
+      "windDirectionDeg": 298,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-13T04:41:43.913Z"
+      "fetchedAt": "2026-09-13T05:45:26.810Z"
     }
   }
 }
