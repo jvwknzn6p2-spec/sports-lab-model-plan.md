@@ -1,17 +1,22 @@
 # HandiEdge — standing audit
 
-_Generated 2026-08-31T16:13:58.919Z over 34 day(s)._
+_Generated 2026-09-14T15:05:53.843Z over 42 day(s)._
 
 ## S-3 / B-2 — Integrity
 
-- ❌ `late_lock` 2026-08-27: locked 439.7 min after the deadline
-- ❌ `late_lock` 2026-08-28: locked 452.3 min after the deadline
-- ❌ `late_lock` 2026-08-29: locked 106 min after the deadline
-- ❌ `late_lock` 2026-08-30: locked 89.1 min after the deadline
+- ❌ `missing_results` 2026-09-02: results were due and are still missing
+- ❌ `late_lock` 2026-08-31: locked 249 min after the deadline
+- ❌ `late_lock` 2026-09-01: locked 93.6 min after the deadline
+- ❌ `late_lock` 2026-09-02: locked 78.6 min after the deadline
+- ❌ `late_lock` 2026-09-09: locked 77.7 min after the deadline
+- ❌ `late_lock` 2026-09-10: locked 69.8 min after the deadline
+- ❌ `late_lock` 2026-09-11: locked 72.7 min after the deadline
+- ❌ `late_lock` 2026-09-12: locked 22.9 min after the deadline
+- ❌ `late_lock` 2026-09-13: locked 63.2 min after the deadline
 
 ## S-4 — Lock discipline
 
-❌ 23 of 33 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 2.4 minutes.
+❌ 31 of 41 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 2.4 minutes.
 - ❌ 2026-07-28: locked 139 min AFTER the deadline
 - ❌ 2026-07-29: locked 123.3 min AFTER the deadline
 - ❌ 2026-07-30: locked 127 min AFTER the deadline
@@ -35,6 +40,14 @@ _Generated 2026-08-31T16:13:58.919Z over 34 day(s)._
 - ❌ 2026-08-28: locked 452.3 min AFTER the deadline
 - ❌ 2026-08-29: locked 106 min AFTER the deadline
 - ❌ 2026-08-30: locked 89.1 min AFTER the deadline
+- ❌ 2026-08-31: locked 249 min AFTER the deadline
+- ❌ 2026-09-01: locked 93.6 min AFTER the deadline
+- ❌ 2026-09-02: locked 78.6 min AFTER the deadline
+- ❌ 2026-09-09: locked 77.7 min AFTER the deadline
+- ❌ 2026-09-10: locked 69.8 min AFTER the deadline
+- ❌ 2026-09-11: locked 72.7 min AFTER the deadline
+- ❌ 2026-09-12: locked 22.9 min AFTER the deadline
+- ❌ 2026-09-13: locked 63.2 min AFTER the deadline
 - 2026-08-24: +2.4 min
 - 2026-08-26: +17.6 min
 - 2026-08-25: +21.9 min
@@ -43,41 +56,43 @@ _Generated 2026-08-31T16:13:58.919Z over 34 day(s)._
 
 ## A-1 — Distribution validity
 
-- Margin residual variance: empirical 19.78 vs model 18.08 (ratio 1.09) over 450 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
-- Same-game run correlation: empirical -0.033 vs model 0
-- Mean |margin error|: 3.37 runs
+- Margin residual variance: empirical 21.28 vs model 18.3 (ratio 1.16) over 542 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
+- Same-game run correlation: empirical -0.026 vs model 0
+- Mean |margin error|: 3.46 runs
 
 ## A-3 — Tail trust (S-cap watch)
 
 ⚠️ **S is capped at A**: the winner market's tail trust sits below the 0.75 floor. It lifts when BOTH winner tail shrinks learn back above the floor.
-- winner: tail 0.697 / far 0.647 (below floor) — 54 tail bet(s) scored, 1 stamped far-tail, 46 legacy (teaching both bands)
-- handicap: tail 0.641 / far 0.64 (below floor) — 6 tail bet(s) scored, 1 stamped far-tail, 4 legacy (teaching both bands)
-- total: tail 0.859 / far 0.833 (ok) — 2 tail bet(s) scored, 1 stamped far-tail, 0 legacy (teaching both bands)
+- winner: tail 0.707 / far 0.647 (below floor) — 58 tail bet(s) scored, 1 stamped far-tail, 46 legacy (teaching both bands)
+- handicap: tail 0.634 / far 0.619 (below floor) — 16 tail bet(s) scored, 6 stamped far-tail, 4 legacy (teaching both bands)
+- total: tail 0.844 / far 0.833 (ok) — 3 tail bet(s) scored, 1 stamped far-tail, 0 legacy (teaching both bands)
 
 ## A-4 — Input-data health
 
-- `[info] away_starter_xfip_estimated`: 425 games (94.2%)
-- `[info] home_starter_xfip_estimated`: 420 games (93.1%)
-- `[warn] home_bullpen_bullpen_heavy_usage`: 252 games (55.9%)
-- `[warn] away_bullpen_bullpen_heavy_usage`: 209 games (46.3%)
-- `[info] home_players_on_il`: 123 games (27.3%)
-- `[info] away_players_on_il`: 123 games (27.3%)
-- `[info] away_lineup_not_posted`: 94 games (20.8%)
-- `[info] home_lineup_not_posted`: 88 games (19.5%)
-- `[warn] away_starter_starter_low_sample`: 61 games (13.5%)
-- `[warn] home_starter_starter_low_sample`: 43 games (9.5%)
-- `[info] home_lineup_applied`: 35 games (7.8%)
-- `[info] away_bullpen_bullpen_heavy_usage`: 29 games (6.4%)
-- `[info] away_lineup_applied`: 29 games (6.4%)
-- `[downgrade] home_no_probable_pitcher`: 26 games (5.8%)
-- `[downgrade] away_no_probable_pitcher`: 21 games (4.7%)
-- `[info] home_bullpen_bullpen_heavy_usage`: 21 games (4.7%)
-- `[warn] total_market_disagreement`: 11 games (2.4%)
-- `[info] weather_missing`: 7 games (1.6%)
-- `[downgrade] away_starter_stats_missing`: 5 games (1.1%)
-- `[downgrade] home_starter_stats_missing`: 5 games (1.1%)
-- `[warn] market_disagreement`: 3 games (0.7%)
+- `[info] away_starter_xfip_estimated`: 525 games (94.1%)
+- `[info] home_starter_xfip_estimated`: 524 games (93.9%)
+- `[warn] home_bullpen_bullpen_heavy_usage`: 270 games (48.4%)
+- `[warn] away_bullpen_bullpen_heavy_usage`: 230 games (41.2%)
+- `[info] home_players_on_il`: 230 games (41.2%)
+- `[info] away_players_on_il`: 230 games (41.2%)
+- `[info] away_lineup_not_posted`: 190 games (34.1%)
+- `[info] home_lineup_not_posted`: 181 games (32.4%)
+- `[warn] away_starter_starter_low_sample`: 75 games (13.4%)
+- `[info] away_bullpen_bullpen_heavy_usage`: 74 games (13.3%)
+- `[info] home_bullpen_bullpen_heavy_usage`: 65 games (11.6%)
+- `[warn] home_starter_starter_low_sample`: 56 games (10.0%)
+- `[info] home_lineup_applied`: 49 games (8.8%)
+- `[info] away_lineup_applied`: 40 games (7.2%)
+- `[downgrade] home_no_probable_pitcher`: 29 games (5.2%)
+- `[downgrade] away_no_probable_pitcher`: 27 games (4.8%)
+- `[warn] total_market_disagreement`: 24 games (4.3%)
+- `[info] weather_missing`: 11 games (2.0%)
+- `[downgrade] away_starter_stats_missing`: 6 games (1.1%)
+- `[downgrade] home_starter_stats_missing`: 5 games (0.9%)
+- `[warn] market_disagreement`: 4 games (0.7%)
 - `[warn] home_lineup_bats_missing_stats`: 1 games (0.2%)
+- `[warn] away_lineup_bats_missing_stats`: 1 games (0.2%)
+- `[warn] weather_high_wind`: 1 games (0.2%)
 
 ## A-2 — Real-line settlements (hand-check these)
 
@@ -149,13 +164,99 @@ _Each row shows the whole arithmetic: the line as quoted, the final margin from 
   - stake on -1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
 - 2026-08-30 Houston Astros @ New York Mets — backed **Houston Astros +1.5** (quoted 〈line -1.5〉), margin +3
   - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-08-31 New York Mets @ Tampa Bay Rays — backed **New York Mets +1.5** (quoted 〈line -1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-08-31 Detroit Tigers @ Minnesota Twins — backed **Detroit Tigers +1.5** (quoted 〈line -1.5〉), margin -10
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-08-31 Athletics @ Texas Rangers — backed **Athletics +1.5** (quoted 〈line -1.5〉), margin -7
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-01 San Diego Padres @ Cincinnati Reds — backed **Cincinnati Reds +1.5** (quoted 〈line 1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-01 San Francisco Giants @ Pittsburgh Pirates — backed **San Francisco Giants +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-01 New York Mets @ Tampa Bay Rays — backed **New York Mets +1.5** (quoted 〈line -1.5〉), margin -4
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-01 Toronto Blue Jays @ Cleveland Guardians — backed **Toronto Blue Jays +1.5** (quoted 〈line -1.5〉), margin -5
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-01 Seattle Mariners @ Boston Red Sox — backed **Seattle Mariners +1.5** (quoted 〈line -1.5〉), margin +3
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-01 Detroit Tigers @ Minnesota Twins — backed **Minnesota Twins +1.5** (quoted 〈line 1.5〉), margin +13
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-01 Miami Marlins @ Kansas City Royals — backed **Kansas City Royals +1.5** (quoted 〈line 1.5〉), margin -3
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-01 Athletics @ Texas Rangers — backed **Athletics +1.5** (quoted 〈line -1.5〉), margin -3
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-01 Philadelphia Phillies @ Arizona Diamondbacks — backed **Arizona Diamondbacks +1.5** (quoted 〈line 1.5〉), margin -6
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-01 St. Louis Cardinals @ Los Angeles Dodgers — backed **St. Louis Cardinals +1.5** (quoted 〈line -1.5〉), margin +5
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-09 St. Louis Cardinals @ San Francisco Giants — backed **San Francisco Giants +1.5** (quoted 〈line 1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-09 Texas Rangers @ Seattle Mariners — backed **Texas Rangers +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-09 Cleveland Guardians @ Baltimore Orioles — backed **Baltimore Orioles +1.5** (quoted 〈line 1.5〉), margin +4
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-09 Houston Astros @ Philadelphia Phillies — backed **Houston Astros +1.5** (quoted 〈line -1.5〉), margin -4
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-09 Arizona Diamondbacks @ Kansas City Royals — backed **Kansas City Royals +1.5** (quoted 〈line 1.5〉), margin +3
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-09 Cincinnati Reds @ Los Angeles Dodgers — backed **Los Angeles Dodgers -1.5** (quoted 〈line -1.5〉), margin +13
+  - stake on -1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-10 Houston Astros @ Philadelphia Phillies — backed **Houston Astros +1.5** (quoted 〈line -1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-11 Los Angeles Angels @ Washington Nationals — backed **Los Angeles Angels +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-11 New York Mets @ New York Yankees — backed **New York Mets +1.5** (quoted 〈line -1.5〉), margin -2
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-11 Kansas City Royals @ Boston Red Sox — backed **Kansas City Royals +1.5** (quoted 〈line -1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-11 Houston Astros @ Tampa Bay Rays — backed **Houston Astros +1.5** (quoted 〈line -1.5〉), margin -2
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-11 Philadelphia Phillies @ Atlanta Braves — backed **Philadelphia Phillies +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-11 Cincinnati Reds @ Milwaukee Brewers — backed **Milwaukee Brewers -1.5** (quoted 〈line -1.5〉), margin +20
+  - stake on -1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-11 San Diego Padres @ San Francisco Giants — backed **San Francisco Giants +1.5** (quoted 〈line 1.5〉), margin -2
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-12 Pittsburgh Pirates @ Chicago Cubs — backed **Pittsburgh Pirates +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-12 Baltimore Orioles @ Toronto Blue Jays — backed **Toronto Blue Jays +1.5** (quoted 〈line 1.5〉), margin +4
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-12 Los Angeles Angels @ Washington Nationals — backed **Los Angeles Angels +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-12 Kansas City Royals @ Boston Red Sox — backed **Kansas City Royals +1.5** (quoted 〈line -1.5〉), margin -4
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-12 Los Angeles Dodgers @ Miami Marlins — backed **Miami Marlins +1.5** (quoted 〈line 1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-12 Houston Astros @ Tampa Bay Rays — backed **Houston Astros +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-12 Chicago White Sox @ St. Louis Cardinals — backed **St. Louis Cardinals +1.5** (quoted 〈line 1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-12 Seattle Mariners @ Athletics — backed **Athletics +1.5** (quoted 〈line 1.5〉), margin -18
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-13 Los Angeles Angels @ Washington Nationals — backed **Los Angeles Angels +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-13 New York Mets @ New York Yankees — backed **New York Mets +1.5** (quoted 〈line -1.5〉), margin -2
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-13 Baltimore Orioles @ Toronto Blue Jays — backed **Baltimore Orioles +1.5** (quoted 〈line -1.5〉), margin -7
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-13 Houston Astros @ Tampa Bay Rays — backed **Houston Astros +1.5** (quoted 〈line -1.5〉), margin -10
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-13 Cleveland Guardians @ Minnesota Twins — backed **Cleveland Guardians +1.5** (quoted 〈line -1.5〉), margin +7
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-13 Cincinnati Reds @ Milwaukee Brewers — backed **Milwaukee Brewers -1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on -1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-09-13 Pittsburgh Pirates @ Chicago Cubs — backed **Pittsburgh Pirates +1.5** (quoted 〈line -1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-09-13 Kansas City Royals @ Boston Red Sox — backed **Kansas City Royals +1.5** (quoted 〈line -1.5〉), margin -3
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
 
 ## A-5 / A-2 — Watched cohorts
 
 _Cohorts deliberately left without their own correction; judge at n≈50 per cohort. Real-line rows are the A-2 readiness tripwire — the day they stop reading n=0, cross-check those settlements by hand._
 
-- starter+offense edges aligned: 19-27 (41.3%, -9.90 units, n=46)
-- away-team picks: 26-26 (50.0%, -2.60 units, n=52)
-- ev_outlier flagged: 1-0 (100.0%, +0.90 units, n=1)
-- real handicap line (non-zero): 15-18 (45.5%, -4.50 units, n=33)
-- new engine (post-overhaul): 35-30 (53.8%, +1.50 units, n=65)
+- starter+offense edges aligned: 26-28 (48.1%, -4.60 units, n=54)
+- away-team picks: 29-27 (51.8%, -0.90 units, n=56)
+- ev_outlier flagged: 5-1 (83.3%, +3.50 units, n=6)
+- real handicap line (non-zero): 40-36 (52.6%, +0.00 units, n=76)
+- new engine (post-overhaul): 60-48 (55.6%, +6.00 units, n=108)
