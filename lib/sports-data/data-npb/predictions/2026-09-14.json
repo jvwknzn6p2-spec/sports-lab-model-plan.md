@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-14T08:03:38.560Z",
-  "updatedAt": "2026-09-14T08:03:38.560Z",
+  "updatedAt": "2026-09-14T09:09:31.579Z",
   "controlTower": {
     "date": "2026-09-14",
     "season": 1002026,
@@ -12,27 +12,27 @@
         "side": "home",
         "line": 1.5,
         "total": 6.5,
-        "marketHomeCover": 0.609,
-        "marketHomePayout": 0.563,
-        "marketAwayPayout": 1.435,
-        "marketOver": 0.51
+        "marketHomeCover": 0.591,
+        "marketHomePayout": 0.637,
+        "marketAwayPayout": 1.35,
+        "marketOver": 0.535
       },
       "92026091403": {
         "side": "home",
         "line": -1.5,
         "total": 7,
-        "marketHomeCover": 0.378,
-        "marketHomePayout": 1.5,
-        "marketAwayPayout": 0.543,
+        "marketHomeCover": 0.417,
+        "marketHomePayout": 1.15,
+        "marketAwayPayout": 0.606,
         "marketOver": 0.517
       },
       "92026091402": {
         "side": "home",
         "line": -1.5,
         "total": 6,
-        "marketHomeCover": 0.39,
-        "marketHomePayout": 1.45,
-        "marketAwayPayout": 0.548,
+        "marketHomeCover": 0.404,
+        "marketHomePayout": 1.36,
+        "marketAwayPayout": 0.599,
         "marketOver": 0.478
       }
     }
@@ -120,7 +120,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-14T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026091403,
@@ -188,7 +188,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-14T08:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026091402,
@@ -257,7 +257,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-14T08:27:00.000Z",
-      "final": false
+      "final": true
     }
   ]
 }
