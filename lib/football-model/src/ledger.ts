@@ -64,6 +64,11 @@ export interface LedgerPrediction {
    */
   historyAsOf?: string;
   historyMissing?: number;
+  /**
+   * 適合に使った L2 罰則の係数 α（`fit.ts` の ridge）。dc-v2-ridge 以降の行が持つ。
+   * dc-v1 の行には無い（＝罰則なし・α=0 相当）
+   */
+  ridge?: number;
 }
 
 export interface LedgerResult {

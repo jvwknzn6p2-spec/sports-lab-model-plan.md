@@ -159,3 +159,116 @@ test("walkForward: 基準（頻度）より RPS が良い・行数と再学習�
   const trainBefore = matches.filter((m) => Date.parse(m.date) < firstEvaluated).length;
   assert.ok(trainBefore >= 60);
 });
+
+// --- 正則化（リッジ縮小）--------------------------------------------------
+// 2026-09-15 の実測: 正則化が無いため λ が 0.025〜4.835 まで発散し、
+// 「最小確率 1%」のような予想が 168 件中 7 件出ていた。市場との乖離が大きい群ほど
+// 成績が悪く（20pt 以上の 16 件で RPS +0.0523）、乖離はエッジではなく雑音だった。
+// 対策は攻撃力・守備力を**リーグ平均へ**縮小する L2 罰則（階層ベイズの MAP 近似）。
+
+/** 昇格直後を模す: 既存 6 チームに、数試合しか無く大勝続きの新チーム G を足す */
+function withThinTeam(): MatchRecord[] {
+  const base = simulate(3, 11);
+  const last = Date.parse(base[base.length - 1].date);
+  const out = [...base];
+  for (let i = 0; i < 4; i++) {
+    const date = new Date(last + (i + 1) * 86_400_000).toISOString();
+    out.push({ date, home: "G", away: "F", homeGoals: 5, awayGoals: 0 });
+  }
+  return out;
+}
+
+test("ridge 既定 0 は従来の推定と 1 ビット同一（本番の挙動を黙って変えない）", () => {
+  const matches = simulate(4, 3);
+  const a = fitDixonColes(matches);
+  const b = fitDixonColes(matches, { ridge: 0 });
+  assert.equal(a.logLikelihood, b.logLikelihood);
+  assert.equal(a.homeAdvantage, b.homeAdvantage);
+  assert.equal(a.rho, b.rho);
+  for (const t of a.teams) {
+    assert.equal(a.attack[t], b.attack[t], `attack ${t}`);
+    assert.equal(a.defense[t], b.defense[t], `defense ${t}`);
+  }
+  assert.equal(a.ridge, 0);
+});
+
+test("ridge は 0 ではなくリーグ平均へ縮小する（得点水準を下げない）", () => {
+  const matches = simulate(4, 5);
+  const plain = fitDixonColes(matches, { ridge: 0 });
+  const reg = fitDixonColes(matches, { ridge: 20 });
+  const mean = (f: typeof plain, k: "attack" | "defense") =>
+    f.teams.reduce((s, t) => s + f[k][t], 0) / f.teams.length;
+  // 守備力の平均（＝リーグ全体の失点水準）は保たれる。0 へ縮小していたらここが 0 に寄る
+  assert.ok(
+    Math.abs(mean(reg, "defense") - mean(plain, "defense")) < 0.08,
+    `守備力の平均が動いた: ${mean(plain, "defense")} → ${mean(reg, "defense")}`,
+  );
+  // 平均的な対戦の総得点も保たれる
+  const total = (f: typeof plain) => {
+    const p = predictMatch(f, "C", "D");
+    return p.lambda + p.mu;
+  };
+  assert.ok(Math.abs(total(reg) - total(plain)) < 0.35, `総得点が動いた: ${total(plain)} → ${total(reg)}`);
+});
+
+test("ridge を上げるとチーム間のばらつきが単調に縮む", () => {
+  const matches = simulate(4, 9);
+  const spread = (ridge: number) => {
+    const f = fitDixonColes(matches, { ridge });
+    const m = f.teams.reduce((s, t) => s + f.attack[t], 0) / f.teams.length;
+    return Math.sqrt(f.teams.reduce((s, t) => s + (f.attack[t] - m) ** 2, 0) / f.teams.length);
+  };
+  const s = [0, 5, 20, 80].map(spread);
+  for (let i = 1; i < s.length; i++) {
+    assert.ok(s[i] < s[i - 1], `ridge を上げてばらつきが縮まない: ${s.join(" > ")}`);
+  }
+});
+
+test("標本の薄いチームほど強く縮む（部分プーリング）", () => {
+  const matches = withThinTeam();
+  const plain = fitDixonColes(matches, { ridge: 0 });
+  const reg = fitDixonColes(matches, { ridge: 20 });
+  // G は 4 試合しかないのに大勝続き → 正則化なしでは攻撃力が突出する
+  const shrinkG = Math.abs(plain.attack.G) - Math.abs(reg.attack.G);
+  // 十分な試合数がある既存チームの縮小量と比べる
+  const shrinkEstablished =
+    ["A", "B", "C", "D", "E", "F"].reduce(
+      (s, t) => s + (Math.abs(plain.attack[t]) - Math.abs(reg.attack[t])),
+      0,
+    ) / 6;
+  assert.ok(shrinkG > 0, `G が縮んでいない: ${plain.attack.G} → ${reg.attack.G}`);
+  assert.ok(
+    shrinkG > shrinkEstablished,
+    `薄い標本の G より既存チームの方が縮んだ: G ${shrinkG} vs 既存平均 ${shrinkEstablished}`,
+  );
+});
+
+test("ridge は極端な期待得点を抑える", () => {
+  const matches = withThinTeam();
+  const plain = predictMatch(fitDixonColes(matches, { ridge: 0 }), "G", "F");
+  const reg = predictMatch(fitDixonColes(matches, { ridge: 20 }), "G", "F");
+  assert.ok(plain.lambda > reg.lambda, `正則化で λ が下がっていない: ${plain.lambda} → ${reg.lambda}`);
+  // アウェイ勝ちの確率が現実的な下限を割らない（実測で 1% の予想が出ていた）
+  assert.ok(reg.outcome.away > plain.outcome.away, `弱い側の確率が上がっていない`);
+});
+
+test("リーク検査: ridge を入れても asOf より後の試合は 1 ビットも影響しない", () => {
+  const all = simulate(4, 21);
+  const asOf = all[Math.floor(all.length * 0.6)].date;
+  const a = fitDixonColes(all, { asOf, ridge: 20 });
+  const b = fitDixonColes(all.slice(0, Math.floor(all.length * 0.6)), { asOf, ridge: 20 });
+  assert.equal(a.logLikelihood, b.logLikelihood);
+  for (const t of a.teams) assert.equal(a.attack[t], b.attack[t], `attack ${t}`);
+});
+
+test("clampLambda: 既定は無効、指定すると期待得点が範囲に収まり発動が分かる", () => {
+  const fit = fitDixonColes(withThinTeam(), { ridge: 0 });
+  const off = predictMatch(fit, "G", "F");
+  assert.equal(off.clamped, false);
+  const on = predictMatch(fit, "G", "F", { clampLambda: [0.15, 2.0] });
+  assert.ok(on.lambda <= 2.0 + 1e-12, `λ がクリップされていない: ${on.lambda}`);
+  assert.equal(on.clamped, true);
+  // 確率は合計 1 のまま
+  const s = on.outcome.home + on.outcome.draw + on.outcome.away;
+  assert.ok(Math.abs(s - 1) < 1e-9, `確率の合計が 1 でない: ${s}`);
+});

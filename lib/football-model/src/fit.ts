@@ -32,6 +32,19 @@ export interface FitOptions {
   asOf?: string;
   /** ρ も推定するか。既定 true。false なら ρ = 0（独立ポアソン） */
   fitRho?: boolean;
+  /**
+   * 攻撃力・守備力を**リーグ平均へ**縮小する L2 罰則の係数 α。既定 0（＝罰則なし）。
+   *
+   * 目的関数は `Σ w·logP − α[Σ(aᵢ−ā)² + Σ(dᵢ−d̄)²]`。階層ベイズ（Baio & Blangiardo
+   * 2010 型）の MAP 近似にあたり、標本の薄いチームほど強く平均へ寄る（部分プーリング）。
+   *
+   * **0 へではなく平均へ縮小する。** 識別性の制約は `Σattack = 0` だけで、守備力の
+   * 平均はリーグ全体の失点水準を担っている。0 へ縮小するとその水準ごと下げてしまう。
+   *
+   * α は絶対値で、尤度側は重み合計に比例して大きくなる。よってデータが増えるほど
+   * 罰則の相対的な効きは自然に弱まる（事前分布が固定で尤度が育つのと同じ）。
+   */
+  ridge?: number;
   maxIter?: number;
   /** 対数尤度の改善がこれ未満になったら停止（重み合計で正規化した値） */
   tol?: number;
@@ -43,7 +56,10 @@ export interface FitResult {
   defense: Record<string, number>;
   homeAdvantage: number;
   rho: number;
+  /** 重み付き対数尤度（罰則を含まない生の値） */
   logLikelihood: number;
+  /** 適用した L2 罰則の係数 α（0 なら罰則なし） */
+  ridge: number;
   iterations: number;
   nMatches: number;
   weightSum: number;
@@ -60,14 +76,20 @@ function logFactorial(k: number): number {
   return s;
 }
 
-/** 重み付き対数尤度とその勾配 */
+/**
+ * 重み付き対数尤度・罰則つき目的関数・その勾配。
+ *
+ * `obj = ll − α[Σ(aᵢ−ā)² + Σ(dᵢ−d̄)²]`。Σ(xᵢ−x̄)² の xⱼ による偏微分は
+ * `2(xⱼ−x̄)`（Σ(xᵢ−x̄)=0 なので平均項が消える）。最大化なので勾配から引く。
+ */
 function evaluate(
   rows: Array<{ h: number; a: number; w: number; hi: number; ai: number }>,
   attack: Float64Array,
   defense: Float64Array,
   gamma: number,
   rho: number,
-): { ll: number; gAttack: Float64Array; gDefense: Float64Array; gGamma: number; gRho: number } {
+  ridge: number,
+): { ll: number; obj: number; gAttack: Float64Array; gDefense: Float64Array; gGamma: number; gRho: number } {
   const T = attack.length;
   const gAttack = new Float64Array(T);
   const gDefense = new Float64Array(T);
@@ -105,7 +127,27 @@ function evaluate(
     gAttack[r.ai] += r.w * dMu;
     gDefense[r.hi] += r.w * dMu;
   }
-  return { ll, gAttack, gDefense, gGamma, gRho };
+  let obj = ll;
+  if (ridge > 0) {
+    let meanA = 0;
+    let meanD = 0;
+    for (let i = 0; i < T; i++) {
+      meanA += attack[i];
+      meanD += defense[i];
+    }
+    meanA /= T;
+    meanD /= T;
+    let penalty = 0;
+    for (let i = 0; i < T; i++) {
+      const da = attack[i] - meanA;
+      const dd = defense[i] - meanD;
+      penalty += da * da + dd * dd;
+      gAttack[i] -= 2 * ridge * da;
+      gDefense[i] -= 2 * ridge * dd;
+    }
+    obj = ll - ridge * penalty;
+  }
+  return { ll, obj, gAttack, gDefense, gGamma, gRho };
 }
 
 /**
@@ -114,6 +156,8 @@ function evaluate(
 export function fitDixonColes(matches: ReadonlyArray<MatchRecord>, opts: FitOptions = {}): FitResult {
   const xi = opts.xi ?? 0.0065;
   const fitRho = opts.fitRho ?? true;
+  const ridge = opts.ridge ?? 0;
+  if (!(ridge >= 0) || !Number.isFinite(ridge)) throw new Error(`ridge は 0 以上の有限値: ${opts.ridge}`);
   const maxIter = opts.maxIter ?? 3000;
   const tol = opts.tol ?? 1e-9;
 
@@ -154,7 +198,7 @@ export function fitDixonColes(matches: ReadonlyArray<MatchRecord>, opts: FitOpti
   let rho = 0;
 
   let lr = 0.5;
-  let cur = evaluate(rows, attack, defense, gamma, rho);
+  let cur = evaluate(rows, attack, defense, gamma, rho, ridge);
   let iterations = 0;
   for (; iterations < maxIter; iterations++) {
     const step = lr / weightSum;
@@ -172,9 +216,11 @@ export function fitDixonColes(matches: ReadonlyArray<MatchRecord>, opts: FitOpti
     }
     const nGamma = gamma + step * cur.gGamma;
     const nRho = fitRho ? Math.max(-RHO_LIMIT, Math.min(RHO_LIMIT, rho + step * cur.gRho)) : 0;
-    const next = evaluate(rows, nAttack, nDefense, nGamma, nRho);
-    if (next.ll >= cur.ll) {
-      const gain = (next.ll - cur.ll) / weightSum;
+    // 採否は**罰則つきの目的関数**で判定する。生の尤度で判定すると、罰則を悪化させる
+    // 歩みを受け入れてしまい、縮小が効かない
+    const next = evaluate(rows, nAttack, nDefense, nGamma, nRho, ridge);
+    if (next.obj >= cur.obj) {
+      const gain = (next.obj - cur.obj) / weightSum;
       attack = nAttack;
       defense = nDefense;
       gamma = nGamma;
@@ -204,6 +250,7 @@ export function fitDixonColes(matches: ReadonlyArray<MatchRecord>, opts: FitOpti
     homeAdvantage: gamma,
     rho,
     logLikelihood: cur.ll,
+    ridge,
     iterations,
     nMatches: used.length,
     weightSum,
@@ -223,19 +270,36 @@ export interface MatchPrediction {
   bothTeamsScore: number;
   over25: number;
   matrix: number[][];
+  /** λ または μ が clampLambda の範囲外で丸められたか。true は適合側の異常の兆候 */
+  clamped: boolean;
 }
 
-/** 学習済みモデルで 1 試合を予測する。未知のチームは例外（中立値で埋めない） */
+/**
+ * 学習済みモデルで 1 試合を予測する。未知のチームは例外（中立値で埋めない）。
+ *
+ * `clampLambda` は期待得点の安全域。既定は無効（従来どおり）。**これは保険であって
+ * 主役ではない** — 発動するのは適合側が壊れているときなので、`clamped` を見て
+ * 原因（正則化の不足）を直すこと。丸めて誤魔化さない。
+ */
 export function predictMatch(
   fit: FitResult,
   home: string,
   away: string,
-  opts: { maxGoals?: number; scorelines?: number } = {},
+  opts: { maxGoals?: number; scorelines?: number; clampLambda?: readonly [number, number] } = {},
 ): MatchPrediction {
   if (!(home in fit.attack)) throw new Error(`未知のチーム: ${home}`);
   if (!(away in fit.attack)) throw new Error(`未知のチーム: ${away}`);
-  const lambda = Math.exp(fit.attack[home] + fit.defense[away] + fit.homeAdvantage);
-  const mu = Math.exp(fit.attack[away] + fit.defense[home]);
+  const rawLambda = Math.exp(fit.attack[home] + fit.defense[away] + fit.homeAdvantage);
+  const rawMu = Math.exp(fit.attack[away] + fit.defense[home]);
+  let lambda = rawLambda;
+  let mu = rawMu;
+  if (opts.clampLambda) {
+    const [lo, hi] = opts.clampLambda;
+    if (!(lo > 0) || !(hi > lo)) throw new Error(`clampLambda が不正: [${lo}, ${hi}]`);
+    lambda = Math.min(hi, Math.max(lo, lambda));
+    mu = Math.min(hi, Math.max(lo, mu));
+  }
+  const clamped = lambda !== rawLambda || mu !== rawMu;
   const matrix = scoreMatrix(lambda, mu, { maxGoals: opts.maxGoals ?? 10, rho: fit.rho });
   return {
     home,
@@ -248,5 +312,6 @@ export function predictMatch(
     bothTeamsScore: bothTeamsScore(matrix),
     over25: overTotal(matrix, 2.5),
     matrix,
+    clamped,
   };
 }

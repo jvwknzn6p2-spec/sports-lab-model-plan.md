@@ -53,7 +53,19 @@ const CACHE = arg("cache", join(ROOT, "cache"))!;
 const HISTORY = arg("history", join(ROOT, "history"))!;
 const NOW = arg("now", new Date().toISOString())!;
 const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
-const MODEL = "dc-v1"; // Dixon-Coles・ξ=0.0065・窓 1500 日
+/**
+ * 正準モデル。**挙動が変わったら必ず名前を変える**（台帳で新旧の予想を混同しないため）。
+ *   dc-v1       … Dixon-Coles・ξ=0.0065・窓 1500 日・正則化なし（〜2026-09-15）
+ *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜）
+ *
+ * α=2 の根拠（全 10 リーグ・履歴 11,116 予想のウォークフォワード実測・2026-09-15）:
+ *   RPS 0.2036 → 0.2021（ペア差 −0.0015・t=−5.02）。10 リーグ中 9 で改善、E0 は同値。
+ *   最小確率 <5% の予想は 4.3% → 1.3% へ減少。α=3 は RPS 0.2023（差は雑音以下）で
+ *   極端予想は 0.8% まで減るので、極端予想が再発したときの次点はこれ。
+ *   α≥10 は明確に悪化（α=10 で +0.0027・t=3.98）。
+ */
+const MODEL = "dc-v2-ridge";
+const RIDGE = 2;
 const WINDOW_DAYS = 1500;
 /** 写しから履歴へ入れる範囲。学習窓より少し長く取り、履歴の先頭が窓より前にあるようにする */
 const HISTORY_SINCE_DAYS = 1600;
@@ -206,7 +218,7 @@ function daily(): void {
         log.push(`${league}: 学習データ ${train.length} 件 < ${MIN_TRAIN}。発行しない（取得失敗か初期化直後）`);
         continue;
       }
-      const fit = fitDixonColes(train, { asOf: NOW });
+      const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE });
       const count = new Map<string, number>();
       for (const t of train) {
         count.set(t.home, (count.get(t.home) ?? 0) + 1);
@@ -227,7 +239,7 @@ function daily(): void {
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
           market: mk?.market ?? null, marketFetchedAt: mk && odds ? odds.fetchedAt : null,
-          historyAsOf, historyMissing,
+          historyAsOf, historyMissing, ridge: fit.ridge,
         });
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }
