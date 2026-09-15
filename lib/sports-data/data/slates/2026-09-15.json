@@ -72,8 +72,8 @@
       "away": {
         "teamId": 145,
         "teamName": "Chicago White Sox",
-        "probablePitcherId": 663436,
-        "probablePitcherName": "Davis Martin",
+        "probablePitcherId": 669684,
+        "probablePitcherName": "Chris Murphy",
         "score": null
       }
     },
@@ -265,8 +265,8 @@
       "home": {
         "teamId": 140,
         "teamName": "Texas Rangers",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 594798,
+        "probablePitcherName": "Jacob deGrom",
         "score": null
       },
       "away": {
@@ -404,6 +404,19 @@
       "runs": 92,
       "atBats": 648,
       "sacFlies": 5
+    },
+    "594798": {
+      "inningsPitched": "149.1",
+      "battersFaced": 601,
+      "strikeOuts": 186,
+      "baseOnBalls": 38,
+      "hitByPitch": 0,
+      "homeRuns": 19,
+      "hits": 123,
+      "earnedRuns": 63,
+      "runs": 63,
+      "atBats": 561,
+      "sacFlies": 1
     },
     "607536": {
       "inningsPitched": "124.1",
@@ -548,19 +561,6 @@
       "atBats": 617,
       "sacFlies": 3
     },
-    "663436": {
-      "inningsPitched": "135.2",
-      "battersFaced": 572,
-      "strikeOuts": 115,
-      "baseOnBalls": 42,
-      "hitByPitch": 9,
-      "homeRuns": 13,
-      "hits": 136,
-      "earnedRuns": 61,
-      "runs": 63,
-      "atBats": 517,
-      "sacFlies": 3
-    },
     "663776": {
       "inningsPitched": "55.0",
       "battersFaced": 253,
@@ -625,6 +625,19 @@
       "runs": 58,
       "atBats": 547,
       "sacFlies": 3
+    },
+    "669684": {
+      "inningsPitched": "32.0",
+      "battersFaced": 140,
+      "strikeOuts": 34,
+      "baseOnBalls": 15,
+      "hitByPitch": 4,
+      "homeRuns": 2,
+      "hits": 28,
+      "earnedRuns": 14,
+      "runs": 17,
+      "atBats": 119,
+      "sacFlies": 2
     },
     "676083": {
       "inningsPitched": "111.0",
@@ -1712,7 +1725,7 @@
   },
   "lineups": {},
   "lineupBatting": {},
-  "fetchedAt": "2026-09-15T15:40:38.541Z",
+  "fetchedAt": "2026-09-15T17:18:37.172Z",
   "forms": {
     "108": {
       "games": 15,
@@ -3274,28 +3287,28 @@
   },
   "weather": {
     "822683": {
-      "temperatureC": 22.8,
-      "windSpeedKmh": 8.5,
-      "windDirectionDeg": 102,
+      "temperatureC": 22.9,
+      "windSpeedKmh": 9.3,
+      "windDirectionDeg": 106,
       "roof": "outdoor",
       "cfBearingDeg": 28,
-      "fetchedAt": "2026-09-15T15:40:45.772Z"
+      "fetchedAt": "2026-09-15T17:18:40.419Z"
     },
     "822762": {
-      "temperatureC": 21.7,
-      "windSpeedKmh": 10.4,
-      "windDirectionDeg": 180,
-      "roof": "retractable",
-      "cfBearingDeg": null,
-      "fetchedAt": "2026-09-15T15:40:45.930Z"
-    },
-    "822849": {
-      "temperatureC": 36.9,
-      "windSpeedKmh": 17.4,
+      "temperatureC": 19.7,
+      "windSpeedKmh": 6.9,
       "windDirectionDeg": 174,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-15T15:40:46.724Z"
+      "fetchedAt": "2026-09-15T17:18:40.525Z"
+    },
+    "822849": {
+      "temperatureC": 37,
+      "windSpeedKmh": 17.6,
+      "windDirectionDeg": 169,
+      "roof": "retractable",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-09-15T17:18:41.038Z"
     },
     "822925": {
       "temperatureC": null,
@@ -3303,92 +3316,92 @@
       "roof": "dome"
     },
     "823007": {
-      "temperatureC": 33.5,
-      "windSpeedKmh": 17.6,
-      "windDirectionDeg": 116,
+      "temperatureC": 27.3,
+      "windSpeedKmh": 13.2,
+      "windDirectionDeg": 101,
       "roof": "outdoor",
       "cfBearingDeg": 62,
-      "fetchedAt": "2026-09-15T15:40:46.561Z"
+      "fetchedAt": "2026-09-15T17:18:40.937Z"
     },
     "823333": {
-      "temperatureC": 23.8,
-      "windSpeedKmh": 7.3,
-      "windDirectionDeg": 147,
+      "temperatureC": 24.4,
+      "windSpeedKmh": 6.2,
+      "windDirectionDeg": 144,
       "roof": "outdoor",
       "cfBearingDeg": 116,
-      "fetchedAt": "2026-09-15T15:40:45.614Z"
+      "fetchedAt": "2026-09-15T17:18:40.315Z"
     },
     "823574": {
       "temperatureC": 19.3,
-      "windSpeedKmh": 10.4,
-      "windDirectionDeg": 146,
+      "windSpeedKmh": 10.6,
+      "windDirectionDeg": 152,
       "roof": "outdoor",
       "cfBearingDeg": 13,
-      "fetchedAt": "2026-09-15T15:40:46.088Z"
+      "fetchedAt": "2026-09-15T17:18:40.629Z"
     },
     "823654": {
-      "temperatureC": 20.7,
-      "windSpeedKmh": 16.6,
-      "windDirectionDeg": 311,
+      "temperatureC": 20.9,
+      "windSpeedKmh": 16,
+      "windDirectionDeg": 316,
       "roof": "outdoor",
       "cfBearingDeg": 129,
-      "fetchedAt": "2026-09-15T15:40:46.403Z"
+      "fetchedAt": "2026-09-15T17:18:40.834Z"
     },
     "823980": {
-      "temperatureC": 24.1,
-      "windSpeedKmh": 15.2,
-      "windDirectionDeg": 211,
+      "temperatureC": 24.7,
+      "windSpeedKmh": 17.1,
+      "windDirectionDeg": 205,
       "roof": "outdoor",
       "cfBearingDeg": 43.61,
-      "fetchedAt": "2026-09-15T15:40:47.212Z"
+      "fetchedAt": "2026-09-15T17:18:41.348Z"
     },
     "824143": {
-      "temperatureC": 33.5,
-      "windSpeedKmh": 15.6,
-      "windDirectionDeg": 154,
+      "temperatureC": 32.5,
+      "windSpeedKmh": 15.8,
+      "windDirectionDeg": 153,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-15T15:40:46.888Z"
+      "fetchedAt": "2026-09-15T17:18:41.138Z"
     },
     "824307": {
-      "temperatureC": 25.5,
-      "windSpeedKmh": 16.2,
-      "windDirectionDeg": 37,
+      "temperatureC": 24.5,
+      "windSpeedKmh": 14.3,
+      "windDirectionDeg": 51,
       "roof": "outdoor",
       "cfBearingDeg": 4,
-      "fetchedAt": "2026-09-15T15:40:47.050Z"
+      "fetchedAt": "2026-09-15T17:18:41.246Z"
     },
     "824384": {
-      "temperatureC": 26.8,
-      "windSpeedKmh": 20.1,
-      "windDirectionDeg": 171,
+      "temperatureC": 26.7,
+      "windSpeedKmh": 18.8,
+      "windDirectionDeg": 176,
       "roof": "outdoor",
       "cfBearingDeg": 0,
-      "fetchedAt": "2026-09-15T15:40:45.455Z"
+      "fetchedAt": "2026-09-15T17:18:40.214Z"
     },
     "824466": {
       "temperatureC": 32.9,
-      "windSpeedKmh": 8.7,
-      "windDirectionDeg": 187,
+      "windSpeedKmh": 7.6,
+      "windDirectionDeg": 199,
       "roof": "outdoor",
       "cfBearingDeg": 122,
-      "fetchedAt": "2026-09-15T15:40:45.297Z"
+      "fetchedAt": "2026-09-15T17:18:40.110Z"
     },
     "824627": {
-      "temperatureC": 26.3,
-      "windSpeedKmh": 5.2,
-      "windDirectionDeg": 196,
+      "temperatureC": 25.2,
+      "windSpeedKmh": 4.8,
+      "windDirectionDeg": 138,
       "roof": "outdoor",
       "cfBearingDeg": 37,
-      "fetchedAt": "2026-09-15T15:40:46.246Z"
+      "fetchedAt": "2026-09-15T17:18:40.732Z"
     },
     "825030": {
-      "temperatureC": 38,
-      "windSpeedKmh": 13,
-      "windDirectionDeg": 174,
+      "temperatureC": 37.9,
+      "windSpeedKmh": 11.9,
+      "windDirectionDeg": 175,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-15T15:40:47.375Z"
+      "fetchedAt": "2026-09-15T17:18:41.453Z"
     }
   }
 }
