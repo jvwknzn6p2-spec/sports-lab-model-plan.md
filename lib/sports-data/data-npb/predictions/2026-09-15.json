@@ -1,0 +1,491 @@
+{
+  "lockedAt": "2026-09-15T05:57:48.178Z",
+  "updatedAt": "2026-09-15T05:57:48.178Z",
+  "controlTower": {
+    "date": "2026-09-15",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026091505": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7.5,
+        "marketHomeCover": 0.321,
+        "marketHomePayout": 2,
+        "marketAwayPayout": 0.412,
+        "marketOver": 0.468
+      },
+      "92026091503": {
+        "side": "home",
+        "line": -1.5,
+        "total": 6.5,
+        "marketHomeCover": 0.411,
+        "marketHomePayout": 1.325,
+        "marketAwayPayout": 0.616,
+        "marketOver": 0.513
+      },
+      "92026091502": {
+        "side": "home",
+        "line": -1.5,
+        "total": 6.5,
+        "marketHomeCover": 0.4,
+        "marketHomePayout": 1.4,
+        "marketAwayPayout": 0.588,
+        "marketOver": 0.496
+      },
+      "92026091508": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7.5,
+        "marketHomeCover": 0.516,
+        "marketHomePayout": 0.833,
+        "marketAwayPayout": 0.952,
+        "marketOver": 0.51
+      },
+      "92026091512": {
+        "side": "home",
+        "line": 1.5,
+        "total": 7,
+        "marketHomeCover": 0.646,
+        "marketHomePayout": 0.476,
+        "marketAwayPayout": 1.7,
+        "marketOver": 0.485
+      },
+      "92026091511": {
+        "side": "home",
+        "line": 1.5,
+        "total": 7,
+        "marketHomeCover": 0.449,
+        "marketHomePayout": 1.1,
+        "marketAwayPayout": 0.746,
+        "marketOver": 0.476
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.882,
+    "tailShrink": 0.892,
+    "farTailShrink": 0.849,
+    "handicapShrink": 0.844,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.862,
+    "totalTailShrink": 0.859,
+    "totalFarTailShrink": 0.834,
+    "gamesSettled": 27,
+    "brierSum": 5.5666,
+    "updatedAt": "2026-09-15T00:02:58.050Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026091505,
+      "gameDate": "2026-09-15T09:00:00.000Z",
+      "home": "東京ヤクルトスワローズ",
+      "away": "広島東洋カープ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.547,
+      "rawWinProbability": 0.553,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7.5,
+          "marketHomeCover": 0.321,
+          "marketHomePayout": 2,
+          "marketAwayPayout": 0.412,
+          "marketOver": 0.468
+        },
+        "pick": null,
+        "coverProbability": 0.605,
+        "rawCoverProbability": 0.625,
+        "ev": 0.15,
+        "marketProbability": 0.679,
+        "marketPriceEv": -0.146,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 7.5,
+        "predicted": 7.23,
+        "pick": null,
+        "probability": 0.577,
+        "rawProbability": 0.59,
+        "marketProbability": 0.532,
+        "ev": 0.097,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.71,
+        "away": 3.31
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.7% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +15.0% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -14.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 67.9% for this side — model 60.5% (-7.4% vs market)",
+        "Market consensus on the total: 53.2% for the UNDER — model 57.7% (+4.5% vs market)",
+        "Bullpen edge: 広島東洋カープ",
+        "Park factor 104 (hitter-friendly)",
+        "Expected runs 3.71–3.31 over 10000 sims",
+        "away: cold bats — 2.5 R/G last 15 (season baseline 3.1)",
+        "Weather: 25°C at first pitch — run environment ×1.031"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-15T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026091503,
+      "gameDate": "2026-09-15T09:00:00.000Z",
+      "home": "横浜DeNAベイスターズ",
+      "away": "読売ジャイアンツ",
+      "pass": false,
+      "predictedWinner": "横浜DeNAベイスターズ",
+      "predictedLoser": "読売ジャイアンツ",
+      "winProbability": 0.628,
+      "rawWinProbability": 0.645,
+      "confidence": "S",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 6.5,
+          "marketHomeCover": 0.411,
+          "marketHomePayout": 1.325,
+          "marketAwayPayout": 0.616,
+          "marketOver": 0.513
+        },
+        "pick": "読売ジャイアンツ +1.5",
+        "coverProbability": 0.535,
+        "rawCoverProbability": 0.541,
+        "ev": 0.016,
+        "marketProbability": 0.589,
+        "marketPriceEv": -0.136,
+        "recommendedStake": 0,
+        "noValue": false
+      },
+      "total": {
+        "line": 6.5,
+        "predicted": 7.12,
+        "pick": "OVER",
+        "probability": 0.534,
+        "rawProbability": 0.539,
+        "marketProbability": 0.513,
+        "ev": 0.014,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.08,
+        "away": 2.86
+      },
+      "reasons": [
+        "Handicap EV +1.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -13.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 58.9% for this side — model 53.5% (-5.4% vs market)",
+        "Market consensus on the total: 51.3% for the OVER — model 53.4% (+2.1% vs market)",
+        "Starter edge: 横浜DeNAベイスターズ (東 克樹 projFIP 3.05 vs 3.30)",
+        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.299 vs 0.286)",
+        "Park factor 103 (hitter-friendly)",
+        "Expected runs 4.08–2.86 over 10000 sims",
+        "home: hot bats — 4.5 R/G last 15 (season baseline 3.9)",
+        "Weather: 26°C at first pitch — run environment ×1.034"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-15T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026091502,
+      "gameDate": "2026-09-15T09:00:00.000Z",
+      "home": "阪神タイガース",
+      "away": "中日ドラゴンズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.547,
+      "rawWinProbability": 0.553,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 6.5,
+          "marketHomeCover": 0.4,
+          "marketHomePayout": 1.4,
+          "marketAwayPayout": 0.588,
+          "marketOver": 0.496
+        },
+        "pick": null,
+        "coverProbability": 0.62,
+        "rawCoverProbability": 0.642,
+        "ev": 0.178,
+        "marketProbability": 0.6,
+        "marketPriceEv": -0.016,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 6.5,
+        "predicted": 6.21,
+        "pick": null,
+        "probability": 0.563,
+        "rawProbability": 0.573,
+        "marketProbability": 0.504,
+        "ev": 0.069,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.19,
+        "away": 2.83
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.7% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +17.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -1.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 60.0% for this side — model 62.0% (+2.0% vs market)",
+        "Market consensus on the total: 50.4% for the UNDER — model 56.3% (+5.9% vs market)",
+        "Offense edge: 阪神タイガース (wOBA 0.298 vs 0.287)",
+        "Bullpen edge: 阪神タイガース",
+        "Park factor 92 (pitcher-friendly)",
+        "Expected runs 3.19–2.83 over 10000 sims",
+        "home: cold bats — 2.5 R/G last 15 (season baseline 3.8)",
+        "away: cold bats — 2.9 R/G last 15 (season baseline 3.5)",
+        "Weather: 24°C at first pitch — run environment ×1.018"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-15T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026091508,
+      "gameDate": "2026-09-15T09:00:00.000Z",
+      "home": "北海道日本ハムファイターズ",
+      "away": "千葉ロッテマリーンズ",
+      "pass": false,
+      "predictedWinner": "北海道日本ハムファイターズ",
+      "predictedLoser": "千葉ロッテマリーンズ",
+      "winProbability": 0.64,
+      "rawWinProbability": 0.658,
+      "confidence": "S",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7.5,
+          "marketHomeCover": 0.516,
+          "marketHomePayout": 0.833,
+          "marketAwayPayout": 0.952,
+          "marketOver": 0.51
+        },
+        "pick": null,
+        "coverProbability": 0.505,
+        "rawCoverProbability": 0.506,
+        "ev": -0.041,
+        "marketProbability": 0.516,
+        "marketPriceEv": -0.074,
+        "recommendedStake": null,
+        "noValue": true
+      },
+      "total": {
+        "line": 7.5,
+        "predicted": 8.99,
+        "pick": "OVER",
+        "probability": 0.581,
+        "rawProbability": 0.593,
+        "marketProbability": 0.51,
+        "ev": 0.103,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 5.23,
+        "away": 3.61
+      },
+      "reasons": [
+        "No handicap bet: -4.1% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -7.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 51.6% for this side — model 50.5% (-1.1% vs market)",
+        "Market consensus on the total: 51.0% for the OVER — model 58.1% (+7.1% vs market)",
+        "Starter edge: 北海道日本ハムファイターズ (北山 亘基 projFIP 3.16 vs 3.61)",
+        "Offense edge: 北海道日本ハムファイターズ (wOBA 0.313 vs 0.291)",
+        "Bullpen edge: 北海道日本ハムファイターズ",
+        "Park factor 106 (hitter-friendly)",
+        "Expected runs 5.23–3.61 over 10000 sims",
+        "away: hot bats — 4.1 R/G last 15 (season baseline 3.6)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-15T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026091512,
+      "gameDate": "2026-09-15T09:00:00.000Z",
+      "home": "東北楽天ゴールデンイーグルス",
+      "away": "埼玉西武ライオンズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.524,
+      "rawWinProbability": 0.527,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 7,
+          "marketHomeCover": 0.646,
+          "marketHomePayout": 0.476,
+          "marketAwayPayout": 1.7,
+          "marketOver": 0.485
+        },
+        "pick": null,
+        "coverProbability": 0.622,
+        "rawCoverProbability": 0.645,
+        "ev": 0.182,
+        "marketProbability": 0.646,
+        "marketPriceEv": -0.082,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 7,
+        "predicted": 7.28,
+        "pick": null,
+        "probability": 0.518,
+        "rawProbability": 0.521,
+        "marketProbability": 0.515,
+        "ev": -0.013,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.47,
+        "away": 3.66
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +18.2% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -8.2% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 64.6% for this side — model 62.2% (-2.4% vs market)",
+        "Market consensus on the total: 51.5% for the UNDER — model 51.8% (+0.3% vs market)",
+        "Bullpen edge: 埼玉西武ライオンズ",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 3.47–3.66 over 10000 sims",
+        "home: no starter data — league-average assumed",
+        "Weather: 20°C at first pitch — run environment ×0.992"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-15T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026091511,
+      "gameDate": "2026-09-15T09:00:00.000Z",
+      "home": "オリックス・バファローズ",
+      "away": "福岡ソフトバンクホークス",
+      "pass": false,
+      "predictedWinner": "福岡ソフトバンクホークス",
+      "predictedLoser": "オリックス・バファローズ",
+      "winProbability": 0.654,
+      "rawWinProbability": 0.675,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 7,
+          "marketHomeCover": 0.449,
+          "marketHomePayout": 1.1,
+          "marketAwayPayout": 0.746,
+          "marketOver": 0.476
+        },
+        "pick": null,
+        "coverProbability": 0.505,
+        "rawCoverProbability": 0.506,
+        "ev": -0.04,
+        "marketProbability": 0.551,
+        "marketPriceEv": -0.118,
+        "recommendedStake": null,
+        "noValue": true
+      },
+      "total": {
+        "line": 7,
+        "predicted": 7.96,
+        "pick": "OVER",
+        "probability": 0.553,
+        "rawProbability": 0.562,
+        "marketProbability": 0.476,
+        "ev": 0.044,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.08,
+        "away": 4.72
+      },
+      "reasons": [
+        "No handicap bet: -4.0% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -11.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 55.1% for this side — model 50.5% (-4.6% vs market)",
+        "Market consensus on the total: 47.6% for the OVER — model 55.3% (+7.7% vs market)",
+        "Offense edge: 福岡ソフトバンクホークス (wOBA 0.324 vs 0.291)",
+        "Bullpen edge: 福岡ソフトバンクホークス",
+        "Park factor 97 (pitcher-friendly)",
+        "Expected runs 3.08–4.72 over 10000 sims",
+        "home: cold bats — 2.9 R/G last 15 (season baseline 3.6)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-15T08:27:00.000Z",
+      "final": false
+    }
+  ]
+}
