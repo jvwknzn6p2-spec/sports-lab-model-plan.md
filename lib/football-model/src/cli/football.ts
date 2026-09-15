@@ -41,6 +41,8 @@ import {
   type OddsScoreEvent,
 } from "../history.ts";
 import { buildTeamResolver } from "../teamAliases.ts";
+import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
+import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -317,10 +319,87 @@ function historyImport(): void {
   }
 }
 
+/**
+ * 貼り付けたハンデに載っている試合だけの予想を出す（Founder 依頼 2026-09-06）。
+ *
+ *   node --experimental-strip-types src/cli/football.ts quote --paste <file> [--root football]
+ *
+ * **EV も推奨も出さない。** 出すのは「封緘済みの予想」「発行時点の市場」「貼られたハンデ」と、
+ * 凍結表 SOCCER_LADDER_V1 で引いた**得点差ごとの取り分**だけ。どれに賭けるべきかは言わない
+ * （モデルが市場に並ぶまで EV 層は作らない・football/README.md の「既知の限界」）。
+ *
+ * 解決できなかったカードも理由つきで全件出す。黙って減らさない。
+ */
+function quote(): void {
+  const pastePath = arg("paste");
+  if (!pastePath) throw new Error("--paste <file> が要る");
+  const cards = parsePasteText(readFileSync(pastePath, "utf8"));
+
+  const L = new Ledger(join(ROOT, "ledger"));
+  const matches = [...L.currentMatches().values()];
+  const preds = L.predictions();
+  // providerId ごとに最新の予想（台帳は追記専用なので後の行が有効）
+  const latest = new Map<string, (typeof preds)[number]>();
+  for (const p of preds) latest.set(p.providerId, p);
+
+  const out: string[] = [];
+  let resolved = 0;
+  for (const c of cards) {
+    if (!c.line) {
+      out.push(`[${c.index}] 解析できず: ${c.error}  «${c.source.replace(/\n/g, " / ")}»`);
+      continue;
+    }
+    const { givingCandidates: G, receivingCandidates: R, handicapRaw, givingTeamRaw, receivingTeamRaw } = c.line;
+    if (G.length === 0 || R.length === 0) {
+      const miss = [G.length === 0 ? givingTeamRaw : null, R.length === 0 ? receivingTeamRaw : null].filter(Boolean);
+      out.push(`[${c.index}] チーム名を解決できず: ${miss.join(" / ")}  （対応表に足せば解決する）`);
+      continue;
+    }
+    // 出し側・貰い側がどちらのホーム/アウェイでも拾う
+    const m = matches.find(
+      (x) =>
+        (G.includes(x.home) && R.includes(x.away)) || (G.includes(x.away) && R.includes(x.home)),
+    );
+    if (!m) {
+      out.push(`[${c.index}] 台帳に該当試合が無い: ${givingTeamRaw} vs ${receivingTeamRaw}`);
+      continue;
+    }
+    const p = latest.get(m.providerId);
+    if (!p) {
+      out.push(`[${c.index}] ${m.home} vs ${m.away}: まだ予想が発行されていない（封緘前・または対象外）`);
+      continue;
+    }
+    resolved++;
+    const givingIsHome = G.includes(m.home);
+    // 出し側から見た勝敗確率（引き分けは共通）
+    const pGiveWin = givingIsHome ? p.pHome : p.pAway;
+    const pGiveLose = givingIsHome ? p.pAway : p.pHome;
+    const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+    out.push(
+      `[${c.index}] ${m.home} vs ${m.away}  (${p.league}, KO ${m.kickoffAt})\n` +
+        `      ハンデ <${handicapRaw}> 出し=${givingTeamRaw}\n` +
+        `      予想 ${givingTeamRaw}勝ち ${pct(pGiveWin)} / 引分 ${pct(p.pDraw)} / ${receivingTeamRaw}勝ち ${pct(pGiveLose)}` +
+        (p.market
+          ? `\n      市場 ${pct(givingIsHome ? p.market[0] : p.market[2])} / ${pct(p.market[1])} / ${pct(givingIsHome ? p.market[2] : p.market[0])}`
+          : "\n      市場 データなし") +
+        `\n      取り分（出し側・${HANDICAP_RULES_VERSION}）: ` +
+        [0, 1, 2, 3]
+          .map((d) => `${d}点差 ${(shareGiving(handicapRaw, d) * 100).toFixed(0)}%`)
+          .join(" / ") +
+        `  ／ 負け ${(shareGiving(handicapRaw, -1) * 100).toFixed(0)}%` +
+        `\n      model=${p.model} ridge=${p.ridge ?? "—"} 封緘=${p.cutoffAt}`,
+    );
+  }
+  console.log(out.join("\n"));
+  console.log(`\n--- 貼り付け ${cards.length} 件 / 予想が出せたのは ${resolved} 件`);
+  console.log("EV も推奨も出していない（決済規則と予想を並べただけ）。分析専用。");
+}
+
 if (cmd === "daily") daily();
 else if (cmd === "scores-needed") scoresNeeded();
 else if (cmd === "history-import") historyImport();
+else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|scores-needed|history-import [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--now ISO]");
+  console.error("usage: football.ts daily|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }
