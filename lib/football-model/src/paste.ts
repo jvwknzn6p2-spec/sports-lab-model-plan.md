@@ -37,6 +37,8 @@ export const JA_LEAGUE_TO_CODE: Readonly<Record<string, string>> = {
   エールディヴィジ: "N1",
   リーグアン: "F1",
   プリメイラリーガ: "P1",
+  リーガポルトガル: "P1",
+  ポルトガルリーグ: "P1",
   ジュピラープロリーグ: "B1",
   ベルギーリーグ: "B1",
   スコティッシュプレミアシップ: "SC0",
@@ -58,8 +60,12 @@ export interface ParsedPasteLine {
   leagueRaw: string | null;
   /** 見出しから解決した台帳のリーグコード。解決できなければ null */
   leagueCode: string | null;
-  /** 開始時刻行（"23:30"）。なければ null */
+  /** 開始時刻行（"23:30"）。なければ null。28:00 のような深夜表記は 04:00 + startsNextDay */
   startTime: string | null;
+  /** 開始時刻が 24 時以降の深夜表記だったか（翌日） */
+  startsNextDay: boolean;
+  /** 直前の「◯◯締切」行。なければ null */
+  deadline: string | null;
   /** ハンデを出している側（貼られた表記そのまま） */
   givingTeamRaw: string;
   /** ハンデを貰う側（貼られた表記そのまま） */
@@ -94,14 +100,32 @@ function stripOrdinal(text: string): { ordinal: number | null; rest: string } {
   return { ordinal: null, rest: text.trim() };
 }
 
-/** 「23:30」「23時半」などの開始時刻行。チーム行ではない */
-function parseTimeLine(rawLine: string): string | null {
+/**
+ * 「23:30」「23時半」などの開始時刻行。チーム行ではない。
+ *
+ * **深夜表記（24 時以降）に対応する。** 実物のシートは翌日未明の試合を `28:00`（= 翌 04:00）
+ * `26:00` のように書く。24 を超える時刻は翌日へ送り、`nextDay` で区別できるようにする。
+ * 黙って 28 時のまま扱うと日付の突合が狂う。
+ */
+function parseTimeLine(rawLine: string): { time: string; nextDay: boolean } | null {
   const rest = normalizeBrackets(rawLine).trim();
   const m = /^(?:(\d{1,2})[:：](\d{2})|(\d{1,2})時(?:(半)|(\d{1,2})分?)?)$/.exec(rest);
   if (!m) return null;
-  const hh = (m[1] ?? m[3])!.padStart(2, "0");
+  let hh = Number(m[1] ?? m[3]);
   const mm = m[2] ?? (m[4] ? "30" : (m[5] ?? "0").padStart(2, "0"));
-  return `${hh}:${mm.padStart(2, "0")}`;
+  if (hh > 47) return null; // 時刻として解釈できない
+  const nextDay = hh >= 24;
+  if (nextDay) hh -= 24;
+  return { time: `${String(hh).padStart(2, "0")}:${mm.padStart(2, "0")}`, nextDay };
+}
+
+/** 「19:30締切」「23時00分締切」のような締切行。カードではない */
+function parseDeadlineLine(rawLine: string): string | null {
+  const rest = normalizeBrackets(rawLine).trim();
+  const m = /^(.+?)\s*締切$/.exec(rest);
+  if (!m) return null;
+  const t = parseTimeLine(m[1]);
+  return t ? t.time : m[1].trim();
 }
 
 function parseTeamLine(rawLine: string): { ordinal: number | null; team: string; handicap: string | null } {
@@ -133,6 +157,7 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
 
   // 見出しだけの塊は、以降のカードに効く（見出し + 空行 + カード という貼り方に対応）
   let carriedLeague: string | null = null;
+  let carriedDeadline: string | null = null;
   const cards: ParsedPasteCard[] = [];
 
   blocks.forEach((source, i) => {
@@ -148,17 +173,22 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
         leagueRaw = h[1];
         continue;
       }
+      const d = parseDeadlineLine(l);
+      if (d !== null) {
+        carriedDeadline = d;
+        continue;
+      }
       body.push(l);
     }
     if (body.length === 0) {
-      // 見出しだけの塊。カードとしては数えず、次以降へ引き継ぐ
+      // 見出し・締切だけの塊。カードとしては数えず、次以降へ引き継ぐ
       if (leagueRaw) carriedLeague = leagueRaw;
       return;
     }
     const effectiveLeague = leagueRaw ?? carriedLeague;
     const leagueCode = effectiveLeague ? (JA_LEAGUE_TO_CODE[leagueKey(effectiveLeague)] ?? null) : null;
 
-    cards.push(parseCard(index, source, body, effectiveLeague, leagueCode));
+    cards.push(parseCard(index, source, body, effectiveLeague, leagueCode, carriedDeadline));
   });
   return cards;
 }
@@ -169,6 +199,7 @@ function parseCard(
   lines: string[],
   leagueRaw: string | null,
   leagueCode: string | null,
+  deadline: string | null,
 ): ParsedPasteCard {
   {
     if (lines.length < 2) {
@@ -176,15 +207,13 @@ function parseCard(
     }
 
     let startTime: string | null = null;
+    let startsNextDay = false;
     const teamLines: string[] = [];
     for (const l of lines) {
       const t = parseTimeLine(l);
-      if (t !== null && teamLines.length === 1) {
-        startTime = t; // チームとチームの間の時刻行
-        continue;
-      }
-      if (t !== null && teamLines.length === 0) {
-        startTime = t; // 先頭の時刻行
+      if (t !== null && teamLines.length <= 1) {
+        startTime = t.time; // 先頭、またはチームとチームの間の時刻行
+        startsNextDay = t.nextDay;
         continue;
       }
       teamLines.push(l);
@@ -219,6 +248,8 @@ function parseCard(
         leagueRaw,
         leagueCode,
         startTime,
+        startsNextDay,
+        deadline,
         givingTeamRaw: giving.team,
         receivingTeamRaw: receiving.team,
         givingCandidates: resolveTeamCandidates(giving.team),

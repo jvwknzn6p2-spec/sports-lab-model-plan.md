@@ -12,6 +12,19 @@
  */
 export const JA_TO_EN: Readonly<Record<string, readonly string[]>> = {
   // 実際の貼り付けで出た別表記（2026-09-15 の実物から追加）
+  "コヴェントリー": ["Coventry"],
+  "レディング": ["Reading"],
+  "ブレンドフォード": ["Brentford"],
+  "リヴァプール": ["Liverpool"],
+  "ピサ": ["Pisa"],
+  "Rバリェカノ": ["Vallecano"],
+  "Rマドリード": ["Real Madrid"],
+  "ヴィレム": ["Willem II"],
+  "ラ・コルーニャ": ["La Coruna"],
+  "ワレヘム": ["Waregem"],
+  "ルヴィエロワーズ": ["RAAL La Louviere"],
+  "ユヴェントス": ["Juventus"],
+  "PSG": ["Paris SG"],
   "RCランス": ["Lens"],
   "マンチェスター・ユナイテッド": ["Man United"],
   "マンチェスター・シティ": ["Man City"],

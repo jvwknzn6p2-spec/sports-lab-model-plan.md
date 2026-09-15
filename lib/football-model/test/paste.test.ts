@@ -145,3 +145,34 @@ test("実物の 6 カードがすべて解析できる", () => {
   }
   assert.deepEqual(cards.map((c) => c.line?.handicapRaw), ["0/6", "2.6", "1.6", "0半6", "0/5", "2半6"]);
 });
+
+test("締切行を読み飛ばし、以降のカードへ引き継ぐ", () => {
+  const cards = parsePasteText("19:30締切\n\n【ラ・リーガ】\nセルタ<0半5>\n21:00\nマラガ");
+  assert.equal(cards.length, 1, "締切行をカードとして数えている");
+  assert.equal(cards[0].line?.deadline, "19:30");
+  assert.equal(cards[0].line?.leagueCode, "SP1");
+  // 「23時00分締切」の和式も読む
+  const b = parsePasteText("23時00分締切\n\n【セリエA】\nナポリ<0半1>\n01:00\nボローニャ");
+  assert.equal(b[0].line?.deadline, "23:00");
+});
+
+test("深夜表記（24 時以降）を翌日として扱う", () => {
+  const cards = parsePasteText("【ラ・リーガ】\nエルチェ\n28:30\nRマドリード<2.3>");
+  assert.equal(cards[0].error, null);
+  assert.equal(cards[0].line?.startTime, "04:30", "28:30 を 04:30 にしていない");
+  assert.equal(cards[0].line?.startsNextDay, true);
+  assert.deepEqual(cards[0].line?.givingCandidates, ["Real Madrid"]);
+  // 24 時未満は翌日にしない
+  const b = parsePasteText("A<0>\n21:00\nB");
+  assert.equal(b[0].line?.startTime, "21:00");
+  assert.equal(b[0].line?.startsNextDay, false);
+});
+
+test("[カッコ] の見出しも読む（カップ戦はリーグ不明のまま通す）", () => {
+  const cards = parsePasteText("[イングランドカップ]\n\nウェストハム\n28:00\nフラム<0/2>");
+  assert.equal(cards.length, 1);
+  assert.equal(cards[0].error, null);
+  assert.equal(cards[0].line?.leagueRaw, "イングランドカップ");
+  assert.equal(cards[0].line?.leagueCode, null, "対象リーグでないので不明のまま");
+  assert.equal(cards[0].line?.startsNextDay, true);
+});
