@@ -91,3 +91,57 @@ test("サッカー固有の表記を受理する（野球の定義域には無�
     assert.equal(cards[0].line?.handicapRaw, hc);
   }
 });
+
+// --- 実物の貼り付けで分かったこと（2026-09-15 Founder 提供）--------------------
+
+test("【リーグ名】の見出し行を読み、カードとして数えない", () => {
+  const text = [
+    "【ジュピラー・プロリーグ】\nヘンク<0/6>\n23:00\nヘント",
+    "【ラ・リーガ】\nレバンテ\n23:15\nバルセロナ<2.6>",
+  ].join("\n\n");
+  const cards = parsePasteText(text);
+  assert.equal(cards.length, 2, "見出しを別カードとして数えている");
+  assert.equal(cards[0].error, null);
+  assert.equal(cards[0].line?.leagueRaw, "ジュピラー・プロリーグ");
+  assert.equal(cards[0].line?.leagueCode, "B1");
+  assert.equal(cards[0].line?.givingTeamRaw, "ヘンク");
+  assert.deepEqual(cards[0].line?.givingCandidates, ["Genk"]);
+  assert.equal(cards[1].line?.leagueCode, "SP1");
+  assert.equal(cards[1].line?.handicapRaw, "2.6");
+  assert.deepEqual(cards[1].line?.givingCandidates, ["Barcelona"]);
+});
+
+test("見出しだけの塊は以降のカードへ引き継ぐ", () => {
+  const cards = parsePasteText("【プレミアリーグ】\n\nマンチェスター・ユナイテッド\n00:30\nマンチェスター・シティ<0/5>");
+  assert.equal(cards.length, 1);
+  assert.equal(cards[0].line?.leagueCode, "E0");
+  assert.deepEqual(cards[0].line?.givingCandidates, ["Man City"]);
+  assert.deepEqual(cards[0].line?.receivingCandidates, ["Man United"]);
+});
+
+test("知らない見出しでもカードは捨てず、リーグ不明として通す", () => {
+  const cards = parsePasteText("【知らないリーグ】\nヘンク<0>\nヘント");
+  assert.equal(cards[0].error, null);
+  assert.equal(cards[0].line?.leagueRaw, "知らないリーグ");
+  assert.equal(cards[0].line?.leagueCode, null);
+});
+
+test("実物の 6 カードがすべて解析できる", () => {
+  const real = [
+    "【ジュピラー・プロリーグ】\nヘンク<0/6>\n23:00\nヘント",
+    "【ラ・リーガ】\nレバンテ\n23:15\nバルセロナ<2.6>",
+    "【エールディビジ】\nズヴォレ\n23:45\nフェイエノールト<1.6>",
+    "【リーグ・アン】\nル・マン\n00:15\nRCランス<0半6>",
+    "【プレミアリーグ】\nマンチェスター・ユナイテッド\n00:30\nマンチェスター・シティ<0/5>",
+    "【ブンデスリーガ】\nエルフェアスベルク\n00:30\nバイエルン<2半6>",
+  ].join("\n\n");
+  const cards = parsePasteText(real);
+  assert.equal(cards.length, 6);
+  for (const c of cards) {
+    assert.equal(c.error, null, `カード ${c.index}: ${c.error}`);
+    assert.notEqual(c.line?.leagueCode, null, `カード ${c.index} のリーグが解決できない`);
+    assert.ok((c.line?.givingCandidates.length ?? 0) > 0, `カード ${c.index} の出し側が未解決`);
+    assert.ok((c.line?.receivingCandidates.length ?? 0) > 0, `カード ${c.index} の貰い側が未解決`);
+  }
+  assert.deepEqual(cards.map((c) => c.line?.handicapRaw), ["0/6", "2.6", "1.6", "0半6", "0/5", "2半6"]);
+});

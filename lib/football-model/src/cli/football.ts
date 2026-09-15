@@ -338,6 +338,17 @@ function quote(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const matches = [...L.currentMatches().values()];
   const preds = L.predictions();
+  // 終了済みの試合は答え合わせまで出す（貼られたハンデが実際いくらになったか）
+  const results = L.results();
+  const findResult = (home: string, away: string, kickoffAt: string) => {
+    const day = kickoffAt.slice(0, 10);
+    return results.find(
+      (r) =>
+        r.home === home &&
+        r.away === away &&
+        Math.abs(Date.parse(r.date) - Date.parse(day)) <= 86_400_000,
+    );
+  };
   // providerId ごとに最新の予想（台帳は追記専用なので後の行が有効）
   const latest = new Map<string, (typeof preds)[number]>();
   for (const p of preds) latest.set(p.providerId, p);
@@ -355,22 +366,63 @@ function quote(): void {
       out.push(`[${c.index}] チーム名を解決できず: ${miss.join(" / ")}  （対応表に足せば解決する）`);
       continue;
     }
-    // 出し側・貰い側がどちらのホーム/アウェイでも拾う
-    const m = matches.find(
+    // 出し側・貰い側がどちらのホーム/アウェイでも拾う。リーグ見出しがあれば絞る
+    let hits = matches.filter(
       (x) =>
         (G.includes(x.home) && R.includes(x.away)) || (G.includes(x.away) && R.includes(x.home)),
     );
-    if (!m) {
+    if (c.line.leagueCode) {
+      const byLeague = hits.filter((x) => x.league === c.line!.leagueCode);
+      if (byLeague.length > 0) hits = byLeague;
+    }
+    if (hits.length === 0) {
       out.push(`[${c.index}] 台帳に該当試合が無い: ${givingTeamRaw} vs ${receivingTeamRaw}`);
       continue;
     }
+    // **同じカードが複数あるとき、古い方を黙って拾ってはいけない。**
+    // 貼られるハンデはこれから行われる試合のものなので、未開始のうち最も近いものを採る。
+    // 未開始が無ければ直近の過去を出すが、その旨を明示する（黙って過去の予想を返さない）
+    const nowMs = Date.parse(NOW);
+    const future = hits
+      .filter((x) => Date.parse(x.kickoffAt) > nowMs)
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+    const past = hits
+      .filter((x) => Date.parse(x.kickoffAt) <= nowMs)
+      .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt));
+    const m = future[0] ?? past[0];
+    const stale = future.length === 0;
+    if (stale) {
+      out.push(
+        `[${c.index}] ⚠ 未開始の該当試合が無い。直近の**終了済み**試合を表示する: ` +
+          `${m.home} vs ${m.away} (KO ${m.kickoffAt})  ` +
+          `候補 ${hits.length} 件／今この時刻 ${NOW}`,
+      );
+    }
+    const givingIsHome0 = G.includes(m.home);
+    // 終了済みなら答え合わせ（貼られたハンデが実際いくらになったか）
+    const res = findResult(m.home, m.away, m.kickoffAt);
+    const settled = res
+      ? (() => {
+          const marginGiving = givingIsHome0
+            ? res.homeGoals - res.awayGoals
+            : res.awayGoals - res.homeGoals;
+          const s = shareGiving(handicapRaw, marginGiving);
+          return (
+            `\n      結果 ${res.homeGoals}-${res.awayGoals}（出し側から見て ${marginGiving >= 0 ? "+" : ""}${marginGiving}点差）` +
+            ` → 出し側の取り分 ${(s * 100).toFixed(0)}%`
+          );
+        })()
+      : "";
+
     const p = latest.get(m.providerId);
     if (!p) {
-      out.push(`[${c.index}] ${m.home} vs ${m.away}: まだ予想が発行されていない（封緘前・または対象外）`);
+      out.push(
+        `[${c.index}] ${m.home} vs ${m.away}: まだ予想が発行されていない（封緘前・または対象外）` + settled,
+      );
       continue;
     }
     resolved++;
-    const givingIsHome = G.includes(m.home);
+    const givingIsHome = givingIsHome0;
     // 出し側から見た勝敗確率（引き分けは共通）
     const pGiveWin = givingIsHome ? p.pHome : p.pAway;
     const pGiveLose = givingIsHome ? p.pAway : p.pHome;
@@ -387,6 +439,7 @@ function quote(): void {
           .map((d) => `${d}点差 ${(shareGiving(handicapRaw, d) * 100).toFixed(0)}%`)
           .join(" / ") +
         `  ／ 負け ${(shareGiving(handicapRaw, -1) * 100).toFixed(0)}%` +
+        settled +
         `\n      model=${p.model} ridge=${p.ridge ?? "—"} 封緘=${p.cutoffAt}`,
     );
   }

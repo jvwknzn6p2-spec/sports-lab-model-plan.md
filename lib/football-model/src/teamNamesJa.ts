@@ -11,6 +11,23 @@
  * 出典はこのプロジェクトが 2026-09 に予想ページ用へ育てた表記表。
  */
 export const JA_TO_EN: Readonly<Record<string, readonly string[]>> = {
+  // 実際の貼り付けで出た別表記（2026-09-15 の実物から追加）
+  "RCランス": ["Lens"],
+  "マンチェスター・ユナイテッド": ["Man United"],
+  "マンチェスター・シティ": ["Man City"],
+  "マンチェスター・U": ["Man United"],
+  "マンチェスター・C": ["Man City"],
+  "エルフェアスベルク": ["Elversberg"],
+  "バイエルン・ミュンヘン": ["Bayern Munich"],
+  "ユニオン・サンジロワーズ": ["St. Gilloise"],
+  "サンジロワーズ": ["St. Gilloise"],
+  "パリSG": ["Paris SG"],
+  "インテル・ミラノ": ["Inter"],
+  "ACミラン": ["Milan"],
+  "レアル・ベティス": ["Betis"],
+  "セビリア": ["Sevilla"],
+  "アトレティコ": ["Ath Madrid"],
+  "ビルバオ": ["Ath Bilbao"],
   "ADOデン・ハーグ": ["Den Haag"],
   "AZアルクマール": ["AZ Alkmaar"],
   "C大阪": ["Cerezo Osaka"],

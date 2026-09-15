@@ -22,9 +22,42 @@
 import { isValidHandicapNotation, parseHandicap } from "./handicap.ts";
 import { resolveTeamCandidates } from "./teamNamesJa.ts";
 
+/**
+ * 日本語のリーグ見出し（`【プレミアリーグ】`）→ 台帳のリーグコード。
+ * 見出しは対象試合の絞り込みに使う（同名カードの取り違えを防ぐ）。
+ * ここに無い見出しは**リーグ不明として扱うだけ**で、カードは捨てない。
+ */
+export const JA_LEAGUE_TO_CODE: Readonly<Record<string, string>> = {
+  プレミアリーグ: "E0",
+  セリエA: "I1",
+  ラリーガ: "SP1",
+  ラリーガエスパニョーラ: "SP1",
+  ブンデスリーガ: "D1",
+  エールディビジ: "N1",
+  エールディヴィジ: "N1",
+  リーグアン: "F1",
+  プリメイラリーガ: "P1",
+  ジュピラープロリーグ: "B1",
+  ベルギーリーグ: "B1",
+  スコティッシュプレミアシップ: "SC0",
+  スコットランドリーグ: "SC0",
+  J1リーグ: "JAP",
+  J1: "JAP",
+  明治安田J1リーグ: "JAP",
+};
+
+/** 見出しの表記ゆれ（中黒・スペース・全角）を吸収する */
+function leagueKey(name: string): string {
+  return name.trim().replace(/[・･\s　]/g, "");
+}
+
 export interface ParsedPasteLine {
   /** 同一カードに複数ラインがある場合の丸数字（①=1）。なければ null */
   ordinal: number | null;
+  /** `【…】` の見出しそのまま。なければ null */
+  leagueRaw: string | null;
+  /** 見出しから解決した台帳のリーグコード。解決できなければ null */
+  leagueCode: string | null;
   /** 開始時刻行（"23:30"）。なければ null */
   startTime: string | null;
   /** ハンデを出している側（貼られた表記そのまま） */
@@ -98,9 +131,46 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
     throw new Error(`カードが多すぎる: ${blocks.length} 件（上限 ${MAX_CARDS}）`);
   }
 
-  return blocks.map((source, i) => {
-    const index = i + 1;
+  // 見出しだけの塊は、以降のカードに効く（見出し + 空行 + カード という貼り方に対応）
+  let carriedLeague: string | null = null;
+  const cards: ParsedPasteCard[] = [];
+
+  blocks.forEach((source, i) => {
+    const index = cards.length + 1;
     const lines = source.split("\n").map((l) => l.trim()).filter((l) => l !== "");
+
+    // `【…】` の見出しを抜き出す（カード内にあっても、単独の塊でもよい）
+    let leagueRaw: string | null = null;
+    const body: string[] = [];
+    for (const l of lines) {
+      const h = /^[【\[]\s*(.+?)\s*[】\]]$/.exec(l);
+      if (h) {
+        leagueRaw = h[1];
+        continue;
+      }
+      body.push(l);
+    }
+    if (body.length === 0) {
+      // 見出しだけの塊。カードとしては数えず、次以降へ引き継ぐ
+      if (leagueRaw) carriedLeague = leagueRaw;
+      return;
+    }
+    const effectiveLeague = leagueRaw ?? carriedLeague;
+    const leagueCode = effectiveLeague ? (JA_LEAGUE_TO_CODE[leagueKey(effectiveLeague)] ?? null) : null;
+
+    cards.push(parseCard(index, source, body, effectiveLeague, leagueCode));
+  });
+  return cards;
+}
+
+function parseCard(
+  index: number,
+  source: string,
+  lines: string[],
+  leagueRaw: string | null,
+  leagueCode: string | null,
+): ParsedPasteCard {
+  {
     if (lines.length < 2) {
       return { index, source, line: null, error: "行が足りない（チーム 2 行が要る）" };
     }
@@ -146,6 +216,8 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
       error: null,
       line: {
         ordinal: giving.ordinal ?? receiving.ordinal,
+        leagueRaw,
+        leagueCode,
         startTime,
         givingTeamRaw: giving.team,
         receivingTeamRaw: receiving.team,
@@ -154,5 +226,5 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
         handicapRaw,
       },
     };
-  });
+  }
 }
