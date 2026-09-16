@@ -1,0 +1,1250 @@
+{
+  "lockedAt": "2026-09-16T15:32:25.097Z",
+  "updatedAt": "2026-09-16T15:32:25.097Z",
+  "controlTower": {
+    "date": "2026-09-16",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "822680": {
+        "side": "home",
+        "line": 1.5,
+        "total": 8.5,
+        "marketHomeCover": 0.489,
+        "marketHomePayout": 0.952,
+        "marketAwayPayout": 0.87,
+        "marketOver": 0.5
+      },
+      "822763": {
+        "side": "home",
+        "line": -1.5,
+        "total": 8.5,
+        "marketHomeCover": 0.375,
+        "marketHomePayout": 1.57,
+        "marketAwayPayout": 0.535,
+        "marketOver": 0.489
+      },
+      "822846": {
+        "side": "home",
+        "line": 1.5,
+        "total": 8,
+        "marketHomeCover": 0.617,
+        "marketHomePayout": 0.556,
+        "marketAwayPayout": 1.52,
+        "marketOver": 0.496
+      },
+      "822926": {
+        "side": "home",
+        "line": -1.5,
+        "total": 8,
+        "marketHomeCover": 0.435,
+        "marketHomePayout": 1.2,
+        "marketAwayPayout": 0.699,
+        "marketOver": 0.49
+      },
+      "823004": {
+        "side": "home",
+        "line": -1.5,
+        "total": 8,
+        "marketHomeCover": 0.409,
+        "marketHomePayout": 1.35,
+        "marketAwayPayout": 0.629,
+        "marketOver": 0.511
+      },
+      "823332": {
+        "side": "home",
+        "line": 1.5,
+        "total": 7.5,
+        "marketHomeCover": 0.588,
+        "marketHomePayout": 0.633,
+        "marketAwayPayout": 1.35,
+        "marketOver": 0.511
+      },
+      "823576": {
+        "side": "home",
+        "line": -1.5,
+        "total": 9,
+        "marketHomeCover": 0.378,
+        "marketHomePayout": 1.53,
+        "marketAwayPayout": 0.556,
+        "marketOver": 0.488
+      },
+      "823655": {
+        "side": "home",
+        "line": 1.5,
+        "total": 8,
+        "marketHomeCover": 0.535,
+        "marketHomePayout": 0.794,
+        "marketAwayPayout": 1.06,
+        "marketOver": 0.5
+      },
+      "823979": {
+        "side": "home",
+        "line": 1.5,
+        "total": 8,
+        "marketHomeCover": 0.571,
+        "marketHomePayout": 0.69,
+        "marketAwayPayout": 1.25,
+        "marketOver": 0.493
+      },
+      "824140": {
+        "side": "home",
+        "line": -1.5,
+        "total": 9,
+        "marketHomeCover": 0.417,
+        "marketHomePayout": 1.3,
+        "marketAwayPayout": 0.654,
+        "marketOver": 0.488
+      },
+      "824306": {
+        "side": "home",
+        "line": 1.5,
+        "total": 11,
+        "marketHomeCover": 0.491,
+        "marketHomePayout": 0.952,
+        "marketAwayPayout": 0.877,
+        "marketOver": 0.519
+      },
+      "824382": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7.5,
+        "marketHomeCover": 0.407,
+        "marketHomePayout": 1.36,
+        "marketAwayPayout": 0.625,
+        "marketOver": 0.5
+      },
+      "824467": {
+        "side": "home",
+        "line": 1.5,
+        "total": 8.5,
+        "marketHomeCover": 0.468,
+        "marketHomePayout": 1.05,
+        "marketAwayPayout": 0.8,
+        "marketOver": 0.488
+      },
+      "824626": {
+        "side": "home",
+        "line": -1.5,
+        "total": 8,
+        "marketHomeCover": 0.397,
+        "marketHomePayout": 1.405,
+        "marketAwayPayout": 0.606,
+        "marketOver": 0.478
+      },
+      "825031": {
+        "side": "home",
+        "line": -1.5,
+        "total": 9,
+        "marketHomeCover": 0.378,
+        "marketHomePayout": 1.55,
+        "marketAwayPayout": 0.556,
+        "marketOver": 0.488
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.902,
+    "tailShrink": 0.715,
+    "farTailShrink": 0.655,
+    "handicapShrink": 0.864,
+    "handicapTailShrink": 0.634,
+    "handicapFarTailShrink": 0.619,
+    "totalShrink": 0.821,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.833,
+    "gamesSettled": 270,
+    "brierSum": 66.0815,
+    "updatedAt": "2026-09-16T11:16:37.843Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 824382,
+      "gameDate": "2026-09-16T17:10:00Z",
+      "home": "Cleveland Guardians",
+      "away": "Chicago White Sox",
+      "pass": false,
+      "predictedWinner": "Cleveland Guardians",
+      "predictedLoser": "Chicago White Sox",
+      "winProbability": 0.591,
+      "rawWinProbability": 0.601,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7.5,
+          "marketHomeCover": 0.407,
+          "marketHomePayout": 1.36,
+          "marketAwayPayout": 0.625,
+          "marketOver": 0.5
+        },
+        "pick": "Chicago White Sox +1.5",
+        "coverProbability": 0.538,
+        "rawCoverProbability": 0.544,
+        "ev": 0.023,
+        "marketProbability": 0.593,
+        "marketPriceEv": -0.125,
+        "recommendedStake": 0.01,
+        "noValue": false
+      },
+      "total": {
+        "line": 7.5,
+        "predicted": 9.02,
+        "pick": "OVER",
+        "probability": 0.576,
+        "rawProbability": 0.592,
+        "marketProbability": 0.5,
+        "ev": 0.094,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.92,
+        "away": 3.91
+      },
+      "reasons": [
+        "Handicap EV +2.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -12.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 59.3% for this side — model 53.8% (-5.5% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 57.6% (+7.6% vs market)",
+        "Starter edge: Cleveland Guardians (Parker Messick projFIP 3.50 vs 4.52)",
+        "Offense edge: Chicago White Sox (wOBA 0.315 vs 0.307)",
+        "Bullpen edge: Cleveland Guardians",
+        "Cleveland Guardians bullpen fatigued (+0.14 R/9)",
+        "Chicago White Sox bullpen fatigued (+0.50 R/9)",
+        "Park factor 98 (pitcher-friendly)",
+        "Expected runs 4.92–3.91 over 10000 sims",
+        "away: cold bats — 3.7 R/G last 15 (season baseline 4.5)",
+        "Weather: 27°C at first pitch — run environment ×1.038",
+        "Wind: 11 km/h from 308° vs CF bearing 0° — blowing in, run environment ×0.987"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_applied",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_applied",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823004,
+      "gameDate": "2026-09-16T17:15:00Z",
+      "home": "St. Louis Cardinals",
+      "away": "San Francisco Giants",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.527,
+      "rawWinProbability": 0.53,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 8,
+          "marketHomeCover": 0.409,
+          "marketHomePayout": 1.35,
+          "marketAwayPayout": 0.629,
+          "marketOver": 0.511
+        },
+        "pick": null,
+        "coverProbability": 0.586,
+        "rawCoverProbability": 0.599,
+        "ev": 0.113,
+        "marketProbability": 0.591,
+        "marketPriceEv": -0.046,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 8,
+        "predicted": 10.63,
+        "pick": null,
+        "probability": 0.664,
+        "rawProbability": 0.699,
+        "marketProbability": 0.511,
+        "ev": 0.244,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 5.37,
+        "away": 5.06
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 52.7% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +11.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -4.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 59.1% for this side — model 58.6% (-0.5% vs market)",
+        "Market consensus on the total: 51.1% for the OVER — model 66.4% (+15.3% vs market)",
+        "Starter edge: San Francisco Giants (Anthony Molina projFIP 3.92 vs 4.17)",
+        "St. Louis Cardinals bullpen fatigued (+0.02 R/9)",
+        "San Francisco Giants bullpen fatigued (+0.06 R/9)",
+        "Park factor 97 (pitcher-friendly)",
+        "Expected runs 5.37–5.06 over 10000 sims",
+        "home: hot bats — 5.5 R/G last 15 (season baseline 4.5)",
+        "away: hot bats — 5.5 R/G last 15 (season baseline 4.4)",
+        "Weather: 31°C at first pitch — run environment ×1.060",
+        "Wind: 3 km/h from 360° vs CF bearing 62° — blowing in, run environment ×0.997"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_applied",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_applied",
+        "[info] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823655,
+      "gameDate": "2026-09-16T17:40:00Z",
+      "home": "Minnesota Twins",
+      "away": "New York Yankees",
+      "pass": false,
+      "predictedWinner": "New York Yankees",
+      "predictedLoser": "Minnesota Twins",
+      "winProbability": 0.569,
+      "rawWinProbability": 0.576,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 8,
+          "marketHomeCover": 0.535,
+          "marketHomePayout": 0.794,
+          "marketAwayPayout": 1.06,
+          "marketOver": 0.5
+        },
+        "pick": "Minnesota Twins +1.5",
+        "coverProbability": 0.552,
+        "rawCoverProbability": 0.56,
+        "ev": 0.048,
+        "marketProbability": 0.535,
+        "marketPriceEv": -0.01,
+        "recommendedStake": 0.01,
+        "noValue": false
+      },
+      "total": {
+        "line": 8,
+        "predicted": 9.44,
+        "pick": "OVER",
+        "probability": 0.581,
+        "rawProbability": 0.598,
+        "marketProbability": 0.5,
+        "ev": 0.095,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.21,
+        "away": 5.07
+      },
+      "reasons": [
+        "Handicap EV +4.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -1.0% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 53.5% for this side — model 55.2% (+1.7% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 58.1% (+8.1% vs market)",
+        "Starter edge: New York Yankees (Carlos Rodón projFIP 3.96 vs 4.41)",
+        "Bullpen edge: New York Yankees",
+        "Minnesota Twins bullpen fatigued (+0.18 R/9)",
+        "Park factor 99 (pitcher-friendly)",
+        "Expected runs 4.21–5.07 over 10000 sims",
+        "away: hot bats — 5.8 R/G last 15 (season baseline 4.5)",
+        "Weather: 21°C at first pitch — run environment ×1.002",
+        "Wind: 10 km/h from 117° vs CF bearing 129° — blowing in, run environment ×0.980"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 822763,
+      "gameDate": "2026-09-16T19:07:00Z",
+      "home": "Toronto Blue Jays",
+      "away": "Detroit Tigers",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.502,
+      "rawWinProbability": 0.502,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 8.5,
+          "marketHomeCover": 0.375,
+          "marketHomePayout": 1.57,
+          "marketAwayPayout": 0.535,
+          "marketOver": 0.489
+        },
+        "pick": null,
+        "coverProbability": 0.61,
+        "rawCoverProbability": 0.627,
+        "ev": 0.158,
+        "marketProbability": 0.625,
+        "marketPriceEv": -0.064,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 8.5,
+        "predicted": 10.13,
+        "pick": null,
+        "probability": 0.588,
+        "rawProbability": 0.607,
+        "marketProbability": 0.489,
+        "ev": 0.117,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 5,
+        "away": 4.95
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 50.2% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +15.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -6.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.5% for this side — model 61.0% (-1.5% vs market)",
+        "Market consensus on the total: 48.9% for the OVER — model 58.8% (+9.9% vs market)",
+        "Starter edge: Detroit Tigers (Keider Montero projFIP 4.23 vs 4.74)",
+        "Toronto Blue Jays bullpen fatigued (+0.32 R/9)",
+        "Detroit Tigers bullpen fatigued (+0.24 R/9)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 5.00–4.95 over 10000 sims",
+        "away: hot bats — 5.7 R/G last 15 (season baseline 4.5)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_applied",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824467,
+      "gameDate": "2026-09-16T22:40:00Z",
+      "home": "Cincinnati Reds",
+      "away": "Los Angeles Dodgers",
+      "pass": false,
+      "predictedWinner": "Los Angeles Dodgers",
+      "predictedLoser": "Cincinnati Reds",
+      "winProbability": 0.669,
+      "rawWinProbability": 0.697,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 8.5,
+          "marketHomeCover": 0.468,
+          "marketHomePayout": 1.05,
+          "marketAwayPayout": 0.8,
+          "marketOver": 0.488
+        },
+        "pick": "Los Angeles Dodgers -1.5",
+        "coverProbability": 0.565,
+        "rawCoverProbability": 0.575,
+        "ev": 0.073,
+        "marketProbability": 0.532,
+        "marketPriceEv": 0.016,
+        "recommendedStake": 0.02,
+        "noValue": false
+      },
+      "total": {
+        "line": 8.5,
+        "predicted": 11.32,
+        "pick": null,
+        "probability": 0.656,
+        "rawProbability": 0.689,
+        "marketProbability": 0.488,
+        "ev": 0.246,
+        "noValue": true
+      },
+      "expectedRuns": {
+        "home": 4.33,
+        "away": 6.78
+      },
+      "reasons": [
+        "Handicap EV +7.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +1.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 53.2% for this side — model 56.5% (+3.3% vs market)",
+        "No total bet: the model sits +16.8% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 48.8% for the OVER — model 65.6% (+16.8% vs market)",
+        "Starter edge: Los Angeles Dodgers (Blake Snell projFIP 3.73 vs 4.90)",
+        "Offense edge: Los Angeles Dodgers (wOBA 0.328 vs 0.307)",
+        "Bullpen edge: Los Angeles Dodgers",
+        "Cincinnati Reds bullpen fatigued (+0.18 R/9)",
+        "Park factor 106 (hitter-friendly)",
+        "Expected runs 4.33–6.78 over 10000 sims",
+        "away: hot bats — 5.7 R/G last 15 (season baseline 4.9)",
+        "Weather: 34°C at first pitch — run environment ×1.060",
+        "Wind: 9 km/h from 228° vs CF bearing 122° — blowing out, run environment ×1.005"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 822926,
+      "gameDate": "2026-09-16T22:40:00Z",
+      "home": "Tampa Bay Rays",
+      "away": "Athletics",
+      "pass": false,
+      "predictedWinner": "Tampa Bay Rays",
+      "predictedLoser": "Athletics",
+      "winProbability": 0.577,
+      "rawWinProbability": 0.586,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 8,
+          "marketHomeCover": 0.435,
+          "marketHomePayout": 1.2,
+          "marketAwayPayout": 0.699,
+          "marketOver": 0.49
+        },
+        "pick": "Athletics +1.5",
+        "coverProbability": 0.549,
+        "rawCoverProbability": 0.557,
+        "ev": 0.043,
+        "marketProbability": 0.565,
+        "marketPriceEv": -0.067,
+        "recommendedStake": 0.01,
+        "noValue": false
+      },
+      "total": {
+        "line": 8,
+        "predicted": 9.28,
+        "pick": "OVER",
+        "probability": 0.569,
+        "rawProbability": 0.584,
+        "marketProbability": 0.49,
+        "ev": 0.074,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.98,
+        "away": 4.07
+      },
+      "reasons": [
+        "Handicap EV +4.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -6.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 56.5% for this side — model 54.9% (-1.6% vs market)",
+        "Market consensus on the total: 49.0% for the OVER — model 56.9% (+7.9% vs market)",
+        "Park factor 96 (pitcher-friendly)",
+        "Expected runs 4.98–4.07 over 10000 sims"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823332,
+      "gameDate": "2026-09-16T22:40:00Z",
+      "home": "Pittsburgh Pirates",
+      "away": "Milwaukee Brewers",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.538,
+      "rawWinProbability": 0.542,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 7.5,
+          "marketHomeCover": 0.588,
+          "marketHomePayout": 0.633,
+          "marketAwayPayout": 1.35,
+          "marketOver": 0.511
+        },
+        "pick": null,
+        "coverProbability": 0.579,
+        "rawCoverProbability": 0.592,
+        "ev": 0.1,
+        "marketProbability": 0.588,
+        "marketPriceEv": -0.054,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 7.5,
+        "predicted": 9.88,
+        "pick": null,
+        "probability": 0.634,
+        "rawProbability": 0.663,
+        "marketProbability": 0.511,
+        "ev": 0.205,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.63,
+        "away": 5.11
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 53.8% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +10.0% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -5.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 58.8% for this side — model 57.9% (-0.9% vs market)",
+        "Market consensus on the total: 51.1% for the OVER — model 63.4% (+12.3% vs market)",
+        "Starter edge: Milwaukee Brewers (Logan Henderson projFIP 3.43 vs 3.74)",
+        "Bullpen edge: Milwaukee Brewers",
+        "Pittsburgh Pirates bullpen fatigued (+0.10 R/9)",
+        "Park factor 97 (pitcher-friendly)",
+        "Expected runs 4.63–5.11 over 10000 sims",
+        "home: cold bats — 4.1 R/G last 15 (season baseline 4.7)",
+        "away: hot bats — 6.9 R/G last 15 (season baseline 4.8)",
+        "Weather: 28°C at first pitch — run environment ×1.051",
+        "Wind: 3 km/h from 330° vs CF bearing 116° — blowing out, run environment ×1.005"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 822680,
+      "gameDate": "2026-09-16T22:45:00Z",
+      "home": "Washington Nationals",
+      "away": "Philadelphia Phillies",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.506,
+      "rawWinProbability": 0.506,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 8.5,
+          "marketHomeCover": 0.489,
+          "marketHomePayout": 0.952,
+          "marketAwayPayout": 0.87,
+          "marketOver": 0.5
+        },
+        "pick": null,
+        "coverProbability": 0.603,
+        "rawCoverProbability": 0.619,
+        "ev": 0.145,
+        "marketProbability": 0.489,
+        "marketPriceEv": 0.177,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 8.5,
+        "predicted": 9.72,
+        "pick": null,
+        "probability": 0.564,
+        "rawProbability": 0.578,
+        "marketProbability": 0.5,
+        "ev": 0.071,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.76,
+        "away": 4.82
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 50.6% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +14.5% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +17.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 48.9% for this side — model 60.3% (+11.4% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 56.4% (+6.4% vs market)",
+        "Starter edge: Philadelphia Phillies (Zack Wheeler projFIP 3.72 vs 4.17)",
+        "Offense edge: Washington Nationals (wOBA 0.325 vs 0.310)",
+        "Bullpen edge: Philadelphia Phillies",
+        "Washington Nationals bullpen fatigued (+0.12 R/9)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 4.76–4.82 over 10000 sims",
+        "Weather: 27°C at first pitch — run environment ×1.044",
+        "Wind: 8 km/h from 202° vs CF bearing 28° — blowing out, run environment ×1.016"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823576,
+      "gameDate": "2026-09-16T23:10:00Z",
+      "home": "New York Mets",
+      "away": "Baltimore Orioles",
+      "pass": false,
+      "predictedWinner": "New York Mets",
+      "predictedLoser": "Baltimore Orioles",
+      "winProbability": 0.591,
+      "rawWinProbability": 0.601,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 9,
+          "marketHomeCover": 0.378,
+          "marketHomePayout": 1.53,
+          "marketAwayPayout": 0.556,
+          "marketOver": 0.488
+        },
+        "pick": "Baltimore Orioles +1.5",
+        "coverProbability": 0.534,
+        "rawCoverProbability": 0.54,
+        "ev": 0.015,
+        "marketProbability": 0.622,
+        "marketPriceEv": -0.168,
+        "recommendedStake": 0,
+        "noValue": false
+      },
+      "total": {
+        "line": 9,
+        "predicted": 9.63,
+        "pick": null,
+        "probability": 0.515,
+        "rawProbability": 0.518,
+        "marketProbability": 0.488,
+        "ev": -0.019,
+        "noValue": true
+      },
+      "expectedRuns": {
+        "home": 5.29,
+        "away": 4.18
+      },
+      "reasons": [
+        "Handicap EV +1.5% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -16.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.2% for this side — model 53.4% (-8.8% vs market)",
+        "No total bet: -1.9% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "Market consensus on the total: 48.8% for the OVER — model 51.5% (+2.7% vs market)",
+        "Starter edge: New York Mets (Robert Stock projFIP 4.09 vs 4.37)",
+        "New York Mets bullpen fatigued (+0.10 R/9)",
+        "Baltimore Orioles bullpen fatigued (+0.24 R/9)",
+        "Park factor 97 (pitcher-friendly)",
+        "Expected runs 5.29–4.18 over 10000 sims",
+        "home: hot bats — 6.0 R/G last 15 (season baseline 4.3)",
+        "away: cold bats — 3.7 R/G last 15 (season baseline 4.4)",
+        "Weather: 22°C at first pitch — run environment ×1.008",
+        "Wind: 12 km/h from 162° vs CF bearing 13° — blowing out, run environment ×1.020"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824626,
+      "gameDate": "2026-09-16T23:40:00Z",
+      "home": "Chicago Cubs",
+      "away": "Atlanta Braves",
+      "pass": false,
+      "predictedWinner": "Chicago Cubs",
+      "predictedLoser": "Atlanta Braves",
+      "winProbability": 0.597,
+      "rawWinProbability": 0.607,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 8,
+          "marketHomeCover": 0.397,
+          "marketHomePayout": 1.405,
+          "marketAwayPayout": 0.606,
+          "marketOver": 0.478
+        },
+        "pick": null,
+        "coverProbability": 0.524,
+        "rawCoverProbability": 0.527,
+        "ev": -0.005,
+        "marketProbability": 0.603,
+        "marketPriceEv": -0.159,
+        "recommendedStake": null,
+        "noValue": true
+      },
+      "total": {
+        "line": 8,
+        "predicted": 10.25,
+        "pick": null,
+        "probability": 0.636,
+        "rawProbability": 0.666,
+        "marketProbability": 0.478,
+        "ev": 0.193,
+        "noValue": true
+      },
+      "expectedRuns": {
+        "home": 5.69,
+        "away": 4.42
+      },
+      "reasons": [
+        "No handicap bet: -0.5% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -15.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 60.3% for this side — model 52.4% (-7.9% vs market)",
+        "No total bet: the model sits +15.8% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 47.8% for the OVER — model 63.6% (+15.8% vs market)",
+        "Starter edge: Chicago Cubs (Shota Imanaga projFIP 4.19 vs 4.72)",
+        "Offense edge: Chicago Cubs (wOBA 0.333 vs 0.314)",
+        "Bullpen edge: Atlanta Braves",
+        "Chicago Cubs bullpen fatigued (+0.06 R/9)",
+        "Atlanta Braves bullpen fatigued (+0.24 R/9)",
+        "Expected runs 5.69–4.42 over 10000 sims",
+        "home: hot bats — 5.6 R/G last 15 (season baseline 5.0)",
+        "Weather: 20°C at first pitch — run environment ×0.992",
+        "Wind: 13 km/h from 12° vs CF bearing 37° — blowing in, run environment ×0.977"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 822846,
+      "gameDate": "2026-09-17T00:05:00Z",
+      "home": "Texas Rangers",
+      "away": "Boston Red Sox",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.542,
+      "rawWinProbability": 0.547,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 8,
+          "marketHomeCover": 0.617,
+          "marketHomePayout": 0.556,
+          "marketAwayPayout": 1.52,
+          "marketOver": 0.496
+        },
+        "pick": null,
+        "coverProbability": 0.65,
+        "rawCoverProbability": 0.683,
+        "ev": 0.236,
+        "marketProbability": 0.617,
+        "marketPriceEv": 0.012,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 8,
+        "predicted": 9.03,
+        "pick": null,
+        "probability": 0.55,
+        "rawProbability": 0.561,
+        "marketProbability": 0.496,
+        "ev": 0.041,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.65,
+        "away": 4.17
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.2% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +23.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +1.2% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 61.7% for this side — model 65.0% (+3.3% vs market)",
+        "Market consensus on the total: 49.6% for the OVER — model 55.0% (+5.4% vs market)",
+        "Bullpen edge: Boston Red Sox",
+        "Park factor 99 (pitcher-friendly)",
+        "Expected runs 4.65–4.17 over 10000 sims",
+        "home: hot bats — 5.4 R/G last 15 (season baseline 4.5)",
+        "away: cold bats — 3.8 R/G last 15 (season baseline 4.5)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824140,
+      "gameDate": "2026-09-17T00:10:00Z",
+      "home": "Houston Astros",
+      "away": "Kansas City Royals",
+      "pass": false,
+      "predictedWinner": "Houston Astros",
+      "predictedLoser": "Kansas City Royals",
+      "winProbability": 0.563,
+      "rawWinProbability": 0.57,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 9,
+          "marketHomeCover": 0.417,
+          "marketHomePayout": 1.3,
+          "marketAwayPayout": 0.654,
+          "marketOver": 0.488
+        },
+        "pick": "Kansas City Royals +1.5",
+        "coverProbability": 0.57,
+        "rawCoverProbability": 0.582,
+        "ev": 0.084,
+        "marketProbability": 0.583,
+        "marketPriceEv": -0.057,
+        "recommendedStake": 0.02,
+        "noValue": false
+      },
+      "total": {
+        "line": 9,
+        "predicted": 8.89,
+        "pick": "UNDER",
+        "probability": 0.55,
+        "rawProbability": 0.561,
+        "marketProbability": 0.512,
+        "ev": 0.041,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.73,
+        "away": 4.02
+      },
+      "reasons": [
+        "Handicap EV +8.4% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -5.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 58.3% for this side — model 57.0% (-1.3% vs market)",
+        "Market consensus on the total: 51.2% for the UNDER — model 55.0% (+3.8% vs market)",
+        "Bullpen edge: Houston Astros",
+        "Park factor 99 (pitcher-friendly)",
+        "Expected runs 4.73–4.02 over 10000 sims",
+        "home: cold bats — 3.7 R/G last 15 (season baseline 4.4)",
+        "away: cold bats — 3.7 R/G last 15 (season baseline 4.4)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824306,
+      "gameDate": "2026-09-17T00:40:00Z",
+      "home": "Colorado Rockies",
+      "away": "San Diego Padres",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.517,
+      "rawWinProbability": 0.519,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 11,
+          "marketHomeCover": 0.491,
+          "marketHomePayout": 0.952,
+          "marketAwayPayout": 0.877,
+          "marketOver": 0.519
+        },
+        "pick": null,
+        "coverProbability": 0.614,
+        "rawCoverProbability": 0.632,
+        "ev": 0.167,
+        "marketProbability": 0.491,
+        "marketPriceEv": 0.199,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 11,
+        "predicted": 11.5,
+        "pick": null,
+        "probability": 0.503,
+        "rawProbability": 0.503,
+        "marketProbability": 0.481,
+        "ev": -0.041,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 5.76,
+        "away": 5.55
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 51.7% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +16.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +19.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 49.1% for this side — model 61.4% (+12.3% vs market)",
+        "Market consensus on the total: 48.1% for the UNDER — model 50.3% (+2.2% vs market)",
+        "Starter edge: Colorado Rockies (Mason Adams projFIP 4.81 vs 5.13)",
+        "Offense edge: Colorado Rockies (wOBA 0.322 vs 0.310)",
+        "Bullpen edge: San Diego Padres",
+        "Colorado Rockies bullpen fatigued (+0.36 R/9)",
+        "San Diego Padres bullpen fatigued (+0.20 R/9)",
+        "Park factor 112 (hitter-friendly)",
+        "Expected runs 5.76–5.55 over 10000 sims",
+        "Weather: 29°C at first pitch — run environment ×1.056",
+        "Wind: 13 km/h from 50° vs CF bearing 4° — blowing in, run environment ×0.982"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] home_lineup_not_posted",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823979,
+      "gameDate": "2026-09-17T01:38:00Z",
+      "home": "Los Angeles Angels",
+      "away": "Seattle Mariners",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.511,
+      "rawWinProbability": 0.512,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 8,
+          "marketHomeCover": 0.571,
+          "marketHomePayout": 0.69,
+          "marketAwayPayout": 1.25,
+          "marketOver": 0.493
+        },
+        "pick": null,
+        "coverProbability": 0.61,
+        "rawCoverProbability": 0.627,
+        "ev": 0.159,
+        "marketProbability": 0.571,
+        "marketPriceEv": 0.031,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 8,
+        "predicted": 9.31,
+        "pick": null,
+        "probability": 0.57,
+        "rawProbability": 0.585,
+        "marketProbability": 0.493,
+        "ev": 0.076,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.49,
+        "away": 4.58
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 51.1% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +15.9% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +3.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 57.1% for this side — model 61.0% (+3.9% vs market)",
+        "Market consensus on the total: 49.3% for the OVER — model 57.0% (+7.7% vs market)",
+        "Expected runs 4.49–4.58 over 10000 sims",
+        "away: hot bats — 5.8 R/G last 15 (season baseline 4.2)",
+        "Weather: 25°C at first pitch — run environment ×1.029",
+        "Wind: 14 km/h from 224° vs CF bearing 44° — blowing out, run environment ×1.028"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 825031,
+      "gameDate": "2026-09-17T01:40:00Z",
+      "home": "Arizona Diamondbacks",
+      "away": "Miami Marlins",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.512,
+      "rawWinProbability": 0.514,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 9,
+          "marketHomeCover": 0.378,
+          "marketHomePayout": 1.55,
+          "marketAwayPayout": 0.556,
+          "marketOver": 0.488
+        },
+        "pick": null,
+        "coverProbability": 0.62,
+        "rawCoverProbability": 0.639,
+        "ev": 0.179,
+        "marketProbability": 0.622,
+        "marketPriceEv": -0.035,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 9,
+        "predicted": 10.24,
+        "pick": null,
+        "probability": 0.559,
+        "rawProbability": 0.572,
+        "marketProbability": 0.488,
+        "ev": 0.056,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.93,
+        "away": 5.15
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 51.2% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +17.9% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -3.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.2% for this side — model 62.0% (-0.2% vs market)",
+        "Market consensus on the total: 48.8% for the OVER — model 55.9% (+7.1% vs market)",
+        "Starter edge: Miami Marlins (Ryan Gusto projFIP 4.30 vs 5.06)",
+        "Arizona Diamondbacks bullpen fatigued (+0.30 R/9)",
+        "Miami Marlins bullpen fatigued (+0.38 R/9)",
+        "Park factor 103 (hitter-friendly)",
+        "Expected runs 4.93–5.15 over 10000 sims",
+        "home: cold bats — 3.8 R/G last 15 (season baseline 4.4)",
+        "away: hot bats — 5.5 R/G last 15 (season baseline 4.6)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-16T13:59:00.000Z",
+      "final": true
+    }
+  ]
+}
