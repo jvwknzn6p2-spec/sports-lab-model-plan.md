@@ -69,6 +69,12 @@ export interface LedgerPrediction {
    * dc-v1 の行には無い（＝罰則なし・α=0 相当）
    */
   ridge?: number;
+  /**
+   * 学習窓の中での「両チームのうち少ない方の試合数」。標本の薄いチームが絡む予想を
+   * 後から層別するための記録（2026-09-16 に MIN_TEAM_MATCHES を 5 → 1 へ下げた際に追加）。
+   * それ以前の行には無い
+   */
+  nTeamMin?: number;
 }
 
 export interface LedgerResult {

@@ -74,10 +74,41 @@ const HISTORY_SINCE_DAYS = 1600;
 /** 結果の速報（Odds API scores）を要求する範囲: 開始から 2 時間〜3 日（daysFrom=3 の上限） */
 const SCORES_MIN_AGE_H = 2;
 const SCORES_MAX_AGE_D = 3;
-const HORIZON_HOURS = Number(arg("horizon", "48")); // 封緘は前日 20:00 JST。翌日（JST）の試合を全て拾う
+/**
+ * 予想を発行する範囲（キックオフまでの時間）。
+ *
+ * **2026-09-16 に 48h → 720h（30 日）へ拡大**（Founder 指示「海外リーグの試合は全て
+ * 予想を出力して下さい」）。48h では日程 107 件のうち 6 件にしか予想が出ていなかった。
+ *
+ * 早く予想しても精度はほとんど落ちないことを実測して確認した（全 10 リーグ・履歴）:
+ *   0 日前 0.2021 / 3 日前 0.1998 / 7 日前 0.2030 / 14 日前 0.2019（RPS）
+ * 差はいずれも 0.0023 以下で単調ですらなく、雑音の範囲。時間減衰の半減期が 107 日
+ * なので 1〜2 週間ぶんのデータ増減がほとんど効かない。
+ *
+ * 30 日で頭打ちにするのは、日程取得元が遠い将来の試合を返し始めたときの歯止め。
+ * 台帳の日程は実測で最大 26 日先まで。
+ */
+const HORIZON_HOURS = Number(arg("horizon", "720"));
 /** 学習データが薄いと確率が極端になる（20 試合で 98/2/0 を実測）。足りなければ発行しない */
 const MIN_TRAIN = 300;
-const MIN_TEAM_MATCHES = 5;
+/**
+ * 学習窓の中でこの試合数に満たないチームが絡む試合は発行しない。
+ *
+ * **2026-09-16 に 5 → 1 へ下げた**（Founder 指示「海外リーグの試合は全て予想を出力」）。
+ * 元の 5 は「標本が薄いと確率が極端になる（20 試合で 98/2/0 を実測）」ための歯止めだったが、
+ * その病理は正則化（dc-v2-ridge・α=2）で直したので、閾値の根拠が消えた。
+ *
+ * 実測（全 10 リーグ・履歴・α=2）— 少ない方のチームの試合数で層別:
+ *   1–2 試合  n=  98  RPS 0.2100  最小確率<5% 0.0%
+ *   3–4 試合  n=  94  RPS 0.2029  最小確率<5% 1.1%
+ *   10+ 試合  n=10703 RPS 0.2021  最小確率<5% 1.3%
+ * **薄いチームほど極端な予想が出にくい**（平均へ縮小されるため）。精度は 1–2 試合で
+ * やや落ちるが病的ではない。各予想には nTeamMin を記録するので、後から層別できる。
+ *
+ * 1 未満にはしない。学習に 1 度も出ていないチームは predictMatch が例外を投げる
+ * （中立値で埋めない）。
+ */
+const MIN_TEAM_MATCHES = 1;
 
 /** リーグ → football-data の CSV（cache 内の名前）と Odds API の sport キー */
 // 海外リーグ優先（Founder 指示 2026-09-03）。順序は表示順でもある。CL/EL/ECL は
@@ -230,7 +261,8 @@ function daily(): void {
       const historyAsOf = train.reduce((acc, t) => (t.date.slice(0, 10) > acc ? t.date.slice(0, 10) : acc), "");
       const historyMissing = countMissingResults([...L.currentMatches().values()].filter((m) => m.league === league), historyRows, NOW);
       for (const m of todo) {
-        if ((count.get(m.home) ?? 0) < MIN_TEAM_MATCHES || (count.get(m.away) ?? 0) < MIN_TEAM_MATCHES) {
+        const nTeamMin = Math.min(count.get(m.home) ?? 0, count.get(m.away) ?? 0);
+        if (nTeamMin < MIN_TEAM_MATCHES) {
           log.push(`  skip ${m.home} v ${m.away}: 学習データが ${MIN_TEAM_MATCHES} 試合未満のチーム`);
           continue;
         }
@@ -241,7 +273,7 @@ function daily(): void {
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
           market: mk?.market ?? null, marketFetchedAt: mk && odds ? odds.fetchedAt : null,
-          historyAsOf, historyMissing, ridge: fit.ridge,
+          historyAsOf, historyMissing, ridge: fit.ridge, nTeamMin,
         });
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }
