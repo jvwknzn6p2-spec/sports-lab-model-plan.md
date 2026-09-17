@@ -43,6 +43,8 @@ import {
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
+import { closingMarketResolver } from "../marketSnapshots.ts";
+import { clvEntries, summarizeClv } from "../clv.ts";
 import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -288,7 +290,10 @@ function daily(): void {
     log.push(`${league}: results recorded ${n} (of ${recent.length} recent)`);
   }
   // 4) 決済
-  log.push(`settled ${L.settle(NOW)}`);
+  // 決済では**キックオフ直前**の市場でも RPS を測る（marketSnapshots.ts）。予想行の market は
+  // 発行時点の値で、発行範囲 720 時間では最大 25 日前になるため、それだけで対照し続けると
+  // ベンチマークが古い市場に固定されてモデルを不当に良く見せる
+  log.push(`settled ${L.settle(NOW, closingMarketResolver(join(ROOT, "market")))}`);
   // 5) レポート
   mkdirSync(join(ROOT, "reports"), { recursive: true });
   writeFileSync(join(ROOT, "reports", "summary.md"), renderSummary(LEAGUES, L.predictions(), L.evaluations(), L.currentMatches(), NOW));
@@ -512,12 +517,45 @@ function health(): void {
   }
 }
 
+/**
+ * CLV（Closing Line Value）。モデルが市場より高く見た側へ、市場が発行時点から
+ * キックオフ直前までに動いたかを測る（src/clv.ts）。**結果の運に左右されずエッジの
+ * 有無を見る器**であり、ここでは EV も推奨も出さない。
+ */
+function clv(): void {
+  const L = new Ledger(join(ROOT, "ledger"));
+  const entries = clvEntries(L.predictions(), L.evaluations(), closingMarketResolver(join(ROOT, "market")));
+  const s = summarizeClv(entries);
+  if (s.n === 0) {
+    console.log("CLV: 対象 0 件（発行時点と直前の市場が両方ある決済済みの予想が無い）");
+    return;
+  }
+  const pct = (x: number) => `${(x * 100).toFixed(0)}%`;
+  console.log(`CLV: 対象 ${s.n} 件（決済済み・発行時点と直前の市場が両方ある）`);
+  console.log(`  市場の動き 平均 ${s.meanMovePp >= 0 ? "+" : ""}${s.meanMovePp.toFixed(2)}pp（SE ${s.sePp.toFixed(2)} → t=${s.t >= 0 ? "+" : ""}${s.t.toFixed(2)}）`);
+  console.log(`  正方向 ${s.positive}/${s.n}（${pct(s.positiveRate)}・95% [${pct(s.positiveCi.lo)}, ${pct(s.positiveCi.hi)}]）`);
+  console.log(`  モデルが見たエッジ 平均 ${s.meanEdgePp.toFixed(2)}pp`);
+  // リーグ別（件数が少ないリーグは数字を読まないこと）
+  const byLeague = new Map<string, typeof entries>();
+  for (const e of entries) {
+    const list = byLeague.get(e.league);
+    if (list) list.push(e);
+    else byLeague.set(e.league, [e]);
+  }
+  for (const lg of [...byLeague.keys()].sort()) {
+    const t = summarizeClv(byLeague.get(lg)!);
+    console.log(`    ${lg.padEnd(4)} n=${String(t.n).padStart(3)}  ${t.meanMovePp >= 0 ? "+" : ""}${t.meanMovePp.toFixed(2)}pp  正方向 ${pct(t.positiveRate)}`);
+  }
+  console.log("\n的中率と同じで、n が小さい行の数字は読まない。EV も賭けの推奨も出していない。");
+}
+
 if (cmd === "daily") daily();
 else if (cmd === "scores-needed") scoresNeeded();
 else if (cmd === "health") health();
+else if (cmd === "clv") clv();
 else if (cmd === "history-import") historyImport();
 else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|health|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
+  console.error("usage: football.ts daily|health|clv|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }

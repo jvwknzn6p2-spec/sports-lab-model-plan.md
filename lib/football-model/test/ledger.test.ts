@@ -109,3 +109,67 @@ test("結果と決済: 結果が来た予想だけ決済し、二重決済しな
   assert.ok(Math.abs(e.rps - ((0.5 - 1) ** 2 + (0.75 - 1) ** 2) / 2) < 1e-9);
   assert.ok(e.marketRps !== null && e.marketRps > 0);
 });
+
+test("決済: キックオフ直前の市場でも RPS を測り、取得時刻を残す", () => {
+  const L = fresh();
+  const [f] = j1(); // Avispa Fukuoka v Mito, kickoff 2026-09-05 10:00Z
+  L.recordFixtures([f], "JAP", "2026-09-03T01:00:00Z");
+  L.publishPrediction({
+    providerId: f.providerId, league: "JAP", kickoffAt: f.kickoffAt, publishedAt: "2026-09-03T03:00:00Z", model: "dc-v2-ridge",
+    asOf: "2026-09-03T01:00:00Z", nTrain: 1000, pHome: 0.5, pDraw: 0.25, pAway: 0.25, lambdaHome: 1.6, lambdaAway: 1.0,
+    market: [0.4, 0.3, 0.3], marketFetchedAt: "2026-09-03T00:57:21Z",
+  });
+  L.recordResults(
+    [{ division: "JAP", date: "2026-09-05T19:00:00Z", home: "Avispa Fukuoka", away: "Mito", homeGoals: 2, awayGoals: 0, odds: null }],
+    "football-data", "2026-09-06T00:00:00Z",
+  );
+  // キックオフ直前（09-05 09:00Z）の市場はホーム 60%。試合後（11:00Z）のものは使ってはならない
+  assert.equal(L.settle("2026-09-06T00:10:00Z", (providerId, kickoffAt) => {
+    assert.equal(providerId, f.providerId);
+    assert.equal(kickoffAt, f.kickoffAt);
+    return { fetchedAt: "2026-09-05T09:00:00Z", market: [0.6, 0.22, 0.18] };
+  }), 1);
+  const e = L.evaluations()[0];
+  assert.equal(e.marketClosingFetchedAt, "2026-09-05T09:00:00Z");
+  // ホーム勝ちなので、ホームを高く見ていた直前の市場のほうが RPS は小さい
+  assert.ok(e.marketRpsClosing !== null && e.marketRpsClosing! < e.marketRps!, `${e.marketRpsClosing} vs ${e.marketRps}`);
+  // 発行時点の値は変わらない（台帳は追記専用・既存の意味を壊さない）
+  assert.ok(Math.abs(e.marketRps! - ((0.4 - 1) ** 2 + (0.7 - 1) ** 2) / 2) < 1e-9);
+});
+
+test("決済: 直前の市場が無い試合は null で残す（推測で埋めない）", () => {
+  const L = fresh();
+  const [f] = j1();
+  L.recordFixtures([f], "JAP", "2026-09-03T01:00:00Z");
+  L.publishPrediction({
+    providerId: f.providerId, league: "JAP", kickoffAt: f.kickoffAt, publishedAt: "2026-09-03T03:00:00Z", model: "dc-v2-ridge",
+    asOf: "2026-09-03T01:00:00Z", nTrain: 1000, pHome: 0.5, pDraw: 0.25, pAway: 0.25, lambdaHome: 1.6, lambdaAway: 1.0,
+    market: [0.4, 0.3, 0.3], marketFetchedAt: "2026-09-03T00:57:21Z",
+  });
+  L.recordResults(
+    [{ division: "JAP", date: "2026-09-05T19:00:00Z", home: "Avispa Fukuoka", away: "Mito", homeGoals: 2, awayGoals: 0, odds: null }],
+    "football-data", "2026-09-06T00:00:00Z",
+  );
+  assert.equal(L.settle("2026-09-06T00:10:00Z", () => null), 1);
+  const e = L.evaluations()[0];
+  assert.equal(e.marketRpsClosing, null);
+  assert.equal(e.marketClosingFetchedAt, null);
+  assert.ok(e.marketRps !== null, "発行時点の対照は従来どおり残る");
+});
+
+test("決済: 解決子を渡さなければ従来どおり（既存の呼び出しを壊さない）", () => {
+  const L = fresh();
+  const [f] = j1();
+  L.recordFixtures([f], "JAP", "2026-09-03T01:00:00Z");
+  L.publishPrediction({
+    providerId: f.providerId, league: "JAP", kickoffAt: f.kickoffAt, publishedAt: "2026-09-03T03:00:00Z", model: "dc-v1",
+    asOf: "2026-09-03T01:00:00Z", nTrain: 1000, pHome: 0.5, pDraw: 0.25, pAway: 0.25, lambdaHome: 1.6, lambdaAway: 1.0,
+    market: [0.4, 0.3, 0.3], marketFetchedAt: "2026-09-03T00:57:21Z",
+  });
+  L.recordResults(
+    [{ division: "JAP", date: "2026-09-05T19:00:00Z", home: "Avispa Fukuoka", away: "Mito", homeGoals: 2, awayGoals: 0, odds: null }],
+    "football-data", "2026-09-06T00:00:00Z",
+  );
+  assert.equal(L.settle("2026-09-06T00:10:00Z"), 1);
+  assert.equal(L.evaluations()[0].marketRpsClosing, null);
+});

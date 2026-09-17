@@ -20,6 +20,7 @@ import type { MarketFixture } from "./oddsApi.ts";
 import type { MatchWithOdds } from "./footballData.ts";
 import type { ProbabilityTriple } from "./scoring.ts";
 import { outcomeOf, rps, multiclassBrier, logLoss } from "./scoring.ts";
+import type { ClosingMarketResolver } from "./marketSnapshots.ts";
 
 /**
  * 封緘の規則（Founder 確定 2026-09-09）: **試合日（JST）の前日 20:00 JST**。
@@ -99,6 +100,15 @@ export interface LedgerEvaluation {
   brier: number;
   logloss: number;
   marketRps: number | null;
+  /**
+   * キックオフ直前の市場スナップショットで測った RPS（`marketSnapshots.ts`）。
+   * `marketRps` は**発行時点**の市場なので、発行が早い試合ほど古い市場と比べることになる。
+   * 発行範囲を 720 時間へ広げた 2026-09-16 以降はその差が効くため、直前値を別に持つ。
+   * スナップショットが無い試合と、2026-09-17 以前の行には無い（null / 不在）
+   */
+  marketRpsClosing?: number | null;
+  /** 上で使ったスナップショットの取得時刻。どれだけ直前の市場かを後から検証できるように */
+  marketClosingFetchedAt?: string | null;
   evaluatedAt: string;
 }
 
@@ -230,8 +240,12 @@ export class Ledger {
   /**
    * 決済。予想 × 結果を league・両チーム・日付（±1 日。時差で現地日付がずれうる）で結ぶ。
    * 結果が無ければ何もしない。
+   *
+   * `closingMarket` を渡すと、キックオフ直前の市場スナップショットでも RPS を測って
+   * 決済行に残す（`marketSnapshots.ts`・理由はそちらの説明に）。渡さなければ従来どおり
+   * 発行時点の市場だけで測る（列は null になる）。
    */
-  settle(nowIso: string): number {
+  settle(nowIso: string, closingMarket?: ClosingMarketResolver): number {
     const done = new Set(this.evaluations().map((e) => e.predictionId));
     const results = this.results();
     const rows: LedgerEvaluation[] = [];
@@ -246,6 +260,7 @@ export class Ledger {
       if (!r) continue;
       const outcome = outcomeOf(r.homeGoals, r.awayGoals);
       const probs: ProbabilityTriple = [p.pHome, p.pDraw, p.pAway];
+      const closing = closingMarket ? closingMarket(p.providerId, p.kickoffAt) : null;
       rows.push({
         predictionId: p.id,
         providerId: p.providerId,
@@ -257,6 +272,8 @@ export class Ledger {
         brier: multiclassBrier(probs, outcome),
         logloss: logLoss(probs, outcome),
         marketRps: p.market ? rps(p.market, outcome) : null,
+        marketRpsClosing: closing ? rps(closing.market, outcome) : null,
+        marketClosingFetchedAt: closing ? closing.fetchedAt : null,
         evaluatedAt: nowIso,
       });
     }

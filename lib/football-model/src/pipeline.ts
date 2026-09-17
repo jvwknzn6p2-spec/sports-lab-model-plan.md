@@ -40,6 +40,13 @@ export interface LeagueSummary {
   model: ReturnType<typeof summarize> | null;
   market: ReturnType<typeof summarize> | null; // 同一試合集合（市場あり）
   modelOnMarketSet: ReturnType<typeof summarize> | null;
+  /**
+   * キックオフ直前の市場での成績（決済行の `marketRpsClosing` が入っている試合だけ）。
+   * 発行時点の市場（`market`）とは別に持つ。発行が最大 25 日前になった今、
+   * 発行時点だけで対照するとベンチマークが古い市場に固定される（marketSnapshots.ts）。
+   * 2026-09-17 以前の決済行には無いので、しばらくは n が小さい
+   */
+  marketClosing: { n: number; meanRps: number; meanRpsAtPublish: number | null } | null;
 }
 
 export function summarizeLeague(league: string, predictions: LedgerPrediction[], evaluations: LedgerEvaluation[]): LeagueSummary {
@@ -50,10 +57,23 @@ export function summarizeLeague(league: string, predictions: LedgerPrediction[],
   const withMarket = evals.filter((e) => preds.get(e.predictionId)!.market);
   const marketRows = withMarket.map((e) => ({ p: preds.get(e.predictionId)!.market!, outcome: toOutcome(e.result) }));
   const modelOnMarket = withMarket.map((e) => ({ p: [preds.get(e.predictionId)!.pHome, preds.get(e.predictionId)!.pDraw, preds.get(e.predictionId)!.pAway] as ProbabilityTriple, outcome: toOutcome(e.result) }));
+  // **同一集合で対照する**。直前市場が入っているのは 2026-09-17 以降の決済だけなので、
+  // 発行時点の平均（全決済）と直前の平均（一部）を横に並べると別集合の比較になる。
+  // 直前が入っている試合に限った発行時点の平均も一緒に返し、セル内で完結させる
+  const closingRows = evals.filter((e) => typeof e.marketRpsClosing === "number");
+  const closing = closingRows.map((e) => e.marketRpsClosing as number);
+  const atPublish = closingRows.filter((e) => typeof e.marketRps === "number").map((e) => e.marketRps as number);
   return {
     league,
     published: preds.size,
     settled: evals.length,
+    marketClosing: closing.length
+      ? {
+          n: closing.length,
+          meanRps: closing.reduce((a, b) => a + b, 0) / closing.length,
+          meanRpsAtPublish: atPublish.length === closing.length ? atPublish.reduce((a, b) => a + b, 0) / atPublish.length : null,
+        }
+      : null,
     model: rows.length ? summarize(rows) : null,
     market: marketRows.length ? summarize(marketRows) : null,
     modelOnMarketSet: modelOnMarket.length ? summarize(modelOnMarket) : null,
@@ -78,16 +98,23 @@ export function renderSummary(leagues: string[], predictions: LedgerPrediction[]
     "# VORTE EV Football — 台帳の要約",
     "",
     `更新 ${nowIso.slice(0, 16).replace("T", " ")} UTC。予想は試合日（JST）の前日 20:00 JST に封緘し、以後は変更しない（2026-09-08 以前の発行分はキックオフ 60 分前）（\`football/ledger/predictions.ndjson\`）。`,
-    "主指標は RPS（小さいほど良い）。的中率は件数と Wilson 95% 区間つきで、単独では読まない。市場は The Odds API の h2h（各ブックの中央値）で、発行時点の値。",
+    "主指標は RPS（小さいほど良い）。的中率は件数と Wilson 95% 区間つきで、単独では読まない。市場は The Odds API の h2h（各ブックの中央値）。",
+    "**市場 RPS は 2 つある**。「発行時点」は予想を出した瞬間の市場（予想行に固定・最大 25 日前）、「直前」はキックオフ前の最後のスナップショット。同一試合集合での実測では古い市場ほど悪く（7 日以上前で +0.0051）、発行時点だけで対照し続けるとモデルを不当に良く見せる。**直前が本来の対照**で、2026-09-17 の決済分から入る。",
+    "直前の列は**その列の試合集合だけ**で発行時点との差（`→`）をセル内に持つ。左の「発行時点」列は全決済が母数なので、**2 つの市場列を横に比べてはいけない**（別集合）。",
     "",
-    "| リーグ | 発行 | 決着 | モデル RPS | 市場 RPS（同一集合） | モデル RPS（同一集合） | 的中率（モデル） |",
-    "|---|---|---|---|---|---|---|",
+    "| リーグ | 発行 | 決着 | モデル RPS | 市場 RPS（発行時点・同一集合） | 市場 RPS（直前） | モデル RPS（同一集合） | 的中率（モデル） |",
+    "|---|---|---|---|---|---|---|---|",
   ];
   for (const league of leagues) {
     const s = summarizeLeague(league, predictions, evaluations);
     const f = (x: number | undefined) => (x === undefined || Number.isNaN(x) ? "—" : x.toFixed(4));
     const acc = s.model ? `${s.model.hits}/${s.model.n} ${(s.model.accuracy * 100).toFixed(1)}% [${(s.model.wilson.lo * 100).toFixed(0)}–${(s.model.wilson.hi * 100).toFixed(0)}%]` : "—";
-    out.push(`| ${NAMES[league] ?? league} | ${s.published} | ${s.settled} | ${f(s.model?.meanRps)} | ${f(s.market?.meanRps)} | ${f(s.modelOnMarketSet?.meanRps)} | ${acc} |`);
+    const cl = s.marketClosing
+      ? `${f(s.marketClosing.meanRps)}（n=${s.marketClosing.n}` +
+        (s.marketClosing.meanRpsAtPublish === null ? "" : `・同集合の発行時点 ${f(s.marketClosing.meanRpsAtPublish)}`) +
+        "）"
+      : "—";
+    out.push(`| ${NAMES[league] ?? league} | ${s.published} | ${s.settled} | ${f(s.model?.meanRps)} | ${f(s.market?.meanRps)} | ${cl} | ${f(s.modelOnMarketSet?.meanRps)} | ${acc} |`);
   }
   out.push("", "## 直近の決済（新しい順・最大 30 件）", "", "| キックオフ (UTC) | リーグ | 試合 | 結果 | 予想 H/D/A | RPS |", "|---|---|---|---|---|---|");
   const byId = new Map(predictions.map((p) => [p.id, p]));
