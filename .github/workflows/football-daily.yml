@@ -60,22 +60,42 @@ jobs:
           # 503 のエラーページを CSV として保存し、日次が緑のまま予想 0 件だった実発生から）。
           # 取れなかったファイルは cache に置かない（CLI は無い分を飛ばし、履歴で学習する）。
           # ホストは www. 無しを先に（www. の前段 nginx が 503 を返す間も Apache 直は 200・2026-09-09 実測）
+          # サイトが丸ごと落ちている日に 37 ファイル × 2 ホスト × 2 回を総当たりしても、
+          # 同じ失敗を 148 回繰り返すだけで 7 分 43 秒かかる（2026-09-17 実測）。
+          # 先頭 2 ファイルが両ホストで落ちたら「全滅」と判断して残りを飛ばす（fail-fast）。
+          # 併せて **リダイレクト先を記録する**。2026-09-16〜 の障害は HTTP 302 →
+          # 127.0.0.1:80 への転送で、ログに Location が無いため原因の特定に本番ログの
+          # ダウンロードが要った。次に同じことが起きたら 1 行目で分かるようにする。
           failed=0
+          attempted=0
+          down=0
+          first_redirect=""
           get () {
-            local name="$1" path="$2" out="football/cache/$1" code host attempt
+            local name="$1" path="$2" out="football/cache/$1" code host attempt redir meta
+            if [ "$down" = "1" ]; then failed=$((failed + 1)); return 0; fi
+            attempted=$((attempted + 1))
             for host in football-data.co.uk www.football-data.co.uk; do
               for attempt in 1 2; do
-                code=$(curl -sSL --max-time 60 -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "$out" -w "%{http_code}" "https://$host/$path" || echo ERR)
+                # --proto-redir =https: http:// への転送は追わずに落とす（127.0.0.1:80 への
+                # 転送を「接続失敗」ではなく「転送拒否」として見せ、待ち時間も作らない）
+                meta=$(curl -sSL --max-time 60 --proto-redir =https -A "Mozilla/5.0 (compatible; VorteFootball/1.0)" -o "$out" -w "%{http_code} %{redirect_url}" "https://$host/$path" || echo "ERR -")
+                code=${meta%% *}; redir=${meta#* }
                 if [ "$code" = "200" ] && head -c 200 "$out" | sed '1s/^\xef\xbb\xbf//' | head -1 | grep -qE '^(Div|Country),'; then
                   echo "ok $name $(wc -c < "$out") via $host"; return 0
                 fi
-                echo "retry $host $attempt $name HTTP $code $( [ -f "$out" ] && wc -c < "$out" || echo 0) bytes"
+                echo "retry $host $attempt $name HTTP $code redirect=${redir:--} $( [ -f "$out" ] && wc -c < "$out" || echo 0) bytes"
+                [ -z "$first_redirect" ] && [ -n "$redir" ] && [ "$redir" != "-" ] && first_redirect="$redir"
                 rm -f "$out"
                 [ "$attempt" -lt 2 ] && sleep 5
               done
             done
             echo "::warning::FAIL $name HTTP $code（football-data.co.uk から取得できない。履歴と他の取得元で進む）"
             failed=$((failed + 1))
+            # 2 ファイル続けて両ホストで落ちたら、以降は試さない（残りも同じ結果になる）
+            if [ "$failed" -ge 2 ] && [ "$failed" = "$attempted" ]; then
+              down=1
+              echo "::warning::football-data.co.uk が全滅と判断（先頭 $attempted 件が両ホストで失敗）。残りは試さない"
+            fi
           }
           # 海外 9 リーグ × 4 季（Founder 指示 2026-09-03・J1 より優先）
           for div in E0 I1 SP1 D1 N1 F1 P1 B1 SC0; do
@@ -84,7 +104,8 @@ jobs:
             done
           done
           get JPN.csv "new/JPN.csv"
-          echo "football-data: failed $failed / 37"
+          echo "football-data: failed $failed / 37 (試行 $attempted)"
+          if [ -n "$first_redirect" ]; then echo "::warning::最初の転送先: $first_redirect（ここが 127.0.0.1 等ならサイト側の遮断）"; fi
           if [ "$failed" -eq 37 ]; then echo "::warning::football-data.co.uk が全滅（両ホスト）。履歴・写し・Odds API scores で進む"; fi
 
       - name: 結果の写しを取得（GitHub・xgabora/Club-Football-Match-Data・欠けても止めない）
@@ -156,3 +177,11 @@ jobs:
             git fetch origin && git rebase origin/main
           done
           git push origin HEAD
+
+      # 取得は「欠けても止めない」設計なので、取得元が全滅した日も上の手順はすべて成功で
+      # 終わる。**つまり記録が凍っていることは緑のログからは見えない**（2026-09-16〜17 に
+      # 実発生: 3 経路同時障害で結果 0 件のまま日次が 2 回成功した）。ここだけが声を出す。
+      # 36 時間で警告・72 時間（日次 3 回連続で結果 0 件）で失敗。閾値の根拠は src/health.ts。
+      # **commit の後に置く**。落として run を赤くしても、取れたぶんの追記は済んでいる。
+      - name: 取込の健全性（結果が入らなくなっていたら run を赤くする）
+        run: node --experimental-strip-types lib/football-model/src/cli/football.ts health --root football

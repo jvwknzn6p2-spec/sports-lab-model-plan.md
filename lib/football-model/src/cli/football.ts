@@ -42,6 +42,7 @@ import {
 } from "../history.ts";
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
+import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
 import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -480,11 +481,43 @@ function quote(): void {
   console.log("EV も推奨も出していない（決済規則と予想を並べただけ）。分析専用。");
 }
 
+/**
+ * 取込と決済の健全性を出す。**日次の後に呼び、止まっていたら声を出すための口**。
+ *
+ * 取得は「欠けても止めない」設計なので、取得元が全滅した日も日次は成功で終わる
+ * （2026-09-16〜17 に実発生: 3 経路同時障害で結果 0 件のまま 2 回緑）。
+ * ここだけが「記録が凍っている」を可視化する。
+ *
+ * 終了コード: 0 = ok / warn、1 = fail（既定 72 時間＝日次 3 回連続で結果 0 件）。
+ * **warn では落とさない**。1 日の欠けは取得元の一時的な不調で起こり、翌日に自然回復する。
+ */
+function health(): void {
+  const L = new Ledger(join(ROOT, "ledger"));
+  const h = ingestHealth(L.results(), NOW);
+  const level = ingestLevel(h);
+  const backlog = settlementBacklog(L.predictions(), L.evaluations(), NOW);
+
+  const since = h.hoursSinceRecord === null ? "—" : `${h.hoursSinceRecord.toFixed(1)}h`;
+  console.log(`ingest ${level}: 結果 ${h.results} 件・最後の取込 ${h.lastRecordedAt ?? "なし"}（${since} 前）・最新の試合日 ${h.lastMatchDate ?? "なし"}`);
+  console.log(`決済待ち ${backlog.length} 件` + (backlog.length ? `・最古 ${backlog[0].ageHours.toFixed(1)}h（${backlog[0].league} ${backlog[0].kickoffAt}）` : ""));
+  for (const b of backlog.slice(0, 10)) {
+    console.log(`  ${b.league} ${b.kickoffAt} ${b.ageHours.toFixed(1)}h ${b.providerId}`);
+  }
+  if (level === "fail") {
+    console.error(`::error::結果の取り込みが ${INGEST_FAIL_HOURS} 時間止まっている（最後の取込 ${h.lastRecordedAt}）。football-data.co.uk / 写し / Odds API scores の 3 経路を確認すること`);
+    process.exit(1);
+  }
+  if (level === "warn") {
+    console.error(`::warning::結果の取り込みが ${INGEST_WARN_HOURS} 時間以上止まっている（最後の取込 ${h.lastRecordedAt}）。${INGEST_FAIL_HOURS} 時間で失敗させる`);
+  }
+}
+
 if (cmd === "daily") daily();
 else if (cmd === "scores-needed") scoresNeeded();
+else if (cmd === "health") health();
 else if (cmd === "history-import") historyImport();
 else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
+  console.error("usage: football.ts daily|health|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }
