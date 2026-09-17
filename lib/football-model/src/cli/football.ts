@@ -41,6 +41,9 @@ import {
   type OddsScoreEvent,
 } from "../history.ts";
 import { buildTeamResolver } from "../teamAliases.ts";
+import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
+import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
+import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -53,17 +56,60 @@ const CACHE = arg("cache", join(ROOT, "cache"))!;
 const HISTORY = arg("history", join(ROOT, "history"))!;
 const NOW = arg("now", new Date().toISOString())!;
 const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
-const MODEL = "dc-v1"; // Dixon-Coles・ξ=0.0065・窓 1500 日
+/**
+ * 正準モデル。**挙動が変わったら必ず名前を変える**（台帳で新旧の予想を混同しないため）。
+ *   dc-v1       … Dixon-Coles・ξ=0.0065・窓 1500 日・正則化なし（〜2026-09-15）
+ *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜）
+ *
+ * α=2 の根拠（全 10 リーグ・履歴 11,116 予想のウォークフォワード実測・2026-09-15）:
+ *   RPS 0.2036 → 0.2021（ペア差 −0.0015・t=−5.02）。10 リーグ中 9 で改善、E0 は同値。
+ *   最小確率 <5% の予想は 4.3% → 1.3% へ減少。α=3 は RPS 0.2023（差は雑音以下）で
+ *   極端予想は 0.8% まで減るので、極端予想が再発したときの次点はこれ。
+ *   α≥10 は明確に悪化（α=10 で +0.0027・t=3.98）。
+ */
+const MODEL = "dc-v2-ridge";
+const RIDGE = 2;
 const WINDOW_DAYS = 1500;
 /** 写しから履歴へ入れる範囲。学習窓より少し長く取り、履歴の先頭が窓より前にあるようにする */
 const HISTORY_SINCE_DAYS = 1600;
 /** 結果の速報（Odds API scores）を要求する範囲: 開始から 2 時間〜3 日（daysFrom=3 の上限） */
 const SCORES_MIN_AGE_H = 2;
 const SCORES_MAX_AGE_D = 3;
-const HORIZON_HOURS = Number(arg("horizon", "48")); // 封緘は前日 20:00 JST。翌日（JST）の試合を全て拾う
+/**
+ * 予想を発行する範囲（キックオフまでの時間）。
+ *
+ * **2026-09-16 に 48h → 720h（30 日）へ拡大**（Founder 指示「海外リーグの試合は全て
+ * 予想を出力して下さい」）。48h では日程 107 件のうち 6 件にしか予想が出ていなかった。
+ *
+ * 早く予想しても精度はほとんど落ちないことを実測して確認した（全 10 リーグ・履歴）:
+ *   0 日前 0.2021 / 3 日前 0.1998 / 7 日前 0.2030 / 14 日前 0.2019（RPS）
+ * 差はいずれも 0.0023 以下で単調ですらなく、雑音の範囲。時間減衰の半減期が 107 日
+ * なので 1〜2 週間ぶんのデータ増減がほとんど効かない。
+ *
+ * 30 日で頭打ちにするのは、日程取得元が遠い将来の試合を返し始めたときの歯止め。
+ * 台帳の日程は実測で最大 26 日先まで。
+ */
+const HORIZON_HOURS = Number(arg("horizon", "720"));
 /** 学習データが薄いと確率が極端になる（20 試合で 98/2/0 を実測）。足りなければ発行しない */
 const MIN_TRAIN = 300;
-const MIN_TEAM_MATCHES = 5;
+/**
+ * 学習窓の中でこの試合数に満たないチームが絡む試合は発行しない。
+ *
+ * **2026-09-16 に 5 → 1 へ下げた**（Founder 指示「海外リーグの試合は全て予想を出力」）。
+ * 元の 5 は「標本が薄いと確率が極端になる（20 試合で 98/2/0 を実測）」ための歯止めだったが、
+ * その病理は正則化（dc-v2-ridge・α=2）で直したので、閾値の根拠が消えた。
+ *
+ * 実測（全 10 リーグ・履歴・α=2）— 少ない方のチームの試合数で層別:
+ *   1–2 試合  n=  98  RPS 0.2100  最小確率<5% 0.0%
+ *   3–4 試合  n=  94  RPS 0.2029  最小確率<5% 1.1%
+ *   10+ 試合  n=10703 RPS 0.2021  最小確率<5% 1.3%
+ * **薄いチームほど極端な予想が出にくい**（平均へ縮小されるため）。精度は 1–2 試合で
+ * やや落ちるが病的ではない。各予想には nTeamMin を記録するので、後から層別できる。
+ *
+ * 1 未満にはしない。学習に 1 度も出ていないチームは predictMatch が例外を投げる
+ * （中立値で埋めない）。
+ */
+const MIN_TEAM_MATCHES = 1;
 
 /** リーグ → football-data の CSV（cache 内の名前）と Odds API の sport キー */
 // 海外リーグ優先（Founder 指示 2026-09-03）。順序は表示順でもある。CL/EL/ECL は
@@ -206,7 +252,7 @@ function daily(): void {
         log.push(`${league}: 学習データ ${train.length} 件 < ${MIN_TRAIN}。発行しない（取得失敗か初期化直後）`);
         continue;
       }
-      const fit = fitDixonColes(train, { asOf: NOW });
+      const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE });
       const count = new Map<string, number>();
       for (const t of train) {
         count.set(t.home, (count.get(t.home) ?? 0) + 1);
@@ -216,7 +262,8 @@ function daily(): void {
       const historyAsOf = train.reduce((acc, t) => (t.date.slice(0, 10) > acc ? t.date.slice(0, 10) : acc), "");
       const historyMissing = countMissingResults([...L.currentMatches().values()].filter((m) => m.league === league), historyRows, NOW);
       for (const m of todo) {
-        if ((count.get(m.home) ?? 0) < MIN_TEAM_MATCHES || (count.get(m.away) ?? 0) < MIN_TEAM_MATCHES) {
+        const nTeamMin = Math.min(count.get(m.home) ?? 0, count.get(m.away) ?? 0);
+        if (nTeamMin < MIN_TEAM_MATCHES) {
           log.push(`  skip ${m.home} v ${m.away}: 学習データが ${MIN_TEAM_MATCHES} 試合未満のチーム`);
           continue;
         }
@@ -227,7 +274,7 @@ function daily(): void {
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
           market: mk?.market ?? null, marketFetchedAt: mk && odds ? odds.fetchedAt : null,
-          historyAsOf, historyMissing,
+          historyAsOf, historyMissing, ridge: fit.ridge, nTeamMin,
         });
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }
@@ -305,10 +352,172 @@ function historyImport(): void {
   }
 }
 
+/**
+ * 貼り付けたハンデに載っている試合だけの予想を出す（Founder 依頼 2026-09-06）。
+ *
+ *   node --experimental-strip-types src/cli/football.ts quote --paste <file> [--root football]
+ *
+ * **EV も推奨も出さない。** 出すのは「封緘済みの予想」「発行時点の市場」「貼られたハンデ」と、
+ * 凍結表 SOCCER_LADDER_V1 で引いた**得点差ごとの取り分**だけ。どれに賭けるべきかは言わない
+ * （モデルが市場に並ぶまで EV 層は作らない・football/README.md の「既知の限界」）。
+ *
+ * 解決できなかったカードも理由つきで全件出す。黙って減らさない。
+ */
+function quote(): void {
+  const pastePath = arg("paste");
+  if (!pastePath) throw new Error("--paste <file> が要る");
+  const cards = parsePasteText(readFileSync(pastePath, "utf8"));
+
+  const L = new Ledger(join(ROOT, "ledger"));
+  const matches = [...L.currentMatches().values()];
+  const preds = L.predictions();
+  // 終了済みの試合は答え合わせまで出す（貼られたハンデが実際いくらになったか）
+  const results = L.results();
+  const findResult = (home: string, away: string, kickoffAt: string) => {
+    const day = kickoffAt.slice(0, 10);
+    return results.find(
+      (r) =>
+        r.home === home &&
+        r.away === away &&
+        Math.abs(Date.parse(r.date) - Date.parse(day)) <= 86_400_000,
+    );
+  };
+  // providerId ごとに最新の予想（台帳は追記専用なので後の行が有効）
+  const latest = new Map<string, (typeof preds)[number]>();
+  for (const p of preds) latest.set(p.providerId, p);
+
+  const out: string[] = [];
+  let resolved = 0;
+  for (const c of cards) {
+    if (!c.line) {
+      out.push(`[${c.index}] 解析できず: ${c.error}  «${c.source.replace(/\n/g, " / ")}»`);
+      continue;
+    }
+    const { givingCandidates: G, receivingCandidates: R, handicapRaw, givingTeamRaw, receivingTeamRaw } = c.line;
+    if (G.length === 0 || R.length === 0) {
+      const miss = [G.length === 0 ? givingTeamRaw : null, R.length === 0 ? receivingTeamRaw : null].filter(Boolean);
+      out.push(`[${c.index}] チーム名を解決できず: ${miss.join(" / ")}  （対応表に足せば解決する）`);
+      continue;
+    }
+    // 出し側・貰い側がどちらのホーム/アウェイでも拾う。リーグ見出しがあれば絞る
+    let hits = matches.filter(
+      (x) =>
+        (G.includes(x.home) && R.includes(x.away)) || (G.includes(x.away) && R.includes(x.home)),
+    );
+    if (c.line.leagueCode) {
+      const byLeague = hits.filter((x) => x.league === c.line!.leagueCode);
+      if (byLeague.length > 0) hits = byLeague;
+    }
+    if (hits.length === 0) {
+      out.push(`[${c.index}] 台帳に該当試合が無い: ${givingTeamRaw} vs ${receivingTeamRaw}`);
+      continue;
+    }
+    // **同じカードが複数あるとき、古い方を黙って拾ってはいけない。**
+    // 貼られるハンデはこれから行われる試合のものなので、未開始のうち最も近いものを採る。
+    // 未開始が無ければ直近の過去を出すが、その旨を明示する（黙って過去の予想を返さない）
+    const nowMs = Date.parse(NOW);
+    const future = hits
+      .filter((x) => Date.parse(x.kickoffAt) > nowMs)
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+    const past = hits
+      .filter((x) => Date.parse(x.kickoffAt) <= nowMs)
+      .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt));
+    const m = future[0] ?? past[0];
+    const stale = future.length === 0;
+    if (stale) {
+      out.push(
+        `[${c.index}] ⚠ 未開始の該当試合が無い。直近の**終了済み**試合を表示する: ` +
+          `${m.home} vs ${m.away} (KO ${m.kickoffAt})  ` +
+          `候補 ${hits.length} 件／今この時刻 ${NOW}`,
+      );
+    }
+    const givingIsHome0 = G.includes(m.home);
+    // 終了済みなら答え合わせ（貼られたハンデが実際いくらになったか）
+    const res = findResult(m.home, m.away, m.kickoffAt);
+    const settled = res
+      ? (() => {
+          const marginGiving = givingIsHome0
+            ? res.homeGoals - res.awayGoals
+            : res.awayGoals - res.homeGoals;
+          const s = shareGiving(handicapRaw, marginGiving);
+          return (
+            `\n      結果 ${res.homeGoals}-${res.awayGoals}（出し側から見て ${marginGiving >= 0 ? "+" : ""}${marginGiving}点差）` +
+            ` → 出し側の取り分 ${(s * 100).toFixed(0)}%`
+          );
+        })()
+      : "";
+
+    const p = latest.get(m.providerId);
+    if (!p) {
+      out.push(
+        `[${c.index}] ${m.home} vs ${m.away}: まだ予想が発行されていない（封緘前・または対象外）` + settled,
+      );
+      continue;
+    }
+    resolved++;
+    const givingIsHome = givingIsHome0;
+    // 出し側から見た勝敗確率（引き分けは共通）
+    const pGiveWin = givingIsHome ? p.pHome : p.pAway;
+    const pGiveLose = givingIsHome ? p.pAway : p.pHome;
+    const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+    out.push(
+      `[${c.index}] ${m.home} vs ${m.away}  (${p.league}, KO ${m.kickoffAt})\n` +
+        `      ハンデ <${handicapRaw}> 出し=${givingTeamRaw}\n` +
+        `      予想 ${givingTeamRaw}勝ち ${pct(pGiveWin)} / 引分 ${pct(p.pDraw)} / ${receivingTeamRaw}勝ち ${pct(pGiveLose)}` +
+        (p.market
+          ? `\n      市場 ${pct(givingIsHome ? p.market[0] : p.market[2])} / ${pct(p.market[1])} / ${pct(givingIsHome ? p.market[2] : p.market[0])}`
+          : "\n      市場 データなし") +
+        `\n      取り分（出し側・${HANDICAP_RULES_VERSION}）: ` +
+        [0, 1, 2, 3]
+          .map((d) => `${d}点差 ${(shareGiving(handicapRaw, d) * 100).toFixed(0)}%`)
+          .join(" / ") +
+        `  ／ 負け ${(shareGiving(handicapRaw, -1) * 100).toFixed(0)}%` +
+        settled +
+        `\n      model=${p.model} ridge=${p.ridge ?? "—"} 封緘=${p.cutoffAt}`,
+    );
+  }
+  console.log(out.join("\n"));
+  console.log(`\n--- 貼り付け ${cards.length} 件 / 予想が出せたのは ${resolved} 件`);
+  console.log("EV も推奨も出していない（決済規則と予想を並べただけ）。分析専用。");
+}
+
+/**
+ * 取込と決済の健全性を出す。**日次の後に呼び、止まっていたら声を出すための口**。
+ *
+ * 取得は「欠けても止めない」設計なので、取得元が全滅した日も日次は成功で終わる
+ * （2026-09-16〜17 に実発生: 3 経路同時障害で結果 0 件のまま 2 回緑）。
+ * ここだけが「記録が凍っている」を可視化する。
+ *
+ * 終了コード: 0 = ok / warn、1 = fail（既定 72 時間＝日次 3 回連続で結果 0 件）。
+ * **warn では落とさない**。1 日の欠けは取得元の一時的な不調で起こり、翌日に自然回復する。
+ */
+function health(): void {
+  const L = new Ledger(join(ROOT, "ledger"));
+  const h = ingestHealth(L.results(), NOW);
+  const level = ingestLevel(h);
+  const backlog = settlementBacklog(L.predictions(), L.evaluations(), NOW);
+
+  const since = h.hoursSinceRecord === null ? "—" : `${h.hoursSinceRecord.toFixed(1)}h`;
+  console.log(`ingest ${level}: 結果 ${h.results} 件・最後の取込 ${h.lastRecordedAt ?? "なし"}（${since} 前）・最新の試合日 ${h.lastMatchDate ?? "なし"}`);
+  console.log(`決済待ち ${backlog.length} 件` + (backlog.length ? `・最古 ${backlog[0].ageHours.toFixed(1)}h（${backlog[0].league} ${backlog[0].kickoffAt}）` : ""));
+  for (const b of backlog.slice(0, 10)) {
+    console.log(`  ${b.league} ${b.kickoffAt} ${b.ageHours.toFixed(1)}h ${b.providerId}`);
+  }
+  if (level === "fail") {
+    console.error(`::error::結果の取り込みが ${INGEST_FAIL_HOURS} 時間止まっている（最後の取込 ${h.lastRecordedAt}）。football-data.co.uk / 写し / Odds API scores の 3 経路を確認すること`);
+    process.exit(1);
+  }
+  if (level === "warn") {
+    console.error(`::warning::結果の取り込みが ${INGEST_WARN_HOURS} 時間以上止まっている（最後の取込 ${h.lastRecordedAt}）。${INGEST_FAIL_HOURS} 時間で失敗させる`);
+  }
+}
+
 if (cmd === "daily") daily();
 else if (cmd === "scores-needed") scoresNeeded();
+else if (cmd === "health") health();
 else if (cmd === "history-import") historyImport();
+else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|scores-needed|history-import [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--now ISO]");
+  console.error("usage: football.ts daily|health|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }

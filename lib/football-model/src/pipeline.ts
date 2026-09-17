@@ -6,9 +6,13 @@ import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "./ledger.t
 
 /**
  * 予想を発行する試合: 未発行・封緘前・キックオフが horizon 時間以内。
- * 早すぎる発行（何日も前）は市場も情報も薄いので horizon で絞る。
- * 封緘は試合日（JST）の前日 20:00 JST なので、日次（07:05 JST 予定・実測では
- * 着地が数時間遅れる）が翌日（JST）の試合を全て拾えるよう既定は 48 時間。
+ * 封緘は試合日（JST）の前日 20:00 JST。日次（07:05 JST 予定・実測では着地が数時間遅れる）
+ * が翌日（JST）の試合を全て拾えることが下限で、その意味でこの既定 48 時間は残してある。
+ *
+ * **本番の日次は 720 時間（30 日）を渡す**（cli/football.ts の `HORIZON_HOURS`・
+ * Founder 指示 2026-09-16「海外リーグの試合は全て予想を出力」）。早く出しても精度が
+ * 落ちないことは実測済み（0/3/7/14 日前で RPS 0.2021/0.1998/0.2030/0.2019）。
+ * 根拠と数表は cli/football.ts の `HORIZON_HOURS` に置いてある。
  */
 export function selectToPredict(
   matches: Iterable<LedgerMatch>,
