@@ -61,7 +61,8 @@ const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
 /**
  * 正準モデル。**挙動が変わったら必ず名前を変える**（台帳で新旧の予想を混同しないため）。
  *   dc-v1       … Dixon-Coles・ξ=0.0065・窓 1500 日・正則化なし（〜2026-09-15）
- *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜）
+ *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜09-17）
+ *   dc-v3-decay … 上の ξ を 0.0065 → 0.002 にしたもの（2026-09-17〜）
  *
  * α=2 の根拠（全 10 リーグ・履歴 11,116 予想のウォークフォワード実測・2026-09-15）:
  *   RPS 0.2036 → 0.2021（ペア差 −0.0015・t=−5.02）。10 リーグ中 9 で改善、E0 は同値。
@@ -69,8 +70,46 @@ const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
  *   極端予想は 0.8% まで減るので、極端予想が再発したときの次点はこれ。
  *   α≥10 は明確に悪化（α=10 で +0.0027・t=3.98）。
  */
-const MODEL = "dc-v2-ridge";
+const MODEL = "dc-v3-decay";
 const RIDGE = 2;
+/**
+ * 時間減衰 ξ（1 日あたり）。**2026-09-17 に 0.0065 → 0.002 へ**（半減期 107 → 346 日）。
+ *
+ * 0.0065 は Dixon-Coles 論文の既定値をそのまま引き継いだもので、**このデータで一度も
+ * 調整していなかった**。α=2 を決めたときも ξ は固定していたため、両者の相互作用も
+ * 測っていない。今回 ξ × α を同時に振って測った。
+ *
+ * 全 10 リーグ・2015 年以降 33,642 試合のウォークフォワード・**同一試合集合のペア差**
+ * （現行 ξ=0.0065 / α=2 を基準。負ほど良い）:
+ *
+ * | ξ | 半減期 | RPS 差（α=2） | t |
+ * |---|---|---|---|
+ * | 0.0015 | 462 日 | −0.00184 | −7.51 |
+ * | **0.002** | **346 日** | **−0.00193** | **−9.09** |
+ * | 0.0025 | 277 日 | −0.00191 | −10.48 |
+ * | 0.003 | 231 日 | −0.00179 | −11.69 |
+ * | 0.0045 | 154 日 | −0.00115 | −14.56 |
+ * | 0.0065 | 107 日 | ±0（従来） | — |
+ * | 0.009 | 77 日 | +0.00151 | +19.80 |
+ * | 0.012 | 58 日 | +0.00326 | +22.05 |
+ *
+ * **10 リーグ全てで同じ向き**（リーグ別でも t=−2.6〜−5.3）、かつ単調。現行値は最適域の
+ * 外にあった。効果 −0.0019 はモデルと市場の差（約 0.0072）の 4 分の 1 に当たる。
+ *
+ * **過学習ではない**: 2015-2021 だけで選ぶと ξ=0.002 が選ばれ、選定に使っていない
+ * 2022-2026 で測り直すと −0.00208（t=−6.14）と、むしろ僅かに良い。
+ *
+ * α は 2 のまま。どの ξ でも α=5 は α=2 に劣る（ξ=0.002 でも同じ）。
+ * 最小確率 <5% の予想は 1.7% → 1.8% でほぼ不変。
+ */
+const XI = 0.002;
+/**
+ * 学習窓。ξ=0.002 では窓の端の重みが e^-3 ≈ 5% 残るため、窓 3000 日にすると
+ * **さらに −0.00009 良くなる（t=−5.10・実測）**。ただしこれは今回の改善（−0.0019）の
+ * 4.5% しかなく、履歴の保持を倍にする（再取り込み・ファイル増・学習時間増）代償に
+ * 見合わない。**平坦な最適域では継承値からの変更を最小にする**方針で 1500 のまま据え置く。
+ * 取り込みが安定していて余裕があるときに別途扱う。
+ */
 const WINDOW_DAYS = 1500;
 /** 写しから履歴へ入れる範囲。学習窓より少し長く取り、履歴の先頭が窓より前にあるようにする */
 const HISTORY_SINCE_DAYS = 1600;
@@ -254,7 +293,7 @@ function daily(): void {
         log.push(`${league}: 学習データ ${train.length} 件 < ${MIN_TRAIN}。発行しない（取得失敗か初期化直後）`);
         continue;
       }
-      const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE });
+      const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE, xi: XI });
       const count = new Map<string, number>();
       for (const t of train) {
         count.set(t.home, (count.get(t.home) ?? 0) + 1);
@@ -276,7 +315,7 @@ function daily(): void {
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
           market: mk?.market ?? null, marketFetchedAt: mk && odds ? odds.fetchedAt : null,
-          historyAsOf, historyMissing, ridge: fit.ridge, nTeamMin,
+          historyAsOf, historyMissing, ridge: fit.ridge, xi: fit.xi, nTeamMin,
         });
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }
