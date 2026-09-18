@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-09-18T07:34:16.349Z",
-  "updatedAt": "2026-09-18T07:34:16.349Z",
+  "lockedAt": "2026-09-18T08:24:43.617Z",
+  "updatedAt": "2026-09-18T08:24:43.617Z",
   "controlTower": {
     "date": "2026-09-18",
     "season": 1002026,
@@ -45,8 +45,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.517,
-      "rawWinProbability": 0.519,
+      "winProbability": 0.511,
+      "rawWinProbability": 0.513,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -64,7 +64,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 6.01,
+        "predicted": 6.51,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -73,22 +73,23 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 2.99,
-        "away": 2.81
+        "home": 3.2,
+        "away": 3.08
       },
       "reasons": [
-        "PASS: edge too small (win prob 51.7% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 51.1% < 55%) — moneyline and total only",
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Park factor 96 (pitcher-friendly)",
-        "Expected runs 2.99–2.81 over 10000 sims",
-        "home: cold bats — 2.7 R/G last 15 (season baseline 3.4)"
+        "Expected runs 3.20–3.08 over 10000 sims",
+        "home: cold bats — 2.7 R/G last 15 (season baseline 3.8)",
+        "away: cold bats — 3.0 R/G last 15 (season baseline 3.9)"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
-        "[info] home_lineup_not_posted",
+        "[info] home_lineup_applied",
         "[info] home_players_on_il",
         "[info] away_starter_xfip_estimated",
-        "[info] away_lineup_not_posted",
+        "[info] away_lineup_applied",
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-18T08:27:00.000Z",
@@ -102,8 +103,8 @@
       "pass": false,
       "predictedWinner": "横浜DeNAベイスターズ",
       "predictedLoser": "東京ヤクルトスワローズ",
-      "winProbability": 0.665,
-      "rawWinProbability": 0.685,
+      "winProbability": 0.657,
+      "rawWinProbability": 0.676,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -121,7 +122,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.67,
+        "predicted": 8.1,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -130,26 +131,28 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.63,
-        "away": 2.87
+        "home": 4.84,
+        "away": 3.1
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Starter edge: 東京ヤクルトスワローズ (山野 太一 projFIP 3.08 vs 3.51)",
-        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.300 vs 0.281)",
+        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.309 vs 0.293)",
         "Bullpen edge: 横浜DeNAベイスターズ",
         "Park factor 104 (hitter-friendly)",
-        "Expected runs 4.63–2.87 over 10000 sims",
-        "home: hot bats — 4.8 R/G last 15 (season baseline 3.9)",
+        "Expected runs 4.84–3.10 over 10000 sims",
+        "home: hot bats — 4.8 R/G last 15 (season baseline 4.2)",
+        "away: cold bats — 3.1 R/G last 15 (season baseline 3.7)",
         "Weather: 22°C at first pitch — run environment ×1.008"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
         "[warn] home_starter_starter_low_sample",
-        "[info] home_lineup_not_posted",
+        "[info] home_lineup_applied",
         "[info] home_players_on_il",
         "[info] away_starter_xfip_estimated",
-        "[info] away_lineup_not_posted",
+        "[warn] away_lineup_bats_missing_stats",
+        "[info] away_lineup_applied",
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-18T08:27:00.000Z",
@@ -163,9 +166,9 @@
       "pass": false,
       "predictedWinner": "阪神タイガース",
       "predictedLoser": "広島東洋カープ",
-      "winProbability": 0.63,
-      "rawWinProbability": 0.646,
-      "confidence": "S",
+      "winProbability": 0.633,
+      "rawWinProbability": 0.65,
+      "confidence": "B",
       "handicap": {
         "input": {
           "side": "home",
@@ -182,7 +185,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 6.64,
+        "predicted": 7.13,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -191,23 +194,23 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.77,
-        "away": 2.65
+        "home": 4.08,
+        "away": 2.86
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
-        "Offense edge: 阪神タイガース (wOBA 0.299 vs 0.274)",
+        "Offense edge: 阪神タイガース (wOBA 0.313 vs 0.286)",
         "Park factor 92 (pitcher-friendly)",
-        "Expected runs 3.77–2.65 over 10000 sims",
-        "home: cold bats — 2.9 R/G last 15 (season baseline 3.9)",
+        "Expected runs 4.08–2.86 over 10000 sims",
+        "home: cold bats — 2.9 R/G last 15 (season baseline 4.3)",
         "Weather: 27°C at first pitch — run environment ×1.038"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
-        "[info] home_lineup_not_posted",
+        "[info] home_lineup_applied",
         "[info] home_players_on_il",
         "[info] away_starter_xfip_estimated",
-        "[info] away_lineup_not_posted",
+        "[info] away_lineup_applied",
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-18T08:27:00.000Z",
