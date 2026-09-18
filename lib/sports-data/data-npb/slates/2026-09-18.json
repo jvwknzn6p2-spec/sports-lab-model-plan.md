@@ -1,7 +1,7 @@
 {
   "date": "2026-09-18",
   "season": 1002026,
-  "fetchedAt": "2026-09-18T11:41:16.056Z",
+  "fetchedAt": "2026-09-18T12:14:19.490Z",
   "games": [
     {
       "gamePk": 92026091801,
@@ -798,14 +798,14 @@
           "name": "林"
         },
         {
-          "playerId": 9030729775,
-          "name": "吉野"
+          "playerId": 9030064298,
+          "name": "佐々木"
         }
       ],
       "away": [
         {
-          "playerId": 9050704687,
-          "name": "増田"
+          "playerId": 9050611303,
+          "name": "ウォルターズ"
         },
         {
           "playerId": 9050379788,
@@ -828,16 +828,16 @@
           "name": "松下"
         },
         {
-          "playerId": 9050733391,
-          "name": "田中"
+          "playerId": 9050944063,
+          "name": "丸山和"
         },
         {
-          "playerId": 9050217138,
-          "name": "鈴木叶"
+          "playerId": 9050620528,
+          "name": "古賀"
         },
         {
-          "playerId": 9050836916,
-          "name": "山野"
+          "playerId": 9050458283,
+          "name": "内山"
         }
       ]
     },
@@ -1191,20 +1191,20 @@
       "hitByPitch": 0,
       "strikeOuts": 0
     },
-    "9050704687": {
-      "plateAppearances": 396,
-      "atBats": 360,
-      "hits": 104,
-      "doubles": 11,
+    "9050611303": {
+      "plateAppearances": 8,
+      "atBats": 7,
+      "hits": 0,
+      "doubles": 0,
       "triples": 0,
-      "homeRuns": 8,
-      "stolenBases": 4,
-      "caughtStealing": 1,
-      "sacFlies": 4,
-      "baseOnBalls": 29,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 0,
       "intentionalWalks": 0,
-      "hitByPitch": 3,
-      "strikeOuts": 65
+      "hitByPitch": 0,
+      "strikeOuts": 4
     },
     "9050379788": {
       "plateAppearances": 416,
@@ -1281,35 +1281,50 @@
       "hitByPitch": 2,
       "strikeOuts": 20
     },
-    "9050733391": {
-      "plateAppearances": 52,
-      "atBats": 48,
-      "hits": 11,
-      "doubles": 1,
-      "triples": 0,
-      "homeRuns": 1,
-      "stolenBases": 0,
-      "caughtStealing": 0,
-      "sacFlies": 0,
-      "baseOnBalls": 4,
-      "intentionalWalks": 0,
+    "9050944063": {
+      "plateAppearances": 124,
+      "atBats": 116,
+      "hits": 38,
+      "doubles": 7,
+      "triples": 1,
+      "homeRuns": 3,
+      "stolenBases": 6,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 7,
+      "intentionalWalks": 1,
       "hitByPitch": 0,
-      "strikeOuts": 16
+      "strikeOuts": 19
     },
-    "9050217138": {
-      "plateAppearances": 130,
-      "atBats": 127,
-      "hits": 24,
-      "doubles": 4,
+    "9050620528": {
+      "plateAppearances": 317,
+      "atBats": 294,
+      "hits": 80,
+      "doubles": 8,
       "triples": 2,
-      "homeRuns": 2,
+      "homeRuns": 1,
       "stolenBases": 2,
       "caughtStealing": 0,
-      "sacFlies": 0,
-      "baseOnBalls": 3,
-      "intentionalWalks": 0,
-      "hitByPitch": 0,
-      "strikeOuts": 32
+      "sacFlies": 3,
+      "baseOnBalls": 8,
+      "intentionalWalks": 1,
+      "hitByPitch": 7,
+      "strikeOuts": 26
+    },
+    "9050458283": {
+      "plateAppearances": 330,
+      "atBats": 289,
+      "hits": 70,
+      "doubles": 16,
+      "triples": 0,
+      "homeRuns": 5,
+      "stolenBases": 3,
+      "caughtStealing": 1,
+      "sacFlies": 1,
+      "baseOnBalls": 38,
+      "intentionalWalks": 5,
+      "hitByPitch": 2,
+      "strikeOuts": 61
     },
     "9030729777": {
       "plateAppearances": 460,
@@ -1431,7 +1446,7 @@
       "hitByPitch": 0,
       "strikeOuts": 33
     },
-    "9030729775": {
+    "9030064298": {
       "plateAppearances": 0,
       "atBats": 0,
       "hits": 0,
@@ -1747,7 +1762,7 @@
       "windDirectionDeg": 38,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-18T11:41:16.456Z"
+      "fetchedAt": "2026-09-18T12:14:19.581Z"
     },
     "92026091802": {
       "temperatureC": 26.1,
@@ -1755,7 +1770,7 @@
       "windDirectionDeg": 31,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-18T11:41:16.556Z"
+      "fetchedAt": "2026-09-18T12:14:19.601Z"
     }
   }
 }
