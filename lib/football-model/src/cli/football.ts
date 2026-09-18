@@ -104,6 +104,25 @@ const RIDGE = 2;
  */
 const XI = 0.002;
 /**
+ * 市場が取れていない試合の発行を待つ猶予。**封緘までこれより余裕があるなら発行しない。**
+ *
+ * **2026-09-18 に実発生した取りこぼしへの対策。** Odds API のクレジットが尽きてオッズが
+ * 1 件も取れなかった日に、発行範囲 720 時間（2026-09-16 に 48h から拡大）の効果で
+ * **122 件が一度に `market: null` のまま封緘された**（市場ありの割合が 97% → 58% へ）。
+ * 予想は 1 試合 1 回で書き換えないので、その試合の発行時点の市場は**永久に欠測**する。
+ *
+ * 48 時間は拡大前の発行範囲そのもの。ここまで待てば、
+ *   - 翌日・翌々日の回でオッズが復旧すれば市場つきで出せる
+ *   - 復旧しなくても封緘前に必ず出る（「予想は試合前に必ず出す」Founder 指示 2026-09-09。
+ *     取得元の生死と予想の発行を切り離す設計は変えない）
+ * の両方が成り立つ。**市場が取れている試合は従来どおり即発行する**（待つ理由が無い）。
+ *
+ * なお決済側のベンチマークは #39 以降 `football/market/` のスナップショットから
+ * 「キックオフ直前」を引くので、市場が後日復旧すればそちらは埋まる。
+ * これで永久に失われるのは発行時点の市場と、それを使う CLV だけである。
+ */
+const MARKET_GRACE_HOURS = 48;
+/**
  * 学習窓。ξ=0.002 では窓の端の重みが e^-3 ≈ 5% 残るため、窓 3000 日にすると
  * **さらに −0.00009 良くなる（t=−5.10・実測）**。ただしこれは今回の改善（−0.0019）の
  * 4.5% しかなく、履歴の保持を倍にする（再取り込み・ファイル増・学習時間増）代償に
@@ -308,8 +327,13 @@ function daily(): void {
           log.push(`  skip ${m.home} v ${m.away}: 学習データが ${MIN_TEAM_MATCHES} 試合未満のチーム`);
           continue;
         }
-        const p = predictMatch(fit, m.home, m.away);
         const mk = marketOf.get(m.providerId);
+        // 市場が取れていない試合は、封緘が近いものだけ出す（下記 MARKET_GRACE_HOURS）
+        if (!mk && Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000) {
+          log.push(`  defer ${m.home} v ${m.away}: 市場が無く封緘まで余裕がある（kickoff ${m.kickoffAt}）`);
+          continue;
+        }
+        const p = predictMatch(fit, m.home, m.away);
         const res = L.publishPrediction({
           providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MODEL, asOf: NOW, nTrain: fit.nMatches,
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),

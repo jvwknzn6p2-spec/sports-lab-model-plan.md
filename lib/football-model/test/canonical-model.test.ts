@@ -61,3 +61,16 @@ test("予想行に ξ と α を記録する（どの設定で出したかを行
 test("モデル名の履歴に現行の名前が説明つきで載っている", () => {
   assert.match(cli, new RegExp(`\\*\\s+${CANONICAL.model}\\s+…`), "MODEL の説明コメントに現行の名前が無い");
 });
+
+test("市場が無い試合は封緘が近いときだけ発行する（2026-09-18 の取りこぼし対策）", () => {
+  // Odds API が落ちた日に 720 時間ぶんを一度に封緘すると、その試合の発行時点の市場が
+  // 永久に欠測する（実発生: 122 件・市場ありが 97% → 58%）。ガードを消さないこと
+  assert.ok(/const MARKET_GRACE_HOURS = \d+;/.test(cli), "MARKET_GRACE_HOURS が無い");
+  const guard = /if \(!mk && Date\.parse\(m\.cutoffAt\) - Date\.parse\(NOW\) > MARKET_GRACE_HOURS \* 3_600_000\)/.test(cli);
+  assert.ok(guard, "市場が無いときに封緘までの余裕で発行を待つガードが無い");
+  // 猶予は封緘前に必ず出せる長さであること（「予想は試合前に必ず出す」Founder 指示 2026-09-09）
+  const h = Number(/const MARKET_GRACE_HOURS = (\d+);/.exec(cli)![1]);
+  assert.ok(h >= 24, `猶予 ${h}h は短すぎる（日次 1 回なので 1 日ぶんは要る）`);
+  assert.ok(h < Number(/const HORIZON_HOURS = Number\(arg\("horizon", "(\d+)"\)\)/.exec(cli)![1]),
+    "猶予が発行範囲以上だと、市場が無い試合が一度も出なくなる");
+});
