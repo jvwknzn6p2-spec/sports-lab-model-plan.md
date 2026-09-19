@@ -16,7 +16,7 @@
  * GitHub の写し・Odds API の scores）はどれが欠けても日次は止まらず、前日までの履歴で
  * 予想を出す。鮮度は予想行の historyAsOf / historyMissing に残る。
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fitDixonColes, predictMatch } from "../fit.ts";
 import type { MatchWithOdds } from "../footballData.ts";
@@ -45,6 +45,7 @@ import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
 import { closingMarketResolver } from "../marketSnapshots.ts";
 import { clvEntries, summarizeClv } from "../clv.ts";
+import { FixtureMarketIndex, parseFixturesCsv } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -61,7 +62,8 @@ const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
 /**
  * 正準モデル。**挙動が変わったら必ず名前を変える**（台帳で新旧の予想を混同しないため）。
  *   dc-v1       … Dixon-Coles・ξ=0.0065・窓 1500 日・正則化なし（〜2026-09-15）
- *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜）
+ *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜09-17）
+ *   dc-v3-decay … 上の ξ を 0.0065 → 0.002 にしたもの（2026-09-17〜）
  *
  * α=2 の根拠（全 10 リーグ・履歴 11,116 予想のウォークフォワード実測・2026-09-15）:
  *   RPS 0.2036 → 0.2021（ペア差 −0.0015・t=−5.02）。10 リーグ中 9 で改善、E0 は同値。
@@ -69,8 +71,65 @@ const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
  *   極端予想は 0.8% まで減るので、極端予想が再発したときの次点はこれ。
  *   α≥10 は明確に悪化（α=10 で +0.0027・t=3.98）。
  */
-const MODEL = "dc-v2-ridge";
+const MODEL = "dc-v3-decay";
 const RIDGE = 2;
+/**
+ * 時間減衰 ξ（1 日あたり）。**2026-09-17 に 0.0065 → 0.002 へ**（半減期 107 → 346 日）。
+ *
+ * 0.0065 は Dixon-Coles 論文の既定値をそのまま引き継いだもので、**このデータで一度も
+ * 調整していなかった**。α=2 を決めたときも ξ は固定していたため、両者の相互作用も
+ * 測っていない。今回 ξ × α を同時に振って測った。
+ *
+ * 全 10 リーグ・2015 年以降 33,642 試合のウォークフォワード・**同一試合集合のペア差**
+ * （現行 ξ=0.0065 / α=2 を基準。負ほど良い）:
+ *
+ * | ξ | 半減期 | RPS 差（α=2） | t |
+ * |---|---|---|---|
+ * | 0.0015 | 462 日 | −0.00184 | −7.51 |
+ * | **0.002** | **346 日** | **−0.00193** | **−9.09** |
+ * | 0.0025 | 277 日 | −0.00191 | −10.48 |
+ * | 0.003 | 231 日 | −0.00179 | −11.69 |
+ * | 0.0045 | 154 日 | −0.00115 | −14.56 |
+ * | 0.0065 | 107 日 | ±0（従来） | — |
+ * | 0.009 | 77 日 | +0.00151 | +19.80 |
+ * | 0.012 | 58 日 | +0.00326 | +22.05 |
+ *
+ * **10 リーグ全てで同じ向き**（リーグ別でも t=−2.6〜−5.3）、かつ単調。現行値は最適域の
+ * 外にあった。効果 −0.0019 はモデルと市場の差（約 0.0072）の 4 分の 1 に当たる。
+ *
+ * **過学習ではない**: 2015-2021 だけで選ぶと ξ=0.002 が選ばれ、選定に使っていない
+ * 2022-2026 で測り直すと −0.00208（t=−6.14）と、むしろ僅かに良い。
+ *
+ * α は 2 のまま。どの ξ でも α=5 は α=2 に劣る（ξ=0.002 でも同じ）。
+ * 最小確率 <5% の予想は 1.7% → 1.8% でほぼ不変。
+ */
+const XI = 0.002;
+/**
+ * 市場が取れていない試合の発行を待つ猶予。**封緘までこれより余裕があるなら発行しない。**
+ *
+ * **2026-09-18 に実発生した取りこぼしへの対策。** Odds API のクレジットが尽きてオッズが
+ * 1 件も取れなかった日に、発行範囲 720 時間（2026-09-16 に 48h から拡大）の効果で
+ * **122 件が一度に `market: null` のまま封緘された**（市場ありの割合が 97% → 58% へ）。
+ * 予想は 1 試合 1 回で書き換えないので、その試合の発行時点の市場は**永久に欠測**する。
+ *
+ * 48 時間は拡大前の発行範囲そのもの。ここまで待てば、
+ *   - 翌日・翌々日の回でオッズが復旧すれば市場つきで出せる
+ *   - 復旧しなくても封緘前に必ず出る（「予想は試合前に必ず出す」Founder 指示 2026-09-09。
+ *     取得元の生死と予想の発行を切り離す設計は変えない）
+ * の両方が成り立つ。**市場が取れている試合は従来どおり即発行する**（待つ理由が無い）。
+ *
+ * なお決済側のベンチマークは #39 以降 `football/market/` のスナップショットから
+ * 「キックオフ直前」を引くので、市場が後日復旧すればそちらは埋まる。
+ * これで永久に失われるのは発行時点の市場と、それを使う CLV だけである。
+ */
+const MARKET_GRACE_HOURS = 48;
+/**
+ * 学習窓。ξ=0.002 では窓の端の重みが e^-3 ≈ 5% 残るため、窓 3000 日にすると
+ * **さらに −0.00009 良くなる（t=−5.10・実測）**。ただしこれは今回の改善（−0.0019）の
+ * 4.5% しかなく、履歴の保持を倍にする（再取り込み・ファイル増・学習時間増）代償に
+ * 見合わない。**平坦な最適域では継承値からの変更を最小にする**方針で 1500 のまま据え置く。
+ * 取り込みが安定していて余裕があるときに別途扱う。
+ */
 const WINDOW_DAYS = 1500;
 /** 写しから履歴へ入れる範囲。学習窓より少し長く取り、履歴の先頭が窓より前にあるようにする */
 const HISTORY_SINCE_DAYS = 1600;
@@ -205,6 +264,31 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
   return { rows, history: rows.map(toMatchWithOdds) };
 }
 
+/**
+ * football-data.co.uk の `fixtures.csv`（無料・無制限の市場）を読む。
+ *
+ * The Odds API の無料枠が尽きた日に 122 件が市場無しで封緘された（2026-09-18・実発生）
+ * ことへの備えで、**クレジットを使わない第 2 の市場**として持つ。収録は約 3 日先までで、
+ * `MARKET_GRACE_HOURS` と噛み合う（封緘の直前には必ず範囲に入っている）。
+ * J1 は収録されないので、J1 の市場は The Odds API だけが持つ。
+ */
+/** fixtures.csv の取得時刻（ファイルの更新時刻）。無ければ null */
+function fixturesFetchedAt(): string | null {
+  const p = join(CACHE, "fixtures.csv");
+  return existsSync(p) ? new Date(statSync(p).mtimeMs).toISOString() : null;
+}
+
+function fixtureMarkets(): FixtureMarketIndex {
+  const p = join(CACHE, "fixtures.csv");
+  if (!existsSync(p)) return new FixtureMarketIndex([]);
+  try {
+    return new FixtureMarketIndex(parseFixturesCsv(readFileSync(p, "utf8")));
+  } catch {
+    // 写しなので、壊れていても日次は止めない（市場が無い扱いになるだけ）
+    return new FixtureMarketIndex([]);
+  }
+}
+
 /** cache/odds/<sport>/<ts>.json の最新を読む */
 function latestOdds(sport: string): { events: OddsEvent[]; fetchedAt: string } | null {
   const dir = join(CACHE, "odds", sport);
@@ -220,6 +304,8 @@ function latestOdds(sport: string): { events: OddsEvent[]; fetchedAt: string } |
 function daily(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const log: string[] = [];
+  // 無料の市場（football-data の fixtures.csv）。クレジットを使わないので毎回読む
+  const freeMarkets = fixtureMarkets();
   for (const league of LEAGUES) {
     const src = SOURCES[league];
     if (!src) throw new Error(`unknown league ${league}`);
@@ -254,7 +340,7 @@ function daily(): void {
         log.push(`${league}: 学習データ ${train.length} 件 < ${MIN_TRAIN}。発行しない（取得失敗か初期化直後）`);
         continue;
       }
-      const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE });
+      const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE, xi: XI });
       const count = new Map<string, number>();
       for (const t of train) {
         count.set(t.home, (count.get(t.home) ?? 0) + 1);
@@ -269,14 +355,24 @@ function daily(): void {
           log.push(`  skip ${m.home} v ${m.away}: 学習データが ${MIN_TEAM_MATCHES} 試合未満のチーム`);
           continue;
         }
-        const p = predictMatch(fit, m.home, m.away);
+        // 市場は The Odds API を優先し、無ければ football-data の fixtures.csv（無料）で補う。
+        // どちらから採ったかは行に残す（作り方が同じでも取得元が違えば由来は残す）
         const mk = marketOf.get(m.providerId);
+        const free = mk?.market ? null : freeMarkets.find(league, m.home, m.away, m.kickoffAt);
+        const market = mk?.market ?? free?.market ?? null;
+        const marketSource = mk?.market ? "odds-api" : free?.market ? "football-data" : null;
+        // 市場がどちらからも取れない試合は、封緘が近いものだけ出す（下記 MARKET_GRACE_HOURS）
+        if (!market && Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000) {
+          log.push(`  defer ${m.home} v ${m.away}: 市場が無く封緘まで余裕がある（kickoff ${m.kickoffAt}）`);
+          continue;
+        }
+        const p = predictMatch(fit, m.home, m.away);
         const res = L.publishPrediction({
           providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MODEL, asOf: NOW, nTrain: fit.nMatches,
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
-          market: mk?.market ?? null, marketFetchedAt: mk && odds ? odds.fetchedAt : null,
-          historyAsOf, historyMissing, ridge: fit.ridge, nTeamMin,
+          market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
+          historyAsOf, historyMissing, ridge: fit.ridge, xi: fit.xi, nTeamMin,
         });
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }

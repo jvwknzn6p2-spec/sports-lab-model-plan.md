@@ -56,6 +56,13 @@ export interface LedgerPrediction {
   lambdaHome: number;
   lambdaAway: number;
   market: ProbabilityTriple | null;
+  /**
+   * 市場の取得元。`odds-api` = The Odds API の h2h 中央値 /
+   * `football-data` = football-data.co.uk の fixtures.csv（無料・各ブックの中央値）。
+   * 確率の作り方は両者そろえてあるが、**どこから採ったかは行に残す**
+   * （2026-09-18 以降の行が持つ。それ以前の行には無く、すべて odds-api）
+   */
+  marketSource?: "odds-api" | "football-data" | null;
   marketFetchedAt: string | null;
   fingerprint: string;
   /**
@@ -70,6 +77,12 @@ export interface LedgerPrediction {
    * dc-v1 の行には無い（＝罰則なし・α=0 相当）
    */
   ridge?: number;
+  /**
+   * 適合に使った時間減衰 ξ（1 日あたり）。dc-v3-decay 以降の行が持つ。
+   * それ以前の行には無い（＝論文既定の 0.0065 相当）。モデル名と併せて、
+   * どの設定で出した予想かを行だけで再現できるようにするための記録
+   */
+  xi?: number;
   /**
    * 学習窓の中での「両チームのうち少ない方の試合数」。標本の薄いチームが絡む予想を
    * 後から層別するための記録（2026-09-16 に MIN_TEAM_MATCHES を 5 → 1 へ下げた際に追加）。
