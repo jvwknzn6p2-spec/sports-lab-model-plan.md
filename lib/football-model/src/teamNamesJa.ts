@@ -11,6 +11,16 @@
  * 出典はこのプロジェクトが 2026-09 に予想ページ用へ育てた表記表。
  */
 export const JA_TO_EN: Readonly<Record<string, readonly string[]>> = {
+  // 実際の貼り付けで出た短縮形（2026-09-19 の実物から追加）。いずれも同日・同リーグの
+  // 台帳の試合と 1 対 1 で突合して確認した（推測ではない）:
+  //   Nott'm Forest v Coventry / Sparta Rotterdam v Heerenveen / Willem II v For Sittard
+  //   Alverca v Rio Ave / Charleroi v Cercle Brugge
+  "ノッテンガム": ["Nott'm Forest"],
+  "ノッティンガム": ["Nott'm Forest"],
+  "スパルタ": ["Sparta Rotterdam"],
+  "シッタート": ["For Sittard"],
+  "アルベルサ": ["Alverca"],
+  "サークルB": ["Cercle Brugge"],
   // 実際の貼り付けで出た別表記（2026-09-15 の実物から追加）
   "コヴェントリー": ["Coventry"],
   "レディング": ["Reading"],
