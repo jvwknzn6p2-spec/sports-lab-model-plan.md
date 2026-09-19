@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-19T05:34:20.669Z",
-  "updatedAt": "2026-09-19T07:29:42.577Z",
+  "updatedAt": "2026-09-19T08:12:34.000Z",
   "controlTower": {
     "date": "2026-09-19",
     "season": 1002026,
@@ -357,8 +357,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.544,
-      "rawWinProbability": 0.55,
+      "winProbability": 0.545,
+      "rawWinProbability": 0.551,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -376,7 +376,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.31,
+        "predicted": 7.7,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -385,24 +385,25 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.32,
-        "away": 3.78
+        "home": 3.59,
+        "away": 3.92
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Bullpen edge: 埼玉西武ライオンズ",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 3.32–3.78 over 10000 sims",
+        "Expected runs 3.59–3.92 over 10000 sims",
+        "away: cold bats — 3.2 R/G last 15 (season baseline 3.8)",
         "home: no starter data — league-average assumed",
         "Weather: 22°C at first pitch — run environment ×1.008"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
-        "[info] home_lineup_not_posted",
+        "[info] home_lineup_applied",
         "[info] home_players_on_il",
         "[info] away_starter_xfip_estimated",
-        "[info] away_lineup_not_posted",
+        "[info] away_lineup_applied",
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-19T08:27:00.000Z",
