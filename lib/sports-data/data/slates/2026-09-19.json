@@ -5,7 +5,7 @@
     {
       "gamePk": 824545,
       "gameDate": "2026-09-19T18:10:00Z",
-      "status": "Scheduled",
+      "status": "Pre-Game",
       "abstractState": "Preview",
       "gameType": "R",
       "venue": {
@@ -17,14 +17,14 @@
         "teamName": "Chicago White Sox",
         "probablePitcherId": 680732,
         "probablePitcherName": "Sean Burke",
-        "score": null
+        "score": 0
       },
       "away": {
         "teamId": 116,
         "teamName": "Detroit Tigers",
         "probablePitcherId": 695549,
         "probablePitcherName": "Jackson Jobe",
-        "score": null
+        "score": 0
       }
     },
     {
@@ -1697,9 +1697,359 @@
     "3289": 97,
     "5325": 99
   },
-  "lineups": {},
-  "lineupBatting": {},
-  "fetchedAt": "2026-09-19T14:47:09.313Z",
+  "lineups": {
+    "824545": {
+      "home": [
+        {
+          "playerId": 803011,
+          "name": "Sam Antonacci"
+        },
+        {
+          "playerId": 691019,
+          "name": "Kyle Teel"
+        },
+        {
+          "playerId": 678246,
+          "name": "Miguel Vargas"
+        },
+        {
+          "playerId": 808959,
+          "name": "Munetaka Murakami"
+        },
+        {
+          "playerId": 643217,
+          "name": "Andrew Benintendi"
+        },
+        {
+          "playerId": 695657,
+          "name": "Colson Montgomery"
+        },
+        {
+          "playerId": 805367,
+          "name": "Chase Meidroth"
+        },
+        {
+          "playerId": 695731,
+          "name": "Braden Montgomery"
+        },
+        {
+          "playerId": 686668,
+          "name": "Brenton Doyle"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 805808,
+          "name": "Kevin McGonigle"
+        },
+        {
+          "playerId": 701678,
+          "name": "Hao-Yu Lee"
+        },
+        {
+          "playerId": 690993,
+          "name": "Colt Keith"
+        },
+        {
+          "playerId": 682985,
+          "name": "Riley Greene"
+        },
+        {
+          "playerId": 693307,
+          "name": "Dillon Dingler"
+        },
+        {
+          "playerId": 703601,
+          "name": "Max Clark"
+        },
+        {
+          "playerId": 701162,
+          "name": "Ben Malgeri"
+        },
+        {
+          "playerId": 814430,
+          "name": "Brett Callahan"
+        },
+        {
+          "playerId": 807726,
+          "name": "John Peck"
+        }
+      ]
+    }
+  },
+  "lineupBatting": {
+    "643217": {
+      "plateAppearances": 447,
+      "atBats": 404,
+      "hits": 99,
+      "doubles": 24,
+      "triples": 2,
+      "homeRuns": 14,
+      "baseOnBalls": 36,
+      "intentionalWalks": 1,
+      "hitByPitch": 1,
+      "sacFlies": 5,
+      "strikeOuts": 102,
+      "stolenBases": 1,
+      "caughtStealing": 0
+    },
+    "678246": {
+      "plateAppearances": 671,
+      "atBats": 566,
+      "hits": 141,
+      "doubles": 31,
+      "triples": 1,
+      "homeRuns": 32,
+      "baseOnBalls": 91,
+      "intentionalWalks": 5,
+      "hitByPitch": 7,
+      "sacFlies": 6,
+      "strikeOuts": 121,
+      "stolenBases": 19,
+      "caughtStealing": 2
+    },
+    "682985": {
+      "plateAppearances": 562,
+      "atBats": 487,
+      "hits": 138,
+      "doubles": 30,
+      "triples": 2,
+      "homeRuns": 21,
+      "baseOnBalls": 66,
+      "intentionalWalks": 4,
+      "hitByPitch": 4,
+      "sacFlies": 5,
+      "strikeOuts": 151,
+      "stolenBases": 3,
+      "caughtStealing": 1
+    },
+    "686668": {
+      "plateAppearances": 203,
+      "atBats": 190,
+      "hits": 43,
+      "doubles": 7,
+      "triples": 1,
+      "homeRuns": 3,
+      "baseOnBalls": 12,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "sacFlies": 0,
+      "strikeOuts": 68,
+      "stolenBases": 14,
+      "caughtStealing": 4
+    },
+    "690993": {
+      "plateAppearances": 420,
+      "atBats": 381,
+      "hits": 99,
+      "doubles": 19,
+      "triples": 4,
+      "homeRuns": 10,
+      "baseOnBalls": 32,
+      "intentionalWalks": 0,
+      "hitByPitch": 5,
+      "sacFlies": 2,
+      "strikeOuts": 83,
+      "stolenBases": 6,
+      "caughtStealing": 0
+    },
+    "691019": {
+      "plateAppearances": 112,
+      "atBats": 95,
+      "hits": 18,
+      "doubles": 3,
+      "triples": 0,
+      "homeRuns": 4,
+      "baseOnBalls": 15,
+      "intentionalWalks": 0,
+      "hitByPitch": 2,
+      "sacFlies": 0,
+      "strikeOuts": 42,
+      "stolenBases": 0,
+      "caughtStealing": 0
+    },
+    "693307": {
+      "plateAppearances": 586,
+      "atBats": 532,
+      "hits": 129,
+      "doubles": 26,
+      "triples": 2,
+      "homeRuns": 27,
+      "baseOnBalls": 32,
+      "intentionalWalks": 0,
+      "hitByPitch": 15,
+      "sacFlies": 5,
+      "strikeOuts": 135,
+      "stolenBases": 0,
+      "caughtStealing": 0
+    },
+    "695657": {
+      "plateAppearances": 608,
+      "atBats": 540,
+      "hits": 111,
+      "doubles": 24,
+      "triples": 0,
+      "homeRuns": 31,
+      "baseOnBalls": 52,
+      "intentionalWalks": 3,
+      "hitByPitch": 14,
+      "sacFlies": 2,
+      "strikeOuts": 213,
+      "stolenBases": 1,
+      "caughtStealing": 1
+    },
+    "695731": {
+      "plateAppearances": 337,
+      "atBats": 295,
+      "hits": 61,
+      "doubles": 13,
+      "triples": 3,
+      "homeRuns": 6,
+      "baseOnBalls": 38,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "sacFlies": 1,
+      "strikeOuts": 69,
+      "stolenBases": 1,
+      "caughtStealing": 3
+    },
+    "701162": {
+      "plateAppearances": 120,
+      "atBats": 102,
+      "hits": 24,
+      "doubles": 3,
+      "triples": 0,
+      "homeRuns": 3,
+      "baseOnBalls": 16,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "sacFlies": 1,
+      "strikeOuts": 33,
+      "stolenBases": 5,
+      "caughtStealing": 0
+    },
+    "701678": {
+      "plateAppearances": 326,
+      "atBats": 296,
+      "hits": 78,
+      "doubles": 16,
+      "triples": 2,
+      "homeRuns": 10,
+      "baseOnBalls": 26,
+      "intentionalWalks": 1,
+      "hitByPitch": 0,
+      "sacFlies": 3,
+      "strikeOuts": 78,
+      "stolenBases": 2,
+      "caughtStealing": 2
+    },
+    "703601": {
+      "plateAppearances": 176,
+      "atBats": 155,
+      "hits": 43,
+      "doubles": 10,
+      "triples": 3,
+      "homeRuns": 3,
+      "baseOnBalls": 15,
+      "intentionalWalks": 1,
+      "hitByPitch": 4,
+      "sacFlies": 0,
+      "strikeOuts": 36,
+      "stolenBases": 5,
+      "caughtStealing": 1
+    },
+    "803011": {
+      "plateAppearances": 526,
+      "atBats": 453,
+      "hits": 122,
+      "doubles": 23,
+      "triples": 4,
+      "homeRuns": 8,
+      "baseOnBalls": 42,
+      "intentionalWalks": 0,
+      "hitByPitch": 27,
+      "sacFlies": 1,
+      "strikeOuts": 81,
+      "stolenBases": 18,
+      "caughtStealing": 7
+    },
+    "805367": {
+      "plateAppearances": 621,
+      "atBats": 546,
+      "hits": 147,
+      "doubles": 29,
+      "triples": 0,
+      "homeRuns": 14,
+      "baseOnBalls": 60,
+      "intentionalWalks": 0,
+      "hitByPitch": 5,
+      "sacFlies": 4,
+      "strikeOuts": 136,
+      "stolenBases": 3,
+      "caughtStealing": 2
+    },
+    "805808": {
+      "plateAppearances": 674,
+      "atBats": 575,
+      "hits": 159,
+      "doubles": 26,
+      "triples": 5,
+      "homeRuns": 17,
+      "baseOnBalls": 93,
+      "intentionalWalks": 1,
+      "hitByPitch": 3,
+      "sacFlies": 3,
+      "strikeOuts": 91,
+      "stolenBases": 12,
+      "caughtStealing": 4
+    },
+    "807726": {
+      "plateAppearances": 54,
+      "atBats": 45,
+      "hits": 10,
+      "doubles": 1,
+      "triples": 0,
+      "homeRuns": 0,
+      "baseOnBalls": 6,
+      "intentionalWalks": 0,
+      "hitByPitch": 2,
+      "sacFlies": 1,
+      "strikeOuts": 11,
+      "stolenBases": 4,
+      "caughtStealing": 0
+    },
+    "808959": {
+      "plateAppearances": 517,
+      "atBats": 424,
+      "hits": 86,
+      "doubles": 14,
+      "triples": 1,
+      "homeRuns": 32,
+      "baseOnBalls": 88,
+      "intentionalWalks": 8,
+      "hitByPitch": 4,
+      "sacFlies": 1,
+      "strikeOuts": 185,
+      "stolenBases": 1,
+      "caughtStealing": 3
+    },
+    "814430": {
+      "plateAppearances": 63,
+      "atBats": 56,
+      "hits": 12,
+      "doubles": 3,
+      "triples": 1,
+      "homeRuns": 1,
+      "baseOnBalls": 5,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "sacFlies": 1,
+      "strikeOuts": 22,
+      "stolenBases": 0,
+      "caughtStealing": 0
+    }
+  },
+  "fetchedAt": "2026-09-19T16:05:53.618Z",
   "forms": {
     "108": {
       "games": 15,
@@ -3261,12 +3611,12 @@
   },
   "weather": {
     "822843": {
-      "temperatureC": 34.8,
-      "windSpeedKmh": 14,
-      "windDirectionDeg": 179,
+      "temperatureC": 35,
+      "windSpeedKmh": 13.8,
+      "windDirectionDeg": 174,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-19T14:47:11.119Z"
+      "fetchedAt": "2026-09-19T16:06:01.109Z"
     },
     "822921": {
       "temperatureC": null,
@@ -3274,36 +3624,36 @@
       "roof": "dome"
     },
     "823003": {
-      "temperatureC": 35.2,
-      "windSpeedKmh": 3,
-      "windDirectionDeg": 284,
+      "temperatureC": 35.6,
+      "windSpeedKmh": 3.1,
+      "windDirectionDeg": 216,
       "roof": "outdoor",
       "cfBearingDeg": 62,
-      "fetchedAt": "2026-09-19T14:47:11.317Z"
+      "fetchedAt": "2026-09-19T16:06:01.377Z"
     },
     "823249": {
       "temperatureC": 24.6,
-      "windSpeedKmh": 14,
+      "windSpeedKmh": 13.2,
       "windDirectionDeg": 299,
       "roof": "outdoor",
       "cfBearingDeg": 0,
-      "fetchedAt": "2026-09-19T14:47:11.614Z"
+      "fetchedAt": "2026-09-19T16:06:01.779Z"
     },
     "823330": {
-      "temperatureC": 23.4,
-      "windSpeedKmh": 9.4,
-      "windDirectionDeg": 67,
+      "temperatureC": 23.5,
+      "windSpeedKmh": 7.3,
+      "windDirectionDeg": 70,
       "roof": "outdoor",
       "cfBearingDeg": 116,
-      "fetchedAt": "2026-09-19T14:47:11.020Z"
+      "fetchedAt": "2026-09-19T16:06:00.975Z"
     },
     "823571": {
-      "temperatureC": 21.7,
-      "windSpeedKmh": 13.3,
-      "windDirectionDeg": 3,
+      "temperatureC": 21.4,
+      "windSpeedKmh": 10.4,
+      "windDirectionDeg": 14,
       "roof": "outdoor",
       "cfBearingDeg": 13,
-      "fetchedAt": "2026-09-19T14:47:10.721Z"
+      "fetchedAt": "2026-09-19T16:06:00.572Z"
     },
     "823899": {
       "temperatureC": 25.9,
@@ -3311,71 +3661,71 @@
       "windDirectionDeg": 253,
       "roof": "outdoor",
       "cfBearingDeg": 26,
-      "fetchedAt": "2026-09-19T14:47:11.713Z"
+      "fetchedAt": "2026-09-19T16:06:01.913Z"
     },
     "823976": {
-      "temperatureC": 26.5,
-      "windSpeedKmh": 13.2,
-      "windDirectionDeg": 248,
+      "temperatureC": 26.7,
+      "windSpeedKmh": 13.4,
+      "windDirectionDeg": 243,
       "roof": "outdoor",
       "cfBearingDeg": 43.61,
-      "fetchedAt": "2026-09-19T14:47:11.810Z"
+      "fetchedAt": "2026-09-19T16:06:02.048Z"
     },
     "824137": {
-      "temperatureC": 31.5,
-      "windSpeedKmh": 13.4,
-      "windDirectionDeg": 126,
+      "temperatureC": 31.7,
+      "windSpeedKmh": 14.3,
+      "windDirectionDeg": 124,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-19T14:47:11.218Z"
+      "fetchedAt": "2026-09-19T16:06:01.243Z"
     },
     "824304": {
-      "temperatureC": 22,
-      "windSpeedKmh": 11.4,
-      "windDirectionDeg": 242,
+      "temperatureC": 26.2,
+      "windSpeedKmh": 11.1,
+      "windDirectionDeg": 65,
       "roof": "outdoor",
       "cfBearingDeg": 4,
-      "fetchedAt": "2026-09-19T14:47:11.416Z"
+      "fetchedAt": "2026-09-19T16:06:01.510Z"
     },
     "824380": {
-      "temperatureC": 20,
-      "windSpeedKmh": 14.7,
-      "windDirectionDeg": 152,
+      "temperatureC": 23.8,
+      "windSpeedKmh": 9.7,
+      "windDirectionDeg": 182,
       "roof": "outdoor",
       "cfBearingDeg": 0,
-      "fetchedAt": "2026-09-19T14:47:10.820Z"
+      "fetchedAt": "2026-09-19T16:06:00.707Z"
     },
     "824461": {
-      "temperatureC": 28.3,
-      "windSpeedKmh": 21.6,
-      "windDirectionDeg": 327,
+      "temperatureC": 32.4,
+      "windSpeedKmh": 5.2,
+      "windDirectionDeg": 258,
       "roof": "outdoor",
       "cfBearingDeg": 122,
-      "fetchedAt": "2026-09-19T14:47:10.921Z"
+      "fetchedAt": "2026-09-19T16:06:00.841Z"
     },
     "824545": {
-      "temperatureC": 21.9,
-      "windSpeedKmh": 7.6,
-      "windDirectionDeg": 82,
+      "temperatureC": 20.1,
+      "windSpeedKmh": 7.3,
+      "windDirectionDeg": 81,
       "roof": "outdoor",
       "cfBearingDeg": 127,
-      "fetchedAt": "2026-09-19T14:47:10.523Z"
+      "fetchedAt": "2026-09-19T16:06:00.303Z"
     },
     "824788": {
-      "temperatureC": 25,
-      "windSpeedKmh": 7.4,
-      "windDirectionDeg": 141,
+      "temperatureC": 24.7,
+      "windSpeedKmh": 6,
+      "windDirectionDeg": 115,
       "roof": "outdoor",
       "cfBearingDeg": 31,
-      "fetchedAt": "2026-09-19T14:47:10.622Z"
+      "fetchedAt": "2026-09-19T16:06:00.438Z"
     },
     "825029": {
       "temperatureC": 38.8,
-      "windSpeedKmh": 8.7,
-      "windDirectionDeg": 275,
+      "windSpeedKmh": 6.5,
+      "windDirectionDeg": 251,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-19T14:47:11.515Z"
+      "fetchedAt": "2026-09-19T16:06:01.644Z"
     }
   }
 }
