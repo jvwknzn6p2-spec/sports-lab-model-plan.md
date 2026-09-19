@@ -16,7 +16,7 @@
  * GitHub の写し・Odds API の scores）はどれが欠けても日次は止まらず、前日までの履歴で
  * 予想を出す。鮮度は予想行の historyAsOf / historyMissing に残る。
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fitDixonColes, predictMatch } from "../fit.ts";
 import type { MatchWithOdds } from "../footballData.ts";
@@ -45,6 +45,7 @@ import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
 import { closingMarketResolver } from "../marketSnapshots.ts";
 import { clvEntries, summarizeClv } from "../clv.ts";
+import { FixtureMarketIndex, parseFixturesCsv } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -263,6 +264,31 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
   return { rows, history: rows.map(toMatchWithOdds) };
 }
 
+/**
+ * football-data.co.uk の `fixtures.csv`（無料・無制限の市場）を読む。
+ *
+ * The Odds API の無料枠が尽きた日に 122 件が市場無しで封緘された（2026-09-18・実発生）
+ * ことへの備えで、**クレジットを使わない第 2 の市場**として持つ。収録は約 3 日先までで、
+ * `MARKET_GRACE_HOURS` と噛み合う（封緘の直前には必ず範囲に入っている）。
+ * J1 は収録されないので、J1 の市場は The Odds API だけが持つ。
+ */
+/** fixtures.csv の取得時刻（ファイルの更新時刻）。無ければ null */
+function fixturesFetchedAt(): string | null {
+  const p = join(CACHE, "fixtures.csv");
+  return existsSync(p) ? new Date(statSync(p).mtimeMs).toISOString() : null;
+}
+
+function fixtureMarkets(): FixtureMarketIndex {
+  const p = join(CACHE, "fixtures.csv");
+  if (!existsSync(p)) return new FixtureMarketIndex([]);
+  try {
+    return new FixtureMarketIndex(parseFixturesCsv(readFileSync(p, "utf8")));
+  } catch {
+    // 写しなので、壊れていても日次は止めない（市場が無い扱いになるだけ）
+    return new FixtureMarketIndex([]);
+  }
+}
+
 /** cache/odds/<sport>/<ts>.json の最新を読む */
 function latestOdds(sport: string): { events: OddsEvent[]; fetchedAt: string } | null {
   const dir = join(CACHE, "odds", sport);
@@ -278,6 +304,8 @@ function latestOdds(sport: string): { events: OddsEvent[]; fetchedAt: string } |
 function daily(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const log: string[] = [];
+  // 無料の市場（football-data の fixtures.csv）。クレジットを使わないので毎回読む
+  const freeMarkets = fixtureMarkets();
   for (const league of LEAGUES) {
     const src = SOURCES[league];
     if (!src) throw new Error(`unknown league ${league}`);
@@ -327,9 +355,14 @@ function daily(): void {
           log.push(`  skip ${m.home} v ${m.away}: 学習データが ${MIN_TEAM_MATCHES} 試合未満のチーム`);
           continue;
         }
+        // 市場は The Odds API を優先し、無ければ football-data の fixtures.csv（無料）で補う。
+        // どちらから採ったかは行に残す（作り方が同じでも取得元が違えば由来は残す）
         const mk = marketOf.get(m.providerId);
-        // 市場が取れていない試合は、封緘が近いものだけ出す（下記 MARKET_GRACE_HOURS）
-        if (!mk && Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000) {
+        const free = mk?.market ? null : freeMarkets.find(league, m.home, m.away, m.kickoffAt);
+        const market = mk?.market ?? free?.market ?? null;
+        const marketSource = mk?.market ? "odds-api" : free?.market ? "football-data" : null;
+        // 市場がどちらからも取れない試合は、封緘が近いものだけ出す（下記 MARKET_GRACE_HOURS）
+        if (!market && Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000) {
           log.push(`  defer ${m.home} v ${m.away}: 市場が無く封緘まで余裕がある（kickoff ${m.kickoffAt}）`);
           continue;
         }
@@ -338,7 +371,7 @@ function daily(): void {
           providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MODEL, asOf: NOW, nTrain: fit.nMatches,
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
-          market: mk?.market ?? null, marketFetchedAt: mk && odds ? odds.fetchedAt : null,
+          market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
           historyAsOf, historyMissing, ridge: fit.ridge, xi: fit.xi, nTeamMin,
         });
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);

@@ -104,9 +104,13 @@ jobs:
             done
           done
           get JPN.csv "new/JPN.csv"
-          echo "football-data: failed $failed / 37 (試行 $attempted)"
+          # 今後の試合 + 各ブックのオッズ（無料・無制限）。The Odds API のクレジットが
+          # 尽きた日に 122 件が市場無しで封緘された（2026-09-18 実発生）ことへの備えで、
+          # **クレジットを使わない第 2 の市場**として持つ。収録は約 3 日先まで・J1 は対象外
+          get fixtures.csv "fixtures.csv"
+          echo "football-data: failed $failed / 38 (試行 $attempted)"
           if [ -n "$first_redirect" ]; then echo "::warning::最初の転送先: $first_redirect（ここが 127.0.0.1 等ならサイト側の遮断）"; fi
-          if [ "$failed" -eq 37 ]; then echo "::warning::football-data.co.uk が全滅（両ホスト）。履歴・写し・Odds API scores で進む"; fi
+          if [ "$failed" -eq 38 ]; then echo "::warning::football-data.co.uk が全滅（両ホスト）。履歴・写し・Odds API scores で進む"; fi
 
       - name: 結果の写しを取得（GitHub・xgabora/Club-Football-Match-Data・欠けても止めない）
         run: |
@@ -127,9 +131,14 @@ jobs:
           set -u
           if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi
           ts=$(date -u +%Y%m%dT%H%M%SZ)
+          # J1（soccer_japan_j_league）は 2026-09-19 に対象から外した（Founder 判断）。
+          # 無料の fixtures.csv に J1 が収録されておらず、市場を持つには有料枠を使うしかない
+          # 一方で、モデルの成績は 10 リーグで最も悪い（RPS 0.2896 対 他は約 0.20）。
+          # **台帳からは消さない**。登録済みの J1 の試合は予想・決済とも従来どおり続き、
+          # 新しい日程が入らなくなることで自然に終わる
           for sport in soccer_epl soccer_italy_serie_a soccer_spain_la_liga soccer_germany_bundesliga \
                        soccer_netherlands_eredivisie soccer_france_ligue_one soccer_portugal_primeira_liga \
-                       soccer_belgium_first_div soccer_spl soccer_japan_j_league; do
+                       soccer_belgium_first_div soccer_spl; do
             mkdir -p "football/cache/odds/$sport"
             code=$(curl -sS --max-time 30 -o "football/cache/odds/$sport/$ts.json" -D /tmp/h.txt -w "%{http_code}" \
               "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")

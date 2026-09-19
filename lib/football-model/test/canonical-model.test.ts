@@ -66,11 +66,22 @@ test("市場が無い試合は封緘が近いときだけ発行する（2026-09-
   // Odds API が落ちた日に 720 時間ぶんを一度に封緘すると、その試合の発行時点の市場が
   // 永久に欠測する（実発生: 122 件・市場ありが 97% → 58%）。ガードを消さないこと
   assert.ok(/const MARKET_GRACE_HOURS = \d+;/.test(cli), "MARKET_GRACE_HOURS が無い");
-  const guard = /if \(!mk && Date\.parse\(m\.cutoffAt\) - Date\.parse\(NOW\) > MARKET_GRACE_HOURS \* 3_600_000\)/.test(cli);
+  // 条件は「どちらの取得元からも市場が取れない」= market が null のとき
+  const guard = /if \(!market && Date\.parse\(m\.cutoffAt\) - Date\.parse\(NOW\) > MARKET_GRACE_HOURS \* 3_600_000\)/.test(cli);
   assert.ok(guard, "市場が無いときに封緘までの余裕で発行を待つガードが無い");
   // 猶予は封緘前に必ず出せる長さであること（「予想は試合前に必ず出す」Founder 指示 2026-09-09）
   const h = Number(/const MARKET_GRACE_HOURS = (\d+);/.exec(cli)![1]);
   assert.ok(h >= 24, `猶予 ${h}h は短すぎる（日次 1 回なので 1 日ぶんは要る）`);
   assert.ok(h < Number(/const HORIZON_HOURS = Number\(arg\("horizon", "(\d+)"\)\)/.exec(cli)![1]),
     "猶予が発行範囲以上だと、市場が無い試合が一度も出なくなる");
+});
+
+test("市場は The Odds API → 無料の fixtures.csv の順に採り、由来を行に残す", () => {
+  // The Odds API の無料枠が尽きた日に市場が丸ごと欠ける（2026-09-18 実発生）ことへの備え。
+  // 無料の第 2 経路を外すと、クレジット切れがそのまま台帳の永久欠測になる
+  assert.ok(/freeMarkets\.find\(league, m\.home, m\.away, m\.kickoffAt\)/.test(cli), "無料の市場を引いていない");
+  assert.ok(/const market = mk\?\.market \?\? free\?\.market \?\? null;/.test(cli), "Odds API → 無料 の優先順になっていない");
+  assert.ok(/marketSource/.test(cli), "市場の由来を記録していない");
+  const pub = /publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
+  assert.ok(pub[1].includes("marketSource"), "予想行に marketSource を記録していない");
 });

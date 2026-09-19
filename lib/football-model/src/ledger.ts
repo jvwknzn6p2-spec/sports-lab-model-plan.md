@@ -56,6 +56,13 @@ export interface LedgerPrediction {
   lambdaHome: number;
   lambdaAway: number;
   market: ProbabilityTriple | null;
+  /**
+   * 市場の取得元。`odds-api` = The Odds API の h2h 中央値 /
+   * `football-data` = football-data.co.uk の fixtures.csv（無料・各ブックの中央値）。
+   * 確率の作り方は両者そろえてあるが、**どこから採ったかは行に残す**
+   * （2026-09-18 以降の行が持つ。それ以前の行には無く、すべて odds-api）
+   */
+  marketSource?: "odds-api" | "football-data" | null;
   marketFetchedAt: string | null;
   fingerprint: string;
   /**
