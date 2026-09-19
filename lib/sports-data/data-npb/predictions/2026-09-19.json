@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-19T05:34:20.669Z",
-  "updatedAt": "2026-09-19T05:34:20.669Z",
+  "updatedAt": "2026-09-19T07:29:42.577Z",
   "controlTower": {
     "date": "2026-09-19",
     "season": 1002026,
@@ -118,8 +118,8 @@
       "pass": false,
       "predictedWinner": "横浜DeNAベイスターズ",
       "predictedLoser": "東京ヤクルトスワローズ",
-      "winProbability": 0.7,
-      "rawWinProbability": 0.726,
+      "winProbability": 0.698,
+      "rawWinProbability": 0.723,
       "confidence": "S",
       "handicap": {
         "input": {
@@ -137,7 +137,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.52,
+        "predicted": 7.54,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -146,17 +146,18 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.74,
-        "away": 2.69
+        "home": 4.75,
+        "away": 2.7
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Offense edge: 横浜DeNAベイスターズ (wOBA 0.300 vs 0.280)",
         "Bullpen edge: 横浜DeNAベイスターズ",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 4.74–2.69 over 10000 sims",
+        "Expected runs 4.75–2.70 over 10000 sims",
         "home: hot bats — 4.8 R/G last 15 (season baseline 3.8)",
-        "away: cold bats — 2.7 R/G last 15 (season baseline 3.2)"
+        "away: cold bats — 2.7 R/G last 15 (season baseline 3.2)",
+        "Weather: 21°C at first pitch — run environment ×1.003"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -177,8 +178,8 @@
       "pass": false,
       "predictedWinner": "阪神タイガース",
       "predictedLoser": "広島東洋カープ",
-      "winProbability": 0.594,
-      "rawWinProbability": 0.606,
+      "winProbability": 0.593,
+      "rawWinProbability": 0.605,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -196,7 +197,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 5.92,
+        "predicted": 5.9,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -205,16 +206,16 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.24,
-        "away": 2.47
+        "home": 3.23,
+        "away": 2.46
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Offense edge: 阪神タイガース (wOBA 0.298 vs 0.274)",
         "Park factor 92 (pitcher-friendly)",
-        "Expected runs 3.24–2.47 over 10000 sims",
+        "Expected runs 3.23–2.46 over 10000 sims",
         "home: cold bats — 2.7 R/G last 15 (season baseline 3.8)",
-        "Weather: 27°C at first pitch — run environment ×1.045"
+        "Weather: 27°C at first pitch — run environment ×1.043"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -375,7 +376,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.3,
+        "predicted": 7.31,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -384,7 +385,7 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.31,
+        "home": 3.32,
         "away": 3.78
       },
       "reasons": [
@@ -392,9 +393,9 @@
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Bullpen edge: 埼玉西武ライオンズ",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 3.31–3.78 over 10000 sims",
+        "Expected runs 3.32–3.78 over 10000 sims",
         "home: no starter data — league-average assumed",
-        "Weather: 22°C at first pitch — run environment ×1.006"
+        "Weather: 22°C at first pitch — run environment ×1.008"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
