@@ -1,6 +1,6 @@
 {
   "date": "2026-09-20",
-  "fetchedAt": "2026-09-20T22:05:49.492Z",
+  "fetchedAt": "2026-09-21T04:28:17.275Z",
   "results": {
     "822844": {
       "homeScore": 2,
@@ -14,6 +14,10 @@
       "homeScore": 5,
       "awayScore": 3
     },
+    "823247": {
+      "homeScore": 7,
+      "awayScore": 3
+    },
     "823329": {
       "homeScore": 4,
       "awayScore": 3
@@ -21,6 +25,14 @@
     "823570": {
       "homeScore": 2,
       "awayScore": 7
+    },
+    "823896": {
+      "homeScore": 3,
+      "awayScore": 1
+    },
+    "823975": {
+      "homeScore": 0,
+      "awayScore": 8
     },
     "824139": {
       "homeScore": 2,
@@ -37,38 +49,19 @@
     "824462": {
       "homeScore": 1,
       "awayScore": 9
+    },
+    "824546": {
+      "homeScore": 8,
+      "awayScore": 1
+    },
+    "824789": {
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "825028": {
+      "homeScore": 8,
+      "awayScore": 4
     }
   },
-  "pending": [
-    {
-      "gamePk": 824546,
-      "matchup": "Detroit Tigers @ Chicago White Sox",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823975,
-      "matchup": "Minnesota Twins @ Los Angeles Angels",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823896,
-      "matchup": "San Francisco Giants @ Los Angeles Dodgers",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 823247,
-      "matchup": "Miami Marlins @ San Diego Padres",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 825028,
-      "matchup": "New York Yankees @ Arizona Diamondbacks",
-      "reason": "not final (In Progress)"
-    },
-    {
-      "gamePk": 824789,
-      "matchup": "Milwaukee Brewers @ Baltimore Orioles",
-      "reason": "not final (Pre-Game)"
-    }
-  ]
+  "pending": []
 }
