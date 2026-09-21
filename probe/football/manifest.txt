@@ -1,31 +1,38 @@
-fetched_at=2026-09-19T14:18:22Z
+fetched_at=2026-09-21T22:53:35Z
 200 56308 fd-fixtures.csv https://www.football-data.co.uk/fixtures.csv
 200 203438 fd-E0-2526.csv https://www.football-data.co.uk/mmz4281/2526/E0.csv
-200 20004 fd-E0-2627.csv https://www.football-data.co.uk/mmz4281/2627/E0.csv
+200 24803 fd-E0-2627.csv https://www.football-data.co.uk/mmz4281/2627/E0.csv
 200 572509 fd-JPN.csv https://www.football-data.co.uk/new/JPN.csv
 200 196217 fd-I1-2526.csv https://www.football-data.co.uk/mmz4281/2526/I1.csv
-200 19221 fd-I1-2627.csv https://www.football-data.co.uk/mmz4281/2627/I1.csv
+200 24049 fd-I1-2627.csv https://www.football-data.co.uk/mmz4281/2627/I1.csv
 200 197653 fd-SP1-2526.csv https://www.football-data.co.uk/mmz4281/2526/SP1.csv
-200 28496 fd-SP1-2627.csv https://www.football-data.co.uk/mmz4281/2627/SP1.csv
+200 33311 fd-SP1-2627.csv https://www.football-data.co.uk/mmz4281/2627/SP1.csv
 200 159944 fd-D1-2526.csv https://www.football-data.co.uk/mmz4281/2526/D1.csv
-200 13395 fd-D1-2627.csv https://www.football-data.co.uk/mmz4281/2627/D1.csv
+200 17760 fd-D1-2627.csv https://www.football-data.co.uk/mmz4281/2627/D1.csv
 200 158364 fd-N1-2526.csv https://www.football-data.co.uk/mmz4281/2526/N1.csv
-200 25882 fd-N1-2627.csv https://www.football-data.co.uk/mmz4281/2627/N1.csv
+200 30164 fd-N1-2627.csv https://www.football-data.co.uk/mmz4281/2627/N1.csv
 200 158471 fd-F1-2526.csv https://www.football-data.co.uk/mmz4281/2526/F1.csv
-200 17596 fd-F1-2627.csv https://www.football-data.co.uk/mmz4281/2627/F1.csv
+200 21896 fd-F1-2627.csv https://www.football-data.co.uk/mmz4281/2627/F1.csv
 200 157715 fd-P1-2526.csv https://www.football-data.co.uk/mmz4281/2526/P1.csv
-200 25362 fd-P1-2627.csv https://www.football-data.co.uk/mmz4281/2627/P1.csv
+200 29676 fd-P1-2627.csv https://www.football-data.co.uk/mmz4281/2627/P1.csv
 200 158888 fd-B1-2526.csv https://www.football-data.co.uk/mmz4281/2526/B1.csv
-200 26194 fd-B1-2627.csv https://www.football-data.co.uk/mmz4281/2627/B1.csv
+200 30495 fd-B1-2627.csv https://www.football-data.co.uk/mmz4281/2627/B1.csv
 200 118594 fd-SC0-2526.csv https://www.football-data.co.uk/mmz4281/2526/SC0.csv
-200 18002 fd-SC0-2627.csv https://www.football-data.co.uk/mmz4281/2627/SC0.csv
-200 32658 fd-japan.html https://www.football-data.co.uk/japan.php
-200 1054476 jleague-match.html https://www.jleague.jp/match/
-200 1109377 jleague-j1-standing.html https://www.jleague.jp/standings/j1/
-200 440278 jdata-search.html https://data.j-league.or.jp/SFMS01/search
+200 20966 fd-SC0-2627.csv https://www.football-data.co.uk/mmz4281/2627/SC0.csv
+200 32670 fd-japan.html https://www.football-data.co.uk/japan.php
+200 20827 fdorg-PL.json https://api.football-data.org/v4/competitions/PL/matches
+200 22477 fdorg-SA.json https://api.football-data.org/v4/competitions/SA/matches
+200 31331 fdorg-PD.json https://api.football-data.org/v4/competitions/PD/matches
+200 18640 fdorg-BL1.json https://api.football-data.org/v4/competitions/BL1/matches
+200 18628 fdorg-FL1.json https://api.football-data.org/v4/competitions/FL1/matches
+200 21982 fdorg-PPL.json https://api.football-data.org/v4/competitions/PPL/matches
+200 22808 fdorg-DED.json https://api.football-data.org/v4/competitions/DED/matches
+200 937924 jleague-match.html https://www.jleague.jp/match/
+200 1102911 jleague-j1-standing.html https://www.jleague.jp/standings/j1/
+200 440334 jdata-search.html https://data.j-league.or.jp/SFMS01/search
 200 18698 understat-epl.html https://understat.com/league/EPL
 403 5570 fbref-j1.html https://fbref.com/en/comps/25/J1-League-Stats
-200 12504 odds-sports.json https://api.the-odds-api.com/v4/sports/
+200 10704 odds-sports.json https://api.the-odds-api.com/v4/sports/
 x-requests-remaining: 0
 x-requests-last: 0
 x-requests-used: 500
@@ -42,4 +49,4 @@ x-requests-used: 500
 401 225 odds-soccer_uefa_europa_league.json https://api.the-odds-api.com/v4/sports/soccer_uefa_europa_league/odds
 401 225 odds-soccer_uefa_europa_conference_league.json https://api.the-odds-api.com/v4/sports/soccer_uefa_europa_conference_league/odds
 401 225 odds-soccer_japan_j_league.json https://api.the-odds-api.com/v4/sports/soccer_japan_j_league/odds
-soccer_keys=soccer_argentina_primera_division,soccer_austria_bundesliga,soccer_belgium_first_div,soccer_brazil_campeonato,soccer_brazil_serie_b,soccer_conmebol_copa_libertadores,soccer_conmebol_copa_sudamericana,soccer_denmark_superliga,soccer_efl_champ,soccer_england_efl_cup,soccer_england_league1,soccer_england_league2,soccer_epl,soccer_finland_veikkausliiga,soccer_france_ligue_one,soccer_france_ligue_two,soccer_germany_bundesliga,soccer_germany_bundesliga2,soccer_germany_bundesliga_women,soccer_germany_dfb_pokal,soccer_germany_liga3,soccer_greece_super_league,soccer_italy_serie_a,soccer_italy_serie_b,soccer_japan_j_league,soccer_korea_kleague1,soccer_league_of_ireland,soccer_mexico_ligamx,soccer_netherlands_eredivisie,soccer_norway_eliteserien,soccer_poland_ekstraklasa,soccer_portugal_primeira_liga,soccer_spain_la_liga,soccer_spain_segunda_division,soccer_spl,soccer_sweden_allsvenskan,soccer_sweden_superettan,soccer_switzerland_superleague,soccer_turkey_super_league,soccer_uefa_champs_league,soccer_uefa_europa_conference_league,soccer_uefa_europa_league,soccer_uefa_nations_league,soccer_usa_mls
+soccer_keys=soccer_argentina_primera_division,soccer_austria_bundesliga,soccer_brazil_campeonato,soccer_brazil_serie_b,soccer_chile_campeonato,soccer_conmebol_copa_libertadores,soccer_conmebol_copa_sudamericana,soccer_denmark_superliga,soccer_efl_champ,soccer_england_efl_cup,soccer_england_league1,soccer_england_league2,soccer_epl,soccer_fa_cup,soccer_france_ligue_one,soccer_germany_bundesliga,soccer_germany_dfb_pokal,soccer_germany_liga3,soccer_greece_super_league,soccer_italy_serie_a,soccer_italy_serie_b,soccer_korea_kleague1,soccer_league_of_ireland,soccer_mexico_ligamx,soccer_netherlands_eredivisie,soccer_norway_eliteserien,soccer_spain_la_liga,soccer_spain_segunda_division,soccer_spl,soccer_uefa_champs_league,soccer_uefa_champs_league_women,soccer_uefa_europa_conference_league,soccer_uefa_europa_league,soccer_uefa_nations_league,soccer_usa_mls
