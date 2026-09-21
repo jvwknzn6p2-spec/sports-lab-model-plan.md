@@ -30,6 +30,7 @@ jobs:
         if: ${{ !inputs.diag_only }}
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
         run: |
           set -u
           DIR=probe/football
@@ -72,6 +73,22 @@ jobs:
           fetch fd-SC0-2526.csv  "https://www.football-data.co.uk/mmz4281/2526/SC0.csv"
           fetch fd-SC0-2627.csv  "https://www.football-data.co.uk/mmz4281/2627/SC0.csv"
           fetch fd-japan.html        "https://www.football-data.co.uk/japan.php"
+
+          # --- api.football-data.org（結果の第 3 経路）。トークンが無い間は 403 が残るだけで、
+          # それ自体が「まだ有効化されていない」という読める記録になる。**実際の応答を見てから**
+          # FOOTBALL_DATA_ORG_ALIASES を埋めるため、名前の分かる 1 競技ぶんを取る
+          if [ -n "${FOOTBALL_DATA_ORG_TOKEN:-}" ]; then
+            for comp in PL SA PD BL1 FL1 PPL DED; do
+              code=$(curl -sS --max-time 30 -o "$DIR/fdorg-$comp.json" -w "%{http_code}" \
+                -H "X-Auth-Token: $FOOTBALL_DATA_ORG_TOKEN" \
+                "https://api.football-data.org/v4/competitions/$comp/matches?dateFrom=$(date -u -d '14 days ago' +%F)&dateTo=$(date -u +%F)")
+              echo "$code $( [ -f "$DIR/fdorg-$comp.json" ] && wc -c < "$DIR/fdorg-$comp.json" || echo 0) fdorg-$comp.json https://api.football-data.org/v4/competitions/$comp/matches" | tee -a "$MANIFEST"
+              [ "$code" != "200" ] && rm -f "$DIR/fdorg-$comp.json"
+              sleep 7
+            done
+          else
+            echo "FOOTBALL_DATA_ORG_TOKEN unset — fdorg skip" | tee -a "$MANIFEST"
+          fi
 
           # --- J リーグ公式（日程・結果の一次情報）
           fetch jleague-match.html   "https://www.jleague.jp/match/"

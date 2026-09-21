@@ -46,6 +46,7 @@ import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settle
 import { closingMarketResolver } from "../marketSnapshots.ts";
 import { clvEntries, summarizeClv } from "../clv.ts";
 import { FixtureMarketIndex, fixturesAsMatches, parseFixturesCsv } from "../footballDataFixtures.ts";
+import { FDORG_COMPETITIONS, historyFromFootballDataOrg, type FdOrgPayload } from "../footballDataOrg.ts";
 import type { FixtureMarket } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
 
@@ -241,7 +242,29 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
     notes.push("mirror absent");
   }
 
-  // 3) Odds API の scores（結果の速報・cache/scores/<sport>/<ts>.json の最新）
+  // 3) football-data.org（v4 API・結果だけ。co.uk が凍結した 2026-09-18〜 への備え）。
+  // トークン未設定なら cache にファイルが無いので、この節は丸ごと飛ぶ
+  const orgCode = Object.keys(FDORG_COMPETITIONS).find((c) => FDORG_COMPETITIONS[c] === league);
+  if (orgCode) {
+    const p = join(CACHE, "fdorg", `${orgCode}.json`);
+    if (existsSync(p)) {
+      try {
+        const payload = JSON.parse(readFileSync(p, "utf8")) as FdOrgPayload;
+        const names = new Set(rows.flatMap((m) => [m.home, m.away]));
+        const parsed = historyFromFootballDataOrg(payload, league, names, new Date(statSync(p).mtimeMs).toISOString());
+        const r = mergeHistory(rows, parsed.rows.filter((x) => x.date >= sinceIso));
+        rows = r.rows;
+        notes.push(`${fmtStats(`fdorg:${orgCode}`, r.stats)} (finished ${parsed.rows.length}, unresolved ${parsed.unresolved})`);
+        // 未解決の名前は**必ず出す**。これが FOOTBALL_DATA_ORG_ALIASES を埋める唯一の根拠で、
+        // 黙って捨てると「取得元を足したのに結果が増えない」理由が分からなくなる
+        if (parsed.unresolvedNames.length) log.push(`  fdorg 未解決の名前 (${league}): ${parsed.unresolvedNames.join(" / ")}`);
+      } catch (e) {
+        notes.push(`fdorg:${orgCode} 読めない（${(e as Error).message}）`);
+      }
+    }
+  }
+
+  // 4) Odds API の scores（結果の速報・cache/scores/<sport>/<ts>.json の最新）
   const sdir = join(CACHE, "scores", src.sport);
   if (existsSync(sdir)) {
     const files = readdirSync(sdir).filter((f) => f.endsWith(".json")).sort();
