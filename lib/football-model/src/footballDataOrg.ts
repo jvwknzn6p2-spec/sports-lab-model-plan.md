@@ -45,11 +45,52 @@ export const FDORG_COMPETITIONS: Record<string, string> = {
 };
 
 /**
- * 実際の応答を見てから埋める対応表（.org の名前 → co.uk の名前）。
- * **初期は空にしてある。記憶や推測で行を足さないこと** — 1 行間違えると別のチームの
- * 結果が静かに別の試合へ入り、決済まで誤る。未解決の名前は日次のログに出る。
+ * 対応表（.org の名前 → co.uk の名前）。**記憶や推測で行を足さないこと** — 1 行間違えると
+ * 別のチームの結果が静かに別の試合へ入り、決済まで誤る。
+ *
+ * **この 33 行は実データから機械的に導いた**（2026-09-21・probe の実応答 151 試合）。
+ * 手順は「同じリーグ・同じ日（±1 日）・**相手チームが一致する試合**を履歴と台帳から引き、
+ * 残った側の名前を読む」。相手が一意に決まらない試合は採らない。支持した試合数も数え、
+ * 食い違う候補が出た名前は採らない（実行時の食い違いは **0 件**）。
+ * 再現は `scripts/derive_fdorg_aliases.ts`。新しい未解決名が出たらこれを走らせること。
+ *
+ * 規則だけでは 85/151（56.3%）しか解決できず、この表で **151/151（100%）**になった（実測）。
  */
-export const FOOTBALL_DATA_ORG_ALIASES: Record<string, string> = {};
+export const FOOTBALL_DATA_ORG_ALIASES: Record<string, string> = {
+  "1. FC Köln": "FC Koln",
+  "AZ": "AZ Alkmaar",
+  "Acad. Viseu": "Academico Viseu",
+  "Amadora": "Estrela",
+  "Angers SCO": "Angers",
+  "Athletic": "Ath Bilbao",
+  "Atleti": "Ath Madrid",
+  "Bayern": "Bayern Munich",
+  "Braga": "Sp Braga",
+  "Brighton Hove": "Brighton",
+  "Como 1907": "Como",
+  "Coventry City": "Coventry",
+  "Deportivo": "La Coruna",
+  "Espanyol": "Espanol",
+  "Estoril Praia": "Estoril",
+  "Frankfurt": "Ein Frankfurt",
+  "HSV": "Hamburg",
+  "Hull City": "Hull",
+  "Ipswich Town": "Ipswich",
+  "Leeds United": "Leeds",
+  "NEC": "Nijmegen",
+  "Nottingham": "Nott'm Forest",
+  "Olympique Lyon": "Lyon",
+  "PSG": "Paris SG",
+  "PSV": "PSV Eindhoven",
+  "Rayo Vallecano": "Vallecano",
+  "Real Betis": "Betis",
+  "Real Sociedad": "Sociedad",
+  "SL Benfica": "Benfica",
+  "Sittard": "For Sittard",
+  "Sporting CP": "Sp Lisbon",
+  "Stade Rennais": "Rennes",
+  "Vitória SC": "Guimaraes",
+};
 
 /** 法人格として落としてよい接頭・接尾（先頭か末尾の 1 語だけ。語中では落とさない） */
 const LEGAL_TOKENS = new Set([

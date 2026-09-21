@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FDORG_COMPETITIONS, foldedIndexOf, historyFromFootballDataOrg, resolveOrgTeam } from "../src/footballDataOrg.ts";
+import { FDORG_COMPETITIONS, FOOTBALL_DATA_ORG_ALIASES, foldedIndexOf, historyFromFootballDataOrg, resolveOrgTeam } from "../src/footballDataOrg.ts";
 import { SOURCE_FOOTBALL_DATA, SOURCE_FOOTBALL_DATA_ORG, SOURCE_MIRROR, SOURCE_ODDS_SCORES, mergeHistory, sourcePriority, type HistoryRow } from "../src/history.ts";
 import { parseFootballDataRaw } from "../src/footballDataRaw.ts";
 
@@ -132,4 +132,39 @@ test("CLI: fdorg は履歴へ入れるだけで、日程・市場の経路に混
   // 日程（recordFixtures）と市場（marketSource）の式に fdorg が混ざっていないこと
   assert.ok(!/recordFixtures\([^)]*[Oo]rg/.test(cli), "fdorg を日程に使っている");
   assert.ok(!/marketSource = [^;]*[Oo]rg/.test(cli), "fdorg を市場に使っている");
+});
+
+test("実サンプル: probe の実応答（PL・2026-09-21 取得）を全件解決して行にする", () => {
+  // 合成データだけで通すと、鍵の名前や書式が実物とずれていても気付けない
+  // （`footballDataFixtures.test.ts` と同じ理由）。ここは probe が取った実応答そのもの
+  const payload = JSON.parse(readFileSync(new URL("../fixtures/fdorg-PL.json", import.meta.url), "utf8"));
+  const r = historyFromFootballDataOrg(payload, "E0", e0Names, "2026-09-21T22:54:00Z");
+  assert.equal(r.rows.length, 20, "実応答 20 件が行にならない");
+  assert.equal(r.unresolved, 0, `未解決が残っている: ${r.unresolvedNames.join(" / ")}`);
+  assert.equal(r.incomplete, 0);
+  // 得点・日付・取得元が実物どおり
+  const first = r.rows.find((x) => x.date === "2026-09-12" && x.home === "Crystal Palace");
+  assert.ok(first, "実応答の 1 件目が見つからない");
+  assert.deepEqual([first.away, first.homeGoals, first.awayGoals], ["Ipswich", 2, 3]);
+  assert.equal(first.source, SOURCE_FOOTBALL_DATA_ORG);
+  assert.equal(first.odds, null, "オッズを持たない取得元なのに値が入っている");
+  // 表が効いていること（規則だけでは引けない名前が実際に含まれている）
+  assert.ok(r.rows.some((x) => x.home === "Nott'm Forest" || x.away === "Nott'm Forest"), "対応表が効いていない");
+});
+
+test("対応表は台帳の正式名しか指さない（打ち間違いが静かに効かなくなるのを防ぐ）", () => {
+  // 値が co.uk の正式名でないと、その行は一生引けないまま「未解決」として捨てられ続ける。
+  // 全 10 リーグの履歴に出る名前の集合と照合する
+  const all = new Set<string>();
+  for (const l of ["E0", "I1", "SP1", "D1", "N1", "F1", "P1"]) {
+    const hist = readFileSync(new URL(`../../../football/history/${l}.ndjson`, import.meta.url), "utf8");
+    for (const line of hist.split("\n")) {
+      if (!line.trim()) continue;
+      const r = JSON.parse(line) as { home: string; away: string };
+      all.add(r.home);
+      all.add(r.away);
+    }
+  }
+  const bad = Object.entries(FOOTBALL_DATA_ORG_ALIASES).filter(([, v]) => !all.has(v));
+  assert.deepEqual(bad, [], `台帳に無い名前を指している: ${bad.map(([k, v]) => `${k}→${v}`).join(", ")}`);
 });

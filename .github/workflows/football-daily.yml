@@ -186,12 +186,17 @@ jobs:
           # 無料枠は 10 リクエスト/分。7 競技なので 7 秒おきに 1 本で十分収まる
           for comp in PL BL1 SA PD FL1 PPL DED; do
             out="football/cache/fdorg/$comp.json"
-            code=$(curl -sS --max-time 30 -o "$out" -w "%{http_code}" \
+            code=$(curl -sS --max-time 30 -o "$out" -D /tmp/fdorg-h.txt -w "%{http_code}" \
               -H "X-Auth-Token: $FOOTBALL_DATA_ORG_TOKEN" \
               "https://api.football-data.org/v4/competitions/$comp/matches?dateFrom=$from&dateTo=$to")
             n=0
             if [ "$code" = "200" ]; then n=$(grep -o '"status"' "$out" | wc -l); else rm -f "$out"; fi
-            echo "fdorg $comp HTTP $code ($n 件)"
+            # 発行元の案内どおり、残り回数のヘッダを記録する。**名前を決め打ちしない**
+            # （X-Requests-Available-Minute 等の綴りを記憶で書くと、違っていても静かに
+            # 空振りする）。X- で始まる応答ヘッダをそのまま出し、実物を見てから絞る
+            hdr=$(grep -i '^x-' /tmp/fdorg-h.txt | grep -iv '^x-auth' | tr -d '\r' | tr '\n' ' ')
+            echo "fdorg $comp HTTP $code ($n 件) $hdr"
+            rm -f /tmp/fdorg-h.txt
             sleep 7
           done
 
