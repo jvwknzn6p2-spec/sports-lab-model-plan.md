@@ -27,6 +27,7 @@
  * 取得元によって作り方が違うと市場ベンチマークの比較が壊れるため。
  */
 import { parseCsv } from "./footballData.ts";
+import type { MarketFixture } from "./oddsApi.ts";
 import type { ProbabilityTriple } from "./scoring.ts";
 
 /** 実在のブックメーカーの列接頭辞。`Max`（最良）と `Avg`（平均）は派生値なので使わない */
@@ -38,6 +39,8 @@ export interface FixtureMarket {
   dateLocal: string;
   /** 現地時刻（HH:MM）。無ければ null */
   timeLocal: string | null;
+  /** キックオフの UTC（ISO）。時刻が無い行は null */
+  kickoffAt: string | null;
   home: string;
   away: string;
   /** 各ブックの中央値から作った市場確率。1 社も読めなければ null */
@@ -66,6 +69,38 @@ function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   const i = s.length >> 1;
   return s.length % 2 ? s[i] : (s[i - 1] + s[i]) / 2;
+}
+
+/**
+ * `Date` / `Time` 列は**英国の現地時刻**（football-data は全リーグを英国時間で書く）。
+ * 夏時間（BST = UTC+1）があるので、固定のずれを足すのではなく Europe/London の
+ * 実際のずれを引く。2 パスにするのは切替日の前後で offset が変わるため。
+ *
+ * **実測で検証済み（2026-09-21）**: probe 取得の fixtures.csv 198 行のうち、
+ * The Odds API 由来で台帳にも載っている 81 件と突き合わせて **81/81 が分単位で一致**。
+ * ここがずれると封緘（キックオフの JST 日付の前日 20:00）が丸一日ずれるので、
+ * 規則を変えたらこの突合をやり直すこと。
+ */
+function londonOffsetMs(utcMs: number): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London", hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(new Date(utcMs));
+  const g = (t: string): number => Number(parts.find((p) => p.type === t)!.value);
+  const h = g("hour") === 24 ? 0 : g("hour"); // en-GB は 24 時制で 24 を返すことがある
+  return Date.UTC(g("year"), g("month") - 1, g("day"), h, g("minute"), g("second")) - utcMs;
+}
+
+/** 英国現地の `YYYY-MM-DD` + `HH:MM` を UTC の ISO にする。読めなければ null */
+export function ukLocalToUtc(dateIso: string, timeHm: string | null): string | null {
+  if (timeHm === null) return null;
+  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateIso);
+  const t = /^(\d{1,2}):(\d{2})$/.exec(timeHm);
+  if (!d || !t) return null;
+  const naive = Date.UTC(Number(d[1]), Number(d[2]) - 1, Number(d[3]), Number(t[1]), Number(t[2]));
+  const utc = naive - londonOffsetMs(naive - londonOffsetMs(naive));
+  return new Date(utc).toISOString().replace(".000Z", "Z");
 }
 
 /** dd/mm/yyyy → YYYY-MM-DD。読めなければ null */
@@ -114,7 +149,8 @@ export function parseFixturesCsv(text: string): FixtureMarket[] {
     if (!division || !home || !away || dateLocal === null) continue;
     const time = (cell(row, "Time") ?? "").trim();
     const { market, books } = marketFromRow(row);
-    out.push({ division, dateLocal, timeLocal: /^\d{1,2}:\d{2}$/.test(time) ? time : null, home, away, market, books });
+    const timeLocal = /^\d{1,2}:\d{2}$/.test(time) ? time : null;
+    out.push({ division, dateLocal, timeLocal, kickoffAt: ukLocalToUtc(dateLocal, timeLocal), home, away, market, books });
   }
   return out;
 }
@@ -155,4 +191,50 @@ export class FixtureMarketIndex {
   get size(): number {
     return this.byKey.size;
   }
+}
+
+/**
+ * fixtures.csv を**日程そのものの取得元**として使う（2026-09-21・実発生への対策）。
+ *
+ * **なぜ市場だけでは足りなかったか**: 2026-09-19 に The Odds API のクレジットが 0 に
+ * なって以降、日次は毎回「odds が無い（予想は発行しない）」で終わっていた。
+ * 無料の fixtures.csv は**既に台帳にある試合の市場を埋める**ことしかしておらず、
+ * 「どの試合があるか」は The Odds API だけが持っていたため、クレジット切れが
+ * そのまま**発行 0 件**になっていた（2026-09-19〜21 の 3 日間で新規予想 0 件・実測）。
+ * 市場の第 2 経路を持っていても、日程の第 2 経路が無ければ止まる。
+ *
+ * **providerId は合成する**（`fd:<リーグ>:<ホーム>:<アウェイ>:<現地日付>`）。台帳は
+ * providerId で試合を同定するので、同じ試合を The Odds API と両方から入れると
+ * **1 試合に 2 つの予想**が立ちうる。これは `Ledger.recordFixtures` の正準重複検査
+ * （リーグ・両チーム・キックオフ ±1 日）が防ぐ。どちらが先に入っても結果は同じ。
+ *
+ * **既知の限界**: fd 由来の providerId で登録された試合は、後から The Odds API が
+ * 同じ試合を返しても市場スナップショット（`football/market/`）が別 ID で積まれるため、
+ * 決済時の「直前の市場」と CLV の対象から外れる。発行時点の市場は fixtures.csv から
+ * 入るので、RPS の対照そのものは残る。
+ */
+export function fixturesAsMatches(
+  fixtures: FixtureMarket[],
+  league: string,
+  resolve: (name: string) => string | null,
+): MarketFixture[] {
+  const out: MarketFixture[] = [];
+  for (const f of fixtures) {
+    if (f.division !== league) continue;
+    if (f.kickoffAt === null) continue; // 時刻の無い行は封緘時刻を決められないので入れない
+    const home = resolve(f.home);
+    const away = resolve(f.away);
+    out.push({
+      provider: "football-data",
+      providerId: `fd:${league}:${f.home}:${f.away}:${f.dateLocal}`,
+      sportKey: `football-data:${league}`,
+      kickoffAt: f.kickoffAt,
+      home: home ?? f.home,
+      away: away ?? f.away,
+      resolved: home !== null && away !== null,
+      bookmakers: f.books,
+      market: f.market,
+    });
+  }
+  return out;
 }

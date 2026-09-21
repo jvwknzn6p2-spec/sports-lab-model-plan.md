@@ -23,7 +23,12 @@ export interface OddsEvent {
 }
 
 export interface MarketFixture {
-  provider: "the-odds-api";
+  /**
+   * 取得元。`football-data` は無料の fixtures.csv 由来で、The Odds API の
+   * クレジットが尽きた日に日程そのものが入らなくなるのを防ぐ第 2 経路
+   * （`footballDataFixtures.ts`）。
+   */
+  provider: "the-odds-api" | "football-data";
   providerId: string;
   sportKey: string;
   kickoffAt: string;

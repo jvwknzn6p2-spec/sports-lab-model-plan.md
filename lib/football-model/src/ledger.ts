@@ -175,14 +175,41 @@ export class Ledger {
     return readNdjson<LedgerEvaluation>(this.p("evaluations"));
   }
 
-  /** 日程の取り込み。解決できない名前の試合は入れない。既知と同じ内容（封緘時刻を含む）なら追記しない */
-  recordFixtures(fixtures: MarketFixture[], league: string, nowIso: string): { added: number; unresolved: number } {
+  /**
+   * 日程の取り込み。解決できない名前の試合は入れない。既知と同じ内容（封緘時刻を含む）なら追記しない。
+   *
+   * **同じ試合を別の providerId で二重に登録しない**（2026-09-21）。日程の取得元が
+   * The Odds API と football-data の 2 つになり、同じ試合が別 ID で入りうるようになった。
+   * 台帳は providerId で試合を同定するので、二重に入ると**1 試合に 2 つの予想**が立ち、
+   * 決済でも 2 件として数えられる。リーグ・両チーム・キックオフ ±1 日が一致する試合が
+   * 既にあれば、**先に入っている方を残して後から来た方を捨てる**（順序に依らない）。
+   * 同じ 2 チームが 2 日以内に再戦することはリーグ戦では起きない。
+   * 適用時の実測: 既存 333 試合に正準重複 0 件（この検査は既存の挙動を変えない）。
+   */
+  recordFixtures(fixtures: MarketFixture[], league: string, nowIso: string): { added: number; unresolved: number; duplicates: number } {
     const cur = this.currentMatches();
+    // 正準同一性（リーグ|ホーム|アウェイ → キックオフの一覧）。この回で足した行も足しながら見る
+    const canon = new Map<string, Array<{ providerId: string; kickoffAt: string }>>();
+    for (const m of cur.values()) {
+      const k = `${m.league}|${m.home}|${m.away}`;
+      const list = canon.get(k);
+      if (list) list.push({ providerId: m.providerId, kickoffAt: m.kickoffAt });
+      else canon.set(k, [{ providerId: m.providerId, kickoffAt: m.kickoffAt }]);
+    }
     const rows: LedgerMatch[] = [];
     let unresolved = 0;
+    let duplicates = 0;
     for (const f of fixtures) {
       if (!f.resolved) {
         unresolved++;
+        continue;
+      }
+      const ck = `${league}|${f.home}|${f.away}`;
+      const clash = (canon.get(ck) ?? []).find(
+        (x) => x.providerId !== f.providerId && Math.abs(Date.parse(x.kickoffAt) - Date.parse(f.kickoffAt)) <= 86_400_000,
+      );
+      if (clash) {
+        duplicates++;
         continue;
       }
       const prev = cur.get(f.providerId);
@@ -198,9 +225,12 @@ export class Ledger {
         away: f.away,
         recordedAt: nowIso,
       });
+      const list = canon.get(ck);
+      if (list) list.push({ providerId: f.providerId, kickoffAt: f.kickoffAt });
+      else canon.set(ck, [{ providerId: f.providerId, kickoffAt: f.kickoffAt }]);
     }
     append(this.p("matches"), rows);
-    return { added: rows.length, unresolved };
+    return { added: rows.length, unresolved, duplicates };
   }
 
   /**

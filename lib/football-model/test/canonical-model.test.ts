@@ -85,3 +85,11 @@ test("市場は The Odds API → 無料の fixtures.csv の順に採り、由来
   const pub = /publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
   assert.ok(pub[1].includes("marketSource"), "予想行に marketSource を記録していない");
 });
+
+test("日程も The Odds API と無料の fixtures.csv の 2 経路から入れる（クレジット切れで発行 0 件にしない）", () => {
+  // 2026-09-19 にクレジットが 0 になって以降、日次は毎回「odds が無い」で終わり、
+  // 3 日間まったく予想が出なかった（実測）。市場の第 2 経路だけでは足りず、
+  // 「どの試合があるか」の第 2 経路が要る。この結線を外さないこと
+  assert.ok(/fixturesAsMatches\(freeRows, league, resolve\)/.test(cli), "無料の日程を読んでいない");
+  assert.ok(/L\.recordFixtures\(freeFixtures, league, NOW\)/.test(cli), "無料の日程を台帳へ登録していない");
+});

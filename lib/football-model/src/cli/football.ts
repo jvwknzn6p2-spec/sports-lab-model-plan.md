@@ -45,7 +45,8 @@ import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
 import { closingMarketResolver } from "../marketSnapshots.ts";
 import { clvEntries, summarizeClv } from "../clv.ts";
-import { FixtureMarketIndex, parseFixturesCsv } from "../footballDataFixtures.ts";
+import { FixtureMarketIndex, fixturesAsMatches, parseFixturesCsv } from "../footballDataFixtures.ts";
+import type { FixtureMarket } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -278,14 +279,14 @@ function fixturesFetchedAt(): string | null {
   return existsSync(p) ? new Date(statSync(p).mtimeMs).toISOString() : null;
 }
 
-function fixtureMarkets(): FixtureMarketIndex {
+function fixtureRows(): FixtureMarket[] {
   const p = join(CACHE, "fixtures.csv");
-  if (!existsSync(p)) return new FixtureMarketIndex([]);
+  if (!existsSync(p)) return [];
   try {
-    return new FixtureMarketIndex(parseFixturesCsv(readFileSync(p, "utf8")));
+    return parseFixturesCsv(readFileSync(p, "utf8"));
   } catch {
-    // 写しなので、壊れていても日次は止めない（市場が無い扱いになるだけ）
-    return new FixtureMarketIndex([]);
+    // 写しなので、壊れていても日次は止めない（日程も市場も無い扱いになるだけ）
+    return [];
   }
 }
 
@@ -305,7 +306,8 @@ function daily(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const log: string[] = [];
   // 無料の市場（football-data の fixtures.csv）。クレジットを使わないので毎回読む
-  const freeMarkets = fixtureMarkets();
+  const freeRows = fixtureRows();
+  const freeMarkets = new FixtureMarketIndex(freeRows);
   for (const league of LEAGUES) {
     const src = SOURCES[league];
     if (!src) throw new Error(`unknown league ${league}`);
@@ -329,7 +331,17 @@ function daily(): void {
         JSON.stringify(fixtures.map((f) => ({ providerId: f.providerId, kickoffAt: f.kickoffAt, home: f.home, away: f.away, resolved: f.resolved, bookmakers: f.bookmakers, market: f.market })), null, 0) + "\n",
       );
     } else {
-      log.push(`${league}: odds が無い（予想は発行しない）`);
+      log.push(`${league}: The Odds API のオッズが無い`);
+    }
+
+    // 1b) 日程の第 2 経路（無料の fixtures.csv）。The Odds API のクレジットが尽きた日に
+    // **日程そのものが入らず発行 0 件**になっていた（2026-09-19〜21 実発生）ことへの対策。
+    // 同じ試合が両方から入っても、正準重複検査（recordFixtures）が二重登録を防ぐ。
+    // J1（JAP）は fixtures.csv に収録されないので、ここでは 0 件になる
+    const freeFixtures = fixturesAsMatches(freeRows, league, resolve);
+    if (freeFixtures.length > 0) {
+      const rf = L.recordFixtures(freeFixtures, league, NOW);
+      log.push(`${league}: fd-fixtures ${freeFixtures.length} (added ${rf.added}, 重複 ${rf.duplicates}, unresolved ${rf.unresolved})`);
     }
 
     // 2) 予想（封緘前・未発行・48h 以内）
