@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-21T05:59:55.893Z",
-  "updatedAt": "2026-09-21T05:59:55.893Z",
+  "updatedAt": "2026-09-21T08:09:09.222Z",
   "controlTower": {
     "date": "2026-09-21",
     "season": 1002026,
@@ -297,8 +297,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.541,
-      "rawWinProbability": 0.548,
+      "winProbability": 0.539,
+      "rawWinProbability": 0.545,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -316,7 +316,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.57,
+        "predicted": 7.54,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -325,18 +325,18 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.51,
-        "away": 3.9
+        "home": 3.5,
+        "away": 3.89
       },
       "reasons": [
-        "PASS: edge too small (win prob 54.1% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 53.9% < 55%) — moneyline and total only",
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Starter edge: 埼玉西武ライオンズ (武内 夏暉 projFIP 3.19 vs 3.57)",
         "Bullpen edge: 埼玉西武ライオンズ",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 3.51–3.90 over 10000 sims",
+        "Expected runs 3.50–3.89 over 10000 sims",
         "away: cold bats — 2.9 R/G last 15 (season baseline 3.7)",
-        "Weather: 26°C at first pitch — run environment ×1.034"
+        "Weather: 25°C at first pitch — run environment ×1.031"
       ],
       "flags": [
         "[warn] weather_high_wind",
