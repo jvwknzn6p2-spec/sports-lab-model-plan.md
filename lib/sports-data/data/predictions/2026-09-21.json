@@ -1,0 +1,239 @@
+{
+  "lockedAt": "2026-09-21T17:11:23.615Z",
+  "updatedAt": "2026-09-21T18:19:56.916Z",
+  "controlTower": {
+    "date": "2026-09-21",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "823169": {
+        "side": "home",
+        "notation": null
+      },
+      "824221": {
+        "side": "home",
+        "notation": null
+      },
+      "824787": {
+        "side": "home",
+        "notation": null
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.937,
+    "tailShrink": 0.715,
+    "farTailShrink": 0.655,
+    "handicapShrink": 0.871,
+    "handicapTailShrink": 0.634,
+    "handicapFarTailShrink": 0.619,
+    "totalShrink": 0.829,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.833,
+    "gamesSettled": 299,
+    "brierSum": 72.2236,
+    "updatedAt": "2026-09-21T04:28:17.278Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 824787,
+      "gameDate": "2026-09-21T22:35:00Z",
+      "home": "Baltimore Orioles",
+      "away": "Toronto Blue Jays",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.55,
+      "rawWinProbability": 0.553,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.03,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.17,
+        "away": 3.7
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 55.0% < 55%) — moneyline and total only",
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Bullpen edge: Baltimore Orioles",
+        "Baltimore Orioles bullpen fatigued (+0.08 R/9)",
+        "Toronto Blue Jays bullpen fatigued (+0.32 R/9)",
+        "Park factor 98 (pitcher-friendly)",
+        "Expected runs 4.17–3.70 over 10000 sims",
+        "home: cold bats — 3.5 R/G last 15 (season baseline 4.3)",
+        "Weather: 20°C at first pitch — run environment ×0.995",
+        "Wind: 11 km/h from 48° vs CF bearing 31° — blowing in, run environment ×0.979"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-21T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 824221,
+      "gameDate": "2026-09-21T22:40:00Z",
+      "home": "Detroit Tigers",
+      "away": "Washington Nationals",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.573,
+      "rawWinProbability": 0.578,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.62,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 5.13,
+        "away": 4.25
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Offense edge: Washington Nationals (wOBA 0.324 vs 0.314)",
+        "Bullpen edge: Detroit Tigers",
+        "Detroit Tigers bullpen fatigued (+0.34 R/9)",
+        "Washington Nationals bullpen fatigued (+0.16 R/9)",
+        "Park factor 98 (pitcher-friendly)",
+        "Expected runs 5.13–4.25 over 10000 sims",
+        "home: hot bats — 5.2 R/G last 15 (season baseline 4.5)",
+        "away: cold bats — 4.2 R/G last 15 (season baseline 4.8)",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed",
+        "Weather: 15°C at first pitch — run environment ×0.956",
+        "Wind: 13 km/h from 22° vs CF bearing 150° — blowing out, run environment ×1.016"
+      ],
+      "flags": [
+        "[downgrade] home_starter_stats_missing",
+        "[info] home_lineup_not_posted",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[downgrade] away_starter_stats_missing",
+        "[info] away_lineup_not_posted",
+        "[info] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-21T13:59:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 823169,
+      "gameDate": "2026-09-22T01:45:00Z",
+      "home": "San Francisco Giants",
+      "away": "Minnesota Twins",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.544,
+      "rawWinProbability": 0.547,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.29,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.82,
+        "away": 4.29
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.4% < 55%) — moneyline and total only",
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "San Francisco Giants bullpen fatigued (+0.04 R/9)",
+        "Minnesota Twins bullpen fatigued (+0.10 R/9)",
+        "Park factor 95 (pitcher-friendly)",
+        "Expected runs 4.82–4.29 over 10000 sims",
+        "away: cold bats — 3.5 R/G last 15 (season baseline 4.5)",
+        "Weather: 16°C at first pitch — run environment ×0.966",
+        "Wind: 20 km/h from 272° vs CF bearing 85° — blowing out, run environment ×1.039"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_bullpen_bullpen_heavy_usage",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-21T13:59:00.000Z",
+      "final": true
+    }
+  ]
+}
