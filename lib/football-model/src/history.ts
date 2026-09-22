@@ -56,6 +56,11 @@ export interface HistoryRow {
   homeGoals: number;
   awayGoals: number;
   odds: { home: number; draw: number; away: number } | null;
+  /**
+   * 枠内シュート（football-data.co.uk の HST / AST）。**この列を持つのは co.uk だけ**で、
+   * 写しにも .org にも Odds API にも無い。古い行には無い（後から埋める・下記 enriched）。
+   */
+  sot?: { home: number; away: number };
   source: string;
   /** この行を取得元から取り込んだ時刻（ISO） */
   observedAt: string;
@@ -64,6 +69,15 @@ export interface HistoryRow {
 export interface MergeStats {
   added: number;
   replaced: number;
+  /**
+   * 置換はしなかったが、**既存行に無くて入ってきた行にある情報を足した**件数。
+   *
+   * 枠内シュートを入れた 2026-09-22 に必要になった。co.uk 同士は優先度が同じで得点も
+   * 同じなので `pIn > pCur` が偽になり置換されない。そのままだと**既存の履歴に
+   * 枠内シュートが一生入らず**、新しい行だけが持つことになる。得点も取得元も変えず、
+   * 欠けている列だけを埋める。
+   */
+  enriched: number;
   /** 得点が食い違った件数（置換の有無に関わらず数える。ログに出して人が見る） */
   conflicts: number;
   kept: number;
@@ -104,7 +118,7 @@ export function mergeHistory(existing: HistoryRow[], incoming: HistoryRow[]): { 
     if (list) list.push(i);
     else index.set(k, [i]);
   });
-  const stats: MergeStats = { added: 0, replaced: 0, conflicts: 0, kept: 0 };
+  const stats: MergeStats = { added: 0, replaced: 0, enriched: 0, conflicts: 0, kept: 0 };
   for (const inc of incoming) {
     const k = key(inc);
     const list = index.get(k) ?? [];
@@ -126,7 +140,13 @@ export function mergeHistory(existing: HistoryRow[], incoming: HistoryRow[]): { 
       rows[hit] = inc;
       stats.replaced++;
     } else {
-      stats.kept++;
+      // 置換はしないが、既存に無い列だけは足す（枠内シュート）
+      if (!cur.sot && inc.sot) {
+        rows[hit] = { ...cur, sot: inc.sot };
+        stats.enriched++;
+      } else {
+        stats.kept++;
+      }
     }
   }
   return { rows: sortHistory(rows), stats };
@@ -141,6 +161,7 @@ export function toMatchWithOdds(r: HistoryRow): MatchWithOdds & { source: string
     homeGoals: r.homeGoals,
     awayGoals: r.awayGoals,
     odds: r.odds,
+    ...(r.sot ? { homeSot: r.sot.home, awaySot: r.sot.away } : {}),
     source: r.source,
   };
 }
@@ -156,6 +177,9 @@ function fromMatch(m: MatchWithOdds, source: string, observedAt: string): Histor
     homeGoals: m.homeGoals,
     awayGoals: m.awayGoals,
     odds: m.odds,
+    ...(typeof m.homeSot === "number" && typeof m.awaySot === "number"
+      ? { sot: { home: m.homeSot, away: m.awaySot } }
+      : {}),
     source,
     observedAt,
   };

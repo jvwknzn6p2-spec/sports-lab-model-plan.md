@@ -18,7 +18,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fitDixonColes, predictMatch } from "../fit.ts";
+import { fitDixonColes, fitShotLayer, predictMatch, predictWithShots } from "../fit.ts";
 import type { MatchWithOdds } from "../footballData.ts";
 import { assertFootballDataCsv, parseFootballDataRaw } from "../footballDataRaw.ts";
 import { Ledger } from "../ledger.ts";
@@ -70,6 +70,7 @@ const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
  *   dc-v1       … Dixon-Coles・ξ=0.0065・窓 1500 日・正則化なし（〜2026-09-15）
  *   dc-v2-ridge … 上に L2 罰則 α=2 を加えたもの（2026-09-15〜09-17）
  *   dc-v3-decay … 上の ξ を 0.0065 → 0.002 にしたもの（2026-09-17〜）
+ *   dc-v5-shots   … dc-v3-decay に枠内シュート層（θ=0.25）を足したもの（2026-09-22）
  *
  * α=2 の根拠（全 10 リーグ・履歴 11,116 予想のウォークフォワード実測・2026-09-15）:
  *   RPS 0.2036 → 0.2021（ペア差 −0.0015・t=−5.02）。10 リーグ中 9 で改善、E0 は同値。
@@ -77,8 +78,13 @@ const LEAGUES = arg("leagues", "JAP,E0")!.split(",");
  *   極端予想は 0.8% まで減るので、極端予想が再発したときの次点はこれ。
  *   α≥10 は明確に悪化（α=10 で +0.0027・t=3.98）。
  */
-const MODEL = "dc-v3-decay";
+const MODEL = "dc-v5-shots";
 const RIDGE = 2;
+/**
+ * 枠内シュート層の重み θ（`fitShotLayer` / `predictWithShots`）。
+ * 実測と限界は fit.ts の `ShotLayer` の説明に書いた。**0 にすると dc-v3-decay と同値**。
+ */
+const SHOT_WEIGHT = 0.25;
 /**
  * 時間減衰 ξ（1 日あたり）。**2026-09-17 に 0.0065 → 0.002 へ**（半減期 107 → 346 日）。
  *
@@ -406,6 +412,8 @@ function daily(): void {
         continue;
       }
       const fit = fitDixonColes(train, { asOf: NOW, ridge: RIDGE, xi: XI });
+      // 枠内シュート層（θ=SHOT_WEIGHT）。学習データが足りなければ層なしで進む
+      const shotLayer = fitShotLayer(train, SHOT_WEIGHT, { asOf: NOW, ridge: RIDGE, xi: XI }, MIN_TRAIN);
       const count = new Map<string, number>();
       for (const t of train) {
         count.set(t.home, (count.get(t.home) ?? 0) + 1);
@@ -432,11 +440,12 @@ function daily(): void {
           deferredCount++;
           continue;
         }
-        const p = predictMatch(fit, m.home, m.away);
+        const p = predictWithShots(fit, shotLayer, m.home, m.away);
         const res = L.publishPrediction({
           providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MODEL, asOf: NOW, nTrain: fit.nMatches,
           pHome: Number(p.outcome.home.toFixed(4)), pDraw: Number(p.outcome.draw.toFixed(4)), pAway: Number((1 - Number(p.outcome.home.toFixed(4)) - Number(p.outcome.draw.toFixed(4))).toFixed(4)),
           lambdaHome: Number(p.lambda.toFixed(3)), lambdaAway: Number(p.mu.toFixed(3)),
+          shotWeight: p.usedShots ? SHOT_WEIGHT : 0,
           market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
           historyAsOf, historyMissing, ridge: fit.ridge, xi: fit.xi, nTeamMin,
         });

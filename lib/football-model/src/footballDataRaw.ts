@@ -123,6 +123,10 @@ export function parseFootballDataRaw(text: string, opts: { divisions?: string[] 
       out.fixtures.push({ division, dateLocal: date, timeLocal, home, away, odds });
       continue;
     }
+    // 枠内シュート（HST / AST）。元から CSV にある列で、追加の取得元も鍵も要らない。
+    // 古い季や一部リーグには無いので、読めた行だけに付ける（推測で埋めない）
+    const hst = num(pick(row, "HST"));
+    const ast = num(pick(row, "AST"));
     out.matches.push({
       division,
       date: `${date}T${timeLocal ?? "00:00"}:00Z`,
@@ -131,6 +135,9 @@ export function parseFootballDataRaw(text: string, opts: { divisions?: string[] 
       homeGoals: Math.round(h),
       awayGoals: Math.round(a),
       odds,
+      ...(hst !== null && ast !== null && hst >= 0 && ast >= 0
+        ? { homeSot: Math.round(hst), awaySot: Math.round(ast) }
+        : {}),
     });
   }
   return out;

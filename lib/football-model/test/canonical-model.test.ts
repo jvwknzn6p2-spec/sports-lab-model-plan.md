@@ -20,7 +20,7 @@ import { readFileSync } from "node:fs";
 const cli = readFileSync(new URL("../src/cli/football.ts", import.meta.url), "utf8");
 
 /** 現行の正準設定。**変えるときはモデル名も変える**（下の検査がそれを強制する） */
-const CANONICAL = { model: "dc-v3-decay", xi: 0.002, ridge: 2, windowDays: 1500 } as const;
+const CANONICAL = { model: "dc-v5-shots", xi: 0.002, ridge: 2, windowDays: 1500, shotWeight: 0.25 } as const;
 
 function constOf(name: string): string {
   const m = new RegExp(`^const ${name} = ([^;]+);`, "m").exec(cli);
@@ -33,6 +33,7 @@ test("正準モデルの設定が表と一致する（変えるならモデル�
   assert.equal(Number(constOf("XI")), CANONICAL.xi);
   assert.equal(Number(constOf("RIDGE")), CANONICAL.ridge);
   assert.equal(Number(constOf("WINDOW_DAYS")), CANONICAL.windowDays);
+  assert.equal(Number(constOf("SHOT_WEIGHT")), CANONICAL.shotWeight);
 });
 
 test("履歴の保持は学習窓より長い（窓の先頭が履歴の外に出ない）", () => {
@@ -92,4 +93,14 @@ test("日程も The Odds API と無料の fixtures.csv の 2 経路から入れ�
   // 「どの試合があるか」の第 2 経路が要る。この結線を外さないこと
   assert.ok(/fixturesAsMatches\(freeRows, league, resolve\)/.test(cli), "無料の日程を読んでいない");
   assert.ok(/L\.recordFixtures\(freeFixtures, league, NOW\)/.test(cli), "無料の日程を台帳へ登録していない");
+});
+
+test("枠内シュート層を予想経路に結線し、使ったかどうかを行に残す", () => {
+  // θ を測って入れた層（2026-09-22）。結線を外すと静かに dc-v3-decay 相当へ戻る
+  assert.ok(/fitShotLayer\(train, SHOT_WEIGHT, \{ asOf: NOW, ridge: RIDGE, xi: XI \}, MIN_TRAIN\)/.test(cli), "層を作っていない");
+  assert.ok(/predictWithShots\(fit, shotLayer, m\.home, m\.away\)/.test(cli), "層を使って予想していない");
+  const pub = /publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
+  assert.ok(pub[1].includes("shotWeight"), "層を使ったかどうかを行に記録していない");
+  // 層が使えなかった試合は 0 を記録する（使ったことにしない）
+  assert.ok(/shotWeight: p\.usedShots \? SHOT_WEIGHT : 0/.test(cli), "層が使えなかった試合を 0 として残していない");
 });

@@ -23,6 +23,13 @@ export interface MatchRecord {
   away: string;
   homeGoals: number;
   awayGoals: number;
+  /**
+   * 枠内シュート（あれば）。**既定の学習には使わない**。
+   * `walkForward` の `shotWeight` を 0 より大きくしたときだけ効く測定用の入力で、
+   * 0 のときは本番と 1 ビットも変わらない。
+   */
+  homeSot?: number;
+  awaySot?: number;
 }
 
 export interface FitOptions {
@@ -314,4 +321,80 @@ export function predictMatch(
     matrix,
     clamped,
   };
+}
+
+/**
+ * 枠内シュート層つきの当てはめ（2026-09-22・`dc-v5-shots`）。
+ *
+ * **xG ではない。** 1 本ごとの質は分からないので、使っているのは「枠内シュートの本数」
+ * だけ。規約上自由に使える唯一の経路が football-data.co.uk の `HST` / `AST` 列で、
+ * 追加の取得元も鍵も要らない（実測: 全リーグ・全季で欠測 0）。
+ *
+ * やり方: 同じ Dixon-Coles を**枠内シュートの本数**にも当てはめ（低スコア補正 ρ は
+ * 枠内シュートには意味が無いので切る）、得られた λ を学習窓内の決定率
+ * （得点合計 / 枠内シュート合計）で得点尺度へ直し、得点由来の λ と `(1−θ):θ` で混ぜる。
+ * **決定率は学習窓の中だけ**から計算する（未来の試合を混ぜない）。
+ *
+ * 実測（probe の 4 季・9 リーグ・6,416 試合のウォークフォワード）:
+ *
+ * | θ | 選定期間 RPS | 検証期間 RPS | 検証の差 | t |
+ * |---|---|---|---|---|
+ * | 0（従来） | 0.2007 | 0.2004 | — | — |
+ * | 0.15 | 0.1999 | 0.1999 | −0.00048 | −3.62 |
+ * | **0.25** | 0.1995 | **0.1997** | **−0.00070** | **−3.16** |
+ * | 0.35 | 0.1992 | 0.1996 | −0.00084 | −2.69 |
+ * | 0.55 | 0.1989 | 0.1996 | −0.00086 | −1.75 |
+ *
+ * 選定期間だけなら θ=0.55 が最良だが、それはグリッドの端で検証期間では有意でない
+ * （過学習の典型）。**検証済みの平坦域の中央として 0.25 を採る。**
+ *
+ * **既知の限界**: これでも市場には勝てない。同じ 6,416 試合で市場は 0.1946 で、
+ * 対数オッズで結合しても**モデルを足した効果は −0.00003**（モデルの係数は −0.1 と負）。
+ * 枠内シュート層はモデル単独の質を上げるだけで、**市場を超えるエッジにはならない。**
+ */
+export interface ShotLayer {
+  /** 枠内シュートに当てはめた結果。学習データが足りなければ null */
+  fit: FitResult | null;
+  /** 学習窓内の決定率（得点合計 / 枠内シュート合計） */
+  conversion: number;
+  /** 混ぜる重み θ */
+  weight: number;
+}
+
+/** 学習データから枠内シュート層を作る。使えなければ `fit: null`（推測で埋めない） */
+export function fitShotLayer(train: readonly MatchRecord[], weight: number, opts: FitOptions, minMatches: number): ShotLayer {
+  if (weight <= 0) return { fit: null, conversion: 0, weight: 0 };
+  const withSot = train.filter((m) => typeof m.homeSot === "number" && typeof m.awaySot === "number");
+  const sot = withSot.reduce((a, m) => a + (m.homeSot as number) + (m.awaySot as number), 0);
+  const goals = withSot.reduce((a, m) => a + m.homeGoals + m.awayGoals, 0);
+  if (withSot.length < minMatches || sot <= 0) return { fit: null, conversion: 0, weight };
+  return {
+    fit: fitDixonColes(
+      withSot.map((m) => ({ ...m, homeGoals: m.homeSot as number, awayGoals: m.awaySot as number })),
+      { ...opts, fitRho: false },
+    ),
+    conversion: goals / sot,
+    weight,
+  };
+}
+
+/**
+ * 得点由来の当てはめと枠内シュート層を混ぜて確率を出す。
+ * 層が無い・どちらかのチームが層に無い場合は、得点由来のまま返す（フェイルクローズ）。
+ */
+export function predictWithShots(fit: FitResult, layer: ShotLayer, home: string, away: string): {
+  outcome: OutcomeProbabilities;
+  lambda: number;
+  mu: number;
+  usedShots: boolean;
+} {
+  const g = predictMatch(fit, home, away);
+  if (!layer.fit || !(home in layer.fit.attack) || !(away in layer.fit.attack) || layer.weight <= 0) {
+    return { outcome: g.outcome, lambda: g.lambda, mu: g.mu, usedShots: false };
+  }
+  const s = predictMatch(layer.fit, home, away);
+  const lambda = (1 - layer.weight) * g.lambda + layer.weight * s.lambda * layer.conversion;
+  const mu = (1 - layer.weight) * g.mu + layer.weight * s.mu * layer.conversion;
+  const matrix = scoreMatrix(lambda, mu, { maxGoals: 10, rho: fit.rho });
+  return { outcome: outcomeProbabilities(matrix), lambda, mu, usedShots: true };
 }
