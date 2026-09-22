@@ -42,7 +42,11 @@ import {
 } from "../history.ts";
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
-import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
+import {
+  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestHealth, ingestLevel, missedSeals,
+  nextZeroFixtureRuns, publishLevel, runTotals, seasonLive, settlementBacklog,
+  type RunLeague, type RunReport,
+} from "../health.ts";
 import { closingMarketResolver } from "../marketSnapshots.ts";
 import { clvEntries, summarizeClv } from "../clv.ts";
 import { FixtureMarketIndex, fixturesAsMatches, parseFixturesCsv } from "../footballDataFixtures.ts";
@@ -325,9 +329,27 @@ function latestOdds(sport: string): { events: OddsEvent[]; fetchedAt: string } |
   return { events: JSON.parse(readFileSync(join(dir, f), "utf8")) as OddsEvent[], fetchedAt };
 }
 
+/** 日次 1 回分の実績（`football/reports/run.json`）。health がこれを読む */
+function runReportPath(): string {
+  return join(ROOT, "reports", "run.json");
+}
+
+function readRunReport(): RunReport | null {
+  const p = runReportPath();
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8")) as RunReport;
+  } catch {
+    return null; // 壊れていても日次は止めない（前回の回数が分からなくなるだけ）
+  }
+}
+
 function daily(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const log: string[] = [];
+  // 1 回分の実績。取得元が返した試合数はこの回にしか存在しない事実で、
+  // 書き残さないと「同じ日程を返した」と「何も返さなかった」の区別が永久に付かない
+  const runLeagues: RunLeague[] = [];
   // 無料の市場（football-data の fixtures.csv）。クレジットを使わないので毎回読む
   const freeRows = fixtureRows();
   const freeMarkets = new FixtureMarketIndex(freeRows);
@@ -339,11 +361,16 @@ function daily(): void {
     const resolve = buildTeamResolver(names);
 
     // 1) 日程と市場
+    let fixtureAdded = 0;
+    let publishedCount = 0;
+    let deferredCount = 0;
+    let freeFixtureCount = 0;
     const odds = latestOdds(src.sport);
     let fixtures: ReturnType<typeof parseOddsEvents> = [];
     if (odds) {
       fixtures = parseOddsEvents(odds.events, resolve);
       const r = L.recordFixtures(fixtures, league, NOW);
+      fixtureAdded += r.added;
       log.push(`${league}: fixtures ${fixtures.length} (added ${r.added}, unresolved ${r.unresolved}) odds@${odds.fetchedAt}`);
       for (const f of fixtures.filter((x) => !x.resolved)) log.push(`  unresolved: ${f.home} v ${f.away}`);
       // 市場の写し（小さく）
@@ -362,8 +389,10 @@ function daily(): void {
     // 同じ試合が両方から入っても、正準重複検査（recordFixtures）が二重登録を防ぐ。
     // J1（JAP）は fixtures.csv に収録されないので、ここでは 0 件になる
     const freeFixtures = fixturesAsMatches(freeRows, league, resolve);
+    freeFixtureCount = freeFixtures.length;
     if (freeFixtures.length > 0) {
       const rf = L.recordFixtures(freeFixtures, league, NOW);
+      fixtureAdded += rf.added;
       log.push(`${league}: fd-fixtures ${freeFixtures.length} (added ${rf.added}, 重複 ${rf.duplicates}, unresolved ${rf.unresolved})`);
     }
 
@@ -399,6 +428,7 @@ function daily(): void {
         // 市場がどちらからも取れない試合は、封緘が近いものだけ出す（下記 MARKET_GRACE_HOURS）
         if (!market && Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000) {
           log.push(`  defer ${m.home} v ${m.away}: 市場が無く封緘まで余裕がある（kickoff ${m.kickoffAt}）`);
+          deferredCount++;
           continue;
         }
         const p = predictMatch(fit, m.home, m.away);
@@ -409,6 +439,7 @@ function daily(): void {
           market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
           historyAsOf, historyMissing, ridge: fit.ridge, xi: fit.xi, nTeamMin,
         });
+        if (res.ok) publishedCount++;
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }
     } else {
@@ -419,15 +450,39 @@ function daily(): void {
     const recent = history.filter((m) => Date.parse(m.date) >= Date.parse(NOW) - 30 * 86_400_000);
     const n = L.recordResults(recent, SOURCE_FOOTBALL_DATA, NOW);
     log.push(`${league}: results recorded ${n} (of ${recent.length} recent)`);
+
+    // 5) この回の実績（発行沈黙の検知に使う）
+    const openNow = [...L.currentMatches().values()].filter(
+      (m) => m.league === league && Date.parse(m.cutoffAt) > Date.parse(NOW),
+    ).length;
+    runLeagues.push({
+      league,
+      fixtures: fixtures.length + freeFixtureCount,
+      added: fixtureAdded,
+      published: publishedCount,
+      deferred: deferredCount,
+      openBeforeCutoff: openNow,
+    });
   }
   // 4) 決済
   // 決済では**キックオフ直前**の市場でも RPS を測る（marketSnapshots.ts）。予想行の market は
   // 発行時点の値で、発行範囲 720 時間では最大 25 日前になるため、それだけで対照し続けると
   // ベンチマークが古い市場に固定されてモデルを不当に良く見せる
   log.push(`settled ${L.settle(NOW, closingMarketResolver(join(ROOT, "market")))}`);
-  // 5) レポート
+  // 6) レポート
   mkdirSync(join(ROOT, "reports"), { recursive: true });
   writeFileSync(join(ROOT, "reports", "summary.md"), renderSummary(LEAGUES, L.predictions(), L.evaluations(), L.currentMatches(), NOW));
+  // 1 回分の実績。0 件の回が続いているかは前回の値から引き継ぐ（季が動いている回だけ数える）
+  const prev = readRunReport();
+  const live = seasonLive([...L.currentMatches().values()].map((m) => m.kickoffAt), NOW);
+  const report: RunReport = {
+    at: NOW,
+    zeroFixtureRuns: nextZeroFixtureRuns(prev?.zeroFixtureRuns ?? 0, runLeagues.reduce((a, l) => a + l.fixtures, 0), live),
+    leagues: runLeagues,
+  };
+  writeFileSync(runReportPath(), JSON.stringify(report, null, 2) + "\n");
+  const t = runTotals(report);
+  log.push(`run: 日程 ${t.fixtures} 件（新規 ${t.added}）・発行 ${t.published}・繰延 ${t.deferred}・封緘前 ${t.openBeforeCutoff}・0 件の回 ${report.zeroFixtureRuns} 連続${live ? "" : "（季が動いていないので数えない）"}`);
   console.log(log.join("\n"));
 }
 
@@ -645,6 +700,61 @@ function health(): void {
   }
   if (level === "warn") {
     console.error(`::warning::結果の取り込みが ${INGEST_WARN_HOURS} 時間以上止まっている（最後の取込 ${h.lastRecordedAt}）。${INGEST_FAIL_HOURS} 時間で失敗させる`);
+  }
+
+  // --- 発行の沈黙（2026-09-19〜22 の事故: 4 日間 予想 0 件でも緑だった）
+  const report = readRunReport();
+  if (report) {
+    const t = runTotals(report);
+    console.log(
+      `run@${report.at}: 日程 ${t.fixtures} 件（新規 ${t.added}）・発行 ${t.published}・繰延 ${t.deferred}` +
+        `・封緘前 ${t.openBeforeCutoff}・0 件の回 ${report.zeroFixtureRuns} 連続`,
+    );
+  } else {
+    console.log("run: 実績の記録がまだ無い（この仕組みより前の台帳）");
+  }
+  // 学習データにあるチームだけを「予想できたはず」と数える。
+  // **リーグは台帳から採る**（`--leagues` の既定は "JAP,E0" しかないので、そこに頼ると
+  // 他リーグの試合が全部「学習データ無し」に見える。2026-09-22 の再現実験で実測）
+  const cur = [...L.currentMatches().values()];
+  const known = new Set<string>();
+  for (const league of new Set(cur.map((m) => m.league))) {
+    for (const r of readHistory(HISTORY, league)) {
+      known.add(`${league}|${r.home}`);
+      known.add(`${league}|${r.away}`);
+    }
+  }
+  const missed = missedSeals(
+    L.matches(),
+    new Set(L.predictions().map((p) => p.providerId)),
+    (m) => {
+      const full = cur.find((x) => x.providerId === m.providerId);
+      return full ? known.has(`${full.league}|${full.home}`) && known.has(`${full.league}|${full.away}`) : false;
+    },
+    NOW,
+  );
+  const pub = publishLevel(report, missed);
+  console.log(
+    `発行 ${pub.level}: 取りこぼし ${pub.missed.length} 件` +
+      `（記録開始前 ${pub.missedBeforeStart.length} 件・学習データ無しで出せなかった ${pub.unpredictable.length} 件は判定に使わない）`,
+  );
+  for (const m of pub.missedBeforeStart.slice(0, 5)) {
+    console.log(`  参考（記録開始前）${m.league} ${m.kickoffAt}（封緘 ${m.cutoffAt} / 登録 ${m.firstRecordedAt}）`);
+  }
+  for (const m of pub.missed.slice(0, 10)) {
+    console.log(`  取りこぼし ${m.league} ${m.kickoffAt}（封緘 ${m.cutoffAt} / 登録 ${m.firstRecordedAt}） ${m.providerId}`);
+  }
+  if (pub.level === "fail") {
+    for (const r of pub.reasons) console.error(`::error::${r}`);
+    console.error(
+      `::error::予想の発行が正常に回っていない。日程は The Odds API（クレジット）と ` +
+        `football-data.co.uk の fixtures.csv（無料）の 2 経路。0 件が ${ZERO_FIXTURE_FAIL_RUNS} 回続くと赤くする` +
+        `（国際試合週間なら直近のキックオフも無いはずなので、その期間は数えない）`,
+    );
+    process.exit(1);
+  }
+  if (pub.level === "warn") {
+    console.error(`::warning::日程の取得元が ${pub.zeroFixtureRuns} 回連続で 1 件も試合を返していない（${ZERO_FIXTURE_FAIL_RUNS} 回で失敗させる）`);
   }
 }
 
