@@ -42,10 +42,16 @@ import {
 } from "../history.ts";
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
-import { INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ingestHealth, ingestLevel, settlementBacklog } from "../health.ts";
+import {
+  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestHealth, ingestLevel, missedSeals,
+  nextZeroFixtureRuns, publishLevel, runTotals, seasonLive, settlementBacklog,
+  type RunLeague, type RunReport,
+} from "../health.ts";
 import { closingMarketResolver } from "../marketSnapshots.ts";
 import { clvEntries, summarizeClv } from "../clv.ts";
-import { FixtureMarketIndex, parseFixturesCsv } from "../footballDataFixtures.ts";
+import { FixtureMarketIndex, fixturesAsMatches, parseFixturesCsv } from "../footballDataFixtures.ts";
+import { FDORG_COMPETITIONS, foldedIndexOf, historyFromFootballDataOrg, resolveOrgTeam, type FdOrgPayload } from "../footballDataOrg.ts";
+import type { FixtureMarket } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -240,7 +246,29 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
     notes.push("mirror absent");
   }
 
-  // 3) Odds API の scores（結果の速報・cache/scores/<sport>/<ts>.json の最新）
+  // 3) football-data.org（v4 API・結果だけ。co.uk が凍結した 2026-09-18〜 への備え）。
+  // トークン未設定なら cache にファイルが無いので、この節は丸ごと飛ぶ
+  const orgCode = Object.keys(FDORG_COMPETITIONS).find((c) => FDORG_COMPETITIONS[c] === league);
+  if (orgCode) {
+    const p = join(CACHE, "fdorg", `${orgCode}.json`);
+    if (existsSync(p)) {
+      try {
+        const payload = JSON.parse(readFileSync(p, "utf8")) as FdOrgPayload;
+        const names = new Set(rows.flatMap((m) => [m.home, m.away]));
+        const parsed = historyFromFootballDataOrg(payload, league, names, new Date(statSync(p).mtimeMs).toISOString());
+        const r = mergeHistory(rows, parsed.rows.filter((x) => x.date >= sinceIso));
+        rows = r.rows;
+        notes.push(`${fmtStats(`fdorg:${orgCode}`, r.stats)} (finished ${parsed.rows.length}, unresolved ${parsed.unresolved})`);
+        // 未解決の名前は**必ず出す**。これが FOOTBALL_DATA_ORG_ALIASES を埋める唯一の根拠で、
+        // 黙って捨てると「取得元を足したのに結果が増えない」理由が分からなくなる
+        if (parsed.unresolvedNames.length) log.push(`  fdorg 未解決の名前 (${league}): ${parsed.unresolvedNames.join(" / ")}`);
+      } catch (e) {
+        notes.push(`fdorg:${orgCode} 読めない（${(e as Error).message}）`);
+      }
+    }
+  }
+
+  // 4) Odds API の scores（結果の速報・cache/scores/<sport>/<ts>.json の最新）
   const sdir = join(CACHE, "scores", src.sport);
   if (existsSync(sdir)) {
     const files = readdirSync(sdir).filter((f) => f.endsWith(".json")).sort();
@@ -278,14 +306,14 @@ function fixturesFetchedAt(): string | null {
   return existsSync(p) ? new Date(statSync(p).mtimeMs).toISOString() : null;
 }
 
-function fixtureMarkets(): FixtureMarketIndex {
+function fixtureRows(): FixtureMarket[] {
   const p = join(CACHE, "fixtures.csv");
-  if (!existsSync(p)) return new FixtureMarketIndex([]);
+  if (!existsSync(p)) return [];
   try {
-    return new FixtureMarketIndex(parseFixturesCsv(readFileSync(p, "utf8")));
+    return parseFixturesCsv(readFileSync(p, "utf8"));
   } catch {
-    // 写しなので、壊れていても日次は止めない（市場が無い扱いになるだけ）
-    return new FixtureMarketIndex([]);
+    // 写しなので、壊れていても日次は止めない（日程も市場も無い扱いになるだけ）
+    return [];
   }
 }
 
@@ -301,11 +329,30 @@ function latestOdds(sport: string): { events: OddsEvent[]; fetchedAt: string } |
   return { events: JSON.parse(readFileSync(join(dir, f), "utf8")) as OddsEvent[], fetchedAt };
 }
 
+/** 日次 1 回分の実績（`football/reports/run.json`）。health がこれを読む */
+function runReportPath(): string {
+  return join(ROOT, "reports", "run.json");
+}
+
+function readRunReport(): RunReport | null {
+  const p = runReportPath();
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8")) as RunReport;
+  } catch {
+    return null; // 壊れていても日次は止めない（前回の回数が分からなくなるだけ）
+  }
+}
+
 function daily(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const log: string[] = [];
+  // 1 回分の実績。取得元が返した試合数はこの回にしか存在しない事実で、
+  // 書き残さないと「同じ日程を返した」と「何も返さなかった」の区別が永久に付かない
+  const runLeagues: RunLeague[] = [];
   // 無料の市場（football-data の fixtures.csv）。クレジットを使わないので毎回読む
-  const freeMarkets = fixtureMarkets();
+  const freeRows = fixtureRows();
+  const freeMarkets = new FixtureMarketIndex(freeRows);
   for (const league of LEAGUES) {
     const src = SOURCES[league];
     if (!src) throw new Error(`unknown league ${league}`);
@@ -314,11 +361,17 @@ function daily(): void {
     const resolve = buildTeamResolver(names);
 
     // 1) 日程と市場
+    let fixtureAdded = 0;
+    let publishedCount = 0;
+    let deferredCount = 0;
+    let futureFixtureCount = 0;
     const odds = latestOdds(src.sport);
     let fixtures: ReturnType<typeof parseOddsEvents> = [];
     if (odds) {
       fixtures = parseOddsEvents(odds.events, resolve);
       const r = L.recordFixtures(fixtures, league, NOW);
+      fixtureAdded += r.added;
+      futureFixtureCount += fixtures.filter((f) => Date.parse(f.kickoffAt) > Date.parse(NOW)).length;
       log.push(`${league}: fixtures ${fixtures.length} (added ${r.added}, unresolved ${r.unresolved}) odds@${odds.fetchedAt}`);
       for (const f of fixtures.filter((x) => !x.resolved)) log.push(`  unresolved: ${f.home} v ${f.away}`);
       // 市場の写し（小さく）
@@ -329,7 +382,19 @@ function daily(): void {
         JSON.stringify(fixtures.map((f) => ({ providerId: f.providerId, kickoffAt: f.kickoffAt, home: f.home, away: f.away, resolved: f.resolved, bookmakers: f.bookmakers, market: f.market })), null, 0) + "\n",
       );
     } else {
-      log.push(`${league}: odds が無い（予想は発行しない）`);
+      log.push(`${league}: The Odds API のオッズが無い`);
+    }
+
+    // 1b) 日程の第 2 経路（無料の fixtures.csv）。The Odds API のクレジットが尽きた日に
+    // **日程そのものが入らず発行 0 件**になっていた（2026-09-19〜21 実発生）ことへの対策。
+    // 同じ試合が両方から入っても、正準重複検査（recordFixtures）が二重登録を防ぐ。
+    // J1（JAP）は fixtures.csv に収録されないので、ここでは 0 件になる
+    const freeFixtures = fixturesAsMatches(freeRows, league, resolve);
+    futureFixtureCount += freeFixtures.filter((f) => Date.parse(f.kickoffAt) > Date.parse(NOW)).length;
+    if (freeFixtures.length > 0) {
+      const rf = L.recordFixtures(freeFixtures, league, NOW);
+      fixtureAdded += rf.added;
+      log.push(`${league}: fd-fixtures ${freeFixtures.length} (added ${rf.added}, 重複 ${rf.duplicates}, unresolved ${rf.unresolved})`);
     }
 
     // 2) 予想（封緘前・未発行・48h 以内）
@@ -364,6 +429,7 @@ function daily(): void {
         // 市場がどちらからも取れない試合は、封緘が近いものだけ出す（下記 MARKET_GRACE_HOURS）
         if (!market && Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000) {
           log.push(`  defer ${m.home} v ${m.away}: 市場が無く封緘まで余裕がある（kickoff ${m.kickoffAt}）`);
+          deferredCount++;
           continue;
         }
         const p = predictMatch(fit, m.home, m.away);
@@ -374,6 +440,7 @@ function daily(): void {
           market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
           historyAsOf, historyMissing, ridge: fit.ridge, xi: fit.xi, nTeamMin,
         });
+        if (res.ok) publishedCount++;
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
       }
     } else {
@@ -384,15 +451,43 @@ function daily(): void {
     const recent = history.filter((m) => Date.parse(m.date) >= Date.parse(NOW) - 30 * 86_400_000);
     const n = L.recordResults(recent, SOURCE_FOOTBALL_DATA, NOW);
     log.push(`${league}: results recorded ${n} (of ${recent.length} recent)`);
+
+    // 5) この回の実績（発行沈黙の検知に使う）
+    const openNow = [...L.currentMatches().values()].filter(
+      (m) => m.league === league && Date.parse(m.cutoffAt) > Date.parse(NOW),
+    ).length;
+    runLeagues.push({
+      league,
+      // **キックオフが未来のものだけ数える**（2026-09-22 の probe で実測した罠）。
+      // football-data.co.uk が凍結すると fixtures.csv は「過去の試合だけ」を返し続ける。
+      // 行数で数えると 81 件返ってきて「取得元は生きている」に見えるが、発行できる試合は
+      // 1 件も無い。実際 9/22 の取得（07:40Z）は 18〜20/09 の過去分しか含まなかった
+      fixtures: futureFixtureCount,
+      added: fixtureAdded,
+      published: publishedCount,
+      deferred: deferredCount,
+      openBeforeCutoff: openNow,
+    });
   }
   // 4) 決済
   // 決済では**キックオフ直前**の市場でも RPS を測る（marketSnapshots.ts）。予想行の market は
   // 発行時点の値で、発行範囲 720 時間では最大 25 日前になるため、それだけで対照し続けると
   // ベンチマークが古い市場に固定されてモデルを不当に良く見せる
   log.push(`settled ${L.settle(NOW, closingMarketResolver(join(ROOT, "market")))}`);
-  // 5) レポート
+  // 6) レポート
   mkdirSync(join(ROOT, "reports"), { recursive: true });
   writeFileSync(join(ROOT, "reports", "summary.md"), renderSummary(LEAGUES, L.predictions(), L.evaluations(), L.currentMatches(), NOW));
+  // 1 回分の実績。0 件の回が続いているかは前回の値から引き継ぐ（季が動いている回だけ数える）
+  const prev = readRunReport();
+  const live = seasonLive([...L.currentMatches().values()].map((m) => m.kickoffAt), NOW);
+  const report: RunReport = {
+    at: NOW,
+    zeroFixtureRuns: nextZeroFixtureRuns(prev?.zeroFixtureRuns ?? 0, runLeagues.reduce((a, l) => a + l.fixtures, 0), live),
+    leagues: runLeagues,
+  };
+  writeFileSync(runReportPath(), JSON.stringify(report, null, 2) + "\n");
+  const t = runTotals(report);
+  log.push(`run: 日程 ${t.fixtures} 件（新規 ${t.added}）・発行 ${t.published}・繰延 ${t.deferred}・封緘前 ${t.openBeforeCutoff}・0 件の回 ${report.zeroFixtureRuns} 連続${live ? "" : "（季が動いていないので数えない）"}`);
   console.log(log.join("\n"));
 }
 
@@ -611,6 +706,61 @@ function health(): void {
   if (level === "warn") {
     console.error(`::warning::結果の取り込みが ${INGEST_WARN_HOURS} 時間以上止まっている（最後の取込 ${h.lastRecordedAt}）。${INGEST_FAIL_HOURS} 時間で失敗させる`);
   }
+
+  // --- 発行の沈黙（2026-09-19〜22 の事故: 4 日間 予想 0 件でも緑だった）
+  const report = readRunReport();
+  if (report) {
+    const t = runTotals(report);
+    console.log(
+      `run@${report.at}: 日程 ${t.fixtures} 件（新規 ${t.added}）・発行 ${t.published}・繰延 ${t.deferred}` +
+        `・封緘前 ${t.openBeforeCutoff}・0 件の回 ${report.zeroFixtureRuns} 連続`,
+    );
+  } else {
+    console.log("run: 実績の記録がまだ無い（この仕組みより前の台帳）");
+  }
+  // 学習データにあるチームだけを「予想できたはず」と数える。
+  // **リーグは台帳から採る**（`--leagues` の既定は "JAP,E0" しかないので、そこに頼ると
+  // 他リーグの試合が全部「学習データ無し」に見える。2026-09-22 の再現実験で実測）
+  const cur = [...L.currentMatches().values()];
+  const known = new Set<string>();
+  for (const league of new Set(cur.map((m) => m.league))) {
+    for (const r of readHistory(HISTORY, league)) {
+      known.add(`${league}|${r.home}`);
+      known.add(`${league}|${r.away}`);
+    }
+  }
+  const missed = missedSeals(
+    L.matches(),
+    new Set(L.predictions().map((p) => p.providerId)),
+    (m) => {
+      const full = cur.find((x) => x.providerId === m.providerId);
+      return full ? known.has(`${full.league}|${full.home}`) && known.has(`${full.league}|${full.away}`) : false;
+    },
+    NOW,
+  );
+  const pub = publishLevel(report, missed);
+  console.log(
+    `発行 ${pub.level}: 取りこぼし ${pub.missed.length} 件` +
+      `（記録開始前 ${pub.missedBeforeStart.length} 件・学習データ無しで出せなかった ${pub.unpredictable.length} 件は判定に使わない）`,
+  );
+  for (const m of pub.missedBeforeStart.slice(0, 5)) {
+    console.log(`  参考（記録開始前）${m.league} ${m.kickoffAt}（封緘 ${m.cutoffAt} / 登録 ${m.firstRecordedAt}）`);
+  }
+  for (const m of pub.missed.slice(0, 10)) {
+    console.log(`  取りこぼし ${m.league} ${m.kickoffAt}（封緘 ${m.cutoffAt} / 登録 ${m.firstRecordedAt}） ${m.providerId}`);
+  }
+  if (pub.level === "fail") {
+    for (const r of pub.reasons) console.error(`::error::${r}`);
+    console.error(
+      `::error::予想の発行が正常に回っていない。日程は The Odds API（クレジット）と ` +
+        `football-data.co.uk の fixtures.csv（無料）の 2 経路。0 件が ${ZERO_FIXTURE_FAIL_RUNS} 回続くと赤くする` +
+        `（国際試合週間なら直近のキックオフも無いはずなので、その期間は数えない）`,
+    );
+    process.exit(1);
+  }
+  if (pub.level === "warn") {
+    console.error(`::warning::日程の取得元が ${pub.zeroFixtureRuns} 回連続で 1 件も試合を返していない（${ZERO_FIXTURE_FAIL_RUNS} 回で失敗させる）`);
+  }
 }
 
 /**
@@ -645,13 +795,79 @@ function clv(): void {
   console.log("\n的中率と同じで、n が小さい行の数字は読まない。EV も賭けの推奨も出していない。");
 }
 
+/**
+ * `fdorg-aliases` — football-data.org の未解決チーム名を**実データから機械的に導く**。
+ *
+ * 記憶で対応表を書かないための手順。**同じリーグ・同じ日（±1 日）で、相手チームが
+ * 一致する試合**を履歴（co.uk）と台帳の日程から引き、残った側の名前を読む。
+ * 相手が一意に決まらない試合は採らない。支持した試合数も数え、**候補が食い違う名前は
+ * 採らない**。解決済みの名前が増えると新たに導けるものが出るので、**0 件になるまで
+ * 繰り返し走らせる**（導いた行を表へ貼って再実行）。
+ *
+ *   node --experimental-strip-types src/cli/football.ts fdorg-aliases \
+ *     --root football --history football/history --fdorg probe/football
+ */
+function fdorgAliases(): void {
+  const dir = arg("fdorg", "probe/football")!;
+  const L = new Ledger(join(ROOT, "ledger"));
+  const ledgerMatches = [...L.currentMatches().values()];
+  const votes = new Map<string, Map<string, number>>();
+  const ambiguous: string[] = [];
+  for (const [comp, league] of Object.entries(FDORG_COMPETITIONS)) {
+    const p = join(dir, `fdorg-${comp}.json`);
+    if (!existsSync(p)) continue;
+    const hist = readHistory(HISTORY, league);
+    const names = new Set(hist.flatMap((m) => [m.home, m.away]));
+    const idx = foldedIndexOf(names);
+    // 突合の相手: 履歴（co.uk の結果）＋ 台帳の日程（co.uk 名に解決済み）
+    const pool = [
+      ...hist.map((h) => ({ date: h.date, home: h.home, away: h.away })),
+      ...ledgerMatches.filter((m) => m.league === league).map((m) => ({ date: m.kickoffAt.slice(0, 10), home: m.home, away: m.away })),
+    ];
+    const payload = JSON.parse(readFileSync(p, "utf8")) as FdOrgPayload;
+    for (const m of payload.matches ?? []) {
+      if (m.status !== "FINISHED" || typeof m.utcDate !== "string") continue;
+      const home = resolveOrgTeam(m.homeTeam, names, idx);
+      const away = resolveOrgTeam(m.awayTeam, names, idx);
+      if ((home && away) || (!home && !away)) continue; // 両方分かる/両方分からないは導けない
+      const day = Date.parse(m.utcDate.slice(0, 10) + "T00:00:00Z");
+      const cand = pool.filter((x) => Math.abs(Date.parse(x.date + "T00:00:00Z") - day) <= 86_400_000 && (home ? x.home === home : x.away === away));
+      const uniq = [...new Set(cand.map((x) => (home ? x.away : x.home)))];
+      const t = home ? m.awayTeam : m.homeTeam;
+      const orgName = t?.shortName ?? t?.name ?? "(名前なし)";
+      if (uniq.length !== 1) {
+        ambiguous.push(`${league} ${orgName} (${m.utcDate.slice(0, 10)}): 候補 ${uniq.length} 件`);
+        continue;
+      }
+      const v = votes.get(orgName) ?? new Map<string, number>();
+      v.set(uniq[0], (v.get(uniq[0]) ?? 0) + 1);
+      votes.set(orgName, v);
+    }
+  }
+  const out: string[] = [];
+  for (const [org, v] of [...votes].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const entries = [...v].sort((a, b) => b[1] - a[1]);
+    if (entries.length > 1) {
+      console.log(`  ※ ${org}: 候補が食い違う ${JSON.stringify(entries)} → 採らない`);
+      continue;
+    }
+    console.log(`  ${org} → ${entries[0][0]} (${entries[0][1]} 試合が支持)`);
+    out.push(`  ${JSON.stringify(org)}: ${JSON.stringify(entries[0][0])},`);
+  }
+  for (const a of ambiguous) console.log(`  相手から一意に決まらない: ${a}`);
+  console.log(`\n導けた ${out.length} 名（FOOTBALL_DATA_ORG_ALIASES へ貼る）`);
+  for (const l of out) console.log(l);
+}
+
+
 if (cmd === "daily") daily();
 else if (cmd === "scores-needed") scoresNeeded();
 else if (cmd === "health") health();
 else if (cmd === "clv") clv();
 else if (cmd === "history-import") historyImport();
+else if (cmd === "fdorg-aliases") fdorgAliases();
 else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|health|clv|scores-needed|history-import|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
+  console.error("usage: football.ts daily|health|clv|scores-needed|history-import|fdorg-aliases|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }

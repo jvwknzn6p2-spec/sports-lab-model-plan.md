@@ -36,12 +36,42 @@ test("cutoffOf: 試合日（JST）の前日 20:00 JST（= 11:00Z）", () => {
 test("日程: 解決済みだけ登録し、同じ内容は追記しない・キックオフ変更は行が増える", () => {
   const L = fresh();
   const fx1 = j1();
-  assert.deepEqual(L.recordFixtures(fx1, "JAP", "2026-09-03T01:00:00Z"), { added: 10, unresolved: 0 });
-  assert.deepEqual(L.recordFixtures(fx1, "JAP", "2026-09-03T02:00:00Z"), { added: 0, unresolved: 0 });
+  assert.deepEqual(L.recordFixtures(fx1, "JAP", "2026-09-03T01:00:00Z"), { added: 10, unresolved: 0, duplicates: 0 });
+  assert.deepEqual(L.recordFixtures(fx1, "JAP", "2026-09-03T02:00:00Z"), { added: 0, unresolved: 0, duplicates: 0 });
   const moved = [{ ...fx1[0], kickoffAt: "2026-09-05T11:00:00Z" }];
   assert.equal(L.recordFixtures(moved, "JAP", "2026-09-03T03:00:00Z").added, 1);
   assert.equal(L.currentMatches().get(fx1[0].providerId)!.kickoffAt, "2026-09-05T11:00:00Z");
   assert.equal(L.matches().length, 11);
+});
+
+test("日程: 同じ試合を別の providerId で二重に登録しない（取得元が 2 つになったため）", () => {
+  // The Odds API のクレジットが尽きた日に無料の fixtures.csv からも日程を入れるようにした
+  // （2026-09-21）。同じ試合が別 ID で 2 行入ると、1 試合に 2 つの予想が立ち、決済でも
+  // 2 件として数えられる。**先に入っている方を残す**（どちらが先でも結果は同じ）
+  const [f] = j1();
+  const L = fresh();
+  assert.equal(L.recordFixtures([f], "JAP", "2026-09-03T01:00:00Z").added, 1);
+  const alias = { ...f, provider: "football-data" as const, providerId: `fd:JAP:${f.home}:${f.away}:2026-09-05` };
+  assert.deepEqual(L.recordFixtures([alias], "JAP", "2026-09-03T02:00:00Z"), { added: 0, unresolved: 0, duplicates: 1 });
+  assert.equal(L.matches().length, 1);
+
+  // 逆順でも同じ（無料の日程が先に入り、後から The Odds API が同じ試合を返す）
+  const L2 = fresh();
+  assert.equal(L2.recordFixtures([alias], "JAP", "2026-09-03T01:00:00Z").added, 1);
+  assert.equal(L2.recordFixtures([f], "JAP", "2026-09-03T02:00:00Z").duplicates, 1);
+  assert.equal(L2.matches().length, 1);
+  assert.equal(L2.currentMatches().get(alias.providerId)!.providerId, alias.providerId);
+
+  // 同じ回の中で両方渡されても 1 行しか入らない
+  const L3 = fresh();
+  assert.deepEqual(L3.recordFixtures([f, alias], "JAP", "2026-09-03T01:00:00Z"), { added: 1, unresolved: 0, duplicates: 1 });
+
+  // キックオフが 2 日以上離れていれば別の試合として入る（延期・再戦）
+  const L4 = fresh();
+  L4.recordFixtures([f], "JAP", "2026-09-03T01:00:00Z");
+  const later = { ...alias, kickoffAt: new Date(Date.parse(f.kickoffAt) + 3 * 86_400_000).toISOString() };
+  assert.equal(L4.recordFixtures([later], "JAP", "2026-09-03T02:00:00Z").added, 1);
+  assert.equal(L4.matches().length, 2);
 });
 
 test("日程: 封緘規則が変わった試合は行を足して現行の cutoffAt にする（既存行は書き換えない）", () => {

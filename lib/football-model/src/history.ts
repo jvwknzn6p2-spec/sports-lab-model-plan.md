@@ -8,8 +8,9 @@
  * 毎日の取得は履歴への**差分の追記・更新**にする。取得元が全滅した日も、前日までの履歴で
  * 予想は出る（その予想は `historyAsOf` / `historyMissing` で鮮度を台帳に残す）。
  *
- * 取得元は 3 つ。優先度（同じ試合で得点が食い違ったときに勝つ側）:
- *   3 football-data.co.uk（一次情報・現地日付・B365 オッズ）
+ * 取得元は 4 つ。優先度（同じ試合で得点が食い違ったときに勝つ側）:
+ *   4 football-data.co.uk（一次情報・現地日付・B365 オッズ）
+ *   3 football-data.org（v4 API・独立した一次情報。日付は UTC。オッズ無し・要トークン）
  *   2 mirror:xgabora（GitHub 上の写し。football-data.co.uk 由来で名前も同じ。更新は不定期）
  *   1 the-odds-api:scores（結果の速報。日付は UTC のキックオフ。オッズ無し）
  * 台帳（ledger/results.ndjson）は従来どおり追記専用。ここは「現在の最良の知識」を
@@ -23,11 +24,19 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const SOURCE_FOOTBALL_DATA = "football-data.co.uk";
+export const SOURCE_FOOTBALL_DATA_ORG = "football-data.org";
 export const SOURCE_MIRROR = "mirror:xgabora";
 export const SOURCE_ODDS_SCORES = "the-odds-api:scores";
 
+/**
+ * 同じ試合で得点が食い違ったときに勝つ側。**相対順だけが意味を持つ**（`mergeHistory` は
+ * 大小しか見ない）ので、間に足すために全体を 1 つ繰り上げても既存の挙動は変わらない。
+ * football-data.org を co.uk の下に置くのは鮮度の話ではなく、**現地日付と B365 オッズを
+ * 持つのが co.uk だけ**だから（2026-09-21 に第 3 の結果取得元として追加）。
+ */
 const PRIORITY: Record<string, number> = {
-  [SOURCE_FOOTBALL_DATA]: 3,
+  [SOURCE_FOOTBALL_DATA]: 4,
+  [SOURCE_FOOTBALL_DATA_ORG]: 3,
   [SOURCE_MIRROR]: 2,
   [SOURCE_ODDS_SCORES]: 1,
 };

@@ -170,6 +170,36 @@ jobs:
             remaining=$(grep -i '^x-requests-remaining:' /tmp/h.txt | tr -d '\r' | awk '{print $2}' || echo "$remaining")
           done < /tmp/scores-needed.txt
 
+      - name: 結果を取得（football-data.org v4・トークンが無ければ飛ばす）
+        env:
+          FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
+        run: |
+          set -u
+          # football-data.co.uk が 9/13〜9/17 の内容で凍結し、写しも Odds API scores も
+          # 使えず、結果の取得元が同時に 3 つとも死んだ（2026-09-21 実測・決済待ち 90 件）。
+          # co.uk 由来でない独立した経路として足す。**結果だけ**で、日程にも市場にも使わない。
+          # トークン未設定の間は何もせず成功終了する（archive.yml と同じ流儀）
+          if [ -z "${FOOTBALL_DATA_ORG_TOKEN:-}" ]; then echo "FOOTBALL_DATA_ORG_TOKEN unset — skip"; exit 0; fi
+          mkdir -p football/cache/fdorg
+          from=$(date -u -d '14 days ago' +%F)
+          to=$(date -u -d '1 day' +%F)
+          # 無料枠は 10 リクエスト/分。7 競技なので 7 秒おきに 1 本で十分収まる
+          for comp in PL BL1 SA PD FL1 PPL DED; do
+            out="football/cache/fdorg/$comp.json"
+            code=$(curl -sS --max-time 30 -o "$out" -D /tmp/fdorg-h.txt -w "%{http_code}" \
+              -H "X-Auth-Token: $FOOTBALL_DATA_ORG_TOKEN" \
+              "https://api.football-data.org/v4/competitions/$comp/matches?dateFrom=$from&dateTo=$to")
+            n=0
+            if [ "$code" = "200" ]; then n=$(grep -o '"status"' "$out" | wc -l); else rm -f "$out"; fi
+            # 発行元の案内どおり、残り回数のヘッダを記録する。**名前を決め打ちしない**
+            # （X-Requests-Available-Minute 等の綴りを記憶で書くと、違っていても静かに
+            # 空振りする）。X- で始まる応答ヘッダをそのまま出し、実物を見てから絞る
+            hdr=$(grep -i '^x-' /tmp/fdorg-h.txt | grep -iv '^x-auth' | tr -d '\r' | tr '\n' ' ')
+            echo "fdorg $comp HTTP $code ($n 件) $hdr"
+            rm -f /tmp/fdorg-h.txt
+            sleep 7
+          done
+
       - name: 日次パイプライン
         run: node --experimental-strip-types lib/football-model/src/cli/football.ts daily --root football --cache football/cache --leagues E0,I1,SP1,D1,N1,F1,P1,B1,SC0,JAP
 

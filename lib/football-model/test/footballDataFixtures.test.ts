@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FixtureMarketIndex, marketFromRow, parseFixturesCsv } from "../src/footballDataFixtures.ts";
+import { FixtureMarketIndex, fixturesAsMatches, marketFromRow, parseFixturesCsv, ukLocalToUtc } from "../src/footballDataFixtures.ts";
 
 const real = readFileSync(new URL("../fixtures/fd-fixtures.csv", import.meta.url), "utf8");
 
@@ -86,4 +86,51 @@ test("索引: 市場の無い行は引かない（null を返すのではなく�
   ));
   assert.equal(idx.size, 0);
   assert.equal(idx.find("E0", "Leeds", "Everton", "2026-09-19T14:00:00Z"), null);
+});
+
+test("英国現地時刻 → UTC（夏時間あり）", () => {
+  // BST（3 月最終日曜〜10 月最終日曜）は UTC+1
+  assert.equal(ukLocalToUtc("2026-09-20", "17:30"), "2026-09-20T16:30:00Z");
+  assert.equal(ukLocalToUtc("2026-06-01", "15:00"), "2026-06-01T14:00:00Z");
+  // GMT の期間は UTC そのもの
+  assert.equal(ukLocalToUtc("2026-12-26", "15:00"), "2026-12-26T15:00:00Z");
+  assert.equal(ukLocalToUtc("2026-02-01", "20:00"), "2026-02-01T20:00:00Z");
+  // 切替日の当日（2026 年は 3/29 01:00Z に BST 開始・10/25 02:00 BST に終了）
+  assert.equal(ukLocalToUtc("2026-03-29", "14:00"), "2026-03-29T13:00:00Z");
+  assert.equal(ukLocalToUtc("2026-10-25", "14:00"), "2026-10-25T14:00:00Z");
+  // 読めないものは埋めない
+  assert.equal(ukLocalToUtc("2026-09-20", null), null);
+  assert.equal(ukLocalToUtc("20/09/2026", "17:30"), null);
+  assert.equal(ukLocalToUtc("2026-09-20", "なし"), null);
+});
+
+test("実サンプル: 全行にキックオフ（UTC）が付く", () => {
+  const fx = parseFixturesCsv(real);
+  assert.equal(fx.filter((f) => f.kickoffAt).length, fx.length);
+  assert.equal(fx[0].kickoffAt, "2026-09-02T18:30:00Z"); // B1 09-02 19:30 英国現地
+});
+
+test("日程の取得元として使う: リーグで絞り、時刻の無い行は入れない", () => {
+  const fx = parseFixturesCsv(real);
+  const names = new Set(fx.flatMap((f) => [f.home, f.away]));
+  const resolve = (n: string) => (names.has(n) ? n : null);
+  const b1 = fixturesAsMatches(fx, "B1", resolve);
+  assert.equal(b1.length, fx.filter((f) => f.division === "B1").length);
+  assert.ok(b1.every((m) => m.provider === "football-data" && m.resolved && m.kickoffAt));
+  assert.ok(b1.every((m) => m.providerId.startsWith("fd:B1:")));
+  // 別リーグは混ざらない
+  assert.equal(fixturesAsMatches(fx, "E0", resolve).every((m) => m.providerId.startsWith("fd:E0:")), true);
+  // 時刻が無い行は日程にしない（封緘時刻を決められないため）
+  const noTime = parseFixturesCsv(
+    "Div,Date,Time,HomeTeam,AwayTeam,B365H,B365D,B365A\nE0,19/09/2026,,Leeds,Everton,2.0,3.5,4.0",
+  );
+  assert.equal(noTime.length, 1);
+  assert.equal(fixturesAsMatches(noTime, "E0", (n) => n).length, 0);
+});
+
+test("日程の取得元: 名前が解決できない行は resolved=false で返す（捨てない）", () => {
+  const fx = parseFixturesCsv(real);
+  const out = fixturesAsMatches(fx, "B1", () => null);
+  assert.ok(out.length > 0);
+  assert.ok(out.every((m) => !m.resolved), "解決できないのに resolved=true になっている");
 });
