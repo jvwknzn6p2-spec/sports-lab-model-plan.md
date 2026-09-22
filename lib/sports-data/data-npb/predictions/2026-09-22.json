@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-21T15:05:13.282Z",
-  "updatedAt": "2026-09-21T15:05:13.282Z",
+  "updatedAt": "2026-09-22T05:56:21.115Z",
   "controlTower": {
     "date": "2026-09-22",
     "season": 1002026,
@@ -35,7 +35,7 @@
     }
   },
   "calibration": {
-    "shrink": 0.862,
+    "shrink": 0.855,
     "tailShrink": 0.896,
     "farTailShrink": 0.863,
     "handicapShrink": 0.838,
@@ -44,9 +44,9 @@
     "totalShrink": 0.87,
     "totalTailShrink": 0.859,
     "totalFarTailShrink": 0.834,
-    "gamesSettled": 41,
-    "brierSum": 8.8504,
-    "updatedAt": "2026-09-20T23:39:02.939Z"
+    "gamesSettled": 42,
+    "brierSum": 9.154,
+    "updatedAt": "2026-09-22T00:20:07.494Z"
   },
   "predictions": [
     {
@@ -57,8 +57,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.569,
-      "rawWinProbability": 0.58,
+      "winProbability": 0.568,
+      "rawWinProbability": 0.579,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -76,7 +76,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.03,
+        "predicted": 7.06,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -85,8 +85,8 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.12,
-        "away": 3.75
+        "home": 3.13,
+        "away": 3.76
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
@@ -94,11 +94,11 @@
         "Offense edge: 阪神タイガース (wOBA 0.298 vs 0.279)",
         "Bullpen edge: 阪神タイガース",
         "Park factor 104 (hitter-friendly)",
-        "Expected runs 3.12–3.75 over 10000 sims",
+        "Expected runs 3.13–3.76 over 10000 sims",
         "away: cold bats — 2.8 R/G last 15 (season baseline 3.8)",
         "home: no starter data — league-average assumed",
         "away: no starter data — league-average assumed",
-        "Weather: 26°C at first pitch — run environment ×1.034"
+        "Weather: 26°C at first pitch — run environment ×1.037"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
@@ -116,12 +116,12 @@
       "gameDate": "2026-09-22T09:00:00.000Z",
       "home": "横浜DeNAベイスターズ",
       "away": "中日ドラゴンズ",
-      "pass": true,
-      "predictedWinner": null,
-      "predictedLoser": null,
-      "winProbability": 0.625,
-      "rawWinProbability": 0.645,
-      "confidence": "C",
+      "pass": false,
+      "predictedWinner": "横浜DeNAベイスターズ",
+      "predictedLoser": "中日ドラゴンズ",
+      "winProbability": 0.606,
+      "rawWinProbability": 0.625,
+      "confidence": "A",
       "handicap": {
         "input": {
           "side": "home",
@@ -138,7 +138,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.8,
+        "predicted": 7.68,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -147,25 +147,22 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.49,
-        "away": 3.1
+        "home": 4.34,
+        "away": 3.17
       },
       "reasons": [
-        "PASS: incomplete/downgraded data",
         "No handicap line entered — run line not quoted (moneyline and total only)",
-        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.299 vs 0.287)",
+        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.299 vs 0.288)",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 4.49–3.10 over 10000 sims",
+        "Expected runs 4.34–3.17 over 10000 sims",
         "home: hot bats — 4.7 R/G last 15 (season baseline 3.9)",
-        "home: no starter data — league-average assumed",
-        "away: no starter data — league-average assumed",
-        "Weather: 26°C at first pitch — run environment ×1.034"
+        "Weather: 26°C at first pitch — run environment ×1.036"
       ],
       "flags": [
-        "[downgrade] home_no_probable_pitcher",
+        "[info] home_starter_xfip_estimated",
         "[info] home_lineup_not_posted",
         "[info] home_players_on_il",
-        "[downgrade] away_no_probable_pitcher",
+        "[info] away_starter_xfip_estimated",
         "[info] away_lineup_not_posted",
         "[info] away_players_on_il"
       ],
@@ -230,7 +227,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-22T05:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026092208,
@@ -240,8 +237,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.594,
-      "rawWinProbability": 0.61,
+      "winProbability": 0.595,
+      "rawWinProbability": 0.611,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -259,7 +256,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 8.26,
+        "predicted": 8.23,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -268,20 +265,19 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.5,
-        "away": 3.53
+        "home": 4.52,
+        "away": 3.51
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
         "No handicap line entered — run line not quoted (moneyline and total only)",
-        "Offense edge: 北海道日本ハムファイターズ (wOBA 0.313 vs 0.290)",
+        "Offense edge: 北海道日本ハムファイターズ (wOBA 0.314 vs 0.290)",
         "Park factor 108 (hitter-friendly)",
-        "Expected runs 4.50–3.53 over 10000 sims",
-        "home: no starter data — league-average assumed",
+        "Expected runs 4.52–3.51 over 10000 sims",
         "away: no starter data — league-average assumed"
       ],
       "flags": [
-        "[downgrade] home_no_probable_pitcher",
+        "[info] home_starter_xfip_estimated",
         "[info] home_lineup_not_posted",
         "[info] home_players_on_il",
         "[downgrade] away_no_probable_pitcher",
@@ -296,12 +292,12 @@
       "gameDate": "2026-09-22T09:00:00.000Z",
       "home": "千葉ロッテマリーンズ",
       "away": "オリックス・バファローズ",
-      "pass": true,
-      "predictedWinner": null,
-      "predictedLoser": null,
-      "winProbability": 0.538,
-      "rawWinProbability": 0.544,
-      "confidence": "C",
+      "pass": false,
+      "predictedWinner": "千葉ロッテマリーンズ",
+      "predictedLoser": "オリックス・バファローズ",
+      "winProbability": 0.551,
+      "rawWinProbability": 0.56,
+      "confidence": "B",
       "handicap": {
         "input": {
           "side": "home",
@@ -318,7 +314,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 8.08,
+        "predicted": 8.66,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -327,25 +323,24 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.15,
-        "away": 3.74
+        "home": 4.49,
+        "away": 3.95
       },
       "reasons": [
-        "PASS: incomplete/downgraded data",
         "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 千葉ロッテマリーンズ (ジャクソン projFIP 3.58 vs 3.88)",
         "Bullpen edge: オリックス・バファローズ",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 4.15–3.74 over 10000 sims",
-        "away: cold bats — 3.0 R/G last 15 (season baseline 3.7)",
-        "home: no starter data — league-average assumed",
-        "away: no starter data — league-average assumed",
-        "Weather: 25°C at first pitch — run environment ×1.031"
+        "Expected runs 4.49–3.95 over 10000 sims",
+        "away: cold bats — 3.1 R/G last 15 (season baseline 3.7)",
+        "Weather: 26°C at first pitch — run environment ×1.034"
       ],
       "flags": [
-        "[downgrade] home_no_probable_pitcher",
+        "[info] home_starter_xfip_estimated",
         "[info] home_lineup_not_posted",
         "[info] home_players_on_il",
-        "[downgrade] away_no_probable_pitcher",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
         "[info] away_lineup_not_posted",
         "[info] away_players_on_il"
       ],
@@ -360,8 +355,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.643,
-      "rawWinProbability": 0.665,
+      "winProbability": 0.613,
+      "rawWinProbability": 0.632,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -379,7 +374,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 8.05,
+        "predicted": 8.27,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -389,21 +384,20 @@
       },
       "expectedRuns": {
         "home": 4.69,
-        "away": 3.18
+        "away": 3.43
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Offense edge: 福岡ソフトバンクホークス (wOBA 0.323 vs 0.294)",
         "Park factor 107 (hitter-friendly)",
-        "Expected runs 4.69–3.18 over 10000 sims",
+        "Expected runs 4.69–3.43 over 10000 sims",
         "home: hot bats — 5.3 R/G last 15 (season baseline 4.6)",
         "away: cold bats — 2.9 R/G last 15 (season baseline 3.7)",
-        "home: no starter data — league-average assumed",
         "away: no starter data — league-average assumed"
       ],
       "flags": [
-        "[downgrade] home_no_probable_pitcher",
+        "[info] home_starter_xfip_estimated",
         "[info] home_lineup_not_posted",
         "[info] home_players_on_il",
         "[downgrade] away_no_probable_pitcher",
