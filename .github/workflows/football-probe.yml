@@ -90,6 +90,34 @@ jobs:
             echo "FOOTBALL_DATA_ORG_TOKEN unset — fdorg skip" | tee -a "$MANIFEST"
           fi
 
+          # --- api.football-data.org: トークンで実際に読める大会の一覧（Founder 承認 1-3）。
+          # 「B1 / SC0 / JAP は無料枠の対象外」は**推測のまま**だったので、ここで事実にする
+          if [ -n "${FOOTBALL_DATA_ORG_TOKEN:-}" ]; then
+            code=$(curl -sS --max-time 30 -o "$DIR/fdorg-competitions.json" -w "%{http_code}" \
+              -H "X-Auth-Token: $FOOTBALL_DATA_ORG_TOKEN" "https://api.football-data.org/v4/competitions")
+            echo "$code $( [ -f "$DIR/fdorg-competitions.json" ] && wc -c < "$DIR/fdorg-competitions.json" || echo 0) fdorg-competitions.json https://api.football-data.org/v4/competitions" | tee -a "$MANIFEST"
+            [ "$code" != "200" ] && rm -f "$DIR/fdorg-competitions.json"
+            sleep 7
+          fi
+
+          # --- openfootball（鍵の要らない公開 JSON）。B1 / SC0 / JAP の第 2 経路の候補。
+          # **どの経路が生きているかは分からないので、複数の綴りを試して結果だけ残す**
+          for u in \
+            "openfootball/football.json/master/2026-27/en.1.json" \
+            "openfootball/football.json/master/2025-26/en.1.json" \
+            "openfootball/football.json/master/2026-27/de.1.json" \
+            "openfootball/football.json/master/2026-27/it.1.json"; do
+            n="of-$(echo "$u" | tr '/' '-').json"
+            fetch "$n" "https://raw.githubusercontent.com/$u"
+          done
+          for u in \
+            "openfootball/belgium/master/2026-27/be.1.txt" \
+            "openfootball/scotland/master/2026-27/sco.1.txt" \
+            "openfootball/japan/master/2026/jp.1.txt"; do
+            n="of-$(echo "$u" | tr '/' '-')"
+            fetch "$n" "https://raw.githubusercontent.com/$u"
+          done
+
           # --- J リーグ公式（日程・結果の一次情報）
           fetch jleague-match.html   "https://www.jleague.jp/match/"
           fetch jleague-j1-standing.html "https://www.jleague.jp/standings/j1/"
