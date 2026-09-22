@@ -23,6 +23,13 @@ export interface MatchRecord {
   away: string;
   homeGoals: number;
   awayGoals: number;
+  /**
+   * 枠内シュート（あれば）。**既定の学習には使わない**。
+   * `walkForward` の `shotWeight` を 0 より大きくしたときだけ効く測定用の入力で、
+   * 0 のときは本番と 1 ビットも変わらない。
+   */
+  homeSot?: number;
+  awaySot?: number;
 }
 
 export interface FitOptions {

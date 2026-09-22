@@ -10,13 +10,28 @@
  *   - （将来）市場基準: クロージングオッズの含意確率。データが入ったら足す
  */
 import { fitDixonColes, predictMatch } from "./fit.ts";
-import type { FitOptions, MatchRecord } from "./fit.ts";
+import type { FitOptions, FitResult, MatchRecord } from "./fit.ts";
+import { outcomeProbabilities, scoreMatrix } from "./poisson.ts";
 import { outcomeOf, summarize } from "./scoring.ts";
 import type { Outcome, ProbabilityTriple, ScoreSummary } from "./scoring.ts";
 
 export interface WalkForwardOptions extends Omit<FitOptions, "asOf"> {
   /** 学習に最低これだけの試合が溜まるまで評価しない（初期値の区間を混ぜない） */
   warmup?: number;
+  /**
+   * **枠内シュート層の重み θ**（2026-09-22・測定用）。既定 0 ＝ 本番と 1 ビットも変わらない。
+   *
+   * 0 より大きいと、同じ Dixon-Coles を**枠内シュートの本数**にも当てはめ、得られた
+   * λ をリーグの決定率（学習窓内の 得点合計 / 枠内シュート合計）で得点尺度へ直してから、
+   * 得点由来の λ と `(1−θ) : θ` で混ぜる。
+   *
+   * **xG ではない。** 1 本ごとの質は分からないので、あくまで「枠内シュートの多さ」を
+   * 攻守の指標として使うだけ。xG の代わりに使えるかは**測って決める**（規約上自由に
+   * 使える唯一の経路が football-data.co.uk の HST/AST 列なので、まずここから測る）。
+   *
+   * 決定率は**学習窓の中だけ**から計算する（未来の試合を混ぜない）。
+   */
+  shotWeight?: number;
   /**
    * 学習に使う過去の日数（asOf から遡る窓）。省略で全履歴。
    * 時間減衰 ξ=0.0065 では 1500 日前の重みは e^-9.75 ≈ 6e-5 で、窓で切っても
@@ -81,6 +96,23 @@ export function walkForward(
       if (trainKnown.length >= warmup) {
         const fit = fitDixonColes(trainKnown, { ...opts, asOf });
         refits++;
+        // 枠内シュート層（θ>0 のときだけ）。**θ=0 なら下の分岐に入らず本番と同値**
+        const theta = opts.shotWeight ?? 0;
+        let shotFit: FitResult | null = null;
+        let conversion = 0;
+        if (theta > 0) {
+          const withSot = trainKnown.filter((m) => typeof m.homeSot === "number" && typeof m.awaySot === "number");
+          const sot = withSot.reduce((a, m) => a + (m.homeSot as number) + (m.awaySot as number), 0);
+          const goals = withSot.reduce((a, m) => a + m.homeGoals + m.awayGoals, 0);
+          // 枠内シュートが足りない窓では層を使わない（推測で埋めない）
+          if (withSot.length >= warmup && sot > 0) {
+            conversion = goals / sot;
+            shotFit = fitDixonColes(
+              withSot.map((m) => ({ ...m, homeGoals: m.homeSot as number, awayGoals: m.awaySot as number })),
+              { ...opts, asOf, fitRho: false }, // 低スコア補正は枠内シュートには意味が無い
+            );
+          }
+        }
         const counts = [0, 0, 0];
         for (const m of trainKnown) counts[outcomeOf(m.homeGoals, m.awayGoals)]++;
         const base: ProbabilityTriple = [
@@ -90,8 +122,18 @@ export function walkForward(
         ];
         for (const m of todays) {
           if (!(m.home in fit.attack) || !(m.away in fit.attack)) continue; // 初登場のチームは評価しない
-          const pred = predictMatch(fit, m.home, m.away);
-          const p: ProbabilityTriple = [pred.outcome.home, pred.outcome.draw, pred.outcome.away];
+          let p: ProbabilityTriple;
+          if (shotFit && m.home in shotFit.attack && m.away in shotFit.attack) {
+            const g = predictMatch(fit, m.home, m.away);
+            const sh = predictMatch(shotFit, m.home, m.away);
+            const lambda = (1 - theta) * g.lambda + theta * sh.lambda * conversion;
+            const mu = (1 - theta) * g.mu + theta * sh.mu * conversion;
+            const o = outcomeProbabilities(scoreMatrix(lambda, mu, { maxGoals: 10, rho: fit.rho }));
+            p = [o.home, o.draw, o.away];
+          } else {
+            const pred = predictMatch(fit, m.home, m.away);
+            p = [pred.outcome.home, pred.outcome.draw, pred.outcome.away];
+          }
           const outcome = outcomeOf(m.homeGoals, m.awayGoals);
           rows.push({ match: m, p, outcome });
           baselineRows.push({ p: base, outcome });

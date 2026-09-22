@@ -56,6 +56,12 @@ jobs:
           fetch fd-E0-2526.csv       "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
           fetch fd-E0-2627.csv       "https://www.football-data.co.uk/mmz4281/2627/E0.csv"
           fetch fd-JPN.csv           "https://www.football-data.co.uk/new/JPN.csv"
+          # 枠内シュート層の測定には 4 季ぶん要る（2 季だと warmup 300 を引いて数百件しか残らない）
+          for div in E0 I1 SP1 D1 N1 F1 P1 B1 SC0; do
+            for season in 2324 2425; do
+              fetch "fd-$div-$season.csv" "https://www.football-data.co.uk/mmz4281/$season/$div.csv"
+            done
+          done
           fetch fd-I1-2526.csv   "https://www.football-data.co.uk/mmz4281/2526/I1.csv"
           fetch fd-I1-2627.csv   "https://www.football-data.co.uk/mmz4281/2627/I1.csv"
           fetch fd-SP1-2526.csv  "https://www.football-data.co.uk/mmz4281/2526/SP1.csv"

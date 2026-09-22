@@ -19,6 +19,16 @@ export interface MatchWithOdds extends MatchRecord {
   odds: { home: number; draw: number; away: number } | null;
 }
 
+/**
+ * 枠内シュート（HST / AST）。football-data.co.uk の結果 CSV に元から入っている列で、
+ * **追加の取得元も鍵も要らない**（実測: 全リーグ・全季で欠測 0）。
+ * xG そのものではない（1 本ごとの質は分からない）ので、**xG とは呼ばない**。
+ */
+export interface ShotsOnTarget {
+  home: number;
+  away: number;
+}
+
 /** 最小限の CSV パーサ（ダブルクォート内のカンマ・改行なし前提。この表はそれで足りる） */
 export function parseCsv(text: string): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
