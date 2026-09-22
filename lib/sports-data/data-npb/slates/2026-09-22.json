@@ -1,7 +1,7 @@
 {
   "date": "2026-09-22",
   "season": 1002026,
-  "fetchedAt": "2026-09-22T12:00:04.130Z",
+  "fetchedAt": "2026-09-22T12:37:04.417Z",
   "games": [
     {
       "gamePk": 92026092205,
@@ -929,8 +929,8 @@
           "name": "増田"
         },
         {
-          "playerId": 9050704685,
-          "name": "星"
+          "playerId": 9050611303,
+          "name": "ウォルターズ"
         },
         {
           "playerId": 9050944063,
@@ -987,12 +987,12 @@
           "name": "元山"
         },
         {
-          "playerId": 9020333747,
-          "name": "坂本"
+          "playerId": 9020666565,
+          "name": "石井"
         },
         {
-          "playerId": 9020817553,
-          "name": "岡留"
+          "playerId": 9020947626,
+          "name": "伏見"
         }
       ]
     },
@@ -1011,8 +1011,8 @@
           "name": "佐野"
         },
         {
-          "playerId": 9030584444,
-          "name": "エンカーナシオン"
+          "playerId": 9030548041,
+          "name": "神里"
         },
         {
           "playerId": 9030087351,
@@ -1031,8 +1031,8 @@
           "name": "成瀬"
         },
         {
-          "playerId": 9030729775,
-          "name": "吉野"
+          "playerId": 9030064298,
+          "name": "佐々木"
         }
       ],
       "away": [
@@ -1065,12 +1065,12 @@
           "name": "岡林"
         },
         {
-          "playerId": 9060643575,
-          "name": "橋本"
+          "playerId": 9060985802,
+          "name": "木下"
         },
         {
-          "playerId": 9060182759,
-          "name": "加藤"
+          "playerId": 9060333745,
+          "name": "齋藤"
         }
       ]
     },
@@ -1183,8 +1183,8 @@
           "name": "水野"
         },
         {
-          "playerId": 9080614872,
-          "name": "水谷"
+          "playerId": 9080980205,
+          "name": "細川"
         },
         {
           "playerId": 9080492534,
@@ -1225,8 +1225,8 @@
           "name": "小深田"
         },
         {
-          "playerId": 9120840474,
-          "name": "田中貴"
+          "playerId": 9120033818,
+          "name": "渡邊佳"
         }
       ]
     },
@@ -1265,8 +1265,8 @@
           "name": "ソト"
         },
         {
-          "playerId": 9090033816,
-          "name": "山﨑"
+          "playerId": 9090289975,
+          "name": "上田"
         }
       ],
       "away": [
@@ -1493,22 +1493,7 @@
       "hitByPitch": 1,
       "strikeOuts": 31
     },
-    "9020333747": {
-      "plateAppearances": 294,
-      "atBats": 261,
-      "hits": 51,
-      "doubles": 6,
-      "triples": 1,
-      "homeRuns": 9,
-      "stolenBases": 2,
-      "caughtStealing": 1,
-      "sacFlies": 2,
-      "baseOnBalls": 20,
-      "intentionalWalks": 3,
-      "hitByPitch": 3,
-      "strikeOuts": 92
-    },
-    "9020817553": {
+    "9020666565": {
       "plateAppearances": 0,
       "atBats": 0,
       "hits": 0,
@@ -1522,6 +1507,21 @@
       "intentionalWalks": 0,
       "hitByPitch": 0,
       "strikeOuts": 0
+    },
+    "9020947626": {
+      "plateAppearances": 132,
+      "atBats": 115,
+      "hits": 24,
+      "doubles": 2,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 1,
+      "baseOnBalls": 8,
+      "intentionalWalks": 2,
+      "hitByPitch": 4,
+      "strikeOuts": 25
     },
     "9050008848": {
       "plateAppearances": 498,
@@ -1553,9 +1553,9 @@
       "hitByPitch": 3,
       "strikeOuts": 66
     },
-    "9050704685": {
-      "plateAppearances": 0,
-      "atBats": 0,
+    "9050611303": {
+      "plateAppearances": 8,
+      "atBats": 7,
       "hits": 0,
       "doubles": 0,
       "triples": 0,
@@ -1566,7 +1566,7 @@
       "baseOnBalls": 0,
       "intentionalWalks": 0,
       "hitByPitch": 0,
-      "strikeOuts": 0
+      "strikeOuts": 4
     },
     "9050944063": {
       "plateAppearances": 125,
@@ -1763,7 +1763,22 @@
       "hitByPitch": 2,
       "strikeOuts": 39
     },
-    "9060643575": {
+    "9060985802": {
+      "plateAppearances": 67,
+      "atBats": 64,
+      "hits": 17,
+      "doubles": 3,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 0,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 1,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "strikeOuts": 12
+    },
+    "9060333745": {
       "plateAppearances": 0,
       "atBats": 0,
       "hits": 0,
@@ -1777,21 +1792,6 @@
       "intentionalWalks": 0,
       "hitByPitch": 0,
       "strikeOuts": 0
-    },
-    "9060182759": {
-      "plateAppearances": 74,
-      "atBats": 65,
-      "hits": 9,
-      "doubles": 2,
-      "triples": 0,
-      "homeRuns": 0,
-      "stolenBases": 1,
-      "caughtStealing": 0,
-      "sacFlies": 0,
-      "baseOnBalls": 5,
-      "intentionalWalks": 0,
-      "hitByPitch": 1,
-      "strikeOuts": 24
     },
     "9030729777": {
       "plateAppearances": 478,
@@ -1838,20 +1838,20 @@
       "hitByPitch": 1,
       "strikeOuts": 70
     },
-    "9030584444": {
-      "plateAppearances": 217,
-      "atBats": 206,
-      "hits": 60,
-      "doubles": 10,
-      "triples": 0,
-      "homeRuns": 11,
+    "9030548041": {
+      "plateAppearances": 23,
+      "atBats": 19,
+      "hits": 2,
+      "doubles": 0,
+      "triples": 1,
+      "homeRuns": 0,
       "stolenBases": 1,
-      "caughtStealing": 0,
-      "sacFlies": 2,
-      "baseOnBalls": 9,
-      "intentionalWalks": 1,
+      "caughtStealing": 1,
+      "sacFlies": 0,
+      "baseOnBalls": 3,
+      "intentionalWalks": 0,
       "hitByPitch": 0,
-      "strikeOuts": 45
+      "strikeOuts": 10
     },
     "9030087351": {
       "plateAppearances": 179,
@@ -1913,7 +1913,7 @@
       "hitByPitch": 0,
       "strikeOuts": 19
     },
-    "9030729775": {
+    "9030064298": {
       "plateAppearances": 0,
       "atBats": 0,
       "hits": 0,
@@ -2318,20 +2318,20 @@
       "hitByPitch": 1,
       "strikeOuts": 33
     },
-    "9120840474": {
-      "plateAppearances": 1,
-      "atBats": 0,
-      "hits": 0,
-      "doubles": 0,
+    "9120033818": {
+      "plateAppearances": 159,
+      "atBats": 143,
+      "hits": 36,
+      "doubles": 7,
       "triples": 0,
-      "homeRuns": 0,
+      "homeRuns": 1,
       "stolenBases": 0,
       "caughtStealing": 0,
       "sacFlies": 0,
-      "baseOnBalls": 0,
+      "baseOnBalls": 11,
       "intentionalWalks": 0,
       "hitByPitch": 0,
-      "strikeOuts": 0
+      "strikeOuts": 25
     },
     "9080704689": {
       "plateAppearances": 436,
@@ -2438,20 +2438,20 @@
       "hitByPitch": 12,
       "strikeOuts": 86
     },
-    "9080614872": {
-      "plateAppearances": 204,
-      "atBats": 191,
-      "hits": 45,
-      "doubles": 7,
-      "triples": 1,
-      "homeRuns": 5,
-      "stolenBases": 2,
+    "9080980205": {
+      "plateAppearances": 133,
+      "atBats": 109,
+      "hits": 24,
+      "doubles": 2,
+      "triples": 0,
+      "homeRuns": 2,
+      "stolenBases": 8,
       "caughtStealing": 2,
-      "sacFlies": 2,
-      "baseOnBalls": 9,
+      "sacFlies": 0,
+      "baseOnBalls": 18,
       "intentionalWalks": 0,
-      "hitByPitch": 2,
-      "strikeOuts": 51
+      "hitByPitch": 0,
+      "strikeOuts": 18
     },
     "9080492534": {
       "plateAppearances": 275,
@@ -2723,20 +2723,20 @@
       "hitByPitch": 7,
       "strikeOuts": 93
     },
-    "9090033816": {
-      "plateAppearances": 149,
-      "atBats": 135,
-      "hits": 31,
-      "doubles": 4,
-      "triples": 1,
-      "homeRuns": 1,
-      "stolenBases": 3,
-      "caughtStealing": 0,
-      "sacFlies": 1,
-      "baseOnBalls": 9,
+    "9090289975": {
+      "plateAppearances": 161,
+      "atBats": 150,
+      "hits": 34,
+      "doubles": 6,
+      "triples": 0,
+      "homeRuns": 7,
+      "stolenBases": 0,
+      "caughtStealing": 1,
+      "sacFlies": 0,
+      "baseOnBalls": 11,
       "intentionalWalks": 0,
-      "hitByPitch": 3,
-      "strikeOuts": 43
+      "hitByPitch": 0,
+      "strikeOuts": 35
     },
     "9100016546": {
       "plateAppearances": 492,
@@ -3029,20 +3029,20 @@
   },
   "weather": {
     "92026092205": {
-      "temperatureC": 26.1,
-      "windSpeedKmh": 4,
-      "windDirectionDeg": 117,
+      "temperatureC": 26,
+      "windSpeedKmh": 5.3,
+      "windDirectionDeg": 118,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:00:04.339Z"
+      "fetchedAt": "2026-09-22T12:37:05.145Z"
     },
     "92026092203": {
-      "temperatureC": 26.2,
-      "windSpeedKmh": 5.9,
-      "windDirectionDeg": 101,
+      "temperatureC": 26.1,
+      "windSpeedKmh": 7.4,
+      "windDirectionDeg": 113,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:00:04.374Z"
+      "fetchedAt": "2026-09-22T12:37:05.246Z"
     },
     "92026092204": {
       "temperatureC": 28.9,
@@ -3050,31 +3050,31 @@
       "windDirectionDeg": 24,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:00:04.410Z"
+      "fetchedAt": "2026-09-22T12:37:05.347Z"
     },
     "92026092208": {
-      "temperatureC": 17.9,
-      "windSpeedKmh": 19.7,
-      "windDirectionDeg": 317,
+      "temperatureC": 18.1,
+      "windSpeedKmh": 18.9,
+      "windDirectionDeg": 323,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:00:04.449Z"
+      "fetchedAt": "2026-09-22T12:37:05.447Z"
     },
     "92026092209": {
-      "temperatureC": 25.8,
-      "windSpeedKmh": 10.1,
-      "windDirectionDeg": 96,
+      "temperatureC": 25.7,
+      "windSpeedKmh": 11.4,
+      "windDirectionDeg": 101,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:00:04.485Z"
+      "fetchedAt": "2026-09-22T12:37:05.547Z"
     },
     "92026092207": {
-      "temperatureC": 24.2,
-      "windSpeedKmh": 19,
+      "temperatureC": 23.9,
+      "windSpeedKmh": 21.4,
       "windDirectionDeg": 25,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:00:04.519Z"
+      "fetchedAt": "2026-09-22T12:37:05.647Z"
     }
   }
 }
