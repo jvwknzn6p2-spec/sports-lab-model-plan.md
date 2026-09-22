@@ -5,8 +5,8 @@
     {
       "gamePk": 823543,
       "gameDate": "2026-09-22T17:05:00Z",
-      "status": "Pre-Game",
-      "abstractState": "Preview",
+      "status": "In Progress",
+      "abstractState": "Live",
       "gameType": "R",
       "venue": {
         "id": 3313,
@@ -457,16 +457,16 @@
       "sacFlies": 4
     },
     "607074": {
-      "inningsPitched": "76.1",
-      "battersFaced": 315,
-      "strikeOuts": 83,
+      "inningsPitched": "77.1",
+      "battersFaced": 318,
+      "strikeOuts": 85,
       "baseOnBalls": 38,
       "hitByPitch": 2,
       "homeRuns": 7,
       "hits": 48,
       "earnedRuns": 25,
       "runs": 30,
-      "atBats": 269,
+      "atBats": 272,
       "sacFlies": 4
     },
     "607259": {
@@ -1110,8 +1110,8 @@
       "caughtStealing": 25
     },
     "139": {
-      "plateAppearances": 5841,
-      "atBats": 5198,
+      "plateAppearances": 5844,
+      "atBats": 5201,
       "hits": 1345,
       "doubles": 217,
       "triples": 22,
@@ -1120,7 +1120,7 @@
       "intentionalWalks": 26,
       "hitByPitch": 58,
       "sacFlies": 42,
-      "strikeOuts": 1085,
+      "strikeOuts": 1087,
       "stolenBases": 159,
       "caughtStealing": 53
     },
@@ -1230,8 +1230,8 @@
       "caughtStealing": 46
     },
     "147": {
-      "plateAppearances": 5784,
-      "atBats": 5138,
+      "plateAppearances": 5785,
+      "atBats": 5139,
       "hits": 1206,
       "doubles": 216,
       "triples": 18,
@@ -1857,8 +1857,8 @@
       "caughtStealing": 4
     },
     "641355": {
-      "plateAppearances": 546,
-      "atBats": 481,
+      "plateAppearances": 547,
+      "atBats": 482,
       "hits": 130,
       "doubles": 25,
       "triples": 3,
@@ -1887,8 +1887,8 @@
       "caughtStealing": 1
     },
     "650490": {
-      "plateAppearances": 664,
-      "atBats": 593,
+      "plateAppearances": 665,
+      "atBats": 594,
       "hits": 173,
       "doubles": 25,
       "triples": 1,
@@ -1897,13 +1897,13 @@
       "intentionalWalks": 6,
       "hitByPitch": 10,
       "sacFlies": 6,
-      "strikeOuts": 96,
+      "strikeOuts": 97,
       "stolenBases": 3,
       "caughtStealing": 1
     },
     "666018": {
-      "plateAppearances": 648,
-      "atBats": 563,
+      "plateAppearances": 649,
+      "atBats": 564,
       "hits": 156,
       "doubles": 26,
       "triples": 0,
@@ -1912,7 +1912,7 @@
       "intentionalWalks": 3,
       "hitByPitch": 11,
       "sacFlies": 8,
-      "strikeOuts": 154,
+      "strikeOuts": 155,
       "stolenBases": 0,
       "caughtStealing": 1
     },
@@ -2052,8 +2052,8 @@
       "caughtStealing": 0
     },
     "691406": {
-      "plateAppearances": 677,
-      "atBats": 592,
+      "plateAppearances": 678,
+      "atBats": 593,
       "hits": 164,
       "doubles": 24,
       "triples": 1,
@@ -2067,8 +2067,8 @@
       "caughtStealing": 3
     },
     "700250": {
-      "plateAppearances": 641,
-      "atBats": 551,
+      "plateAppearances": 642,
+      "atBats": 552,
       "hits": 144,
       "doubles": 22,
       "triples": 4,
@@ -2112,7 +2112,7 @@
       "caughtStealing": 1
     }
   },
-  "fetchedAt": "2026-09-22T15:40:56.022Z",
+  "fetchedAt": "2026-09-22T17:19:29.406Z",
   "forms": {
     "108": {
       "games": 15,
@@ -2551,6 +2551,11 @@
         "name": "Spencer Steer",
         "position": "1B",
         "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tony Santillan",
+        "position": "P",
+        "status": "Injured 15-Day"
       }
     ],
     "114": [
@@ -3650,123 +3655,123 @@
   "weather": {
     "822840": {
       "temperatureC": 34.8,
-      "windSpeedKmh": 13.9,
-      "windDirectionDeg": 59,
+      "windSpeedKmh": 11.7,
+      "windDirectionDeg": 18,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T15:40:59.754Z"
+      "fetchedAt": "2026-09-22T17:19:38.411Z"
     },
     "823089": {
-      "temperatureC": 20.5,
-      "windSpeedKmh": 4.1,
-      "windDirectionDeg": 218,
+      "temperatureC": 20.8,
+      "windSpeedKmh": 2.7,
+      "windDirectionDeg": 203,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T15:40:59.959Z"
+      "fetchedAt": "2026-09-22T17:19:38.720Z"
     },
     "823166": {
-      "temperatureC": 18.8,
-      "windSpeedKmh": 21.7,
-      "windDirectionDeg": 276,
+      "temperatureC": 18.6,
+      "windSpeedKmh": 19.1,
+      "windDirectionDeg": 273,
       "roof": "outdoor",
       "cfBearingDeg": 85,
-      "fetchedAt": "2026-09-22T15:41:00.065Z"
+      "fetchedAt": "2026-09-22T17:19:38.875Z"
     },
     "823328": {
       "temperatureC": 14.4,
-      "windSpeedKmh": 14.3,
-      "windDirectionDeg": 65,
+      "windSpeedKmh": 15.3,
+      "windDirectionDeg": 63,
       "roof": "outdoor",
       "cfBearingDeg": 116,
-      "fetchedAt": "2026-09-22T15:40:59.126Z"
+      "fetchedAt": "2026-09-22T17:19:37.482Z"
     },
     "823412": {
-      "temperatureC": 16.5,
-      "windSpeedKmh": 15.6,
+      "temperatureC": 15.8,
+      "windSpeedKmh": 16.1,
       "windDirectionDeg": 40,
       "roof": "outdoor",
       "cfBearingDeg": 9,
-      "fetchedAt": "2026-09-22T15:40:59.231Z"
+      "fetchedAt": "2026-09-22T17:19:37.638Z"
     },
     "823494": {
-      "temperatureC": 17.8,
-      "windSpeedKmh": 15.6,
-      "windDirectionDeg": 56,
+      "temperatureC": 17.9,
+      "windSpeedKmh": 16.8,
+      "windDirectionDeg": 28,
       "roof": "outdoor",
       "cfBearingDeg": 75,
-      "fetchedAt": "2026-09-22T15:40:58.812Z"
+      "fetchedAt": "2026-09-22T17:19:37.020Z"
     },
     "823543": {
-      "temperatureC": 18.8,
-      "windSpeedKmh": 23.7,
-      "windDirectionDeg": 60,
+      "temperatureC": 16.6,
+      "windSpeedKmh": 13.2,
+      "windDirectionDeg": 55,
       "roof": "outdoor",
       "cfBearingDeg": 75,
-      "fetchedAt": "2026-09-22T15:40:58.812Z"
+      "fetchedAt": "2026-09-22T17:19:37.019Z"
     },
     "823897": {
-      "temperatureC": 24.8,
-      "windSpeedKmh": 16.2,
-      "windDirectionDeg": 257,
+      "temperatureC": 24.6,
+      "windSpeedKmh": 16.3,
+      "windDirectionDeg": 256,
       "roof": "outdoor",
       "cfBearingDeg": 26,
-      "fetchedAt": "2026-09-22T15:41:00.170Z"
+      "fetchedAt": "2026-09-22T17:19:39.029Z"
     },
     "824061": {
-      "temperatureC": 20.1,
-      "windSpeedKmh": 11,
-      "windDirectionDeg": 52,
+      "temperatureC": 20.4,
+      "windSpeedKmh": 11.3,
+      "windDirectionDeg": 53,
       "roof": "outdoor",
       "cfBearingDeg": 46,
-      "fetchedAt": "2026-09-22T15:40:59.542Z"
+      "fetchedAt": "2026-09-22T17:19:38.101Z"
     },
     "824222": {
-      "temperatureC": 15.8,
-      "windSpeedKmh": 14.2,
-      "windDirectionDeg": 66,
+      "temperatureC": 16.2,
+      "windSpeedKmh": 12.9,
+      "windDirectionDeg": 60,
       "roof": "outdoor",
       "cfBearingDeg": 150,
-      "fetchedAt": "2026-09-22T15:40:59.020Z"
+      "fetchedAt": "2026-09-22T17:19:37.328Z"
     },
     "824302": {
-      "temperatureC": 27.2,
-      "windSpeedKmh": 7.5,
-      "windDirectionDeg": 305,
+      "temperatureC": 24.9,
+      "windSpeedKmh": 16.5,
+      "windDirectionDeg": 148,
       "roof": "outdoor",
       "cfBearingDeg": 4,
-      "fetchedAt": "2026-09-22T15:40:59.859Z"
+      "fetchedAt": "2026-09-22T17:19:38.565Z"
     },
     "824624": {
-      "temperatureC": 14.9,
-      "windSpeedKmh": 17.4,
-      "windDirectionDeg": 56,
+      "temperatureC": 14.8,
+      "windSpeedKmh": 18.2,
+      "windDirectionDeg": 63,
       "roof": "outdoor",
       "cfBearingDeg": 37,
-      "fetchedAt": "2026-09-22T15:40:59.648Z"
+      "fetchedAt": "2026-09-22T17:19:38.255Z"
     },
     "824709": {
       "temperatureC": 13.4,
-      "windSpeedKmh": 10.2,
-      "windDirectionDeg": 48,
+      "windSpeedKmh": 9.9,
+      "windDirectionDeg": 46,
       "roof": "outdoor",
       "cfBearingDeg": 45,
-      "fetchedAt": "2026-09-22T15:40:59.334Z"
+      "fetchedAt": "2026-09-22T17:19:37.791Z"
     },
     "824785": {
-      "temperatureC": 15.2,
-      "windSpeedKmh": 12.7,
-      "windDirectionDeg": 29,
+      "temperatureC": 15.1,
+      "windSpeedKmh": 11.7,
+      "windDirectionDeg": 18,
       "roof": "outdoor",
       "cfBearingDeg": 31,
-      "fetchedAt": "2026-09-22T15:40:58.916Z"
+      "fetchedAt": "2026-09-22T17:19:37.174Z"
     },
     "824867": {
-      "temperatureC": 28.1,
-      "windSpeedKmh": 10,
-      "windDirectionDeg": 38,
+      "temperatureC": 27.2,
+      "windSpeedKmh": 9.8,
+      "windDirectionDeg": 36,
       "roof": "outdoor",
       "cfBearingDeg": 145,
-      "fetchedAt": "2026-09-22T15:40:59.437Z"
+      "fetchedAt": "2026-09-22T17:19:37.946Z"
     }
   }
 }
