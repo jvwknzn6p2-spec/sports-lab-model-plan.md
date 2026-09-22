@@ -1,4 +1,4 @@
-fetched_at=2026-09-21T22:53:35Z
+fetched_at=2026-09-22T07:40:39Z
 200 56308 fd-fixtures.csv https://www.football-data.co.uk/fixtures.csv
 200 203438 fd-E0-2526.csv https://www.football-data.co.uk/mmz4281/2526/E0.csv
 200 24803 fd-E0-2627.csv https://www.football-data.co.uk/mmz4281/2627/E0.csv
@@ -19,20 +19,28 @@ fetched_at=2026-09-21T22:53:35Z
 200 30495 fd-B1-2627.csv https://www.football-data.co.uk/mmz4281/2627/B1.csv
 200 118594 fd-SC0-2526.csv https://www.football-data.co.uk/mmz4281/2526/SC0.csv
 200 20966 fd-SC0-2627.csv https://www.football-data.co.uk/mmz4281/2627/SC0.csv
-200 32670 fd-japan.html https://www.football-data.co.uk/japan.php
+200 32658 fd-japan.html https://www.football-data.co.uk/japan.php
 200 20827 fdorg-PL.json https://api.football-data.org/v4/competitions/PL/matches
-200 22477 fdorg-SA.json https://api.football-data.org/v4/competitions/SA/matches
-200 31331 fdorg-PD.json https://api.football-data.org/v4/competitions/PD/matches
+200 20454 fdorg-SA.json https://api.football-data.org/v4/competitions/SA/matches
+200 29277 fdorg-PD.json https://api.football-data.org/v4/competitions/PD/matches
 200 18640 fdorg-BL1.json https://api.football-data.org/v4/competitions/BL1/matches
-200 18628 fdorg-FL1.json https://api.football-data.org/v4/competitions/FL1/matches
-200 21982 fdorg-PPL.json https://api.football-data.org/v4/competitions/PPL/matches
+200 18576 fdorg-FL1.json https://api.football-data.org/v4/competitions/FL1/matches
+200 20955 fdorg-PPL.json https://api.football-data.org/v4/competitions/PPL/matches
 200 22808 fdorg-DED.json https://api.football-data.org/v4/competitions/DED/matches
-200 937924 jleague-match.html https://www.jleague.jp/match/
-200 1102911 jleague-j1-standing.html https://www.jleague.jp/standings/j1/
+200 5646 fdorg-competitions.json https://api.football-data.org/v4/competitions
+200 54951 of-openfootball-football.json-master-2026-27-en.1.json.json https://raw.githubusercontent.com/openfootball/football.json/master/2026-27/en.1.json
+200 108493 of-openfootball-football.json-master-2025-26-en.1.json.json https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/en.1.json
+200 40044 of-openfootball-football.json-master-2026-27-de.1.json.json https://raw.githubusercontent.com/openfootball/football.json/master/2026-27/de.1.json
+200 47178 of-openfootball-football.json-master-2026-27-it.1.json.json https://raw.githubusercontent.com/openfootball/football.json/master/2026-27/it.1.json
+404 14 of-openfootball-belgium-master-2026-27-be.1.txt https://raw.githubusercontent.com/openfootball/belgium/master/2026-27/be.1.txt
+404 14 of-openfootball-scotland-master-2026-27-sco.1.txt https://raw.githubusercontent.com/openfootball/scotland/master/2026-27/sco.1.txt
+404 14 of-openfootball-japan-master-2026-jp.1.txt https://raw.githubusercontent.com/openfootball/japan/master/2026/jp.1.txt
+200 915430 jleague-match.html https://www.jleague.jp/match/
+200 1102997 jleague-j1-standing.html https://www.jleague.jp/standings/j1/
 200 440334 jdata-search.html https://data.j-league.or.jp/SFMS01/search
 200 18698 understat-epl.html https://understat.com/league/EPL
 403 5570 fbref-j1.html https://fbref.com/en/comps/25/J1-League-Stats
-200 10704 odds-sports.json https://api.the-odds-api.com/v4/sports/
+200 11326 odds-sports.json https://api.the-odds-api.com/v4/sports/
 x-requests-remaining: 0
 x-requests-last: 0
 x-requests-used: 500
@@ -49,4 +57,4 @@ x-requests-used: 500
 401 225 odds-soccer_uefa_europa_league.json https://api.the-odds-api.com/v4/sports/soccer_uefa_europa_league/odds
 401 225 odds-soccer_uefa_europa_conference_league.json https://api.the-odds-api.com/v4/sports/soccer_uefa_europa_conference_league/odds
 401 225 odds-soccer_japan_j_league.json https://api.the-odds-api.com/v4/sports/soccer_japan_j_league/odds
-soccer_keys=soccer_argentina_primera_division,soccer_austria_bundesliga,soccer_brazil_campeonato,soccer_brazil_serie_b,soccer_chile_campeonato,soccer_conmebol_copa_libertadores,soccer_conmebol_copa_sudamericana,soccer_denmark_superliga,soccer_efl_champ,soccer_england_efl_cup,soccer_england_league1,soccer_england_league2,soccer_epl,soccer_fa_cup,soccer_france_ligue_one,soccer_germany_bundesliga,soccer_germany_dfb_pokal,soccer_germany_liga3,soccer_greece_super_league,soccer_italy_serie_a,soccer_italy_serie_b,soccer_korea_kleague1,soccer_league_of_ireland,soccer_mexico_ligamx,soccer_netherlands_eredivisie,soccer_norway_eliteserien,soccer_spain_la_liga,soccer_spain_segunda_division,soccer_spl,soccer_uefa_champs_league,soccer_uefa_champs_league_women,soccer_uefa_europa_conference_league,soccer_uefa_europa_league,soccer_uefa_nations_league,soccer_usa_mls
+soccer_keys=soccer_argentina_primera_division,soccer_austria_bundesliga,soccer_brazil_campeonato,soccer_brazil_serie_b,soccer_chile_campeonato,soccer_conmebol_copa_libertadores,soccer_conmebol_copa_sudamericana,soccer_denmark_superliga,soccer_efl_champ,soccer_england_efl_cup,soccer_england_league1,soccer_england_league2,soccer_epl,soccer_fa_cup,soccer_france_ligue_one,soccer_germany_bundesliga,soccer_germany_bundesliga2,soccer_germany_dfb_pokal,soccer_germany_liga3,soccer_greece_super_league,soccer_italy_serie_a,soccer_italy_serie_b,soccer_korea_kleague1,soccer_league_of_ireland,soccer_mexico_ligamx,soccer_netherlands_eredivisie,soccer_norway_eliteserien,soccer_portugal_primeira_liga,soccer_spain_la_liga,soccer_spain_segunda_division,soccer_spl,soccer_sweden_allsvenskan,soccer_switzerland_superleague,soccer_turkey_super_league,soccer_uefa_champs_league,soccer_uefa_champs_league_women,soccer_uefa_europa_conference_league,soccer_uefa_europa_league,soccer_uefa_nations_league,soccer_usa_mls
