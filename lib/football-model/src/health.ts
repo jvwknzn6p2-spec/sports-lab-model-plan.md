@@ -145,7 +145,14 @@ export const PUBLISH_HEALTH_START = "2026-09-22T00:00:00Z";
 
 export interface RunLeague {
   league: string;
-  /** 取得元が返した試合数（The Odds API + 無料の fixtures.csv の合計・重複込み） */
+  /**
+   * 取得元が返した試合のうち**キックオフが未来のもの**（The Odds API + 無料の
+   * fixtures.csv の合計・重複込み）。
+   *
+   * **行数で数えてはいけない**（2026-09-22 実測）。football-data.co.uk が凍結すると
+   * fixtures.csv は過去の試合だけを返し続ける。行数だと 81 件返ってきて「取得元は
+   * 生きている」に見えるのに、発行できる試合は 1 件も無い。
+   */
   fixtures: number;
   /** 台帳へ新しく入った日程の行数 */
   added: number;

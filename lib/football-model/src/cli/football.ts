@@ -364,13 +364,14 @@ function daily(): void {
     let fixtureAdded = 0;
     let publishedCount = 0;
     let deferredCount = 0;
-    let freeFixtureCount = 0;
+    let futureFixtureCount = 0;
     const odds = latestOdds(src.sport);
     let fixtures: ReturnType<typeof parseOddsEvents> = [];
     if (odds) {
       fixtures = parseOddsEvents(odds.events, resolve);
       const r = L.recordFixtures(fixtures, league, NOW);
       fixtureAdded += r.added;
+      futureFixtureCount += fixtures.filter((f) => Date.parse(f.kickoffAt) > Date.parse(NOW)).length;
       log.push(`${league}: fixtures ${fixtures.length} (added ${r.added}, unresolved ${r.unresolved}) odds@${odds.fetchedAt}`);
       for (const f of fixtures.filter((x) => !x.resolved)) log.push(`  unresolved: ${f.home} v ${f.away}`);
       // 市場の写し（小さく）
@@ -389,7 +390,7 @@ function daily(): void {
     // 同じ試合が両方から入っても、正準重複検査（recordFixtures）が二重登録を防ぐ。
     // J1（JAP）は fixtures.csv に収録されないので、ここでは 0 件になる
     const freeFixtures = fixturesAsMatches(freeRows, league, resolve);
-    freeFixtureCount = freeFixtures.length;
+    futureFixtureCount += freeFixtures.filter((f) => Date.parse(f.kickoffAt) > Date.parse(NOW)).length;
     if (freeFixtures.length > 0) {
       const rf = L.recordFixtures(freeFixtures, league, NOW);
       fixtureAdded += rf.added;
@@ -457,7 +458,11 @@ function daily(): void {
     ).length;
     runLeagues.push({
       league,
-      fixtures: fixtures.length + freeFixtureCount,
+      // **キックオフが未来のものだけ数える**（2026-09-22 の probe で実測した罠）。
+      // football-data.co.uk が凍結すると fixtures.csv は「過去の試合だけ」を返し続ける。
+      // 行数で数えると 81 件返ってきて「取得元は生きている」に見えるが、発行できる試合は
+      // 1 件も無い。実際 9/22 の取得（07:40Z）は 18〜20/09 の過去分しか含まなかった
+      fixtures: futureFixtureCount,
       added: fixtureAdded,
       published: publishedCount,
       deferred: deferredCount,
