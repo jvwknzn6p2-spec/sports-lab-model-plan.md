@@ -1,7 +1,7 @@
 {
   "date": "2026-09-22",
   "season": 1002026,
-  "fetchedAt": "2026-09-22T12:37:04.417Z",
+  "fetchedAt": "2026-09-22T12:50:08.721Z",
   "games": [
     {
       "gamePk": 92026092205,
@@ -929,8 +929,8 @@
           "name": "増田"
         },
         {
-          "playerId": 9050611303,
-          "name": "ウォルターズ"
+          "playerId": 9050345416,
+          "name": "山田"
         },
         {
           "playerId": 9050944063,
@@ -987,8 +987,8 @@
           "name": "元山"
         },
         {
-          "playerId": 9020666565,
-          "name": "石井"
+          "playerId": 9020364432,
+          "name": "ドリス"
         },
         {
           "playerId": 9020947626,
@@ -1493,7 +1493,7 @@
       "hitByPitch": 1,
       "strikeOuts": 31
     },
-    "9020666565": {
+    "9020364432": {
       "plateAppearances": 0,
       "atBats": 0,
       "hits": 0,
@@ -1553,17 +1553,17 @@
       "hitByPitch": 3,
       "strikeOuts": 66
     },
-    "9050611303": {
-      "plateAppearances": 8,
-      "atBats": 7,
-      "hits": 0,
+    "9050345416": {
+      "plateAppearances": 39,
+      "atBats": 36,
+      "hits": 8,
       "doubles": 0,
       "triples": 0,
-      "homeRuns": 0,
+      "homeRuns": 1,
       "stolenBases": 0,
       "caughtStealing": 0,
       "sacFlies": 0,
-      "baseOnBalls": 0,
+      "baseOnBalls": 3,
       "intentionalWalks": 0,
       "hitByPitch": 0,
       "strikeOuts": 4
@@ -3034,7 +3034,7 @@
       "windDirectionDeg": 118,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:37:05.145Z"
+      "fetchedAt": "2026-09-22T12:50:09.281Z"
     },
     "92026092203": {
       "temperatureC": 26.1,
@@ -3042,7 +3042,7 @@
       "windDirectionDeg": 113,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:37:05.246Z"
+      "fetchedAt": "2026-09-22T12:50:09.420Z"
     },
     "92026092204": {
       "temperatureC": 28.9,
@@ -3050,7 +3050,7 @@
       "windDirectionDeg": 24,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:37:05.347Z"
+      "fetchedAt": "2026-09-22T12:50:09.558Z"
     },
     "92026092208": {
       "temperatureC": 18.1,
@@ -3058,7 +3058,7 @@
       "windDirectionDeg": 323,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:37:05.447Z"
+      "fetchedAt": "2026-09-22T12:50:09.697Z"
     },
     "92026092209": {
       "temperatureC": 25.7,
@@ -3066,7 +3066,7 @@
       "windDirectionDeg": 101,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:37:05.547Z"
+      "fetchedAt": "2026-09-22T12:50:09.835Z"
     },
     "92026092207": {
       "temperatureC": 23.9,
@@ -3074,7 +3074,7 @@
       "windDirectionDeg": 25,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T12:37:05.647Z"
+      "fetchedAt": "2026-09-22T12:50:09.974Z"
     }
   }
 }
