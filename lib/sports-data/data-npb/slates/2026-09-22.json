@@ -1,7 +1,7 @@
 {
   "date": "2026-09-22",
   "season": 1002026,
-  "fetchedAt": "2026-09-22T05:56:18.918Z",
+  "fetchedAt": "2026-09-22T07:54:07.734Z",
   "games": [
     {
       "gamePk": 92026092205,
@@ -684,6 +684,16 @@
         "name": "糸原 健斗",
         "position": "内野手",
         "status": "登録抹消 2026-09-18"
+      },
+      {
+        "name": "Ｅ．ルーカス",
+        "position": "投手",
+        "status": "登録抹消 2026-09-22"
+      },
+      {
+        "name": "立石 正広",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-22"
       }
     ],
     "903": [
@@ -799,6 +809,16 @@
         "name": "正木 智也",
         "position": "外野手",
         "status": "登録抹消 2026-09-20"
+      },
+      {
+        "name": "Ｊ．ラトリッジ",
+        "position": "投手",
+        "status": "登録抹消 2026-09-22"
+      },
+      {
+        "name": "谷川原 健太",
+        "position": "捕手",
+        "status": "登録抹消 2026-09-22"
       }
     ],
     "908": [
@@ -816,6 +836,11 @@
         "name": "Ｆ．レイエス",
         "position": "外野手",
         "status": "登録抹消 2026-09-17"
+      },
+      {
+        "name": "吉田 賢吾",
+        "position": "捕手",
+        "status": "登録抹消 2026-09-22"
       }
     ],
     "909": [
@@ -836,11 +861,6 @@
       }
     ],
     "910": [
-      {
-        "name": "中村 剛也",
-        "position": "内野手",
-        "status": "登録抹消 2026-09-15"
-      },
       {
         "name": "平良 海馬",
         "position": "投手",
@@ -971,8 +991,8 @@
           "name": "笹原"
         },
         {
-          "playerId": 9010037441,
-          "name": "戸郷"
+          "playerId": 9010614933,
+          "name": "船迫"
         }
       ]
     }
@@ -1098,20 +1118,20 @@
       "hitByPitch": 0,
       "strikeOuts": 27
     },
-    "9010037441": {
-      "plateAppearances": 19,
-      "atBats": 15,
-      "hits": 3,
-      "doubles": 1,
+    "9010614933": {
+      "plateAppearances": 0,
+      "atBats": 0,
+      "hits": 0,
+      "doubles": 0,
       "triples": 0,
       "homeRuns": 0,
       "stolenBases": 0,
       "caughtStealing": 0,
       "sacFlies": 0,
-      "baseOnBalls": 1,
+      "baseOnBalls": 0,
       "intentionalWalks": 0,
       "hitByPitch": 0,
-      "strikeOuts": 6
+      "strikeOuts": 0
     },
     "9040064365": {
       "plateAppearances": 127,
@@ -1269,52 +1289,52 @@
   },
   "weather": {
     "92026092205": {
-      "temperatureC": 26.3,
-      "windSpeedKmh": 4.3,
-      "windDirectionDeg": 132,
+      "temperatureC": 26.4,
+      "windSpeedKmh": 4.2,
+      "windDirectionDeg": 121,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T05:56:19.609Z"
+      "fetchedAt": "2026-09-22T07:54:08.142Z"
     },
     "92026092203": {
-      "temperatureC": 26.2,
-      "windSpeedKmh": 6,
-      "windDirectionDeg": 107,
+      "temperatureC": 26.3,
+      "windSpeedKmh": 5.6,
+      "windDirectionDeg": 105,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T05:56:19.770Z"
+      "fetchedAt": "2026-09-22T07:54:08.243Z"
     },
     "92026092204": {
       "temperatureC": 29.4,
-      "windSpeedKmh": 8,
-      "windDirectionDeg": 27,
+      "windSpeedKmh": 8.4,
+      "windDirectionDeg": 25,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T05:56:19.934Z"
+      "fetchedAt": "2026-09-22T07:54:08.342Z"
     },
     "92026092208": {
-      "temperatureC": 18,
-      "windSpeedKmh": 20.5,
-      "windDirectionDeg": 314,
+      "temperatureC": 17.9,
+      "windSpeedKmh": 19.7,
+      "windDirectionDeg": 317,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T05:56:20.099Z"
+      "fetchedAt": "2026-09-22T07:54:08.444Z"
     },
     "92026092209": {
-      "temperatureC": 25.8,
-      "windSpeedKmh": 9.6,
-      "windDirectionDeg": 103,
+      "temperatureC": 26,
+      "windSpeedKmh": 9.9,
+      "windDirectionDeg": 100,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T05:56:20.263Z"
+      "fetchedAt": "2026-09-22T07:54:08.546Z"
     },
     "92026092207": {
       "temperatureC": 24.3,
-      "windSpeedKmh": 19.2,
-      "windDirectionDeg": 26,
+      "windSpeedKmh": 18.5,
+      "windDirectionDeg": 27,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-22T05:56:20.428Z"
+      "fetchedAt": "2026-09-22T07:54:08.645Z"
     }
   }
 }
