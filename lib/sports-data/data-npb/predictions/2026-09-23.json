@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-23T05:39:03.540Z",
-  "updatedAt": "2026-09-23T05:39:03.540Z",
+  "updatedAt": "2026-09-23T07:55:15.253Z",
   "controlTower": {
     "date": "2026-09-23",
     "season": 1002026,
@@ -119,8 +119,8 @@
       "pass": false,
       "predictedWinner": "横浜DeNAベイスターズ",
       "predictedLoser": "中日ドラゴンズ",
-      "winProbability": 0.618,
-      "rawWinProbability": 0.638,
+      "winProbability": 0.619,
+      "rawWinProbability": 0.639,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -138,7 +138,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.77,
+        "predicted": 7.74,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -147,16 +147,16 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.4,
-        "away": 3.18
+        "home": 4.39,
+        "away": 3.17
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Offense edge: 横浜DeNAベイスターズ (wOBA 0.299 vs 0.288)",
         "Park factor 103 (hitter-friendly)",
-        "Expected runs 4.40–3.18 over 10000 sims",
+        "Expected runs 4.39–3.17 over 10000 sims",
         "home: hot bats — 5.0 R/G last 15 (season baseline 3.8)",
-        "Weather: 20°C at first pitch — run environment ×0.994"
+        "Weather: 20°C at first pitch — run environment ×0.992"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -345,7 +345,7 @@
         "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-09-23T07:27:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 92026092307,
