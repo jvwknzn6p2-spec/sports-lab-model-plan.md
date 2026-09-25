@@ -3,6 +3,7 @@
  */
 import { wilson95, summarize, type ProbabilityTriple } from "./scoring.ts";
 import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "./ledger.ts";
+import { countedPredictions } from "./fixtureIdentity.ts";
 
 /**
  * 予想を発行する試合: 未発行・封緘前・キックオフが horizon 時間以内。
@@ -93,7 +94,10 @@ const NAMES: Record<string, string> = {
   JAP: "J1",
 };
 
-export function renderSummary(leagues: string[], predictions: LedgerPrediction[], evaluations: LedgerEvaluation[], matches: Map<string, LedgerMatch>, nowIso: string): string {
+export function renderSummary(leagues: string[], allPredictions: LedgerPrediction[], evaluations: LedgerEvaluation[], matches: Map<string, LedgerMatch>, nowIso: string): string {
+  // 同じ試合の 2 本目・封緘後の予想は数えない（fixtureIdentity.ts）。台帳の行はそのまま
+  const { counted, excluded } = countedPredictions(allPredictions, matches);
+  const predictions = allPredictions.filter((p) => counted.has(p.id));
   const out: string[] = [
     "# VORTE EV Football — 台帳の要約",
     "",
@@ -115,6 +119,12 @@ export function renderSummary(leagues: string[], predictions: LedgerPrediction[]
         "）"
       : "—";
     out.push(`| ${NAMES[league] ?? league} | ${s.published} | ${s.settled} | ${f(s.model?.meanRps)} | ${f(s.market?.meanRps)} | ${cl} | ${f(s.modelOnMarketSet?.meanRps)} | ${acc} |`);
+  }
+  if (excluded.size > 0) {
+    out.push(
+      "",
+      `_同じ試合の二重登録（日程変更・取得元違い）による 2 本目の予想と、その試合の早い登録の封緘より後に発行された予想 ${excluded.size} 件は、上の表にも下の一覧にも数えない（台帳には残す・\`fixtureIdentity.ts\`）。_`,
+    );
   }
   out.push("", "## 直近の決済（新しい順・最大 30 件）", "", "| キックオフ (UTC) | リーグ | 試合 | 結果 | 予想 H/D/A | RPS |", "|---|---|---|---|---|---|");
   const byId = new Map(predictions.map((p) => [p.id, p]));
