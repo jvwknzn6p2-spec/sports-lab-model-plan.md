@@ -64,6 +64,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { distributionCheck, runAudit, type AuditDay } from "../engine/audit";
+import { lastCompleteWeek, weeklyToMarkdown } from "../engine/weekly";
 import {
   walkForward,
   type BacktestDay,
@@ -1350,7 +1351,8 @@ async function cmdReport(): Promise<void> {
  * Exits non-zero when any error-severity issue is found, so the scheduled
  * workflow goes red instead of quietly committing a report nobody reads.
  */
-async function cmdAudit(): Promise<void> {
+/** Every date the store knows about, as audit days (shared by audit and weekly). */
+async function loadAuditDays(): Promise<{ days: AuditDay[]; parseFailures: string[] }> {
   const { readdir } = await import("node:fs/promises");
   const parseFailures: string[] = [];
   const dates = new Set<string>();
@@ -1395,6 +1397,11 @@ async function cmdAudit(): Promise<void> {
         )?.handicaps ?? null,
     });
   }
+  return { days, parseFailures };
+}
+
+async function cmdAudit(): Promise<void> {
+  const { days, parseFailures } = await loadAuditDays();
 
   const history = existsSync(HISTORY_PATH) ? await loadHistory() : [];
   const calibration = await loadCalibration();
@@ -1659,6 +1666,47 @@ async function cmdBacktest(args: {
   console.log(`  Reports → ${outDir}/${tag}-summary.md`);
 }
 
+/**
+ * The weekly OPERATIONS report (engine/weekly.ts): pipeline day by day, the
+ * week / previous week / cumulative record with the verified tier apart,
+ * the audit's open findings, and the commit + data instant it describes.
+ * Default week: the last complete ISO week (a Monday run reports last week).
+ */
+async function cmdWeekly(args: { week?: string }): Promise<void> {
+  const now = new Date();
+  const week = args.week ?? lastCompleteWeek(now);
+  const { days } = await loadAuditDays();
+  const history = existsSync(HISTORY_PATH) ? await loadHistory() : [];
+  const audit = runAudit(
+    days,
+    history,
+    await loadCalibration(),
+    now,
+    LEAGUE.deadlines,
+    LEAGUE.perGameLockLeadMinutes != null,
+  );
+  const md = weeklyToMarkdown({
+    league: LEAGUE.label,
+    week,
+    days: days.map((d) => ({
+      date: d.date,
+      slate: existsSync(join(SLATE_DIR, `${d.date}.json`)),
+      lock: d.lock,
+      results: d.results,
+    })),
+    history,
+    tierIndex: await loadLockTierIndex(),
+    issues: audit.issues,
+    commit: process.env.GITHUB_SHA ?? null,
+    generatedAt: now.toISOString(),
+    slateDateIsUsDate: LEAGUE.perGameLockLeadMinutes == null,
+  });
+  const path = join(REPORTS_DIR, "weekly", `${week}.md`);
+  await mkdir(dirname(path), { recursive: true });
+  await saveMarkdown(path, md);
+  console.log(`Weekly operations report (${LEAGUE.label} ${week}) → ${path}`);
+}
+
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -1682,6 +1730,7 @@ async function main(): Promise<void> {
       "skip-weather": { type: "boolean", default: false },
       "skip-injuries": { type: "boolean", default: false },
       league: { type: "string" },
+      week: { type: "string" },
     },
   });
   // League first: every path and deadline the commands read derives from it.
@@ -1694,6 +1743,7 @@ async function main(): Promise<void> {
   else if (cmd === "report") await cmdReport();
   else if (cmd === "review") await cmdReview(values);
   else if (cmd === "audit") await cmdAudit();
+  else if (cmd === "weekly") await cmdWeekly(values);
   else if (cmd === "backtest") await cmdBacktest(values);
   else {
     console.log("Usage:");
