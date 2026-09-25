@@ -57,7 +57,7 @@
  * numbers reproducible bit-for-bit.
  */
 
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -113,10 +113,18 @@ import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
 import { buildWeather } from "../sources/weather";
 import { buildInjuries } from "../sources/injuries-builder";
 import {
+  aggregateByLockTier,
   aggregateHistory,
   marketRecordLabel,
   TOTAL_MARKET_NEVER_QUOTED,
 } from "../engine/report";
+import {
+  isAfterFirstPitch,
+  LATE_FLAG,
+  lockTierIndex,
+  withholdAfterFirstPitch,
+  type LockTier,
+} from "../engine/lock-provenance";
 import {
   gamePredictionDeadline,
   isPredictionLocked,
@@ -205,6 +213,26 @@ async function loadCalibration(): Promise<CalibrationState> {
   return normalizeCalibration(
     await readJson<Partial<CalibrationState>>(CALIBRATION_PATH),
   );
+}
+
+/**
+ * Every committed lock's pick → lock tier (see lock-provenance.ts). Read
+ * from the lock files themselves so the split is reproducible from the
+ * repository alone; the ledger (history.jsonl) is never rewritten.
+ */
+async function loadLockTierIndex(): Promise<Map<string, LockTier>> {
+  if (!existsSync(PRED_DIR)) return new Map();
+  const files = (await readdir(PRED_DIR)).filter((f) =>
+    /^\d{4}-\d{2}-\d{2}\.json$/.test(f),
+  );
+  const locks: Array<{ date: string; lock: PredictionLock }> = [];
+  for (const f of files) {
+    locks.push({
+      date: f.slice(0, 10),
+      lock: await readJson<PredictionLock>(join(PRED_DIR, f)),
+    });
+  }
+  return lockTierIndex(locks);
 }
 
 async function loadHistory(): Promise<SettlementReport[]> {
@@ -658,6 +686,7 @@ async function cmdPredict(args: {
   const predictions: GamePrediction[] = [];
   let carried = 0;
   let lateCount = 0;
+  let postStartCount = 0;
   for (const g of games) {
     const kept = alreadyFinal.get(g.gamePk);
     if (kept) {
@@ -672,17 +701,25 @@ async function cmdPredict(args: {
       seed: `${ct.date}:${g.gamePk}`,
     });
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
-    const p = decide(g, runs, sim, calibration, handicap, cfg);
+    let p = decide(g, runs, sim, calibration, handicap, cfg);
 
     const deadline = gameDeadline(g.gameDate);
     const gameLocked = now.getTime() >= deadline.getTime();
     p.lockDeadline = deadline.toISOString();
     p.final = gameLocked;
+    // Provenance, stamped once here and carried through every re-lock.
+    p.predictedAt = now.toISOString();
+    if (process.env.GITHUB_RUN_ID) p.predictedRunId = process.env.GITHUB_RUN_ID;
     if (gameLocked) {
       // Produced after this game's cut-off — recorded as such rather than
       // passed off as a pick that was made in time.
-      p.flags = [...p.flags, "[warn] predicted_after_deadline"];
+      p.flags = [...p.flags, LATE_FLAG];
       lateCount++;
+    }
+    if (isAfterFirstPitch(g.gameDate, now)) {
+      // The game has started: keep the row, withhold every market.
+      p = withholdAfterFirstPitch(p, now);
+      postStartCount++;
     }
     predictions.push(p);
   }
@@ -728,6 +765,12 @@ async function cmdPredict(args: {
   if (lateCount > 0) {
     console.log(
       `WARNING: ${lateCount} game(s) were predicted after their lock deadline.`,
+    );
+  }
+  if (postStartCount > 0) {
+    console.log(
+      `WARNING: ${postStartCount} game(s) had already started — recorded ` +
+        "with every market withheld (no pick, no stake).",
     );
   }
   const upcoming = predictions
@@ -1150,10 +1193,12 @@ async function cmdReport(): Promise<void> {
     );
     return;
   }
-  const s = aggregateHistory(await loadHistory());
+  const history = await loadHistory();
+  const s = aggregateHistory(history);
+  const tiers = aggregateByLockTier(history, await loadLockTierIndex());
   const calibration = await loadCalibration();
   const summaryPath = join(REPORTS_DIR, "summary.md");
-  await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration));
+  await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration, tiers));
 
   console.log("=".repeat(72));
   console.log(

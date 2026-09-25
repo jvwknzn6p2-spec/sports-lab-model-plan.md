@@ -15,7 +15,8 @@
 
 import type { Confidence } from "./decision";
 import { breakEvenProbability } from "./ev";
-import type { SettlementReport } from "./settle";
+import { LOCK_TIERS, type LockTier, tierOf } from "./lock-provenance";
+import { dayTotals, type SettledGame, type SettlementReport } from "./settle";
 
 export interface HistorySummary {
   dates: number;
@@ -52,6 +53,8 @@ export interface HistorySummary {
    * as context, but the significance claim belongs to the money.
    */
   handicapProfitTotal: number | null;
+  /** Settled handicap stakes behind handicapProfitTotal / handicapRoi. */
+  handicapStakes: number;
   handicapRoi: number | null;
   handicapProfitAssessment: ProfitAssessment | null;
   /** Win-rate context (Wilson CI vs the full-unit break-even). */
@@ -433,6 +436,7 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
     handicapCalibration: marketCalibration(handicapSamples),
     totalCalibration: marketCalibration(totalSamples),
     handicapProfitTotal: profitN === 0 ? null : round3(profitSum),
+    handicapStakes: profitN,
     handicapRoi: profitN === 0 ? null : round3(profitSum / profitN),
     handicapProfitAssessment: assessProfit(allProfits),
     handicapAssessment: assessRecord(handicap.wins, handicap.losses),
@@ -468,3 +472,49 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
 }
 
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+/**
+ * A day's report restricted to the games `keep` accepts, with every
+ * day-level field recomputed from those games by settlement's own
+ * definition (dayTotals). Restricting to every game reproduces the stored
+ * day exactly — test/lock-provenance.test.ts holds that against the real
+ * ledgers, so a tier split can never drift from the headline it splits.
+ */
+export function restrictReport(
+  r: SettlementReport,
+  keep: (g: SettledGame) => boolean,
+): SettlementReport {
+  const games = r.games.filter(keep);
+  return {
+    ...r,
+    ...dayTotals(games),
+    // Unsettled games are not rows, so they cannot be attributed to a tier.
+    gamesMissingResults: 0,
+    games,
+  };
+}
+
+/**
+ * The cumulative record split by lock tier (see lock-provenance.ts). Each
+ * tier is summarised by aggregateHistory over only its own games, on the
+ * last report per date — the same last-wins rule as the headline. A date
+ * contributes to a tier only when it holds at least one of its games.
+ */
+export function aggregateByLockTier(
+  reports: SettlementReport[],
+  index: Map<string, LockTier>,
+): Record<LockTier, HistorySummary> {
+  const byDate = new Map<string, SettlementReport>();
+  for (const r of reports) byDate.set(r.date, r);
+  const finals = [...byDate.values()];
+  const out = {} as Record<LockTier, HistorySummary>;
+  for (const tier of LOCK_TIERS) {
+    const restricted = finals
+      .map((r) =>
+        restrictReport(r, (g) => tierOf(index, r.date, g.gamePk) === tier),
+      )
+      .filter((r) => r.games.length > 0);
+    out[tier] = aggregateHistory(restricted);
+  }
+  return out;
+}
