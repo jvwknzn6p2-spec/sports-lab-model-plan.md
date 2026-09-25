@@ -13,10 +13,17 @@
  * 閾値の根拠（本番台帳 155 決済の実測・2026-09-17）:
  *   決済ラグ（キックオフ→決済）は 中央値 13.9h / 90%点 97.5h / 最大 118.5h。
  *   **バックログの古さで警報を出すと、正常な遅れ（〜5 日）と区別が付かない。**
- *   よって警報の主軸は「結果を 1 件も取り込めていない時間」にする。こちらは
- *   「そもそも仕事が無かった」に当たる状況が無い（毎日どこかのリーグで試合がある）。
+ *   よって警報の主軸は「結果を 1 件も取り込めていない時間」にする。
+ *
+ * **ただし「そもそも仕事が無かった」は必ず起きる**（2026-09-25 に判明。当初の
+ * 「毎日どこかのリーグで試合がある」という前提は誤りだった）。国際試合週間は
+ * 10 リーグすべてが同時に止まり、2026-09-22〜10-09 は**17 日間 1 試合も無い**。
+ * 時間だけで測ると日次が 2 週間赤くなる。実測でも、健全に動いていた期間の取込間隔は
+ * 中央値 24.4h に対し **最大 127.6h**（9/04→9/09）・**96.6h**（9/18→9/22）あり、
+ * 現行の 72h は**平常運転でも鳴っていた**。VORTE EV の `expected_24h`（NPB の月曜
+ * 休養日）と同じ形で、**沈黙を数える前に「結果が出ているはずの試合があるか」を見る**。
  */
-import type { LedgerEvaluation, LedgerPrediction, LedgerResult } from "./ledger.ts";
+import type { LedgerEvaluation, LedgerMatch, LedgerPrediction, LedgerResult } from "./ledger.ts";
 
 /** 取り込みが止まっている、と判断するまでの時間（警告）。日次 1 回なので 24h では毎回出る */
 export const INGEST_WARN_HOURS = 36;
@@ -25,6 +32,18 @@ export const INGEST_WARN_HOURS = 36;
  * VORTE EV の `archive-freshness`（72 時間＝3 回連続で CI を落とす）と同じ基準。
  */
 export const INGEST_FAIL_HOURS = 72;
+/**
+ * 試合が終わってから「結果はもう入っているはずだ」と言えるまでの猶予。
+ *
+ * 実測（台帳が日次で回り始めた 2026-09-10 以降の結果 189 件・キックオフ日 00:00Z からの
+ * 取込までの時間）: 中央値 48.7h / p75 72.7h / p95 96.3h / **最大 111.5h**。
+ * 取得元（football-data.co.uk の CSV）が週明けにまとめて更新されるためで、
+ * **4 日以上かかるのは異常ではない**。111.5 をそのまま書かないのは標本 189 件に対して
+ * 精度を詐称しないため。この猶予より新しい試合は「まだ来ていないだけ」として数えない。
+ *
+ * 履歴の全期間（9/03〜9/23）で、この猶予を使うと**誤警報は 0 件**になる（実測）。
+ */
+export const RESULT_DUE_HOURS = 120;
 
 export interface IngestHealth {
   /** 結果を最後に台帳へ書いた時刻（ISO）。1 件も無ければ null */
@@ -84,13 +103,65 @@ export function settlementBacklog(
 
 export type HealthLevel = "ok" | "warn" | "fail";
 
+/** 結果が入っているはずなのに入っていない試合（最古の 1 件） */
+export interface DueMatch {
+  league: string;
+  kickoffAt: string;
+  /** キックオフからの経過時間 */
+  ageHours: number;
+}
+
 /**
- * 警報の段階。`lastRecordedAt` が無い（結果が 1 件も無い）台帳は **ok** とする。
- * 立ち上げ直後を故障と呼ばないため（VORTE EV の `expected_24h` と同じ、
- * 「そもそも仕事が無かった」を故障にしない配慮）。
+ * **沈黙の期待**（VORTE EV の `expected_24h` と同じ役割）。
+ *
+ * 最後に結果を書いた時刻より後にキックオフし、かつ `dueHours` 以上経った試合を返す
+ * （最古の 1 件。無ければ null）。**最後の取込より後に始まった試合の結果は、定義上
+ * まだ台帳に無い**（書き込みはキックオフより前に終わっているため）ので、結果の照合は要らない。
+ *
+ * null は「取り込むべきものが無い」＝沈黙は期待どおり、という意味であり、
+ * **取込が健全であることの証明ではない**。生の事実（`hoursSinceRecord`）は
+ * `ingestHealth` にそのまま残す。判断を足すのはこちら側だけにする。
  */
-export function ingestLevel(h: IngestHealth, warnHours = INGEST_WARN_HOURS, failHours = INGEST_FAIL_HOURS): HealthLevel {
+export function ingestDue(
+  matches: Iterable<LedgerMatch>,
+  lastRecordedAt: string | null,
+  nowIso: string,
+  dueHours = RESULT_DUE_HOURS,
+): DueMatch | null {
+  if (lastRecordedAt === null) return null;
+  const now = Date.parse(nowIso);
+  const since = Date.parse(lastRecordedAt);
+  let oldest: DueMatch | null = null;
+  for (const m of matches) {
+    const kickoff = Date.parse(m.kickoffAt);
+    if (kickoff <= since) continue;
+    const ageHours = (now - kickoff) / 3_600_000;
+    if (ageHours < dueHours) continue;
+    if (oldest === null || m.kickoffAt < oldest.kickoffAt) {
+      oldest = { league: m.league, kickoffAt: m.kickoffAt, ageHours };
+    }
+  }
+  return oldest;
+}
+
+/**
+ * 警報の段階。次の 2 つはどちらも **ok** とする。
+ *  - `lastRecordedAt` が無い（結果が 1 件も無い）台帳 — 立ち上げ直後を故障と呼ばない
+ *  - `due` が null — 結果が出ているはずの試合が 1 件も無い（国際試合週間・オフ）。
+ *    ここを見ないと、試合が 1 試合も無い 17 日間ずっと赤になる
+ *
+ * **検知は遅くなる**（取得元が全部落ちた場合、気付くのは試合日から `RESULT_DUE_HOURS`
+ * ＝ 5 日後）。それでも旧実装より良い: 旧実装の 72h は平常運転の取込間隔
+ * （実測 最大 127.6h）を下回っており、**鳴っても故障と区別が付かなかった**。
+ */
+export function ingestLevel(
+  h: IngestHealth,
+  due: DueMatch | null,
+  warnHours = INGEST_WARN_HOURS,
+  failHours = INGEST_FAIL_HOURS,
+): HealthLevel {
   if (h.hoursSinceRecord === null) return "ok";
+  if (due === null) return "ok";
   if (h.hoursSinceRecord >= failHours) return "fail";
   if (h.hoursSinceRecord >= warnHours) return "warn";
   return "ok";

@@ -43,7 +43,7 @@ import {
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import {
-  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestHealth, ingestLevel, missedSeals,
+  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, RESULT_DUE_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestDue, ingestHealth, ingestLevel, missedSeals,
   nextZeroFixtureRuns, publishLevel, runTotals, seasonLive, settlementBacklog,
   type RunLeague, type RunReport,
 } from "../health.ts";
@@ -699,11 +699,24 @@ function quote(): void {
 function health(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const h = ingestHealth(L.results(), NOW);
-  const level = ingestLevel(h);
+  // 沈黙を数える前に「結果が出ているはずの試合があるか」を見る（国際試合週間で全リーグが
+  // 同時に止まるため。2026-09-25 の実測で、時間だけの判定は 2 週間赤くなることが分かった）
+  const due = ingestDue(L.currentMatches().values(), h.lastRecordedAt, NOW);
+  const level = ingestLevel(h, due);
   const backlog = settlementBacklog(L.predictions(), L.evaluations(), NOW);
 
   const since = h.hoursSinceRecord === null ? "—" : `${h.hoursSinceRecord.toFixed(1)}h`;
   console.log(`ingest ${level}: 結果 ${h.results} 件・最後の取込 ${h.lastRecordedAt ?? "なし"}（${since} 前）・最新の試合日 ${h.lastMatchDate ?? "なし"}`);
+  if (due === null) {
+    // 「何も来ていない」と「来るはずのものが無い」を取り違えないよう、必ず理由を出す
+    const next = [...L.currentMatches().values()]
+      .map((m) => m.kickoffAt)
+      .filter((k) => Date.parse(k) > Date.parse(NOW))
+      .sort()[0];
+    console.log(`  沈黙は期待どおり: 結果が出ているはずの未取込の試合は 0 件（猶予 ${RESULT_DUE_HOURS}h）` + (next ? `・次の試合 ${next}` : ""));
+  } else {
+    console.log(`  未取込の最古: ${due.league} ${due.kickoffAt}（${due.ageHours.toFixed(1)}h 前・猶予 ${RESULT_DUE_HOURS}h）`);
+  }
   console.log(`決済待ち ${backlog.length} 件` + (backlog.length ? `・最古 ${backlog[0].ageHours.toFixed(1)}h（${backlog[0].league} ${backlog[0].kickoffAt}）` : ""));
   for (const b of backlog.slice(0, 10)) {
     console.log(`  ${b.league} ${b.kickoffAt} ${b.ageHours.toFixed(1)}h ${b.providerId}`);
