@@ -83,6 +83,7 @@ import {
   DEFAULT_DECISION_CONFIG,
   fmtPct,
   fmtUnits,
+  hasQuotedLine,
   normalizeCalibration,
   type CalibrationState,
   type GamePrediction,
@@ -347,7 +348,20 @@ async function writeSkeletonAndFillOdds(
   // consensus. Entered lines are never touched, and a fetch failure leaves
   // the tower as it is — the day then simply quotes no handicap market.
   const oddsKey = process.env.ODDS_API_KEY;
-  if (oddsKey) {
+  const tower = await readJson<ControlTower>(ctPath);
+  const needsOdds = oddsGames.some((g) => {
+    const h = tower.handicaps?.[String(g.gamePk)];
+    return !hasQuotedLine(h) || h?.total == null;
+  });
+  if (oddsKey && !needsOdds) {
+    // Filled lines are kept, never refreshed (fillControlTowerFromOdds), so
+    // a call when every game already carries a line and a total buys
+    // nothing. The key is shared and its monthly credits ran out on
+    // 2026-09-17 — the predict/slate passes were calling it ~10×/day.
+    console.log(
+      "  Odds: every game already carries a line and a total — no call made.",
+    );
+  } else if (oddsKey) {
     try {
       const events = await fetchMlbOdds({
         apiKey: oddsKey,
