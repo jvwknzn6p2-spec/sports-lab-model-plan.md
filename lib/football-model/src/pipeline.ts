@@ -81,7 +81,7 @@ export function summarizeLeague(league: string, predictions: LedgerPrediction[],
   };
 }
 
-const NAMES: Record<string, string> = {
+export const NAMES: Record<string, string> = {
   E0: "プレミアリーグ",
   I1: "セリエA",
   SP1: "ラ・リーガ",
