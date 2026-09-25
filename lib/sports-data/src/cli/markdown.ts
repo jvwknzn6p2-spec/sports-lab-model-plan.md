@@ -11,8 +11,14 @@ import type { AuditReport } from "../engine/audit";
 import type { CalibrationState, GamePrediction } from "../engine/decision";
 import { fmtPct, fmtUnits, hasQuotedLine, rankByValue } from "../engine/decision";
 import {
+  LOCK_TIER_LABEL,
+  LOCK_TIERS,
+  type LockTier,
+} from "../engine/lock-provenance";
+import {
   marketRecordLabel,
   TOTAL_MARKET_NEVER_QUOTED,
+  wilson95,
   type CalibrationBucket,
   type HistorySummary,
 } from "../engine/report";
@@ -244,13 +250,73 @@ export function settlementToMarkdown(r: SettlementReport): string {
   return out.join("\n") + "\n";
 }
 
+/** One tier's record on one phone-width line. */
+function tierLine(tier: LockTier, s: HistorySummary): string {
+  const w = s.winnerRecord;
+  const decided = w.wins + w.losses;
+  const ci = decided > 0 ? wilson95(w.wins, decided) : null;
+  const money =
+    s.handicapProfitTotal === null
+      ? "no handicap stake"
+      : `handicap ${s.handicapRecord.wins}-${s.handicapRecord.losses}, ` +
+        `${fmtUnits(s.handicapProfitTotal)} units over ` +
+        `${s.handicapStakes} stake(s)` +
+        (s.handicapRoi === null ? "" : ` (ROI ${fmtPct(s.handicapRoi)})`);
+  return (
+    `- **${tier}** — ${LOCK_TIER_LABEL[tier]}: ` +
+    (decided === 0
+      ? "no decided pick"
+      : `${w.wins}-${w.losses} (${pct(w.wins / decided)}, 95% CI ` +
+        `${pct(ci!.lo)}–${pct(ci!.hi)})`) +
+    (s.meanBrier === null ? "" : `, Brier ${s.meanBrier}`) +
+    `; ${money}`
+  );
+}
+
+/**
+ * The record split by WHEN each pick was fixed (lock-provenance.ts). Leads
+ * the summary: only `on_time` is a verified pre-game record whose P&L could
+ * have been bet, and a headline that silently mixes in picks fixed after the
+ * market closed — or after first pitch — cannot be trusted.
+ */
+export function lockTiersToMarkdown(
+  tiers: Record<LockTier, HistorySummary>,
+): string {
+  const out: string[] = [];
+  out.push("## Verified pre-game record (by when each pick was fixed)");
+  out.push("");
+  out.push(
+    "_Only picks fixed BEFORE their deadline form the verified record; the " +
+      "market closes at the deadline, so only their P&L was executable. " +
+      "Picks fixed after the deadline are pre-game forecasts (accuracy is " +
+      "fair, P&L is reference). Picks fixed at or after first pitch are " +
+      "excluded. Tiers come from the committed lock files; the ledger " +
+      "(history.jsonl) is not rewritten._",
+  );
+  out.push("");
+  for (const t of LOCK_TIERS) {
+    const s = tiers[t];
+    if (s.gamesSettled + s.gamesPassed === 0 && s.handicapProfitTotal === null)
+      continue;
+    out.push(tierLine(t, s));
+  }
+  out.push("");
+  return out.join("\n");
+}
+
 export function summaryToMarkdown(
   s: HistorySummary,
   calibration: CalibrationState,
+  tiers?: Record<LockTier, HistorySummary>,
 ): string {
   const out: string[] = [];
   out.push("# HandiEdge — running results");
   out.push("");
+  if (tiers) {
+    out.push(lockTiersToMarkdown(tiers));
+    out.push("## All picks (every tier combined — reference)");
+    out.push("");
+  }
   out.push(
     `**${s.winnerRecord.wins}-${s.winnerRecord.losses}**` +
       (s.winnerRate === null ? "" : ` (${pct(s.winnerRate)})`) +

@@ -433,6 +433,19 @@ export interface GamePrediction {
   lockDeadline?: string | null;
   /** True once the deadline has passed and the pick is frozen. */
   final?: boolean;
+  /**
+   * When this pick was produced — stamped once by the run that produced it
+   * and carried unchanged through every re-lock, so the record can tell a
+   * pick fixed before its deadline from one fixed after it, or after first
+   * pitch (lock-provenance.ts). Absent on picks written before 2026-09-25.
+   */
+  predictedAt?: string;
+  /**
+   * The GitHub Actions run that produced the pick (GITHUB_RUN_ID), so the
+   * repository's own timestamp can be checked against GitHub's server-side
+   * record of that run. Absent outside Actions and on older picks.
+   */
+  predictedRunId?: string;
 }
 
 /** Pull a raw probability toward 50% by the market's learned shrink. */

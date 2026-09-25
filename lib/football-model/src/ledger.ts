@@ -21,6 +21,7 @@ import type { MatchWithOdds } from "./footballData.ts";
 import type { ProbabilityTriple } from "./scoring.ts";
 import { outcomeOf, rps, multiclassBrier, logLoss } from "./scoring.ts";
 import type { ClosingMarketResolver } from "./marketSnapshots.ts";
+import { fixtureRegistrations } from "./fixtureIdentity.ts";
 
 /**
  * 封緘の規則（Founder 確定 2026-09-09）: **試合日（JST）の前日 20:00 JST**。
@@ -248,6 +249,15 @@ export class Ledger {
     if (match.kickoffAt !== p.kickoffAt) return { ok: false, reason: "kickoff differs from registry" };
     if (p.publishedAt >= match.cutoffAt) return { ok: false, reason: `sealed (cutoff ${match.cutoffAt})` };
     if (this.predictions().some((x) => x.providerId === p.providerId)) return { ok: false, reason: "already published" };
+    // 同じ試合の別登録（日程変更・取得元違い。fixtureIdentity.ts）: 1 試合 1 予想、封緘は最も早い登録のもの
+    const regs = fixtureRegistrations(match, this.currentMatches().values());
+    const siblings = new Set(regs.map((r) => r.providerId));
+    const twin = this.predictions().find((x) => x.providerId !== p.providerId && siblings.has(x.providerId));
+    if (twin) return { ok: false, reason: `already published for the same fixture (${twin.providerId} kickoff ${twin.kickoffAt})` };
+    const earliest = regs.reduce((a, b) => (b.cutoffAt < a.cutoffAt ? b : a), match);
+    if (p.publishedAt >= earliest.cutoffAt) {
+      return { ok: false, reason: `sealed by an earlier registration of the same fixture (kickoff ${earliest.kickoffAt}, cutoff ${earliest.cutoffAt})` };
+    }
     if (Math.abs(p.pHome + p.pDraw + p.pAway - 1) > 5e-4) return { ok: false, reason: "probabilities do not sum to 1" };
     const fingerprint = createHash("sha256")
       .update(`${p.providerId}|${p.model}|${p.pHome.toFixed(4)}|${p.pDraw.toFixed(4)}|${p.pAway.toFixed(4)}|${match.cutoffAt}`)
@@ -302,9 +312,14 @@ export class Ledger {
       const m = this.currentMatches().get(p.providerId);
       if (!m) continue;
       const kickoffDay = Date.parse(p.kickoffAt.slice(0, 10) + "T00:00:00Z");
-      const r = results.find(
-        (x) => x.league === p.league && x.home === m.home && x.away === m.away && Math.abs(Date.parse(x.date + "T00:00:00Z") - kickoffDay) <= 86_400_000,
-      );
+      // 結果の日付は現地日付なので前後 1 日を同じ試合とみなす。**後ろ倒し（延期）は 7 日まで**
+      // 追う（Utrecht–Go Ahead Eagles は 9/5 の登録で 9/8 に開催・決済待ちのまま残っていた）。
+      // 前倒しは追わない: 登録より早く行われた試合に、その後に出た予想を結ばないため
+      const r = results.find((x) => {
+        if (x.league !== p.league || x.home !== m.home || x.away !== m.away) return false;
+        const d = Date.parse(x.date + "T00:00:00Z") - kickoffDay;
+        return d >= -86_400_000 && d <= 7 * 86_400_000;
+      });
       if (!r) continue;
       const outcome = outcomeOf(r.homeGoals, r.awayGoals);
       const probs: ProbabilityTriple = [p.pHome, p.pDraw, p.pAway];

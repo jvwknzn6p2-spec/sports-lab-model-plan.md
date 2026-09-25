@@ -68,6 +68,18 @@ jobs:
             echo "No NPB predictions yet — NPB audit skipped."
           fi
 
+      # Weekly OPERATIONS report per league (engine/weekly.ts): pipeline day by
+      # day, verified record apart from the rest, open findings, commit and
+      # data instant. Informational — it never turns the run red.
+      - name: Weekly operations report
+        if: always()
+        working-directory: lib/sports-data
+        run: |
+          pnpm exec tsx src/cli/handiedge.ts weekly || true
+          if [ -d data-npb/predictions ]; then
+            pnpm exec tsx src/cli/handiedge.ts weekly --league npb || true
+          fi
+
       - name: Publish to run summary
         if: steps.audit.outputs.exit == '0' || steps.audit.outputs.exit == '2'
         run: |
@@ -84,10 +96,13 @@ jobs:
           if [ -f lib/sports-data/data-npb/reports/audit.md ]; then
             git add lib/sports-data/data-npb/reports/audit.md
           fi
+          for d in lib/sports-data/data/reports/weekly lib/sports-data/data-npb/reports/weekly; do
+            if [ -d "$d" ]; then git add "$d"; fi
+          done
           if git diff --cached --quiet; then
             echo "Nothing to commit."
           else
-            git commit -m "HandiEdge: standing audit"
+            git commit -m "HandiEdge: standing audit and weekly operations report"
             git pull --rebase origin "${{ github.ref_name }}"
             git push origin "HEAD:${{ github.ref_name }}"
           fi

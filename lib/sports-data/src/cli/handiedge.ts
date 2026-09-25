@@ -57,13 +57,14 @@
  * numbers reproducible bit-for-bit.
  */
 
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { distributionCheck, runAudit, type AuditDay } from "../engine/audit";
+import { lastCompleteWeek, weeklyToMarkdown } from "../engine/weekly";
 import {
   walkForward,
   type BacktestDay,
@@ -83,6 +84,7 @@ import {
   DEFAULT_DECISION_CONFIG,
   fmtPct,
   fmtUnits,
+  hasQuotedLine,
   normalizeCalibration,
   type CalibrationState,
   type GamePrediction,
@@ -113,10 +115,18 @@ import { buildForms, FORM_GAMES_TARGET } from "../sources/form-builder";
 import { buildWeather } from "../sources/weather";
 import { buildInjuries } from "../sources/injuries-builder";
 import {
+  aggregateByLockTier,
   aggregateHistory,
   marketRecordLabel,
   TOTAL_MARKET_NEVER_QUOTED,
 } from "../engine/report";
+import {
+  isAfterFirstPitch,
+  LATE_FLAG,
+  lockTierIndex,
+  withholdAfterFirstPitch,
+  type LockTier,
+} from "../engine/lock-provenance";
 import {
   gamePredictionDeadline,
   isPredictionLocked,
@@ -205,6 +215,26 @@ async function loadCalibration(): Promise<CalibrationState> {
   return normalizeCalibration(
     await readJson<Partial<CalibrationState>>(CALIBRATION_PATH),
   );
+}
+
+/**
+ * Every committed lock's pick → lock tier (see lock-provenance.ts). Read
+ * from the lock files themselves so the split is reproducible from the
+ * repository alone; the ledger (history.jsonl) is never rewritten.
+ */
+async function loadLockTierIndex(): Promise<Map<string, LockTier>> {
+  if (!existsSync(PRED_DIR)) return new Map();
+  const files = (await readdir(PRED_DIR)).filter((f) =>
+    /^\d{4}-\d{2}-\d{2}\.json$/.test(f),
+  );
+  const locks: Array<{ date: string; lock: PredictionLock }> = [];
+  for (const f of files) {
+    locks.push({
+      date: f.slice(0, 10),
+      lock: await readJson<PredictionLock>(join(PRED_DIR, f)),
+    });
+  }
+  return lockTierIndex(locks);
 }
 
 async function loadHistory(): Promise<SettlementReport[]> {
@@ -319,7 +349,20 @@ async function writeSkeletonAndFillOdds(
   // consensus. Entered lines are never touched, and a fetch failure leaves
   // the tower as it is — the day then simply quotes no handicap market.
   const oddsKey = process.env.ODDS_API_KEY;
-  if (oddsKey) {
+  const tower = await readJson<ControlTower>(ctPath);
+  const needsOdds = oddsGames.some((g) => {
+    const h = tower.handicaps?.[String(g.gamePk)];
+    return !hasQuotedLine(h) || h?.total == null;
+  });
+  if (oddsKey && !needsOdds) {
+    // Filled lines are kept, never refreshed (fillControlTowerFromOdds), so
+    // a call when every game already carries a line and a total buys
+    // nothing. The key is shared and its monthly credits ran out on
+    // 2026-09-17 — the predict/slate passes were calling it ~10×/day.
+    console.log(
+      "  Odds: every game already carries a line and a total — no call made.",
+    );
+  } else if (oddsKey) {
     try {
       const events = await fetchMlbOdds({
         apiKey: oddsKey,
@@ -658,6 +701,7 @@ async function cmdPredict(args: {
   const predictions: GamePrediction[] = [];
   let carried = 0;
   let lateCount = 0;
+  let postStartCount = 0;
   for (const g of games) {
     const kept = alreadyFinal.get(g.gamePk);
     if (kept) {
@@ -672,17 +716,25 @@ async function cmdPredict(args: {
       seed: `${ct.date}:${g.gamePk}`,
     });
     const handicap = ct.handicaps?.[String(g.gamePk)] ?? null;
-    const p = decide(g, runs, sim, calibration, handicap, cfg);
+    let p = decide(g, runs, sim, calibration, handicap, cfg);
 
     const deadline = gameDeadline(g.gameDate);
     const gameLocked = now.getTime() >= deadline.getTime();
     p.lockDeadline = deadline.toISOString();
     p.final = gameLocked;
+    // Provenance, stamped once here and carried through every re-lock.
+    p.predictedAt = now.toISOString();
+    if (process.env.GITHUB_RUN_ID) p.predictedRunId = process.env.GITHUB_RUN_ID;
     if (gameLocked) {
       // Produced after this game's cut-off — recorded as such rather than
       // passed off as a pick that was made in time.
-      p.flags = [...p.flags, "[warn] predicted_after_deadline"];
+      p.flags = [...p.flags, LATE_FLAG];
       lateCount++;
+    }
+    if (isAfterFirstPitch(g.gameDate, now)) {
+      // The game has started: keep the row, withhold every market.
+      p = withholdAfterFirstPitch(p, now);
+      postStartCount++;
     }
     predictions.push(p);
   }
@@ -728,6 +780,12 @@ async function cmdPredict(args: {
   if (lateCount > 0) {
     console.log(
       `WARNING: ${lateCount} game(s) were predicted after their lock deadline.`,
+    );
+  }
+  if (postStartCount > 0) {
+    console.log(
+      `WARNING: ${postStartCount} game(s) had already started — recorded ` +
+        "with every market withheld (no pick, no stake).",
     );
   }
   const upcoming = predictions
@@ -1150,10 +1208,12 @@ async function cmdReport(): Promise<void> {
     );
     return;
   }
-  const s = aggregateHistory(await loadHistory());
+  const history = await loadHistory();
+  const s = aggregateHistory(history);
+  const tiers = aggregateByLockTier(history, await loadLockTierIndex());
   const calibration = await loadCalibration();
   const summaryPath = join(REPORTS_DIR, "summary.md");
-  await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration));
+  await saveMarkdown(summaryPath, summaryToMarkdown(s, calibration, tiers));
 
   console.log("=".repeat(72));
   console.log(
@@ -1291,7 +1351,8 @@ async function cmdReport(): Promise<void> {
  * Exits non-zero when any error-severity issue is found, so the scheduled
  * workflow goes red instead of quietly committing a report nobody reads.
  */
-async function cmdAudit(): Promise<void> {
+/** Every date the store knows about, as audit days (shared by audit and weekly). */
+async function loadAuditDays(): Promise<{ days: AuditDay[]; parseFailures: string[] }> {
   const { readdir } = await import("node:fs/promises");
   const parseFailures: string[] = [];
   const dates = new Set<string>();
@@ -1336,6 +1397,11 @@ async function cmdAudit(): Promise<void> {
         )?.handicaps ?? null,
     });
   }
+  return { days, parseFailures };
+}
+
+async function cmdAudit(): Promise<void> {
+  const { days, parseFailures } = await loadAuditDays();
 
   const history = existsSync(HISTORY_PATH) ? await loadHistory() : [];
   const calibration = await loadCalibration();
@@ -1600,6 +1666,47 @@ async function cmdBacktest(args: {
   console.log(`  Reports → ${outDir}/${tag}-summary.md`);
 }
 
+/**
+ * The weekly OPERATIONS report (engine/weekly.ts): pipeline day by day, the
+ * week / previous week / cumulative record with the verified tier apart,
+ * the audit's open findings, and the commit + data instant it describes.
+ * Default week: the last complete ISO week (a Monday run reports last week).
+ */
+async function cmdWeekly(args: { week?: string }): Promise<void> {
+  const now = new Date();
+  const week = args.week ?? lastCompleteWeek(now);
+  const { days } = await loadAuditDays();
+  const history = existsSync(HISTORY_PATH) ? await loadHistory() : [];
+  const audit = runAudit(
+    days,
+    history,
+    await loadCalibration(),
+    now,
+    LEAGUE.deadlines,
+    LEAGUE.perGameLockLeadMinutes != null,
+  );
+  const md = weeklyToMarkdown({
+    league: LEAGUE.label,
+    week,
+    days: days.map((d) => ({
+      date: d.date,
+      slate: existsSync(join(SLATE_DIR, `${d.date}.json`)),
+      lock: d.lock,
+      results: d.results,
+    })),
+    history,
+    tierIndex: await loadLockTierIndex(),
+    issues: audit.issues,
+    commit: process.env.GITHUB_SHA ?? null,
+    generatedAt: now.toISOString(),
+    slateDateIsUsDate: LEAGUE.perGameLockLeadMinutes == null,
+  });
+  const path = join(REPORTS_DIR, "weekly", `${week}.md`);
+  await mkdir(dirname(path), { recursive: true });
+  await saveMarkdown(path, md);
+  console.log(`Weekly operations report (${LEAGUE.label} ${week}) → ${path}`);
+}
+
 async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -1623,6 +1730,7 @@ async function main(): Promise<void> {
       "skip-weather": { type: "boolean", default: false },
       "skip-injuries": { type: "boolean", default: false },
       league: { type: "string" },
+      week: { type: "string" },
     },
   });
   // League first: every path and deadline the commands read derives from it.
@@ -1635,6 +1743,7 @@ async function main(): Promise<void> {
   else if (cmd === "report") await cmdReport();
   else if (cmd === "review") await cmdReview(values);
   else if (cmd === "audit") await cmdAudit();
+  else if (cmd === "weekly") await cmdWeekly(values);
   else if (cmd === "backtest") await cmdBacktest(values);
   else {
     console.log("Usage:");
