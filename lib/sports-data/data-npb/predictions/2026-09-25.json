@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-09-25T05:58:19.990Z",
-  "updatedAt": "2026-09-25T05:58:19.990Z",
+  "lockedAt": "2026-09-25T08:06:32.265Z",
+  "updatedAt": "2026-09-25T08:06:32.265Z",
   "controlTower": {
     "date": "2026-09-25",
     "season": 1002026,
@@ -53,7 +53,7 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.547,
+      "winProbability": 0.548,
       "rawWinProbability": 0.555,
       "confidence": "C",
       "handicap": {
@@ -72,7 +72,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.29,
+        "predicted": 7.32,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -82,16 +82,16 @@
       },
       "expectedRuns": {
         "home": 3.34,
-        "away": 3.83
+        "away": 3.84
       },
       "reasons": [
-        "PASS: edge too small (win prob 54.7% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 54.8% < 55%) — moneyline and total only",
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Offense edge: 中日ドラゴンズ (wOBA 0.289 vs 0.280)",
         "Bullpen edge: 中日ドラゴンズ",
         "Park factor 106 (hitter-friendly)",
-        "Expected runs 3.34–3.83 over 10000 sims",
-        "Weather: 24°C at first pitch — run environment ×1.020"
+        "Expected runs 3.34–3.84 over 10000 sims",
+        "Weather: 24°C at first pitch — run environment ×1.021"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -172,8 +172,8 @@
       "pass": false,
       "predictedWinner": "読売ジャイアンツ",
       "predictedLoser": "広島東洋カープ",
-      "winProbability": 0.575,
-      "rawWinProbability": 0.587,
+      "winProbability": 0.576,
+      "rawWinProbability": 0.588,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -191,7 +191,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 6.04,
+        "predicted": 6.05,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -201,16 +201,16 @@
       },
       "expectedRuns": {
         "home": 2.58,
-        "away": 3.24
+        "away": 3.25
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Starter edge: 読売ジャイアンツ (井上 温大 projFIP 2.66 vs 3.16)",
         "Offense edge: 読売ジャイアンツ (wOBA 0.285 vs 0.273)",
         "Park factor 95 (pitcher-friendly)",
-        "Expected runs 2.58–3.24 over 10000 sims",
+        "Expected runs 2.58–3.25 over 10000 sims",
         "home: cold bats — 2.5 R/G last 15 (season baseline 3.1)",
-        "Weather: 24°C at first pitch — run environment ×1.024"
+        "Weather: 25°C at first pitch — run environment ×1.027"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
