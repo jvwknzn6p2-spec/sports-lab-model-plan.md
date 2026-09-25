@@ -1,18 +1,18 @@
 # HandiEdge — running results
 
-**34-15** (69.4%) across 24 days, 68 PASS.
+**34-16** (68.0%) across 25 days, 72 PASS.
 
 - Handicap: 13-10 · **+1.70 units** after the cut (ROI +7.4% per bet)
 - Significance (P&L): +7.4% per bet over 23 stakes — z 0.37, **not yet distinguishable from luck**
 - Hit rate: 56.5% over 23 bets (95% CI 36.8%–74.4%) vs 52.6% full-unit break-even
 - Total: 15-9
-- Mean Brier: 0.215 (0.25 = coin flip, lower is better)
-- Calibration: says 61.1%, actually 69.4% — underconfident by 8.3pt
+- Mean Brier: 0.217 (0.25 = coin flip, lower is better)
+- Calibration: says 61.0%, actually 68.0% — underconfident by 7.0pt
 - Handicap calibration: says 57.9%, actually 56.5% over 23 bets (Brier 0.241)
 - Total calibration: says 56.0%, actually 62.5% over 24 bets (Brier 0.247)
-- Mean margin error: 2.411 runs
-- Mean total error: 2.519 runs
-- Learned shrink (core/tail/far) — moneyline 0.862/0.896/0.863, handicap 0.838/0.858/0.857, total 0.87/0.859/0.834 (49 games)
+- Mean margin error: 2.396 runs
+- Mean total error: 2.49 runs
+- Learned shrink (core/tail/far) — moneyline 0.855/0.896/0.863, handicap 0.838/0.858/0.857, total 0.87/0.859/0.834 (50 games)
 
 ## Calibration by band (handicap)
 
@@ -25,7 +25,7 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 ## Calibration by band (winner)
 
-- 55.0%–60.0%: said 57.3%, hit 60.0% over 20 (gap 2.7pt)
+- 55.0%–60.0%: said 57.3%, hit 57.1% over 21 (gap -0.1pt)
 - 60.0%–65.0%: said 62.3%, hit 76.2% over 21 (gap 13.9pt) (underconfident)
 - 65.0%–70.0%: said 67.4%, hit 75.0% over 8 (gap 7.6pt)
 
@@ -33,10 +33,11 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 - S: 5-3 (62.5%, -1.20 units over 5 stake(s), n=8 decided)
 - A: 3-0 (100.0%, +0.00 units over 0 stake(s), n=3 decided)
-- B: 26-12 (68.4%, +2.90 units over 18 stake(s), n=38 decided)
+- B: 26-13 (66.7%, +2.90 units over 18 stake(s), n=39 decided)
 
 ## By day
 
+- 2026-09-25: 0-1 (1 pick, 4 PASS, Brier 0.332)
 - 2026-09-24: 0-1 (1 pick, 1 PASS, Brier 0.313)
 - 2026-09-23: 4-0 (4 picks, 2 PASS, Brier 0.152)
 - 2026-09-22: 1-1 (2 picks, 4 PASS, Brier 0.229)
