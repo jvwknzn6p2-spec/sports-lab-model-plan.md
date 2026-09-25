@@ -4,7 +4,7 @@ import { appendFileSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Ledger, cutoffOf } from "../src/ledger.ts";
-import { parseOddsEvents, type OddsEvent } from "../src/oddsApi.ts";
+import { parseOddsEvents, type MarketFixture, type OddsEvent } from "../src/oddsApi.ts";
 import { parseFootballDataRaw } from "../src/footballDataRaw.ts";
 import { buildTeamResolver } from "../src/teamAliases.ts";
 
@@ -202,4 +202,89 @@ test("決済: 解決子を渡さなければ従来どおり（既存の呼び出
   );
   assert.equal(L.settle("2026-09-06T00:10:00Z"), 1);
   assert.equal(L.evaluations()[0].marketRpsClosing, null);
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * 日程が動いた試合の決済（2026-09-25・本番台帳の実測から）
+ *
+ * 決済は「キックオフ日の ±1 日」でしか結んでいなかったため、延期・前倒しされた試合は
+ * 結果が自分の履歴にあっても永久に決済されず、静かに記録から落ちていた。
+ * ただし**窓を広げるだけでは 1 試合を 2 回数える**（同じカードの幽霊日程が実在した）。
+ * この 3 件が本番で実際に詰まっていた形そのものである。
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const fixture = (providerId: string, kickoffAt: string, home: string, away: string): MarketFixture => ({
+  provider: "football-data", providerId, sportKey: "test", kickoffAt, home, away,
+  resolved: true, bookmakers: 0, market: null,
+});
+
+function withPrediction(L: Ledger, league: string, f: MarketFixture): void {
+  L.recordFixtures([f], league, "2026-09-01T00:00:00Z");
+  const r = L.publishPrediction({
+    providerId: f.providerId, league, kickoffAt: f.kickoffAt, publishedAt: "2026-09-01T01:00:00Z",
+    model: "dc-v5-shots", asOf: "2026-09-01T00:00:00Z", nTrain: 900,
+    pHome: 0.4, pDraw: 0.3, pAway: 0.3, lambdaHome: 1.4, lambdaAway: 1.2, market: null, marketFetchedAt: null,
+  });
+  assert.ok(r.ok, `発行できていない: ${JSON.stringify(r)}`);
+}
+
+const resultRow = (league: string, date: string, home: string, away: string, hg: number, ag: number) => ({
+  division: league, date, home, away, homeGoals: hg, awayGoals: ag, odds: null,
+});
+
+test("決済: 延期で日付が動いた試合も結ぶ（結果は台帳にあるのに落ちていた）", () => {
+  const L = fresh();
+  // 本番の実例: Utrecht v Go Ahead Eagles を 09-05 で予想 → 実際は 09-08 に 3-3
+  withPrediction(L, "N1", fixture("utr-gae", "2026-09-05T16:45:00Z", "Utrecht", "Go Ahead Eagles"));
+  L.recordResults([resultRow("N1", "2026-09-08", "Utrecht", "Go Ahead Eagles", 3, 3)], "football-data", "2026-09-11T00:00:00Z");
+  assert.equal(L.settle("2026-09-11T00:10:00Z"), 1);
+  const e = L.evaluations()[0]!;
+  assert.equal(e.result, "D");
+  assert.equal(e.homeGoals, 3);
+  assert.equal(e.resultDate, "2026-09-08");
+  assert.equal(e.matchedBy, "rescheduled");
+  // 冪等
+  assert.equal(L.settle("2026-09-11T00:20:00Z"), 0);
+});
+
+test("決済: ±1 日で結べた試合は従来どおり（matchedBy=kickoff）", () => {
+  const L = fresh();
+  withPrediction(L, "N1", fixture("a", "2026-09-05T16:45:00Z", "Utrecht", "Twente"));
+  L.recordResults([resultRow("N1", "2026-09-05", "Utrecht", "Twente", 1, 0)], "football-data", "2026-09-08T00:00:00Z");
+  assert.equal(L.settle("2026-09-08T00:10:00Z"), 1);
+  assert.equal(L.evaluations()[0]!.matchedBy, "kickoff");
+  assert.equal(L.evaluations()[0]!.resultDate, "2026-09-05");
+});
+
+test("決済: 同じカードの幽霊日程を 2 回数えない（本番の Sevilla v Valencia）", () => {
+  const L = fresh();
+  // 取得元が同じ試合を 09-11 と 09-13 の 2 つの日程として返していた。実際に行われたのは 1 試合
+  withPrediction(L, "SP1", fixture("sev-val-11", "2026-09-11T19:00:00Z", "Sevilla", "Valencia"));
+  withPrediction(L, "SP1", fixture("sev-val-13", "2026-09-13T19:00:00Z", "Sevilla", "Valencia"));
+  L.recordResults([resultRow("SP1", "2026-09-11", "Sevilla", "Valencia", 1, 0)], "football-data", "2026-09-15T00:00:00Z");
+  // 09-11 の予想だけが決済される。09-13 の幽霊は未決済のまま残す（フェイルクローズ）
+  assert.equal(L.settle("2026-09-15T00:10:00Z"), 1);
+  assert.equal(L.evaluations()[0]!.providerId, "sev-val-11");
+  assert.equal(L.evaluations()[0]!.matchedBy, "kickoff");
+  // 何度回しても増えない＝二重計上しない
+  assert.equal(L.settle("2026-09-20T00:00:00Z"), 0);
+  assert.equal(L.settle("2026-10-20T00:00:00Z"), 0);
+});
+
+test("決済: 結果が無い試合は決済しない（推測で埋めない）", () => {
+  const L = fresh();
+  // 本番の Levante v Ath Bilbao。9 月の結果がどこにも無い（中止か日程側の誤りか UNKNOWN）
+  withPrediction(L, "SP1", fixture("lev-ath", "2026-09-16T19:30:00Z", "Levante", "Ath Bilbao"));
+  L.recordResults([resultRow("SP1", "2026-09-13", "Levante", "Barcelona", 2, 4)], "football-data", "2026-09-18T00:00:00Z");
+  assert.equal(L.settle("2026-10-20T00:00:00Z"), 0);
+  assert.equal(L.evaluations().length, 0);
+});
+
+test("決済: 窓の外の結果は結ばない（別の対戦に食い付かせない）", () => {
+  const L = fresh();
+  withPrediction(L, "SC0", fixture("cel-ran", "2026-09-05T14:00:00Z", "Celtic", "Rangers"));
+  // 同じ並びの対戦がシーズン内でもう一度ある（SC0 は同一カードを 3〜4 回やる）
+  L.recordResults([resultRow("SC0", "2026-12-20", "Celtic", "Rangers", 2, 1)], "football-data", "2026-12-22T00:00:00Z");
+  assert.equal(L.settle("2026-12-22T00:10:00Z"), 0);
+  assert.equal(L.evaluations().length, 0);
 });
