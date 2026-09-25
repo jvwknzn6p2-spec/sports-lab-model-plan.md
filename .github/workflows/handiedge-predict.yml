@@ -11,34 +11,40 @@ name: HandiEdge — daily predictions
 # human could enter a line, so every slate in the tool's history was predicted
 # at ハンデなし.
 #
-# TWO-STAGE LOCK against a 22:59 JST (13:59 UTC) deadline — the market
-# itself closes at 23:00 JST.
+# LOCK against a 22:59 JST (13:59 UTC) deadline — the market itself closes
+# at 23:00 JST. Every pre-deadline run re-locks on fresher data (lockedAt is
+# honestly restamped); every run after the deadline carries the frozen picks
+# through UNCHANGED (see cmdPredict), and once every pick is frozen the slate
+# is no longer refetched at all (see "Is every pick already frozen?").
 #
-#   11:40 UTC cron — the SAFETY lock. Fires ~12:26–12:30 at the observed
-#     scheduler delay (46–50 min on this repository, spikes to 117 min),
-#     locking ~21:30 JST with ~90 minutes of headroom. Moved earlier from
-#     12:10 on 2026-08-23: at 12:10 the observed WORST spike (117 min) would
-#     fire 14:07 — past the 13:59 deadline — so the safety lock could itself
-#     arrive late; from 11:40 even that spike lands 13:37, still on time.
-#     Whatever happens later, the day has an on-time slate; the refresh
-#     below still re-locks on fresher data.
-#   12:45 UTC cron — the REFRESH lock. Fires ~13:31–13:35 (≈22:31–35 JST),
-#     re-locking on ~35 minutes' fresher data: confirmed probables, moved
-#     market lines, updated weather. If the queue spikes past the deadline,
-#     `predict --force` freezes and carries the existing picks through
-#     UNCHANGED (see cmdPredict) — the refresh degrades to a no-op instead
-#     of a late slate. A pre-deadline re-lock honestly restamps lockedAt.
+# The crons are designed around the scheduler delay this repository ACTUALLY
+# gets, measured 2026-08-24..09-25 from each day's first commit: the first
+# predict cron landed a median 3.9 h late (p90 5.5 h, max 9.9 h), the morning
+# slate cron a median 5.4 h (max 11.5 h). The old design assumed 46–50 min
+# (max 117 min) and put its "safety" lock at 11:40 UTC, so it landed around
+# 15:30 UTC — after the deadline on 43 of 53 slates (578 of 716 games were
+# fixed after the market had closed; 3 after first pitch).
 #
-# Why not one cron aimed at 22:59 exactly: the scheduler jitter above is
-# larger than the margin, and a late fire would miss the market close
-# entirely — no bets at all beats slightly stale data never.
+#   02:10 UTC — the SAFETY lock: lands before 13:59 even at the worst delay
+#               ever observed (11.5 h → 13:40). Slightly staler data is the
+#               price; the refresh runs below re-lock while they still can.
+#   05:20, 08:20, 09:50 UTC — REFRESH locks spread across the delay
+#               distribution, so whatever the day's queue does, the last
+#               lock before the deadline is as fresh as it can be.
+#   11:40, 12:45 UTC — kept for fast-queue days; late landings are no-ops.
 #
-#   cron 13:00 → fired 13:22   (deadline of that era 13:21 — missed by 1 min)
-#   cron 12:37 → fired 13:23:54, 13:26:19 on consecutive days
+# Extra runs are free on a public repository and cost no odds credits once
+# every game carries a line (fetch-slate skips the call) or the slate is
+# frozen (the refetch is skipped). A scheduled run can still be dropped by
+# GitHub under load; the spread is also the redundancy against that.
 #
 # The slate date is MLB's game date, which is the UTC date this job runs on.
 on:
   schedule:
+    - cron: "10 2 * * *"
+    - cron: "20 5 * * *"
+    - cron: "20 8 * * *"
+    - cron: "50 9 * * *"
     - cron: "40 11 * * *"
     - cron: "45 12 * * *"
   workflow_dispatch:
@@ -85,6 +91,31 @@ jobs:
           if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
+      # Once every pick's deadline has passed nothing can change — and
+      # refetching would overwrite the committed slate that PRODUCED the
+      # frozen picks (the inputs a replay needs) and spend odds credits for
+      # nothing. So a fully frozen slate is left exactly as it was locked;
+      # predict still runs over it to stamp the picks final.
+      - name: Is every pick already frozen?
+        id: frozen
+        run: |
+          LOCK="lib/sports-data/data/predictions/${{ steps.d.outputs.date }}.json"
+          FROZEN=$(node -e '
+            const fs = require("fs");
+            const f = process.argv[1];
+            if (!fs.existsSync(f)) { console.log("false"); process.exit(0); }
+            const ps = JSON.parse(fs.readFileSync(f, "utf8")).predictions ?? [];
+            const now = Date.now();
+            const frozen = ps.length > 0 && ps.every((p) =>
+              p.final === true ||
+              (p.lockDeadline != null && Date.parse(p.lockDeadline) <= now));
+            console.log(frozen ? "true" : "false");
+          ' "$LOCK")
+          echo "frozen=$FROZEN" >> "$GITHUB_OUTPUT"
+          if [ "$FROZEN" = "true" ]; then
+            echo "> Every pick for ${{ steps.d.outputs.date }} is already frozen — slate kept as locked (no refetch, no odds call)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       # ALWAYS --force. The morning slate job (handiedge-slate.yml) has
       # normally already written today's slate, and `fetch-slate` refuses to
       # run over an existing one without it — so without --force this step
@@ -97,6 +128,7 @@ jobs:
       # ODDS_API_KEY fills any line still unentered at freeze time from
       # market consensus (entered lines are never touched).
       - name: Refresh slate (schedule, stats, bullpen usage, park factors, form)
+        if: steps.frozen.outputs.frozen != 'true'
         working-directory: lib/sports-data
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
@@ -159,7 +191,7 @@ jobs:
       # the command itself also skips cleanly without one. continue-on-error:
       # a briefing failure must never block the day's predictions landing.
       - name: AI review (advisory)
-        if: steps.guard.outputs.run == 'true'
+        if: steps.guard.outputs.run == 'true' && steps.frozen.outputs.frozen != 'true'
         continue-on-error: true
         working-directory: lib/sports-data
         env:

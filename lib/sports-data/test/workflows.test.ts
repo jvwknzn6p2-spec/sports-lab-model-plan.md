@@ -38,6 +38,18 @@ const WORKFLOWS = join(
 
 const read = (name: string) => readFileSync(join(WORKFLOWS, name), "utf8");
 
+/**
+ * GitHub's scheduler delay on THIS repository, measured 2026-08-24..09-25
+ * from each day's first bot commit against its cron: the MLB predict cron
+ * landed a median 3.9 h late (p90 5.5 h), the NPB 01:00 pass 4.7 h (p90
+ * 5.0 h), the morning slate crons up to 11.5 h. The previous constants
+ * (typical 50 min, worst 117 min) were measured in early August and no
+ * longer describe the queue: every "safety" lock they blessed landed after
+ * its deadline. Re-measure before relaxing these.
+ */
+const TYPICAL_DELAY = 330; // minutes — the measured p90
+const WORST_OBSERVED_DELAY = 690; // minutes — the worst cron seen (11.5 h)
+
 /** Minutes past midnight UTC of a `"M H * * *"` daily cron. */
 function cronMinuteOfDay(yaml: string): number {
   const m = /cron:\s*"(\d+)\s+(\d+)\s+\*\s+\*\s+\*"/.exec(yaml);
@@ -70,40 +82,38 @@ test("both slate fetches force unconditionally, or a re-run is a hard failure", 
   }
 });
 
-test("the morning slate lands early enough to leave an editing window", () => {
+test("a predict run is still scheduled well after the morning slate", () => {
+  // Lines entered into the control tower after the morning slate are picked
+  // up by any later pre-deadline re-lock. The safety lock now runs BEFORE the
+  // morning slate (it has to, at the measured delay), so the window is kept
+  // by the LATEST predict cron. (No human has edited a control tower to
+  // date — every line so far came from the odds fill — but the path stays.)
   const slate = cronMinuteOfDay(read("handiedge-slate.yml"));
-  const predict = cronMinuteOfDay(read("handiedge-predict.yml"));
-  const windowMinutes = predict - slate;
+  const latest = Math.max(...allCronMinutesOfDay(read("handiedge-predict.yml")));
   assert.ok(
-    windowMinutes >= 240,
-    `only ${windowMinutes} min to enter handicap lines — the split exists to ` +
-      "give a usable window, and anything under four hours is not one",
+    latest - slate >= 240,
+    `only ${latest - slate} min between the morning slate and the last predict cron`,
   );
 });
 
 test("the picks still lock well before the deadline, at the OBSERVED delay", () => {
-  const predict = cronMinuteOfDay(read("handiedge-predict.yml"));
+  const predict = Math.min(...allCronMinutesOfDay(read("handiedge-predict.yml")));
   const deadlineUtc =
     PREDICTION_DEADLINE_JST.hour * 60 +
     PREDICTION_DEADLINE_JST.minute -
     JST_UTC_OFFSET_MINUTES;
-  // GitHub's scheduler has fired this repository's crons 46–50 minutes late
-  // routinely and 117 minutes late once (2026-08-13). Budget for the bad day:
-  // a cron that only survives the typical delay is one queue away from
+  // At the typical (p90) delay the earliest lock must land with room to
+  // spare — a cron that only survives the median is one queue away from
   // stamping a whole slate predicted_after_deadline.
-  const OBSERVED_DELAY = 50;
-  const headroom = deadlineUtc - (predict + OBSERVED_DELAY);
+  const headroom = deadlineUtc - (predict + TYPICAL_DELAY);
   assert.ok(
     headroom >= 40,
-    `only ${headroom} min of headroom after the observed ${OBSERVED_DELAY} min ` +
+    `only ${headroom} min of headroom after the observed ${TYPICAL_DELAY} min ` +
       "scheduler delay — move the cron earlier",
   );
   // The safety lock is the lock of last resort, so it must also survive the
-  // WORST delay this repository has actually seen — not just the typical one.
-  // At the old 12:10 cron the 117-minute spike would have fired 14:07, eight
-  // minutes past the deadline, and the "safety" lock would itself have been
-  // the late one.
-  const WORST_OBSERVED_DELAY = 117;
+  // WORST delay this repository has actually seen. The 11:40 UTC safety cron
+  // this replaced landed ~15:30 UTC on most days of September.
   const worstCase = deadlineUtc - (predict + WORST_OBSERVED_DELAY);
   assert.ok(
     worstCase > 0,
@@ -130,24 +140,29 @@ test("the FIRST NPB predict pass survives the worst observed delay", () => {
   // NPB picks lock per game, 33' before each first pitch — so the earliest
   // deadline a slate can hold is 33' before the earliest standard start
   // (13:00 JST), which is exactly the league's fixed fallback deadline
-  // (12:27 JST). A game with that deadline gets its FIRST pick from the
-  // earliest predict pass; if that pass fires after 12:27 JST the pick is
-  // born late — a genuine discipline breach, not a stale refresh (the
-  // 2026-08-23 late_lock: the 02:30 UTC cron fired ~60 min late and the
-  // first lock landed 03:30, 3.1 min past a 13:00-JST game's cut-off).
-  const earliest = Math.min(...allCronMinutesOfDay(read("npb-predict.yml")));
+  // (12:27 JST = 03:27 UTC). A game with that deadline gets its FIRST pick
+  // from the earliest predict pass; if that pass lands after the cut-off the
+  // pick is born late, and after first pitch it is not a prediction at all
+  // (25 such picks by 2026-09-25, from a 01:00 UTC pass landing ~05:40).
+  //
+  // The date resolves in JST at run time, so a cron at or after 15:00 UTC
+  // (JST midnight) belongs to the NEXT game day: count it from the day before.
+  const JST_MIDNIGHT_UTC = 24 * 60 - JST_UTC_OFFSET_MINUTES; // 15:00 UTC
+  const earliest = Math.min(
+    ...allCronMinutesOfDay(read("npb-predict.yml")).map((m) =>
+      m >= JST_MIDNIGHT_UTC ? m - 24 * 60 : m,
+    ),
+  );
   const deadlineUtc =
     NPB_CONFIG.deadlines.prediction.hour * 60 +
     NPB_CONFIG.deadlines.prediction.minute -
     JST_UTC_OFFSET_MINUTES;
-  const OBSERVED_DELAY = 50;
-  const headroom = deadlineUtc - (earliest + OBSERVED_DELAY);
+  const headroom = deadlineUtc - (earliest + TYPICAL_DELAY);
   assert.ok(
     headroom >= 40,
-    `only ${headroom} min of headroom after the observed ${OBSERVED_DELAY} min ` +
+    `only ${headroom} min of headroom after the observed ${TYPICAL_DELAY} min ` +
       "scheduler delay — move the first NPB predict cron earlier",
   );
-  const WORST_OBSERVED_DELAY = 117;
   const worstCase = deadlineUtc - (earliest + WORST_OBSERVED_DELAY);
   assert.ok(
     worstCase > 0,
@@ -155,6 +170,35 @@ test("the FIRST NPB predict pass survives the worst observed delay", () => {
       `fire the first NPB pass ${-worstCase} min AFTER the earliest possible ` +
       "per-game deadline — move the cron earlier",
   );
+});
+
+test("no NPB cron lands in the JST evening before its game day", () => {
+  // A pass fired between the last game's cut-off and JST midnight resolves
+  // TODAY's (already frozen) slate — harmless, but a pass meant for tomorrow
+  // must sit at or after 15:00 UTC to resolve tomorrow's date.
+  for (const m of allCronMinutesOfDay(read("npb-predict.yml"))) {
+    assert.ok(
+      m < 9 * 60 || m >= 15 * 60,
+      `NPB cron at ${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} UTC ` +
+        "resolves neither today's live slate nor tomorrow's",
+    );
+  }
+});
+
+test("a fully frozen slate is not refetched, and is not reviewed again", () => {
+  // Refetching after every pick froze overwrote the committed slate that
+  // produced the picks (PR #33 could only partially replay 08-27 onwards for
+  // exactly this reason), loaded npb.jp and spent odds credits for nothing.
+  for (const f of ["handiedge-predict.yml", "npb-predict.yml"]) {
+    const y = read(f);
+    assert.match(y, /id: frozen/, `${f}: the frozen check is missing`);
+    const refresh = /- name: Refresh[^\n]*\n\s+if: ([^\n]+)/.exec(y);
+    assert.ok(refresh, `${f}: the slate refresh must be conditional`);
+    assert.match(refresh[1]!, /steps\.frozen\.outputs\.frozen != 'true'/, f);
+    const review = /- name: AI review \(advisory\)\n\s+if: ([^\n]+)/.exec(y);
+    assert.ok(review, `${f}: the AI review step must be conditional`);
+    assert.match(review[1]!, /steps\.frozen\.outputs\.frozen != 'true'/, f);
+  }
 });
 
 test("NPB slate fetches force unconditionally and writers serialise", () => {
