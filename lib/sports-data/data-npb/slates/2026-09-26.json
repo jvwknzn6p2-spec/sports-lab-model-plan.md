@@ -1,7 +1,7 @@
 {
   "date": "2026-09-26",
   "season": 1002026,
-  "fetchedAt": "2026-09-26T12:14:33.184Z",
+  "fetchedAt": "2026-09-26T12:27:36.757Z",
   "games": [
     {
       "gamePk": 92026092605,
@@ -945,8 +945,8 @@
           "name": "長岡"
         },
         {
-          "playerId": 9050704685,
-          "name": "星"
+          "playerId": 9050611303,
+          "name": "ウォルターズ"
         },
         {
           "playerId": 9050733391,
@@ -1007,8 +1007,8 @@
           "name": "森駿"
         },
         {
-          "playerId": 9060756379,
-          "name": "石伊"
+          "playerId": 9060901712,
+          "name": "樋口"
         },
         {
           "playerId": 9060003188,
@@ -1420,20 +1420,20 @@
       "hitByPitch": 0,
       "strikeOuts": 0
     },
-    "9060756379": {
-      "plateAppearances": 386,
-      "atBats": 350,
-      "hits": 91,
-      "doubles": 19,
-      "triples": 1,
-      "homeRuns": 7,
-      "stolenBases": 0,
-      "caughtStealing": 1,
-      "sacFlies": 2,
-      "baseOnBalls": 19,
-      "intentionalWalks": 1,
-      "hitByPitch": 8,
-      "strikeOuts": 90
+    "9060901712": {
+      "plateAppearances": 13,
+      "atBats": 10,
+      "hits": 2,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "stolenBases": 6,
+      "caughtStealing": 0,
+      "sacFlies": 0,
+      "baseOnBalls": 2,
+      "intentionalWalks": 0,
+      "hitByPitch": 0,
+      "strikeOuts": 3
     },
     "9060003188": {
       "plateAppearances": 340,
@@ -1465,9 +1465,9 @@
       "hitByPitch": 5,
       "strikeOuts": 68
     },
-    "9050704685": {
-      "plateAppearances": 0,
-      "atBats": 0,
+    "9050611303": {
+      "plateAppearances": 8,
+      "atBats": 7,
       "hits": 0,
       "doubles": 0,
       "triples": 0,
@@ -1478,7 +1478,7 @@
       "baseOnBalls": 0,
       "intentionalWalks": 0,
       "hitByPitch": 0,
-      "strikeOuts": 0
+      "strikeOuts": 4
     },
     "9050733391": {
       "plateAppearances": 74,
@@ -2691,7 +2691,7 @@
       "windDirectionDeg": 343,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-26T12:14:33.746Z"
+      "fetchedAt": "2026-09-26T12:27:37.306Z"
     },
     "92026092603": {
       "temperatureC": 20.5,
@@ -2699,7 +2699,7 @@
       "windDirectionDeg": 21,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-26T12:14:33.885Z"
+      "fetchedAt": "2026-09-26T12:27:37.814Z"
     },
     "92026092610": {
       "temperatureC": null,
@@ -2717,7 +2717,7 @@
       "windDirectionDeg": 141,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-26T12:14:34.024Z"
+      "fetchedAt": "2026-09-26T12:27:37.944Z"
     }
   }
 }
