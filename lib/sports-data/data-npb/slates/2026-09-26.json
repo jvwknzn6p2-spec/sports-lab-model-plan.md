@@ -1,7 +1,7 @@
 {
   "date": "2026-09-26",
   "season": 1002026,
-  "fetchedAt": "2026-09-26T04:50:16.439Z",
+  "fetchedAt": "2026-09-26T05:58:04.126Z",
   "games": [
     {
       "gamePk": 92026092605,
@@ -1128,8 +1128,8 @@
           "name": "田宮"
         },
         {
-          "playerId": 9080614872,
-          "name": "水谷"
+          "playerId": 9080098610,
+          "name": "野村"
         },
         {
           "playerId": 9080788901,
@@ -1729,20 +1729,20 @@
       "hitByPitch": 0,
       "strikeOuts": 54
     },
-    "9080614872": {
-      "plateAppearances": 215,
-      "atBats": 200,
-      "hits": 48,
-      "doubles": 8,
-      "triples": 1,
-      "homeRuns": 6,
-      "stolenBases": 2,
-      "caughtStealing": 2,
-      "sacFlies": 2,
-      "baseOnBalls": 11,
-      "intentionalWalks": 0,
+    "9080098610": {
+      "plateAppearances": 415,
+      "atBats": 387,
+      "hits": 100,
+      "doubles": 15,
+      "triples": 0,
+      "homeRuns": 17,
+      "stolenBases": 4,
+      "caughtStealing": 1,
+      "sacFlies": 4,
+      "baseOnBalls": 22,
+      "intentionalWalks": 1,
       "hitByPitch": 2,
-      "strikeOuts": 55
+      "strikeOuts": 88
     },
     "9080788901": {
       "plateAppearances": 372,
@@ -1990,20 +1990,20 @@
   },
   "weather": {
     "92026092605": {
-      "temperatureC": 18.5,
-      "windSpeedKmh": 3.8,
+      "temperatureC": 18.4,
+      "windSpeedKmh": 4.9,
       "windDirectionDeg": 343,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-26T04:50:17.018Z"
+      "fetchedAt": "2026-09-26T05:58:04.743Z"
     },
     "92026092603": {
-      "temperatureC": 19.7,
-      "windSpeedKmh": 9.8,
-      "windDirectionDeg": 8,
+      "temperatureC": 19.5,
+      "windSpeedKmh": 9.9,
+      "windDirectionDeg": 10,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-26T04:50:17.157Z"
+      "fetchedAt": "2026-09-26T05:58:04.887Z"
     },
     "92026092610": {
       "temperatureC": null,
@@ -2016,12 +2016,12 @@
       "roof": "dome"
     },
     "92026092607": {
-      "temperatureC": 21.8,
-      "windSpeedKmh": 6.9,
-      "windDirectionDeg": 96,
+      "temperatureC": 22,
+      "windSpeedKmh": 7.9,
+      "windDirectionDeg": 141,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-26T04:50:17.294Z"
+      "fetchedAt": "2026-09-26T05:58:05.031Z"
     }
   }
 }
