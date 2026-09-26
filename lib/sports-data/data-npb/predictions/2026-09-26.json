@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-09-26T05:58:06.080Z",
-  "updatedAt": "2026-09-26T05:58:06.080Z",
+  "updatedAt": "2026-09-26T07:57:04.275Z",
   "controlTower": {
     "date": "2026-09-26",
     "season": 1002026,
@@ -53,8 +53,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.538,
-      "rawWinProbability": 0.544,
+      "winProbability": 0.542,
+      "rawWinProbability": 0.549,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -72,7 +72,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 7.7,
+        "predicted": 7.72,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -81,17 +81,17 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.51,
-        "away": 3.95
+        "home": 3.52,
+        "away": 3.97
       },
       "reasons": [
-        "PASS: edge too small (win prob 53.8% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 54.2% < 55%) — moneyline and total only",
         "No handicap line entered — run line not quoted (moneyline and total only)",
         "Bullpen edge: 中日ドラゴンズ",
         "Park factor 106 (hitter-friendly)",
-        "Expected runs 3.51–3.95 over 10000 sims",
+        "Expected runs 3.52–3.97 over 10000 sims",
         "away: hot bats — 4.0 R/G last 15 (season baseline 3.5)",
-        "Weather: 18°C at first pitch — run environment ×0.982"
+        "Weather: 19°C at first pitch — run environment ×0.986"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
