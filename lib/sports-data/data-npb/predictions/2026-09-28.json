@@ -1,0 +1,217 @@
+{
+  "lockedAt": "2026-09-28T06:28:15.264Z",
+  "updatedAt": "2026-09-28T06:28:15.264Z",
+  "controlTower": {
+    "date": "2026-09-28",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026092803": {
+        "side": "home",
+        "notation": null
+      },
+      "92026092810": {
+        "side": "home",
+        "notation": null
+      },
+      "92026092809": {
+        "side": "home",
+        "notation": null
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.868,
+    "tailShrink": 0.896,
+    "farTailShrink": 0.876,
+    "handicapShrink": 0.836,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.87,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.834,
+    "gamesSettled": 57,
+    "brierSum": 12.1308,
+    "updatedAt": "2026-09-28T00:04:44.027Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026092803,
+      "gameDate": "2026-09-28T09:00:00.000Z",
+      "home": "横浜DeNAベイスターズ",
+      "away": "広島東洋カープ",
+      "pass": false,
+      "predictedWinner": "横浜DeNAベイスターズ",
+      "predictedLoser": "広島東洋カープ",
+      "winProbability": 0.654,
+      "rawWinProbability": 0.677,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 7.25,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.28,
+        "away": 2.75
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.299 vs 0.274)",
+        "Park factor 103 (hitter-friendly)",
+        "Expected runs 4.28–2.75 over 10000 sims",
+        "home: hot bats — 4.3 R/G last 15 (season baseline 3.8)",
+        "Weather: 24°C at first pitch — run environment ×1.022"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-28T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026092810,
+      "gameDate": "2026-09-28T09:00:00.000Z",
+      "home": "埼玉西武ライオンズ",
+      "away": "東北楽天ゴールデンイーグルス",
+      "pass": false,
+      "predictedWinner": "埼玉西武ライオンズ",
+      "predictedLoser": "東北楽天ゴールデンイーグルス",
+      "winProbability": 0.587,
+      "rawWinProbability": 0.6,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 6.78,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.68,
+        "away": 2.89
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 埼玉西武ライオンズ (隅田 知一郎 projFIP 2.53 vs 3.17)",
+        "Park factor 95 (pitcher-friendly)",
+        "Expected runs 3.68–2.89 over 10000 sims"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-28T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026092809,
+      "gameDate": "2026-09-28T09:00:00.000Z",
+      "home": "千葉ロッテマリーンズ",
+      "away": "北海道日本ハムファイターズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.52,
+      "rawWinProbability": 0.523,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.7,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.12,
+        "away": 4.41
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 52.0% < 55%) — moneyline and total only",
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 北海道日本ハムファイターズ (福島 蓮 projFIP 3.18 vs 3.55)",
+        "Offense edge: 北海道日本ハムファイターズ (wOBA 0.311 vs 0.290)",
+        "Bullpen edge: 北海道日本ハムファイターズ",
+        "Park factor 102 (hitter-friendly)",
+        "Expected runs 4.12–4.41 over 10000 sims",
+        "away: cold bats — 3.6 R/G last 15 (season baseline 4.2)",
+        "Weather: 24°C at first pitch — run environment ×1.022"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-28T08:27:00.000Z",
+      "final": false
+    }
+  ]
+}
