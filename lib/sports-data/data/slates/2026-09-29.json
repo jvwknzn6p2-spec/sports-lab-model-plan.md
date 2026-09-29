@@ -5,7 +5,7 @@
     {
       "gamePk": 849845,
       "gameDate": "2026-09-29T18:00:00Z",
-      "status": "Scheduled",
+      "status": "Pre-Game",
       "abstractState": "Preview",
       "gameType": "F",
       "venue": {
@@ -17,14 +17,14 @@
         "teamName": "Atlanta Braves",
         "probablePitcherId": 519242,
         "probablePitcherName": "Chris Sale",
-        "score": null
+        "score": 0
       },
       "away": {
         "teamId": 143,
         "teamName": "Philadelphia Phillies",
         "probablePitcherId": 666200,
         "probablePitcherName": "Jesús Luzardo",
-        "score": null
+        "score": 0
       }
     },
     {
@@ -535,9 +535,359 @@
     "3313": 102,
     "4705": 101
   },
-  "lineups": {},
-  "lineupBatting": {},
-  "fetchedAt": "2026-09-29T12:40:57.079Z",
+  "lineups": {
+    "849845": {
+      "home": [
+        {
+          "playerId": 686948,
+          "name": "Drake Baldwin"
+        },
+        {
+          "playerId": 660670,
+          "name": "Ronald Acuña Jr."
+        },
+        {
+          "playerId": 621566,
+          "name": "Matt Olson"
+        },
+        {
+          "playerId": 643289,
+          "name": "Mauricio Dubón"
+        },
+        {
+          "playerId": 671739,
+          "name": "Michael Harris II"
+        },
+        {
+          "playerId": 645277,
+          "name": "Ozzie Albies"
+        },
+        {
+          "playerId": 663586,
+          "name": "Austin Riley"
+        },
+        {
+          "playerId": 573262,
+          "name": "Mike Yastrzemski"
+        },
+        {
+          "playerId": 673490,
+          "name": "Ha-Seong Kim"
+        }
+      ],
+      "away": [
+        {
+          "playerId": 607208,
+          "name": "Trea Turner"
+        },
+        {
+          "playerId": 656941,
+          "name": "Kyle Schwarber"
+        },
+        {
+          "playerId": 547180,
+          "name": "Bryce Harper"
+        },
+        {
+          "playerId": 664761,
+          "name": "Alec Bohm"
+        },
+        {
+          "playerId": 656537,
+          "name": "Derek Hill"
+        },
+        {
+          "playerId": 650559,
+          "name": "Bryan De La Cruz"
+        },
+        {
+          "playerId": 681082,
+          "name": "Bryson Stott"
+        },
+        {
+          "playerId": 624641,
+          "name": "Edmundo Sosa"
+        },
+        {
+          "playerId": 592663,
+          "name": "J.T. Realmuto"
+        }
+      ]
+    }
+  },
+  "lineupBatting": {
+    "547180": {
+      "plateAppearances": 693,
+      "atBats": 577,
+      "hits": 155,
+      "doubles": 32,
+      "triples": 3,
+      "homeRuns": 29,
+      "baseOnBalls": 107,
+      "intentionalWalks": 3,
+      "hitByPitch": 1,
+      "sacFlies": 8,
+      "strikeOuts": 148,
+      "stolenBases": 7,
+      "caughtStealing": 6
+    },
+    "573262": {
+      "plateAppearances": 408,
+      "atBats": 361,
+      "hits": 81,
+      "doubles": 18,
+      "triples": 1,
+      "homeRuns": 12,
+      "baseOnBalls": 41,
+      "intentionalWalks": 0,
+      "hitByPitch": 4,
+      "sacFlies": 2,
+      "strikeOuts": 98,
+      "stolenBases": 1,
+      "caughtStealing": 0
+    },
+    "592663": {
+      "plateAppearances": 467,
+      "atBats": 414,
+      "hits": 85,
+      "doubles": 19,
+      "triples": 0,
+      "homeRuns": 11,
+      "baseOnBalls": 37,
+      "intentionalWalks": 0,
+      "hitByPitch": 10,
+      "sacFlies": 6,
+      "strikeOuts": 100,
+      "stolenBases": 3,
+      "caughtStealing": 0
+    },
+    "607208": {
+      "plateAppearances": 700,
+      "atBats": 645,
+      "hits": 156,
+      "doubles": 29,
+      "triples": 1,
+      "homeRuns": 19,
+      "baseOnBalls": 48,
+      "intentionalWalks": 1,
+      "hitByPitch": 4,
+      "sacFlies": 3,
+      "strikeOuts": 147,
+      "stolenBases": 21,
+      "caughtStealing": 4
+    },
+    "621566": {
+      "plateAppearances": 698,
+      "atBats": 625,
+      "hits": 157,
+      "doubles": 34,
+      "triples": 0,
+      "homeRuns": 41,
+      "baseOnBalls": 64,
+      "intentionalWalks": 5,
+      "hitByPitch": 3,
+      "sacFlies": 6,
+      "strikeOuts": 171,
+      "stolenBases": 4,
+      "caughtStealing": 0
+    },
+    "624641": {
+      "plateAppearances": 250,
+      "atBats": 231,
+      "hits": 57,
+      "doubles": 11,
+      "triples": 2,
+      "homeRuns": 9,
+      "baseOnBalls": 7,
+      "intentionalWalks": 0,
+      "hitByPitch": 6,
+      "sacFlies": 3,
+      "strikeOuts": 54,
+      "stolenBases": 4,
+      "caughtStealing": 0
+    },
+    "643289": {
+      "plateAppearances": 619,
+      "atBats": 572,
+      "hits": 158,
+      "doubles": 28,
+      "triples": 3,
+      "homeRuns": 12,
+      "baseOnBalls": 35,
+      "intentionalWalks": 0,
+      "hitByPitch": 4,
+      "sacFlies": 3,
+      "strikeOuts": 73,
+      "stolenBases": 10,
+      "caughtStealing": 3
+    },
+    "645277": {
+      "plateAppearances": 683,
+      "atBats": 615,
+      "hits": 146,
+      "doubles": 27,
+      "triples": 1,
+      "homeRuns": 22,
+      "baseOnBalls": 46,
+      "intentionalWalks": 1,
+      "hitByPitch": 8,
+      "sacFlies": 14,
+      "strikeOuts": 105,
+      "stolenBases": 4,
+      "caughtStealing": 4
+    },
+    "650559": {
+      "plateAppearances": 86,
+      "atBats": 75,
+      "hits": 21,
+      "doubles": 4,
+      "triples": 0,
+      "homeRuns": 2,
+      "baseOnBalls": 7,
+      "intentionalWalks": 0,
+      "hitByPitch": 2,
+      "sacFlies": 2,
+      "strikeOuts": 18,
+      "stolenBases": 0,
+      "caughtStealing": 0
+    },
+    "656537": {
+      "plateAppearances": 216,
+      "atBats": 199,
+      "hits": 48,
+      "doubles": 5,
+      "triples": 1,
+      "homeRuns": 11,
+      "baseOnBalls": 13,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "sacFlies": 0,
+      "strikeOuts": 69,
+      "stolenBases": 13,
+      "caughtStealing": 4
+    },
+    "656941": {
+      "plateAppearances": 701,
+      "atBats": 581,
+      "hits": 135,
+      "doubles": 20,
+      "triples": 1,
+      "homeRuns": 45,
+      "baseOnBalls": 105,
+      "intentionalWalks": 6,
+      "hitByPitch": 8,
+      "sacFlies": 6,
+      "strikeOuts": 220,
+      "stolenBases": 3,
+      "caughtStealing": 1
+    },
+    "660670": {
+      "plateAppearances": 469,
+      "atBats": 408,
+      "hits": 104,
+      "doubles": 18,
+      "triples": 1,
+      "homeRuns": 20,
+      "baseOnBalls": 53,
+      "intentionalWalks": 2,
+      "hitByPitch": 5,
+      "sacFlies": 3,
+      "strikeOuts": 103,
+      "stolenBases": 21,
+      "caughtStealing": 8
+    },
+    "663586": {
+      "plateAppearances": 630,
+      "atBats": 566,
+      "hits": 124,
+      "doubles": 21,
+      "triples": 2,
+      "homeRuns": 19,
+      "baseOnBalls": 48,
+      "intentionalWalks": 1,
+      "hitByPitch": 11,
+      "sacFlies": 5,
+      "strikeOuts": 201,
+      "stolenBases": 9,
+      "caughtStealing": 2
+    },
+    "664761": {
+      "plateAppearances": 629,
+      "atBats": 567,
+      "hits": 141,
+      "doubles": 29,
+      "triples": 1,
+      "homeRuns": 15,
+      "baseOnBalls": 48,
+      "intentionalWalks": 1,
+      "hitByPitch": 9,
+      "sacFlies": 5,
+      "strikeOuts": 88,
+      "stolenBases": 2,
+      "caughtStealing": 0
+    },
+    "671739": {
+      "plateAppearances": 621,
+      "atBats": 591,
+      "hits": 174,
+      "doubles": 36,
+      "triples": 1,
+      "homeRuns": 26,
+      "baseOnBalls": 23,
+      "intentionalWalks": 1,
+      "hitByPitch": 2,
+      "sacFlies": 3,
+      "strikeOuts": 119,
+      "stolenBases": 12,
+      "caughtStealing": 3
+    },
+    "673490": {
+      "plateAppearances": 147,
+      "atBats": 129,
+      "hits": 15,
+      "doubles": 1,
+      "triples": 1,
+      "homeRuns": 0,
+      "baseOnBalls": 16,
+      "intentionalWalks": 0,
+      "hitByPitch": 1,
+      "sacFlies": 0,
+      "strikeOuts": 38,
+      "stolenBases": 2,
+      "caughtStealing": 0
+    },
+    "681082": {
+      "plateAppearances": 608,
+      "atBats": 536,
+      "hits": 137,
+      "doubles": 36,
+      "triples": 6,
+      "homeRuns": 10,
+      "baseOnBalls": 62,
+      "intentionalWalks": 0,
+      "hitByPitch": 3,
+      "sacFlies": 3,
+      "strikeOuts": 100,
+      "stolenBases": 27,
+      "caughtStealing": 0
+    },
+    "686948": {
+      "plateAppearances": 615,
+      "atBats": 549,
+      "hits": 156,
+      "doubles": 21,
+      "triples": 0,
+      "homeRuns": 25,
+      "baseOnBalls": 55,
+      "intentionalWalks": 2,
+      "hitByPitch": 9,
+      "sacFlies": 2,
+      "strikeOuts": 132,
+      "stolenBases": 3,
+      "caughtStealing": 1
+    }
+  },
+  "fetchedAt": "2026-09-29T17:00:40.676Z",
   "forms": {
     "108": {
       "games": 15,
@@ -693,16 +1043,6 @@
   "injuries": {
     "111": [
       {
-        "name": "Anthony Seigler",
-        "position": "2B",
-        "status": "Injured 10-Day"
-      },
-      {
-        "name": "Curtis Mead",
-        "position": "3B",
-        "status": "Injured 10-Day"
-      },
-      {
         "name": "Eduardo Rivera",
         "position": "P",
         "status": "Injured 60-Day"
@@ -713,29 +1053,14 @@
         "status": "Injured 60-Day"
       },
       {
-        "name": "Garrett Crochet",
-        "position": "P",
-        "status": "Injured 60-Day"
-      },
-      {
         "name": "Johan Oviedo",
         "position": "P",
         "status": "Injured 60-Day"
       },
       {
-        "name": "Justin Slaten",
-        "position": "P",
-        "status": "Injured 15-Day"
-      },
-      {
         "name": "Kutter Crawford",
         "position": "P",
         "status": "Injured 60-Day"
-      },
-      {
-        "name": "Masataka Yoshida",
-        "position": "DH",
-        "status": "Injured 10-Day"
       },
       {
         "name": "Mickey Gasper",
@@ -800,11 +1125,6 @@
         "status": "Injured 60-Day"
       },
       {
-        "name": "Trent Thornton",
-        "position": "P",
-        "status": "Injured 15-Day"
-      },
-      {
         "name": "Tyler Austin",
         "position": "1B",
         "status": "Injured 60-Day"
@@ -850,11 +1170,6 @@
         "name": "Mike Burrows",
         "position": "P",
         "status": "Injured 60-Day"
-      },
-      {
-        "name": "Steven Okert",
-        "position": "P",
-        "status": "Injured 15-Day"
       }
     ],
     "135": [
@@ -869,16 +1184,6 @@
         "status": "Injured 15-Day"
       },
       {
-        "name": "Jeremiah Estrada",
-        "position": "P",
-        "status": "Injured 15-Day"
-      },
-      {
-        "name": "Joe Musgrove",
-        "position": "P",
-        "status": "Injured 60-Day"
-      },
-      {
         "name": "Lucas Giolito",
         "position": "P",
         "status": "Injured 60-Day"
@@ -889,13 +1194,13 @@
         "status": "Injured 60-Day"
       },
       {
-        "name": "Miguel Andujar",
-        "position": "DH",
-        "status": "Injured 10-Day"
-      },
-      {
         "name": "Ramón Laureano",
         "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Rodolfo Durán",
+        "position": "C",
         "status": "Injured 60-Day"
       }
     ],
@@ -928,11 +1233,6 @@
     ],
     "144": [
       {
-        "name": "Bryce Elder",
-        "position": "P",
-        "status": "Injured 15-Day"
-      },
-      {
         "name": "Hurston Waldrep",
         "position": "P",
         "status": "Injured 60-Day"
@@ -946,11 +1246,6 @@
         "name": "Joey Wentz",
         "position": "P",
         "status": "Injured 60-Day"
-      },
-      {
-        "name": "Lane Thomas",
-        "position": "LF",
-        "status": "Injured 10-Day"
       },
       {
         "name": "Martín Pérez",
@@ -978,11 +1273,6 @@
         "name": "Brooks Baldwin",
         "position": "LF",
         "status": "Injured 60-Day"
-      },
-      {
-        "name": "Joey Bart",
-        "position": "C",
-        "status": "Injured 10-Day"
       },
       {
         "name": "Jordan Leasure",
@@ -1017,11 +1307,6 @@
     ],
     "147": [
       {
-        "name": "Aaron Judge",
-        "position": "RF",
-        "status": "Injured 10-Day"
-      },
-      {
         "name": "Clarke Schmidt",
         "position": "P",
         "status": "Injured 15-Day"
@@ -1032,59 +1317,44 @@
         "status": "Injured 60-Day"
       },
       {
-        "name": "Giancarlo Stanton",
-        "position": "DH",
-        "status": "Injured 60-Day"
-      },
-      {
         "name": "Kervin Castro",
         "position": "P",
         "status": "Injured 60-Day"
-      },
-      {
-        "name": "Ryan Weathers",
-        "position": "P",
-        "status": "Injured 15-Day"
-      },
-      {
-        "name": "Trent Grisham",
-        "position": "CF",
-        "status": "Injured 10-Day"
       }
     ]
   },
   "weather": {
     "849843": {
-      "temperatureC": 26.5,
-      "windSpeedKmh": 13.1,
-      "windDirectionDeg": 279,
+      "temperatureC": 25.4,
+      "windSpeedKmh": 12.2,
+      "windDirectionDeg": 294,
       "roof": "outdoor",
       "cfBearingDeg": 0,
-      "fetchedAt": "2026-09-29T12:41:03.238Z"
+      "fetchedAt": "2026-09-29T17:00:47.131Z"
     },
     "849845": {
-      "temperatureC": 27.2,
-      "windSpeedKmh": 0.5,
-      "windDirectionDeg": 315,
+      "temperatureC": 27.1,
+      "windSpeedKmh": 3.1,
+      "windDirectionDeg": 111,
       "roof": "outdoor",
       "cfBearingDeg": 145,
-      "fetchedAt": "2026-09-29T12:41:02.941Z"
+      "fetchedAt": "2026-09-29T17:00:46.664Z"
     },
     "849849": {
-      "temperatureC": 31.9,
-      "windSpeedKmh": 17.1,
-      "windDirectionDeg": 120,
+      "temperatureC": 30.8,
+      "windSpeedKmh": 12.2,
+      "windDirectionDeg": 133,
       "roof": "retractable",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-09-29T12:41:03.039Z"
+      "fetchedAt": "2026-09-29T17:00:46.821Z"
     },
     "849851": {
-      "temperatureC": 17.4,
-      "windSpeedKmh": 4,
-      "windDirectionDeg": 275,
+      "temperatureC": 18.3,
+      "windSpeedKmh": 2.5,
+      "windDirectionDeg": 270,
       "roof": "outdoor",
       "cfBearingDeg": 75,
-      "fetchedAt": "2026-09-29T12:41:03.139Z"
+      "fetchedAt": "2026-09-29T17:00:46.976Z"
     }
   }
 }
