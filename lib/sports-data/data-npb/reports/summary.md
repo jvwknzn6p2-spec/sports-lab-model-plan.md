@@ -1,18 +1,18 @@
 # HandiEdge — running results
 
-**42-19** (68.9%) across 30 days, 82 PASS.
+**44-19** (69.8%) across 31 days, 82 PASS.
 
 - Handicap: 14-11 · **+1.60 units** after the cut (ROI +6.4% per bet)
 - Significance (P&L): +6.4% per bet over 25 stakes — z 0.33, **not yet distinguishable from luck**
 - Hit rate: 56.0% over 25 bets (95% CI 37.1%–73.3%) vs 52.6% full-unit break-even
 - Total: 15-10
-- Mean Brier: 0.217 (0.25 = coin flip, lower is better)
-- Calibration: says 61.1%, actually 68.9% — underconfident by 7.8pt
+- Mean Brier: 0.215 (0.25 = coin flip, lower is better)
+- Calibration: says 61.2%, actually 69.8% — underconfident by 8.6pt
 - Handicap calibration: says 57.8%, actually 56.0% over 25 bets (Brier 0.24)
 - Total calibration: says 56.3%, actually 60.0% over 25 bets (Brier 0.253)
-- Mean margin error: 2.453 runs
-- Mean total error: 2.577 runs
-- Learned shrink (core/tail/far) — moneyline 0.87/0.88/0.876, handicap 0.836/0.858/0.857, total 0.87/0.844/0.834 (61 games)
+- Mean margin error: 2.463 runs
+- Mean total error: 2.595 runs
+- Learned shrink (core/tail/far) — moneyline 0.875/0.88/0.88, handicap 0.836/0.858/0.857, total 0.87/0.844/0.834 (63 games)
 
 ## Calibration by band (handicap)
 
@@ -25,19 +25,20 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 ## Calibration by band (winner)
 
-- 55.0%–60.0%: said 57.3%, hit 61.5% over 26 (gap 4.2pt)
+- 55.0%–60.0%: said 57.3%, hit 63.0% over 27 (gap 5.7pt)
 - 60.0%–65.0%: said 62.2%, hit 75.0% over 24 (gap 12.8pt) (underconfident)
-- 65.0%–70.0%: said 67.3%, hit 70.0% over 10 (gap 2.7pt)
+- 65.0%–70.0%: said 67.4%, hit 72.7% over 11 (gap 5.3pt)
 - 70.0%–100.0%: said 72.9%, hit 100.0% over 1 (gap 27.1pt)
 
 ## By confidence
 
-- S: 5-3 (62.5%, -1.20 units over 5 stake(s), n=8 decided)
+- S: 6-3 (66.7%, -1.20 units over 5 stake(s), n=9 decided)
 - A: 3-0 (100.0%, +0.00 units over 0 stake(s), n=3 decided)
-- B: 34-16 (68.0%, +2.80 units over 20 stake(s), n=50 decided)
+- B: 35-16 (68.6%, +2.80 units over 20 stake(s), n=51 decided)
 
 ## By day
 
+- 2026-09-30: 2-0 (2 picks, 0 PASS, Brier 0.143)
 - 2026-09-29: 2-0 (2 picks, 1 PASS, Brier 0.16)
 - 2026-09-28: 0-2 (2 picks, 1 PASS, Brier 0.386)
 - 2026-09-27: 2-1 (3 picks, 2 PASS, Brier 0.205)
