@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-09-30T06:25:05.193Z",
-  "updatedAt": "2026-09-30T06:25:05.193Z",
+  "lockedAt": "2026-09-30T06:58:06.455Z",
+  "updatedAt": "2026-09-30T06:58:06.455Z",
   "controlTower": {
     "date": "2026-09-30",
     "season": 1002026,
@@ -41,8 +41,8 @@
       "pass": false,
       "predictedWinner": "阪神タイガース",
       "predictedLoser": "東京ヤクルトスワローズ",
-      "winProbability": 0.681,
-      "rawWinProbability": 0.707,
+      "winProbability": 0.682,
+      "rawWinProbability": 0.708,
       "confidence": "S",
       "handicap": {
         "input": {
@@ -60,7 +60,7 @@
       },
       "total": {
         "line": null,
-        "predicted": 6.76,
+        "predicted": 6.8,
         "pick": null,
         "probability": null,
         "rawProbability": null,
@@ -69,8 +69,8 @@
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.13,
-        "away": 2.43
+        "home": 4.15,
+        "away": 2.45
       },
       "reasons": [
         "No handicap line entered — run line not quoted (moneyline and total only)",
@@ -78,9 +78,9 @@
         "Offense edge: 阪神タイガース (wOBA 0.301 vs 0.281)",
         "Bullpen edge: 阪神タイガース",
         "Park factor 91 (pitcher-friendly)",
-        "Expected runs 4.13–2.43 over 10000 sims",
+        "Expected runs 4.15–2.45 over 10000 sims",
         "home: cold bats — 3.3 R/G last 15 (season baseline 3.9)",
-        "Weather: 25°C at first pitch — run environment ×1.028"
+        "Weather: 26°C at first pitch — run environment ×1.034"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
