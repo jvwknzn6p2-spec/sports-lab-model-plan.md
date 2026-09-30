@@ -1,0 +1,156 @@
+{
+  "lockedAt": "2026-09-30T06:25:05.193Z",
+  "updatedAt": "2026-09-30T06:25:05.193Z",
+  "controlTower": {
+    "date": "2026-09-30",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026093002": {
+        "side": "home",
+        "notation": null
+      },
+      "92026093012": {
+        "side": "home",
+        "notation": null
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.87,
+    "tailShrink": 0.88,
+    "farTailShrink": 0.876,
+    "handicapShrink": 0.836,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.87,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.834,
+    "gamesSettled": 61,
+    "brierSum": 13.2226,
+    "updatedAt": "2026-09-29T22:02:04.053Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026093002,
+      "gameDate": "2026-09-30T09:00:00.000Z",
+      "home": "阪神タイガース",
+      "away": "東京ヤクルトスワローズ",
+      "pass": false,
+      "predictedWinner": "阪神タイガース",
+      "predictedLoser": "東京ヤクルトスワローズ",
+      "winProbability": 0.681,
+      "rawWinProbability": 0.707,
+      "confidence": "S",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 6.76,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.13,
+        "away": 2.43
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 阪神タイガース (髙橋 遥人 projFIP 2.31 vs 2.91)",
+        "Offense edge: 阪神タイガース (wOBA 0.301 vs 0.281)",
+        "Bullpen edge: 阪神タイガース",
+        "Park factor 91 (pitcher-friendly)",
+        "Expected runs 4.13–2.43 over 10000 sims",
+        "home: cold bats — 3.3 R/G last 15 (season baseline 3.9)",
+        "Weather: 25°C at first pitch — run environment ×1.028"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-30T08:27:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 92026093012,
+      "gameDate": "2026-09-30T09:00:00.000Z",
+      "home": "東北楽天ゴールデンイーグルス",
+      "away": "千葉ロッテマリーンズ",
+      "pass": false,
+      "predictedWinner": "東北楽天ゴールデンイーグルス",
+      "predictedLoser": "千葉ロッテマリーンズ",
+      "winProbability": 0.57,
+      "rawWinProbability": 0.581,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 7.44,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.02,
+        "away": 3.27
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 東北楽天ゴールデンイーグルス (荘司 康誠 projFIP 3.04 vs 3.36)",
+        "Bullpen edge: 東北楽天ゴールデンイーグルス",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 4.02–3.27 over 10000 sims",
+        "Weather: 19°C at first pitch — run environment ×0.985"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[warn] away_starter_starter_low_sample",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-30T08:27:00.000Z",
+      "final": false
+    }
+  ]
+}
