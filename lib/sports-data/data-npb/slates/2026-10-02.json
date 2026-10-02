@@ -1,0 +1,710 @@
+{
+  "date": "2026-10-02",
+  "season": 1002026,
+  "fetchedAt": "2026-10-02T00:59:50.221Z",
+  "games": [
+    {
+      "gamePk": 92026100205,
+      "gameDate": "2026-10-02T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9105,
+        "name": "神 宮"
+      },
+      "home": {
+        "teamId": 905,
+        "teamName": "東京ヤクルトスワローズ",
+        "probablePitcherId": 90507848,
+        "probablePitcherName": "山野 太一",
+        "score": null
+      },
+      "away": {
+        "teamId": 901,
+        "teamName": "読売ジャイアンツ",
+        "probablePitcherId": 90108155,
+        "probablePitcherName": "山﨑 伊織",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 92026100209,
+      "gameDate": "2026-10-02T09:00:00.000Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "R",
+      "venue": {
+        "id": 9109,
+        "name": "ZOZOマリン"
+      },
+      "home": {
+        "teamId": 909,
+        "teamName": "千葉ロッテマリーンズ",
+        "probablePitcherId": 90924375,
+        "probablePitcherName": "田中 晴也",
+        "score": null
+      },
+      "away": {
+        "teamId": 907,
+        "teamName": "福岡ソフトバンクホークス",
+        "probablePitcherId": null,
+        "probablePitcherName": null,
+        "score": null
+      }
+    }
+  ],
+  "starters": {
+    "90108155": {
+      "inningsPitched": "29.1",
+      "battersFaced": 131,
+      "hits": 31,
+      "homeRuns": 3,
+      "baseOnBalls": 13,
+      "hitByPitch": 1,
+      "strikeOuts": 22,
+      "runs": 16,
+      "earnedRuns": 16
+    },
+    "90507848": {
+      "inningsPitched": "155.1",
+      "battersFaced": 624,
+      "hits": 121,
+      "homeRuns": 13,
+      "baseOnBalls": 31,
+      "hitByPitch": 10,
+      "strikeOuts": 145,
+      "runs": 49,
+      "earnedRuns": 41
+    },
+    "90924375": {
+      "inningsPitched": "88.1",
+      "battersFaced": 379,
+      "hits": 83,
+      "homeRuns": 8,
+      "baseOnBalls": 29,
+      "hitByPitch": 3,
+      "strikeOuts": 84,
+      "runs": 45,
+      "earnedRuns": 40
+    }
+  },
+  "batting": {
+    "901": {
+      "plateAppearances": 5169,
+      "atBats": 4639,
+      "hits": 1089,
+      "doubles": 200,
+      "triples": 13,
+      "homeRuns": 101,
+      "stolenBases": 99,
+      "caughtStealing": 42,
+      "sacFlies": 28,
+      "baseOnBalls": 378,
+      "intentionalWalks": 20,
+      "hitByPitch": 49,
+      "strikeOuts": 1189
+    },
+    "905": {
+      "plateAppearances": 5128,
+      "atBats": 4640,
+      "hits": 1093,
+      "doubles": 191,
+      "triples": 10,
+      "homeRuns": 82,
+      "stolenBases": 96,
+      "caughtStealing": 27,
+      "sacFlies": 26,
+      "baseOnBalls": 383,
+      "intentionalWalks": 30,
+      "hitByPitch": 35,
+      "strikeOuts": 1116
+    },
+    "907": {
+      "plateAppearances": 5431,
+      "atBats": 4753,
+      "hits": 1249,
+      "doubles": 222,
+      "triples": 23,
+      "homeRuns": 160,
+      "stolenBases": 74,
+      "caughtStealing": 18,
+      "sacFlies": 45,
+      "baseOnBalls": 505,
+      "intentionalWalks": 20,
+      "hitByPitch": 56,
+      "strikeOuts": 1088
+    },
+    "909": {
+      "plateAppearances": 5087,
+      "atBats": 4627,
+      "hits": 1093,
+      "doubles": 175,
+      "triples": 13,
+      "homeRuns": 124,
+      "stolenBases": 45,
+      "caughtStealing": 21,
+      "sacFlies": 20,
+      "baseOnBalls": 341,
+      "intentionalWalks": 9,
+      "hitByPitch": 60,
+      "strikeOuts": 1102
+    }
+  },
+  "bullpens": {
+    "901": {
+      "inningsPitched": "1235",
+      "battersFaced": 5105,
+      "strikeOuts": 1133,
+      "baseOnBalls": 408,
+      "hitByPitch": 62,
+      "homeRuns": 95,
+      "hits": 1036,
+      "earnedRuns": 373,
+      "runs": 418
+    },
+    "905": {
+      "inningsPitched": "1067",
+      "battersFaced": 4561,
+      "strikeOuts": 923,
+      "baseOnBalls": 383,
+      "hitByPitch": 58,
+      "homeRuns": 118,
+      "hits": 997,
+      "earnedRuns": 464,
+      "runs": 508
+    },
+    "907": {
+      "inningsPitched": "1255.2",
+      "battersFaced": 5179,
+      "hits": 1084,
+      "homeRuns": 127,
+      "baseOnBalls": 373,
+      "hitByPitch": 58,
+      "strikeOuts": 1146,
+      "runs": 444,
+      "earnedRuns": 402
+    },
+    "909": {
+      "inningsPitched": "1128.2",
+      "battersFaced": 4776,
+      "strikeOuts": 869,
+      "baseOnBalls": 365,
+      "hitByPitch": 62,
+      "homeRuns": 131,
+      "hits": 1053,
+      "earnedRuns": 481,
+      "runs": 524
+    }
+  },
+  "forms": {
+    "901": {
+      "games": 15,
+      "runsScoredPerGame": 3.47,
+      "runsAllowedPerGame": 2.67
+    },
+    "902": {
+      "games": 15,
+      "runsScoredPerGame": 3.67,
+      "runsAllowedPerGame": 2.73
+    },
+    "903": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 3.27
+    },
+    "904": {
+      "games": 15,
+      "runsScoredPerGame": 3.27,
+      "runsAllowedPerGame": 3.2
+    },
+    "905": {
+      "games": 15,
+      "runsScoredPerGame": 2.93,
+      "runsAllowedPerGame": 5.13
+    },
+    "906": {
+      "games": 15,
+      "runsScoredPerGame": 3.53,
+      "runsAllowedPerGame": 4.27
+    },
+    "907": {
+      "games": 15,
+      "runsScoredPerGame": 6.4,
+      "runsAllowedPerGame": 2.67
+    },
+    "908": {
+      "games": 15,
+      "runsScoredPerGame": 4,
+      "runsAllowedPerGame": 4.07
+    },
+    "909": {
+      "games": 15,
+      "runsScoredPerGame": 3.2,
+      "runsAllowedPerGame": 4.2
+    },
+    "910": {
+      "games": 15,
+      "runsScoredPerGame": 3.47,
+      "runsAllowedPerGame": 3.93
+    },
+    "911": {
+      "games": 15,
+      "runsScoredPerGame": 3.33,
+      "runsAllowedPerGame": 5
+    },
+    "912": {
+      "games": 15,
+      "runsScoredPerGame": 3.53,
+      "runsAllowedPerGame": 2.87
+    }
+  },
+  "parkFactors": {
+    "9101": 96,
+    "9102": 91,
+    "9103": 103,
+    "9104": 95,
+    "9105": 106,
+    "9106": 99,
+    "9107": 109,
+    "9108": 108,
+    "9109": 102,
+    "9110": 94,
+    "9111": 97,
+    "9112": 100
+  },
+  "injuries": {
+    "901": [
+      {
+        "name": "赤星 優志",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "鈴木 大和",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "石川 達也",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "戸郷 翔征",
+        "position": "投手",
+        "status": "登録抹消 2026-09-30"
+      }
+    ],
+    "902": [
+      {
+        "name": "伊藤 将司",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "豊田 寛",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "下村 海翔",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "門別 啓人",
+        "position": "投手",
+        "status": "登録抹消 2026-09-28"
+      }
+    ],
+    "903": [
+      {
+        "name": "平良 拳太郎",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "東妻 純平",
+        "position": "捕手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "佐々木 千隼",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "深沢 鳳介",
+        "position": "投手",
+        "status": "登録抹消 2026-09-25"
+      },
+      {
+        "name": "片山 皓心",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      }
+    ],
+    "904": [
+      {
+        "name": "髙 太一",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "清水 叶人",
+        "position": "捕手",
+        "status": "登録抹消 2026-09-25"
+      },
+      {
+        "name": "秋山 翔吾",
+        "position": "外野手",
+        "status": "登録抹消 2026-10-01"
+      },
+      {
+        "name": "大盛 穂",
+        "position": "外野手",
+        "status": "登録抹消 2026-10-01"
+      }
+    ],
+    "905": [
+      {
+        "name": "松本 健吾",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "Ｄ．サンタナ",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "Ｊ．オスナ",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-28"
+      }
+    ],
+    "906": [
+      {
+        "name": "Ｋ．マラー",
+        "position": "投手",
+        "status": "登録抹消 2026-09-25"
+      },
+      {
+        "name": "仲地 礼亜",
+        "position": "投手",
+        "status": "登録抹消 2026-09-26"
+      },
+      {
+        "name": "木下 拓哉",
+        "position": "捕手",
+        "status": "登録抹消 2026-09-26"
+      },
+      {
+        "name": "高橋 周平",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-26"
+      },
+      {
+        "name": "上林 誠知",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-26"
+      },
+      {
+        "name": "土田 龍空",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-27"
+      }
+    ],
+    "907": [
+      {
+        "name": "大山 凌",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "Ｌ．モイネロ",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "中村 晃",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-28"
+      },
+      {
+        "name": "川村 友斗",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-28"
+      },
+      {
+        "name": "大津 亮介",
+        "position": "投手",
+        "status": "登録抹消 2026-09-30"
+      },
+      {
+        "name": "渡邉 陸",
+        "position": "捕手",
+        "status": "登録抹消 2026-10-01"
+      }
+    ],
+    "908": [
+      {
+        "name": "宮西 尚生",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "中島 卓也",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "山﨑 福也",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "田中 正義",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "柴田 獅子",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "達 孝太",
+        "position": "投手",
+        "status": "登録抹消 2026-09-25"
+      },
+      {
+        "name": "加藤 貴之",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "伊藤 大海",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "水谷 瞬",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "有原 航平",
+        "position": "投手",
+        "status": "登録抹消 2026-09-28"
+      },
+      {
+        "name": "Ｒ．カストロ",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-28"
+      },
+      {
+        "name": "松岡 洸希",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      }
+    ],
+    "909": [
+      {
+        "name": "石垣 元気",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "愛斗",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "Ａ．ジャクソン",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "澤田 圭佑",
+        "position": "投手",
+        "status": "登録抹消 2026-10-01"
+      },
+      {
+        "name": "吉川 悠斗",
+        "position": "投手",
+        "status": "登録抹消 2026-10-01"
+      }
+    ],
+    "910": [
+      {
+        "name": "松本 航",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "武内 夏暉",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "浜屋 将太",
+        "position": "投手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "林 安可",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-24"
+      },
+      {
+        "name": "冨士 大和",
+        "position": "投手",
+        "status": "登録抹消 2026-09-28"
+      },
+      {
+        "name": "中村 祐太",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "黒田 将矢",
+        "position": "投手",
+        "status": "登録抹消 2026-09-30"
+      },
+      {
+        "name": "蛭間 拓哉",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-30"
+      }
+    ],
+    "911": [
+      {
+        "name": "山口 廉王",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "博志",
+        "position": "投手",
+        "status": "登録抹消 2026-09-23"
+      },
+      {
+        "name": "平野 佳寿",
+        "position": "投手",
+        "status": "登録抹消 2026-09-26"
+      },
+      {
+        "name": "Ａ．エスピノーザ",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "Ａ．マチャド",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "山田 修義",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "佐藤 一磨",
+        "position": "投手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "西野 真弘",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "大城 滉二",
+        "position": "内野手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "杉本 裕太郎",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-27"
+      },
+      {
+        "name": "岩嵜 翔",
+        "position": "投手",
+        "status": "登録抹消 2026-09-28"
+      },
+      {
+        "name": "椋木 蓮",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "石川 亮",
+        "position": "捕手",
+        "status": "登録抹消 2026-09-29"
+      }
+    ],
+    "912": [
+      {
+        "name": "前田 健太",
+        "position": "投手",
+        "status": "登録抹消 2026-09-25"
+      },
+      {
+        "name": "吉野 創士",
+        "position": "外野手",
+        "status": "登録抹消 2026-09-25"
+      },
+      {
+        "name": "岸 孝之",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "九谷 瑠",
+        "position": "投手",
+        "status": "登録抹消 2026-09-29"
+      }
+    ]
+  },
+  "lineups": {},
+  "lineupBatting": {},
+  "leagueConstants": {
+    "season": 1002026,
+    "wOBA": 0.294,
+    "wOBAScale": 1.24,
+    "wBB": 0.69,
+    "wHBP": 0.722,
+    "w1B": 0.882,
+    "w2B": 1.256,
+    "w3B": 1.59,
+    "wHR": 2.05,
+    "runSB": 0.2,
+    "runCS": -0.4,
+    "runsPerPA": 0.097,
+    "runsPerWin": 9.6,
+    "cFIP": 2.78,
+    "lgFIP": 3.322,
+    "hrPerFB": 0.09
+  },
+  "weather": {
+    "92026100205": {
+      "temperatureC": 19.6,
+      "windSpeedKmh": 1.8,
+      "windDirectionDeg": 360,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-10-02T00:59:50.646Z"
+    },
+    "92026100209": {
+      "temperatureC": 19.7,
+      "windSpeedKmh": 7.9,
+      "windDirectionDeg": 51,
+      "roof": "outdoor",
+      "cfBearingDeg": null,
+      "fetchedAt": "2026-10-02T00:59:50.750Z"
+    }
+  }
+}
