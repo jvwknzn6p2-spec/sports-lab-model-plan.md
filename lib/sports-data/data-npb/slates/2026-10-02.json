@@ -1,7 +1,7 @@
 {
   "date": "2026-10-02",
   "season": 1002026,
-  "fetchedAt": "2026-10-02T03:42:23.319Z",
+  "fetchedAt": "2026-10-02T06:57:24.920Z",
   "games": [
     {
       "gamePk": 92026100205,
@@ -343,6 +343,11 @@
         "name": "片山 皓心",
         "position": "投手",
         "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "若松 尚輝",
+        "position": "投手",
+        "status": "登録抹消 2026-10-02"
       }
     ],
     "904": [
@@ -508,6 +513,16 @@
         "name": "松岡 洸希",
         "position": "投手",
         "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "河野 竜生",
+        "position": "投手",
+        "status": "登録抹消 2026-10-02"
+      },
+      {
+        "name": "宮崎 一樹",
+        "position": "外野手",
+        "status": "登録抹消 2026-10-02"
       }
     ],
     "909": [
@@ -666,6 +681,11 @@
         "name": "九谷 瑠",
         "position": "投手",
         "status": "登録抹消 2026-09-29"
+      },
+      {
+        "name": "瀧中 瞭太",
+        "position": "投手",
+        "status": "登録抹消 2026-10-02"
       }
     ]
   },
@@ -691,20 +711,20 @@
   },
   "weather": {
     "92026100205": {
-      "temperatureC": 19.6,
-      "windSpeedKmh": 1.8,
-      "windDirectionDeg": 360,
+      "temperatureC": 20.5,
+      "windSpeedKmh": 1.5,
+      "windDirectionDeg": 76,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-10-02T03:42:23.958Z"
+      "fetchedAt": "2026-10-02T06:57:25.534Z"
     },
     "92026100209": {
-      "temperatureC": 19.7,
-      "windSpeedKmh": 7.9,
-      "windDirectionDeg": 51,
+      "temperatureC": 20.3,
+      "windSpeedKmh": 8.4,
+      "windDirectionDeg": 83,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-10-02T03:42:24.096Z"
+      "fetchedAt": "2026-10-02T06:57:25.687Z"
     }
   }
 }
