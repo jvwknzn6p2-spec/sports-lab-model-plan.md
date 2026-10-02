@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-02T07:35:08.603Z",
-  "updatedAt": "2026-10-02T07:35:08.603Z",
+  "lockedAt": "2026-10-02T07:54:06.324Z",
+  "updatedAt": "2026-10-02T07:54:06.324Z",
   "controlTower": {
     "date": "2026-10-02",
     "season": 1002026,
@@ -12,8 +12,8 @@
         "side": "home",
         "line": 1.5,
         "total": 6.5,
-        "marketHomeCover": 0.606,
-        "marketHomePayout": 0.575,
+        "marketHomeCover": 0.608,
+        "marketHomePayout": 0.572,
         "marketAwayPayout": 1.4,
         "marketOver": 0.483
       },
@@ -21,8 +21,8 @@
         "side": "home",
         "line": 1.5,
         "total": 8,
-        "marketHomeCover": 0.469,
-        "marketHomePayout": 1.03,
+        "marketHomeCover": 0.461,
+        "marketHomePayout": 1.04,
         "marketAwayPayout": 0.769,
         "marketOver": 0.489
       }
@@ -59,8 +59,8 @@
           "side": "home",
           "line": 1.5,
           "total": 6.5,
-          "marketHomeCover": 0.606,
-          "marketHomePayout": 0.575,
+          "marketHomeCover": 0.608,
+          "marketHomePayout": 0.572,
           "marketAwayPayout": 1.4,
           "marketOver": 0.483
         },
@@ -68,8 +68,8 @@
         "coverProbability": 0.606,
         "rawCoverProbability": 0.626,
         "ev": 0.151,
-        "marketProbability": 0.606,
-        "marketPriceEv": -0.046,
+        "marketProbability": 0.608,
+        "marketPriceEv": -0.048,
         "recommendedStake": null,
         "noValue": false
       },
@@ -91,8 +91,8 @@
         "PASS: edge too small (win prob 54.4% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
         "Handicap EV +15.1% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -4.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 60.6% for this side — model 60.6% (+0.0% vs market)",
+        "At the market's own price this edge is worth -4.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 60.8% for this side — model 60.6% (-0.2% vs market)",
         "Market consensus on the total: 48.3% for the OVER — model 54.0% (+5.7% vs market)",
         "Starter edge: 東京ヤクルトスワローズ (山野 太一 projFIP 3.16 vs 3.77)",
         "Bullpen edge: 読売ジャイアンツ",
@@ -128,8 +128,8 @@
           "side": "home",
           "line": 1.5,
           "total": 8,
-          "marketHomeCover": 0.469,
-          "marketHomePayout": 1.03,
+          "marketHomeCover": 0.461,
+          "marketHomePayout": 1.04,
           "marketAwayPayout": 0.769,
           "marketOver": 0.489
         },
@@ -137,7 +137,7 @@
         "coverProbability": 0.533,
         "rawCoverProbability": 0.539,
         "ev": 0.012,
-        "marketProbability": 0.531,
+        "marketProbability": 0.539,
         "marketPriceEv": -0.057,
         "recommendedStake": null,
         "noValue": false
@@ -160,7 +160,7 @@
         "PASS: incomplete/downgraded data",
         "Handicap EV +1.2% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth -5.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 53.1% for this side — model 53.3% (+0.2% vs market)",
+        "Market consensus on the handicap: 53.9% for this side — model 53.3% (-0.6% vs market)",
         "Market consensus on the total: 48.9% for the OVER — model 54.1% (+5.2% vs market)",
         "Offense edge: 福岡ソフトバンクホークス (wOBA 0.326 vs 0.290)",
         "Bullpen edge: 福岡ソフトバンクホークス",
