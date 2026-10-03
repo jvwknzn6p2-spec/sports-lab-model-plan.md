@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-03T02:56:18.634Z",
-  "updatedAt": "2026-10-03T02:56:18.634Z",
+  "lockedAt": "2026-10-03T03:55:17.384Z",
+  "updatedAt": "2026-10-03T03:55:17.384Z",
   "controlTower": {
     "date": "2026-10-03",
     "season": 1002026,
@@ -13,8 +13,8 @@
         "line": -1.5,
         "total": 5.5,
         "marketHomeCover": 0.366,
-        "marketHomePayout": 1.605,
-        "marketAwayPayout": 0.5,
+        "marketHomePayout": 1.6,
+        "marketAwayPayout": 0.503,
         "marketOver": 0.517
       },
       "92026100305": {
@@ -23,17 +23,17 @@
         "total": 6.5,
         "marketHomeCover": 0.596,
         "marketHomePayout": 0.606,
-        "marketAwayPayout": 1.35,
-        "marketOver": 0.515
+        "marketAwayPayout": 1.36,
+        "marketOver": 0.512
       },
       "92026100304": {
         "side": "home",
         "line": 1.5,
         "total": 6.5,
-        "marketHomeCover": 0.529,
+        "marketHomeCover": 0.53,
         "marketHomePayout": 0.8,
         "marketAwayPayout": 1,
-        "marketOver": 0.473
+        "marketOver": 0.465
       },
       "92026100312": {
         "side": "home",
@@ -87,8 +87,8 @@
           "line": -1.5,
           "total": 5.5,
           "marketHomeCover": 0.366,
-          "marketHomePayout": 1.605,
-          "marketAwayPayout": 0.5,
+          "marketHomePayout": 1.6,
+          "marketAwayPayout": 0.503,
           "marketOver": 0.517
         },
         "pick": null,
@@ -96,7 +96,7 @@
         "rawCoverProbability": 0.668,
         "ev": 0.219,
         "marketProbability": 0.634,
-        "marketPriceEv": -0.038,
+        "marketPriceEv": -0.036,
         "recommendedStake": null,
         "noValue": false
       },
@@ -118,7 +118,7 @@
         "PASS: edge too small (win prob 51.0% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
         "Handicap EV +21.9% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -3.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "At the market's own price this edge is worth -3.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
         "Market consensus on the handicap: 63.4% for this side — model 64.1% (+0.7% vs market)",
         "Market consensus on the total: 51.7% for the OVER — model 55.2% (+3.5% vs market)",
         "Starter edge: 読売ジャイアンツ (井上 温大 projFIP 2.61 vs 3.11)",
@@ -156,8 +156,8 @@
           "total": 6.5,
           "marketHomeCover": 0.596,
           "marketHomePayout": 0.606,
-          "marketAwayPayout": 1.35,
-          "marketOver": 0.515
+          "marketAwayPayout": 1.36,
+          "marketOver": 0.512
         },
         "pick": null,
         "coverProbability": 0.611,
@@ -174,7 +174,7 @@
         "pick": null,
         "probability": 0.565,
         "rawProbability": 0.575,
-        "marketProbability": 0.515,
+        "marketProbability": 0.512,
         "ev": 0.074,
         "noValue": false
       },
@@ -187,7 +187,7 @@
         "Handicap EV +16.1% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth -1.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
         "Market consensus on the handicap: 59.6% for this side — model 61.1% (+1.5% vs market)",
-        "Market consensus on the total: 51.5% for the OVER — model 56.5% (+5.0% vs market)",
+        "Market consensus on the total: 51.2% for the OVER — model 56.5% (+5.3% vs market)",
         "Bullpen edge: 中日ドラゴンズ",
         "Park factor 106 (hitter-friendly)",
         "Expected runs 3.53–3.80 over 10000 sims",
@@ -221,16 +221,16 @@
           "side": "home",
           "line": 1.5,
           "total": 6.5,
-          "marketHomeCover": 0.529,
+          "marketHomeCover": 0.53,
           "marketHomePayout": 0.8,
           "marketAwayPayout": 1,
-          "marketOver": 0.473
+          "marketOver": 0.465
         },
         "pick": "広島東洋カープ +1.5",
         "coverProbability": 0.554,
         "rawCoverProbability": 0.564,
         "ev": 0.052,
-        "marketProbability": 0.529,
+        "marketProbability": 0.53,
         "marketPriceEv": -0.003,
         "recommendedStake": 0.01,
         "noValue": false
@@ -241,7 +241,7 @@
         "pick": "UNDER",
         "probability": 0.54,
         "rawProbability": 0.547,
-        "marketProbability": 0.527,
+        "marketProbability": 0.535,
         "ev": 0.027,
         "noValue": false
       },
@@ -252,8 +252,8 @@
       "reasons": [
         "Handicap EV +5.2% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth -0.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 52.9% for this side — model 55.4% (+2.5% vs market)",
-        "Market consensus on the total: 52.7% for the UNDER — model 54.0% (+1.3% vs market)",
+        "Market consensus on the handicap: 53.0% for this side — model 55.4% (+2.4% vs market)",
+        "Market consensus on the total: 53.5% for the UNDER — model 54.0% (+0.5% vs market)",
         "Starter edge: 阪神タイガース (才木 浩人 projFIP 2.41 vs 3.31)",
         "Offense edge: 阪神タイガース (wOBA 0.303 vs 0.273)",
         "Park factor 95 (pitcher-friendly)",
