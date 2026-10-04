@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { renderSummary, selectToPredict, summarizeLeague } from "../src/pipeline.ts";
 import { cutoffOf, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../src/ledger.ts";
 
-const m = (id: string, kickoffAt: string): LedgerMatch => ({ providerId: id, league: "JAP", kickoffAt, cutoffAt: cutoffOf(kickoffAt), home: "A", away: "B", recordedAt: "t" });
+const m = (id: string, kickoffAt: string, home = "A", away = "B"): LedgerMatch => ({ providerId: id, league: "JAP", kickoffAt, cutoffAt: cutoffOf(kickoffAt), home, away, recordedAt: "t" });
 const now = "2026-09-04T03:00:00Z"; // JST 9/4 12:00
 
 test("selectToPredict: 未発行・封緘前（前日 20:00 JST）・48h 以内だけ、キックオフ順", () => {
@@ -34,10 +34,10 @@ test("summarizeLeague / renderSummary: 同一集合で市場と比べ、件数�
   assert.equal(s.settled, 1);
   assert.ok(s.model && s.market && s.modelOnMarketSet);
   assert.equal(s.model!.hits, 1);
-  const md = renderSummary(["JAP"], preds, evals, new Map([["x1", m("x1", "2026-09-05T10:00:00Z")], ["x2", m("x2", "2026-09-05T10:00:00Z")]]), now);
+  const md = renderSummary(["JAP"], preds, evals, new Map([["x1", m("x1", "2026-09-05T10:00:00Z")], ["x2", m("x2", "2026-09-05T10:00:00Z", "C", "D")]]), now);
   assert.match(md, /\| J1 \| 2 \| 1 \|/);
   assert.match(md, /1\/1 100\.0% \[\d+–100%\]/);
   assert.ok(md.includes("A 1-0 B"));
-  assert.ok(md.includes("A v B")); // 未決着
+  assert.ok(md.includes("C v D")); // 未決着（x2・別カード）
   assert.ok(md.includes("ベッティング"));
 });

@@ -48,6 +48,32 @@ export function ingestHealth(results: LedgerResult[], nowIso: string): IngestHea
   return { lastRecordedAt, hoursSinceRecord, lastMatchDate, results: results.length };
 }
 
+/**
+ * 結果が来るはずの試合があるか: 取り込めている最新の試合日の**翌日以降**にキックオフし、
+ * すでに `minAgeHours` 経った登録が台帳にあるか。
+ *
+ * 冒頭の「毎日どこかのリーグで試合がある」は代表ウィークには成り立たない。2026-09-21〜
+ * 10-09 は対象 10 リーグとも試合が無く（football-data.org の公式 API で 9/20 以降の
+ * 予定 0・fixtures.csv の次節は 10/10〜12）、結果が 1 件も入らないのは正常なのに、
+ * 72 時間で日次が赤くなるところだった。VORTE EV の `expected_24h` と同じく、
+ * 生の事実（hoursSinceRecord）は変えず、判断にだけ「仕事があったか」を足す。
+ * 取得元が死んで試合だけが進んでいる場合は、その試合の登録がここで数えられて落ちる。
+ */
+export function resultsExpected(
+  kickoffs: Iterable<string>,
+  lastMatchDate: string | null,
+  nowIso: string,
+  minAgeHours = 6,
+): boolean {
+  const now = Date.parse(nowIso);
+  const after = lastMatchDate === null ? -Infinity : Date.parse(lastMatchDate + "T00:00:00Z") + 86_400_000;
+  for (const k of kickoffs) {
+    const t = Date.parse(k);
+    if (t >= after && now - t >= minAgeHours * 3_600_000) return true;
+  }
+  return false;
+}
+
 export interface BacklogEntry {
   predictionId: string;
   providerId: string;
@@ -89,8 +115,15 @@ export type HealthLevel = "ok" | "warn" | "fail";
  * 立ち上げ直後を故障と呼ばないため（VORTE EV の `expected_24h` と同じ、
  * 「そもそも仕事が無かった」を故障にしない配慮）。
  */
-export function ingestLevel(h: IngestHealth, warnHours = INGEST_WARN_HOURS, failHours = INGEST_FAIL_HOURS): HealthLevel {
+export function ingestLevel(
+  h: IngestHealth,
+  warnHours = INGEST_WARN_HOURS,
+  failHours = INGEST_FAIL_HOURS,
+  expected = true,
+): HealthLevel {
   if (h.hoursSinceRecord === null) return "ok";
+  // 取り込むべき結果が無い期間（代表ウィーク等）の沈黙は故障ではない（resultsExpected）
+  if (!expected) return "ok";
   if (h.hoursSinceRecord >= failHours) return "fail";
   if (h.hoursSinceRecord >= warnHours) return "warn";
   return "ok";

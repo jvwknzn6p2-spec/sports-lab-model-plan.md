@@ -103,11 +103,23 @@ _Populate as you build — explicit user instructions worth remembering across s
   statement — the 半-line split-stake machinery is proving itself in
   production through exactly these rows.
 - Predictions are LOCKED per date against a **22:59 JST deadline** (market
-  closes 23:00 JST). The daily cycle is a two-stage lock: 12:10 UTC safety
-  lock + 12:45 UTC refresh re-lock; after the deadline `predict --force`
-  carries the frozen picks through unchanged. Settlement sweeps the finish
-  window every 2 hours (`fetch-results --poll` exits cleanly when nothing is
-  Final yet; partial settles are replaced last-wins).
+  closes 23:00 JST). GitHub's scheduler runs this repo's crons **hours**
+  late (measured 2026-08-24..09-25: median ~4–5 h, worst 11.5 h), so the
+  predict crons start at 02:10 UTC (MLB) / 00:10 JST (NPB) and spread across
+  the day; `workflows.test.ts` pins them to the MEASURED delay — re-measure
+  before relaxing it. After a pick's deadline `predict --force` carries it
+  through unchanged, and a fully frozen slate is not refetched. Settlement
+  sweeps the finish window every 2 hours (`fetch-results --poll` exits
+  cleanly when nothing is Final yet; partial settles are replaced last-wins).
+- **The record is split by WHEN each pick was fixed** (`lock-provenance.ts`):
+  `on_time` (before its deadline — the only verified record, the only
+  executable P&L) / `late_pre_start` (after the deadline, before first pitch
+  — a forecast, P&L reference only) / `post_start` (excluded). Picks carry
+  `predictedAt` + `predictedRunId`; older picks are placed by the
+  `predicted_after_deadline` flag + the lock's `lockedAt` (checked 849/849
+  against git history on 2026-09-25). A pick produced at/after first pitch
+  is written with every market withheld. Never "fix" the headline by
+  rewriting history.jsonl — the split is read from the lock files.
 - **`ANTHROPIC_API_KEY`** (repo secret) enables the Step-9 AI reviewer panel
   (`handiedge review`) — advisory briefings in `data/reviews/`, never a pick
   change. Without the key the step skips cleanly. A key that is PRESENT but

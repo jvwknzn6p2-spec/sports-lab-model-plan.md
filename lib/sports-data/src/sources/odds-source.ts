@@ -279,9 +279,28 @@ export function fillControlTowerFromOdds(
 }
 
 export class OddsApiError extends Error {
-  constructor(message: string) {
+  /**
+   * The API's own `error_code` when it sent one — e.g. OUT_OF_USAGE_CREDITS
+   * (the monthly quota is spent; every call fails until it resets) vs
+   * INVALID_KEY (the secret itself is wrong). Both arrive as HTTP 401, so
+   * the status alone cannot tell "top up / wait for the reset" from "fix the
+   * key" — the difference VORTE EV's odds workflow learned on 2026-09-22.
+   */
+  readonly code: string | null;
+  constructor(message: string, code: string | null = null) {
     super(message);
     this.name = "OddsApiError";
+    this.code = code;
+  }
+}
+
+/** What the Odds API's error body says, or null when it says nothing usable. */
+async function oddsApiErrorCode(res: Response): Promise<string | null> {
+  try {
+    const body = (await res.json()) as { error_code?: unknown };
+    return typeof body?.error_code === "string" ? body.error_code : null;
+  } catch {
+    return null;
   }
 }
 
@@ -309,8 +328,16 @@ export async function fetchMlbOdds(opts: {
   try {
     const res = await doFetch(url, { signal: ctrl.signal });
     if (!res.ok) {
+      const code = await oddsApiErrorCode(res);
+      const why =
+        code === "OUT_OF_USAGE_CREDITS"
+          ? " — the key's monthly credits are spent (the quota resets on the plan's cycle; the key is not invalid)"
+          : code
+            ? ` (${code})`
+            : "";
       throw new OddsApiError(
-        `The Odds API returned ${res.status} ${res.statusText}`,
+        `The Odds API returned ${res.status} ${res.statusText}${why}`,
+        code,
       );
     }
     const body: unknown = await res.json();

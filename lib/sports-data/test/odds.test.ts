@@ -248,3 +248,34 @@ test("the odds fill attaches market probabilities at the exact point only", () =
   assert.equal(handicaps["2"]!.marketHomePayout, undefined);
   assert.equal(handicaps["2"]!.line, -2.5);
 });
+
+test("an exhausted quota is named as such, not as a bad key", async () => {
+  const { fetchMlbOdds, OddsApiError } = await import(
+    "../src/sources/odds-source"
+  );
+  const body = JSON.stringify({
+    message: "Usage quota has been reached.",
+    error_code: "OUT_OF_USAGE_CREDITS",
+  });
+  const fake = (async () =>
+    new Response(body, {
+      status: 401,
+      statusText: "Unauthorized",
+    })) as unknown as typeof fetch;
+  await assert.rejects(
+    fetchMlbOdds({ apiKey: "k", fetchImpl: fake }),
+    (err: unknown) => {
+      assert.ok(err instanceof OddsApiError);
+      assert.equal(err.code, "OUT_OF_USAGE_CREDITS");
+      assert.match(err.message, /monthly credits are spent/);
+      return true;
+    },
+  );
+  // A 401 with no usable body still fails loud, just without a code.
+  const bare = (async () =>
+    new Response("nope", { status: 401, statusText: "Unauthorized" })) as unknown as typeof fetch;
+  await assert.rejects(
+    fetchMlbOdds({ apiKey: "k", fetchImpl: bare }),
+    (err: unknown) => err instanceof OddsApiError && err.code === null,
+  );
+});
