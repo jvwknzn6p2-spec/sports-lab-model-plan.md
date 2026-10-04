@@ -1,5 +1,15 @@
 # HandiEdge — running results
 
+## Verified pre-game record (by when each pick was fixed)
+
+_Only picks fixed BEFORE their deadline form the verified record; the market closes at the deadline, so only their P&L was executable. Picks fixed after the deadline are pre-game forecasts (accuracy is fair, P&L is reference). Picks fixed at or after first pitch are excluded. Tiers come from the committed lock files; the ledger (history.jsonl) is not rewritten._
+
+- **on_time** — fixed before the deadline (verified pre-game record): 36-19 (65.5%, 95% CI 52.3%–76.6%), Brier 0.231; handicap 26-23, +0.40 units over 49 stake(s) (ROI +0.8%)
+- **late_pre_start** — fixed after the deadline, before first pitch (forecast only — the market had closed, P&L is reference): 175-120 (59.3%, 95% CI 53.6%–64.8%), Brier 0.245; handicap 124-92, +19.60 units over 216 stake(s) (ROI +9.1%)
+- **post_start** — fixed at/after first pitch (not a pre-game prediction — excluded): 0-1 (0.0%, 95% CI 0.0%–79.3%), Brier 0.381; no handicap stake
+
+## All picks (every tier combined — reference)
+
 **211-140** (60.1%) across 59 days, 403 PASS.
 
 - Handicap: 150-115 · **+20.00 units** after the cut (ROI +7.5% per bet)
