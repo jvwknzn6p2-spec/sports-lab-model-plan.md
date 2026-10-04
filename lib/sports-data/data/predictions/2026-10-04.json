@@ -1,6 +1,6 @@
 {
   "lockedAt": "2026-10-04T13:33:07.225Z",
-  "updatedAt": "2026-10-04T13:33:07.225Z",
+  "updatedAt": "2026-10-04T14:36:06.384Z",
   "controlTower": {
     "date": "2026-10-04",
     "season": 2026,
@@ -13,17 +13,17 @@
         "line": -1.5,
         "total": 7,
         "marketHomeCover": 0.389,
-        "marketHomePayout": 1.48,
-        "marketAwayPayout": 0.583,
+        "marketHomePayout": 1.485,
+        "marketAwayPayout": 0.573,
         "marketOver": 0.5
       },
       "849825": {
         "side": "home",
         "line": -1.5,
         "total": 7,
-        "marketHomeCover": 0.375,
-        "marketHomePayout": 1.58,
-        "marketAwayPayout": 0.541,
+        "marketHomeCover": 0.369,
+        "marketHomePayout": 1.62,
+        "marketAwayPayout": 0.538,
         "marketOver": 0.511
       }
     }
@@ -109,7 +109,7 @@
         "[warn] total_market_disagreement"
       ],
       "lockDeadline": "2026-10-04T13:59:00.000Z",
-      "final": false
+      "final": true
     },
     {
       "gamePk": 849823,
@@ -181,7 +181,7 @@
         "[warn] total_market_disagreement"
       ],
       "lockDeadline": "2026-10-04T13:59:00.000Z",
-      "final": false
+      "final": true
     }
   ]
 }
