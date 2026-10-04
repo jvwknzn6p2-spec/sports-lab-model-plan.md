@@ -96,6 +96,12 @@ export interface SettledGame {
 
 export interface SettlementReport {
   date: string;
+  /**
+   * Tag (`id/vN`, settlement-rules.ts) of the rule this report was scored
+   * under. Absent on rows written before rules were versioned: MLB rows are
+   * MLB_FINAL_SCORE/v1 and NPB rows NPB_FINAL_POSTED_SCORE/v1 by construction.
+   */
+  settlementRule?: string;
   gamesSettled: number;
   gamesPassed: number;
   gamesMissingResults: number;

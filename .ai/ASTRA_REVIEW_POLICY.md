@@ -157,8 +157,8 @@ never mixed in one comparison.
 | rule | status | basis |
 |---|---|---|
 | `MLB_FINAL_SCORE/v1` | production | MLB Stats API final of a `Final` game, extras included ✅ §2 |
-| `NPB_FINAL_POSTED_SCORE/v1` | production (what `history.jsonl` holds) | npb.jp month-page final (up to the 12th); tie = PUSH |
-| `NPB_REGULATION_9/v1` | re-evaluation (applies from 2026-08-22) | score at the end of the 9th from the score page's inning line; the handicap market's basis ✅ §2 |
+| `NPB_FINAL_POSTED_SCORE/v1` | production before `NPB_PRODUCTION_CUTOVER` (2026-09-08); what `history.jsonl` holds for those dates | npb.jp month-page final (up to the 12th); tie = PUSH |
+| `NPB_REGULATION_9/v1` | production from 2026-09-08; re-evaluation for 2026-08-22 … 2026-09-07 | score at the end of the 9th from the score page's inning line; the handicap market's basis ✅ §2 |
 | `SOCCER_FULL_TIME_90/v1` | production | football-data.co.uk FTHG/FTAG (90' + stoppage) ✅ §2 |
 
 How the NPB regulation-9 basis is realised without touching the ledger:
@@ -169,7 +169,9 @@ How the NPB regulation-9 basis is realised without touching the ledger:
   to rewrite it. Current source: the VORTE EV archive
   (`game_regulation_scores`, derived by its parser from npb.jp score pages
   with a self-check that games ending in ≤ 9 innings equal their final);
-  joined on (date, home team name). A direct npb.jp fetch is a later change.
+  joined on (date, home team name) for the dates before the cutover; from the
+  cutover, `handiedge fetch-results --league npb` reads npb.jp directly
+  (below).
 - **Re-evaluation stream**: `handiedge reevaluate --league npb --rule
   NPB_REGULATION_9` appends to `data-npb/reevaluations.jsonl` one record per
   pick: prediction id, rule id+version, original rule, the ORIGINAL settled
@@ -189,10 +191,21 @@ How the NPB regulation-9 basis is realised without touching the ledger:
   have no score under any rule. Whether every book reads called/shortened
   games exactly this way is UNKNOWN; the Founder-confirmed market rule is
   "decided at the end of the 9th".
-- **Promotion to production** (switching `handiedge settle` for NPB to the
-  regulation rule) is a separate, explicit change: it adds a fetch from
-  npb.jp, keeps `NPB_FINAL_POSTED_SCORE/v1` history intact, and starts a new
-  rule version in `history.jsonl` rows from its applies-from date.
+- **Production switch** (`NPB_PRODUCTION_CUTOVER` in `settlement-rules.ts`,
+  2026-09-08): from that slate date `handiedge fetch-results --league npb`
+  still records the observed final score in `results/<date>.json` (kept as
+  observed) but settles from the end-of-9th score, which it reads from
+  npb.jp's per-game page (`npb/regulation.ts`: games index → game page →
+  inning line, ≤ 9-inning self-check against 計) into
+  `regulation-scores/<date>.json` with URL and `observedAt`. A game whose
+  regulation score cannot be read stays pending (`regulationPending`) and is
+  never settled from the posted final. Every `history.jsonl` row written
+  since carries `settlementRule`; rows before the cutover keep
+  `NPB_FINAL_POSTED_SCORE/v1` and are never re-scored in place. The running
+  report slices the record by rule and makes no comparison across rules.
+  Known limit: npb.jp's games index links only the last few days, so a
+  regulation score missed in that window must be back-filled by hand or
+  from the VORTE EV archive import (provenance recorded either way).
 
 **What "win probability" means and how PUSH is scored.** `candidate_prob`
 is the model's probability that the HOME team is the *decided* winner under

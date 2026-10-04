@@ -17,7 +17,23 @@ import type { Confidence } from "./decision";
 import { breakEvenProbability } from "./ev";
 import type { SettlementReport } from "./settle";
 
+/** One settlement rule's slice of the history (never merged with another rule's). */
+export interface RuleSlice {
+  rule: string;
+  dates: number;
+  gamesSettled: number;
+  winnerRecord: { wins: number; losses: number };
+  handicapRecord: { wins: number; losses: number };
+  handicapProfitTotal: number | null;
+}
+
 export interface HistorySummary {
+  /**
+   * Records by settlement rule (settlement-rules.ts). When more than one
+   * rule is present the headline numbers above mix bases and are
+   * descriptive only; comparisons must be made within one slice.
+   */
+  byRule: RuleSlice[];
   dates: number;
   gamesSettled: number;
   gamesPassed: number;
@@ -310,13 +326,38 @@ function marketCalibration(
   };
 }
 
-export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
+/** Rule tag of a history row; rows from before rules were versioned are the league's original basis. */
+export function reportRule(r: SettlementReport, league: "mlb" | "npb"): string {
+  return r.settlementRule ?? (league === "mlb" ? "MLB_FINAL_SCORE/v1" : "NPB_FINAL_POSTED_SCORE/v1");
+}
+
+export function slicesByRule(reports: SettlementReport[], league: "mlb" | "npb"): RuleSlice[] {
+  const byDate = new Map<string, SettlementReport>();
+  for (const r of reports) byDate.set(r.date, r);
+  const slices = new Map<string, RuleSlice>();
+  for (const r of byDate.values()) {
+    const tag = reportRule(r, league);
+    const s = slices.get(tag) ?? { rule: tag, dates: 0, gamesSettled: 0, winnerRecord: { wins: 0, losses: 0 }, handicapRecord: { wins: 0, losses: 0 }, handicapProfitTotal: null };
+    s.dates++;
+    s.gamesSettled += r.gamesSettled;
+    s.winnerRecord.wins += r.winnerRecord.wins;
+    s.winnerRecord.losses += r.winnerRecord.losses;
+    s.handicapRecord.wins += r.handicapRecord.wins;
+    s.handicapRecord.losses += r.handicapRecord.losses;
+    if (r.handicapProfit !== null) s.handicapProfitTotal = Math.round(((s.handicapProfitTotal ?? 0) + r.handicapProfit) * 100) / 100;
+    slices.set(tag, s);
+  }
+  return [...slices.values()].sort((a, b) => a.rule.localeCompare(b.rule));
+}
+
+export function aggregateHistory(reports: SettlementReport[], league: "mlb" | "npb" = "mlb"): HistorySummary {
   // Last report per date wins (re-settles supersede earlier ones).
   const byDate = new Map<string, SettlementReport>();
   for (const r of reports) byDate.set(r.date, r);
   const finals = [...byDate.values()].sort((a, b) =>
     a.date.localeCompare(b.date),
   );
+  const byRule = slicesByRule(reports, league);
 
   let games = 0;
   let passed = 0;
@@ -417,6 +458,7 @@ export function aggregateHistory(reports: SettlementReport[]): HistorySummary {
 
   const decided = winner.wins + winner.losses;
   return {
+    byRule,
     dates: finals.length,
     gamesSettled: games,
     gamesPassed: passed,

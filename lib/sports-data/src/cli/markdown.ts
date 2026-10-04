@@ -294,6 +294,22 @@ export function summaryToMarkdown(
   out.push(
     `- Total: ${marketRecordLabel(s.totalRecord, TOTAL_MARKET_NEVER_QUOTED)}`,
   );
+  if (s.byRule.length > 1) {
+    out.push("");
+    out.push(
+      "**Settlement rules.** The record above spans more than one settlement " +
+        "basis; the totals are descriptive only and no comparison is made " +
+        "across rules (policy §2). Per rule:",
+    );
+    for (const r of s.byRule) {
+      out.push(
+        `- \`${r.rule}\`: ${r.dates} day${r.dates === 1 ? "" : "s"}, winner ${r.winnerRecord.wins}-${r.winnerRecord.losses}, ` +
+          `handicap ${r.handicapRecord.wins}-${r.handicapRecord.losses}` +
+          (r.handicapProfitTotal === null ? "" : ` (${fmtUnits(r.handicapProfitTotal)} units)`),
+      );
+    }
+    out.push("");
+  }
   if (s.meanBrier !== null) {
     out.push(
       `- Mean Brier: ${s.meanBrier} (0.25 = coin flip, lower is better)`,

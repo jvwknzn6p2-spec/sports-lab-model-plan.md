@@ -89,7 +89,8 @@ python3 scripts/evaluate_model.py              # → reports/latest_evaluation.j
 python3 -m pytest -q tests                     # evaluator + exporter tests (synthetic + real-data smoke)
 (cd lib/sports-data && pnpm exec tsx src/cli/handiedge.ts replay --out /tmp/replay-head)          # judgment 2: candidate side
 python3 scripts/export_evaluation.py --sports mlb --candidate-mlb-dir /tmp/replay-head             # replay vs production lock
-(cd lib/sports-data && pnpm exec tsx src/cli/handiedge.ts reevaluate --league npb --rule NPB_REGULATION_9)  # judgment 1
+(cd lib/sports-data && pnpm exec tsx src/cli/handiedge.ts reevaluate --league npb --rule NPB_REGULATION_9)  # judgment 1 (dates before the cutover)
+(cd lib/sports-data && pnpm exec tsx src/cli/handiedge.ts fetch-regulation-scores --league npb --date YYYY-MM-DD)  # end-of-9th scores from npb.jp (network)
 python3 scripts/export_evaluation.py --sports npb --npb-rule NPB_REGULATION_9                      # NPB rows on the regulation basis
 python3 scripts/calibration_power.py                                                               # judgment 3: sample-size design
 pnpm run typecheck && pnpm run typecheck:test && pnpm test   # the node suites, same list as CI

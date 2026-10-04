@@ -104,3 +104,18 @@ export function teamByFullName(name: string): NpbTeam {
 export function teamByOddsName(name: string): NpbTeam | undefined {
   return byOddsName.get(name.trim());
 }
+
+const byBisCode = new Map(NPB_TEAMS.map((t) => [t.bisCode, t]));
+
+/**
+ * Resolve the letter code npb.jp uses in per-game paths
+ * (/scores/<year>/<MMDD>/<home>-<away>-<n>/) and BIS stat pages. Unknown
+ * codes FAIL for the same reason the name lookups do.
+ */
+export function teamByBisCode(code: string): NpbTeam {
+  const t = byBisCode.get(code.trim());
+  if (!t) {
+    throw new NpbTeamError(`Unknown NPB team code "${code}" — add it to npb/teams.ts`);
+  }
+  return t;
+}

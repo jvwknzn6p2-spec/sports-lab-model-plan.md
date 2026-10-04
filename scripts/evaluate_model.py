@@ -142,7 +142,7 @@ def main(argv=None):
                 key=eid+'|'+mid
                 if key in seen:dups.append(key)
                 seen.add(key)
-            scored.append({'y':y,'candidate':c,'baseline':b,'sport':r.get('sport') or 'UNKNOWN','league':r.get('league') or 'UNKNOWN','cluster':(r.get(a.cluster_by) or '') if a.cluster_by else None})
+            scored.append({'y':y,'candidate':c,'baseline':b,'sport':r.get('sport') or 'UNKNOWN','league':r.get('league') or 'UNKNOWN','settlement_rule':r.get('settlement_rule') or 'UNKNOWN','cluster':(r.get(a.cluster_by) or '') if a.cluster_by else None})
         except Exception as e:errors.append(f'row {i}: {e}')
     rep['counts']={'raw_rows':len(rows),'scored_rows':len(scored),'push_rows_excluded':push,'invalid_rows':len(errors)}
     rep['data_integrity']={'errors':errors[:100],'prediction_at_or_after_start_rows':leaks[:100],'duplicate_event_market_keys':sorted(set(dups))[:100],'naive_timestamp_fields':naive}
@@ -170,7 +170,7 @@ def main(argv=None):
                 if gate[m]['ci95_low']>0:
                     regress=True;rep['gate']['reasons'].append(f'candidate {m} statistically worse than baseline (paired {"block " if cl is not None else ""}bootstrap 95% CI > 0)')
         else:rep['gate']['reasons'].append(f'baseline comparison descriptive only: n={len(y)} < {a.min_gate_samples}')
-    for field in ('sport','league'):
+    for field in ('sport','league','settlement_rule'):
         groups=defaultdict(list)
         for r in scored:groups[r[field]].append(r)
         rep['segments'][field]={}

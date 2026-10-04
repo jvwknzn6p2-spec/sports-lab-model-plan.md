@@ -95,6 +95,10 @@ SETTLEMENT_RULES = {
     "SOCCER": "SOCCER_FULL_TIME_90/v1",
 }
 
+# First NPB slate date settled under NPB_REGULATION_9 in production; mirrors
+# NPB_PRODUCTION_CUTOVER in lib/sports-data/src/engine/settlement-rules.ts.
+NPB_PRODUCTION_CUTOVER = "2026-09-08"
+
 # league -> (store directory under lib/sports-data, result source)
 BASEBALL = {
     "MLB": ("data", "statsapi.mlb.com"),
@@ -230,13 +234,16 @@ def export_baseball(
     if not pred_dir.is_dir():
         counts["missing_prediction_dir"] += 1
         return rows
-    regulation = league == "NPB" and npb_rule == "NPB_REGULATION_9"
-    rule_tag = SETTLEMENT_RULES["NPB_REGULATION_9"] if regulation else SETTLEMENT_RULES[league]
     candidates = load_replay_dir(candidate_dir, "--candidate dir")
     baselines = load_replay_dir(baseline_dir, "--baseline dir")
     for lock_path in sorted(pred_dir.glob("*.json")):
         date = lock_path.stem
         lock = read_json(lock_path)
+        if league == "NPB":
+            regulation = npb_rule == "NPB_REGULATION_9" or (npb_rule == "production" and date >= NPB_PRODUCTION_CUTOVER)
+        else:
+            regulation = False
+        rule_tag = SETTLEMENT_RULES["NPB_REGULATION_9"] if regulation else SETTLEMENT_RULES[league]
         if regulation:
             reg_path = sd / store / "regulation-scores" / f"{date}.json"
             reg = read_json(reg_path) if reg_path.exists() else {}
@@ -451,8 +458,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--candidate-npb-dir", help="directory of replayed NPB lock files (candidate)")
     ap.add_argument("--baseline-mlb-dir", help="directory of BASE-SHA replayed MLB locks (baseline); requires --candidate-mlb-dir")
     ap.add_argument("--baseline-npb-dir", help="directory of BASE-SHA replayed NPB locks (baseline); requires --candidate-npb-dir")
-    ap.add_argument("--npb-rule", choices=["NPB_FINAL_POSTED_SCORE", "NPB_REGULATION_9"], default="NPB_FINAL_POSTED_SCORE",
-                    help="settlement basis for NPB rows (regulation-9 reads data-npb/regulation-scores/)")
+    ap.add_argument("--npb-rule", choices=["production", "NPB_FINAL_POSTED_SCORE", "NPB_REGULATION_9"], default="production",
+                    help="settlement basis for NPB rows: 'production' follows the per-date production rule "
+                         f"(posted final before {NPB_PRODUCTION_CUTOVER}, regulation-9 from it); the explicit "
+                         "rules force one basis for every date (regulation-9 reads data-npb/regulation-scores/)")
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()
     out = under(root, a.output)
@@ -494,7 +503,8 @@ def main(argv: list[str] | None = None) -> int:
             **{lg: ("replay_head_vs_replay_base" if baseline_dirs[lg] else "replay_vs_production_lock" if candidate_dirs[lg] else "production_lock_calibrated_vs_raw") for lg in BASEBALL},
             "SOCCER": "ledger_pHome_vs_market",
         },
-        "npb_rule": SETTLEMENT_RULES["NPB_REGULATION_9"] if a.npb_rule == "NPB_REGULATION_9" else SETTLEMENT_RULES["NPB"],
+        "npb_rule": a.npb_rule if a.npb_rule == "production" else SETTLEMENT_RULES["NPB_REGULATION_9" if a.npb_rule == "NPB_REGULATION_9" else "NPB"],
+        "npb_production_cutover": NPB_PRODUCTION_CUTOVER,
         "settlement_rules": SETTLEMENT_RULES,
         "counts": {k: dict(sorted(v.items())) for k, v in per_sport.items()},
         "exclusion_reasons": EXCLUSION_REASONS,
