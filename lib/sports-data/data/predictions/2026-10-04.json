@@ -1,0 +1,187 @@
+{
+  "lockedAt": "2026-10-04T13:33:07.225Z",
+  "updatedAt": "2026-10-04T13:33:07.225Z",
+  "controlTower": {
+    "date": "2026-10-04",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "849823": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7,
+        "marketHomeCover": 0.389,
+        "marketHomePayout": 1.48,
+        "marketAwayPayout": 0.583,
+        "marketOver": 0.5
+      },
+      "849825": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7,
+        "marketHomeCover": 0.375,
+        "marketHomePayout": 1.58,
+        "marketAwayPayout": 0.541,
+        "marketOver": 0.511
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.922,
+    "tailShrink": 0.701,
+    "farTailShrink": 0.67,
+    "handicapShrink": 0.868,
+    "handicapTailShrink": 0.634,
+    "handicapFarTailShrink": 0.619,
+    "totalShrink": 0.85,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.833,
+    "gamesSettled": 351,
+    "brierSum": 85.2234,
+    "updatedAt": "2026-10-04T05:40:31.159Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 849825,
+      "gameDate": "2026-10-04T20:00:00Z",
+      "home": "Milwaukee Brewers",
+      "away": "San Diego Padres",
+      "pass": false,
+      "predictedWinner": "Milwaukee Brewers",
+      "predictedLoser": "San Diego Padres",
+      "winProbability": 0.578,
+      "rawWinProbability": 0.584,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7,
+          "marketHomeCover": 0.375,
+          "marketHomePayout": 1.58,
+          "marketAwayPayout": 0.541,
+          "marketOver": 0.511
+        },
+        "pick": "San Diego Padres +1.5",
+        "coverProbability": 0.555,
+        "rawCoverProbability": 0.563,
+        "ev": 0.054,
+        "marketProbability": 0.625,
+        "marketPriceEv": -0.145,
+        "recommendedStake": 0.02,
+        "noValue": false
+      },
+      "total": {
+        "line": 7,
+        "predicted": 9.16,
+        "pick": null,
+        "probability": 0.659,
+        "rawProbability": 0.688,
+        "marketProbability": 0.511,
+        "ev": 0.223,
+        "noValue": true
+      },
+      "expectedRuns": {
+        "home": 4.92,
+        "away": 4.08
+      },
+      "reasons": [
+        "Handicap EV +5.4% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -14.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.5% for this side — model 55.5% (-7.0% vs market)",
+        "No total bet: the model sits +14.8% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 51.1% for the OVER — model 65.9% (+14.8% vs market)",
+        "Starter edge: Milwaukee Brewers (Logan Henderson projFIP 3.62 vs 4.31)",
+        "Offense edge: Milwaukee Brewers (wOBA 0.325 vs 0.314)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 4.92–4.08 over 10000 sims",
+        "away: hot bats — 5.9 R/G last 15 (season baseline 4.5)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
+      ],
+      "lockDeadline": "2026-10-04T13:59:00.000Z",
+      "final": false
+    },
+    {
+      "gamePk": 849823,
+      "gameDate": "2026-10-05T00:00:00Z",
+      "home": "Los Angeles Dodgers",
+      "away": "Atlanta Braves",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.645,
+      "rawWinProbability": 0.659,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7,
+          "marketHomeCover": 0.389,
+          "marketHomePayout": 1.48,
+          "marketAwayPayout": 0.583,
+          "marketOver": 0.5
+        },
+        "pick": null,
+        "coverProbability": 0.506,
+        "rawCoverProbability": 0.507,
+        "ev": -0.039,
+        "marketProbability": 0.389,
+        "marketPriceEv": 0.255,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 7,
+        "predicted": 9.03,
+        "pick": null,
+        "probability": 0.649,
+        "rawProbability": 0.676,
+        "marketProbability": 0.5,
+        "ev": 0.206,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 5.27,
+        "away": 3.61
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "No handicap bet: -3.9% per unit at this line (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +25.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 38.9% for this side — model 50.6% (+11.7% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 64.9% (+14.9% vs market)",
+        "Offense edge: Los Angeles Dodgers (wOBA 0.330 vs 0.312)",
+        "Bullpen edge: Los Angeles Dodgers",
+        "Atlanta Braves bullpen fatigued (+0.10 R/9)",
+        "Park factor 99 (pitcher-friendly)",
+        "Expected runs 5.27–3.61 over 10000 sims",
+        "away: no starter data — league-average assumed",
+        "Weather: 35°C at first pitch — run environment ×1.060",
+        "Wind: 12 km/h from 240° vs CF bearing 26° — blowing out, run environment ×1.020"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
+      ],
+      "lockDeadline": "2026-10-04T13:59:00.000Z",
+      "final": false
+    }
+  ]
+}
