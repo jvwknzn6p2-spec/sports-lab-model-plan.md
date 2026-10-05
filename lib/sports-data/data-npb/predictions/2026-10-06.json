@@ -1,0 +1,188 @@
+{
+  "lockedAt": "2026-10-05T15:27:09.142Z",
+  "updatedAt": "2026-10-05T15:27:09.142Z",
+  "controlTower": {
+    "date": "2026-10-06",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026100602": {
+        "side": "home",
+        "line": -1.5,
+        "total": 5.5,
+        "marketHomeCover": 0.428,
+        "marketHomePayout": 1.25,
+        "marketAwayPayout": 0.667,
+        "marketOver": 0.516
+      },
+      "92026100609": {
+        "side": "home",
+        "line": 1.5,
+        "total": 6.5,
+        "marketHomeCover": 0.604,
+        "marketHomePayout": 0.571,
+        "marketAwayPayout": 1.41,
+        "marketOver": 0.51
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.872,
+    "tailShrink": 0.888,
+    "farTailShrink": 0.88,
+    "handicapShrink": 0.844,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.868,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.818,
+    "gamesSettled": 68,
+    "brierSum": 14.6747,
+    "updatedAt": "2026-10-04T22:01:51.128Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026100602,
+      "gameDate": "2026-10-06T09:00:00.000Z",
+      "home": "阪神タイガース",
+      "away": "広島東洋カープ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.62,
+      "rawWinProbability": 0.637,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 5.5,
+          "marketHomeCover": 0.428,
+          "marketHomePayout": 1.25,
+          "marketAwayPayout": 0.667,
+          "marketOver": 0.516
+        },
+        "pick": null,
+        "coverProbability": 0.542,
+        "rawCoverProbability": 0.55,
+        "ev": 0.03,
+        "marketProbability": 0.572,
+        "marketPriceEv": -0.097,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 5.5,
+        "predicted": 6.89,
+        "pick": null,
+        "probability": 0.589,
+        "rawProbability": 0.602,
+        "marketProbability": 0.516,
+        "ev": 0.118,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.94,
+        "away": 2.8
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +3.0% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -9.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 57.2% for this side — model 54.2% (-3.0% vs market)",
+        "Market consensus on the total: 51.6% for the OVER — model 58.9% (+7.3% vs market)",
+        "Offense edge: 阪神タイガース (wOBA 0.301 vs 0.274)",
+        "Park factor 91 (pitcher-friendly)",
+        "Expected runs 3.94–2.80 over 10000 sims",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed",
+        "Weather: 22°C at first pitch — run environment ×1.008"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-10-06T08:27:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-05T15:27:09.142Z",
+      "predictedRunId": "37332884127"
+    },
+    {
+      "gamePk": 92026100609,
+      "gameDate": "2026-10-06T09:00:00.000Z",
+      "home": "千葉ロッテマリーンズ",
+      "away": "埼玉西武ライオンズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.522,
+      "rawWinProbability": 0.525,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 6.5,
+          "marketHomeCover": 0.604,
+          "marketHomePayout": 0.571,
+          "marketAwayPayout": 1.41,
+          "marketOver": 0.51
+        },
+        "pick": null,
+        "coverProbability": 0.624,
+        "rawCoverProbability": 0.647,
+        "ev": 0.186,
+        "marketProbability": 0.604,
+        "marketPriceEv": -0.019,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 6.5,
+        "predicted": 7.33,
+        "pick": null,
+        "probability": 0.552,
+        "rawProbability": 0.56,
+        "marketProbability": 0.51,
+        "ev": 0.049,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.5,
+        "away": 3.65
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +18.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -1.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 60.4% for this side — model 62.4% (+2.0% vs market)",
+        "Market consensus on the total: 51.0% for the OVER — model 55.2% (+4.2% vs market)",
+        "Bullpen edge: 埼玉西武ライオンズ",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 3.50–3.65 over 10000 sims",
+        "home: cold bats — 2.7 R/G last 15 (season baseline 3.5)",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed",
+        "Weather: 23°C at first pitch — run environment ×1.017"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-10-06T08:27:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-05T15:27:09.142Z",
+      "predictedRunId": "37332884127"
+    }
+  ]
+}
