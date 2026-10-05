@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-05T02:41:49.383Z",
-  "updatedAt": "2026-10-05T02:41:49.383Z",
+  "lockedAt": "2026-10-05T05:43:48.729Z",
+  "updatedAt": "2026-10-05T05:43:48.729Z",
   "controlTower": {
     "date": "2026-10-05",
     "season": 2026,
@@ -40,7 +40,7 @@
     "totalFarTailShrink": 0.833,
     "gamesSettled": 352,
     "brierSum": 85.4015,
-    "updatedAt": "2026-10-05T02:36:37.504Z"
+    "updatedAt": "2026-10-05T04:27:26.710Z"
   },
   "predictions": [
     {
@@ -51,8 +51,8 @@
       "pass": false,
       "predictedWinner": "Cleveland Guardians",
       "predictedLoser": "Chicago White Sox",
-      "winProbability": 0.56,
-      "rawWinProbability": 0.565,
+      "winProbability": 0.562,
+      "rawWinProbability": 0.567,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -65,42 +65,42 @@
           "marketOver": 0.522
         },
         "pick": "Chicago White Sox +1.5",
-        "coverProbability": 0.578,
-        "rawCoverProbability": 0.589,
-        "ev": 0.098,
+        "coverProbability": 0.577,
+        "rawCoverProbability": 0.588,
+        "ev": 0.096,
         "marketProbability": 0.617,
-        "marketPriceEv": -0.094,
+        "marketPriceEv": -0.095,
         "recommendedStake": 0.03,
         "noValue": false
       },
       "total": {
         "line": 6.5,
-        "predicted": 8.39,
+        "predicted": 8.45,
         "pick": "OVER",
-        "probability": 0.637,
-        "rawProbability": 0.661,
+        "probability": 0.641,
+        "rawProbability": 0.666,
         "marketProbability": 0.522,
-        "ev": 0.21,
+        "ev": 0.218,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.42,
-        "away": 3.79
+        "home": 4.46,
+        "away": 3.82
       },
       "reasons": [
-        "Handicap EV +9.8% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -9.4% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 61.7% for this side — model 57.8% (-3.9% vs market)",
-        "Market consensus on the total: 52.2% for the OVER — model 63.7% (+11.5% vs market)",
+        "Handicap EV +9.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -9.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 61.7% for this side — model 57.7% (-4.0% vs market)",
+        "Market consensus on the total: 52.2% for the OVER — model 64.1% (+11.9% vs market)",
         "Starter edge: Cleveland Guardians (Gavin Williams projFIP 3.47 vs 4.51)",
         "Offense edge: Chicago White Sox (wOBA 0.317 vs 0.307)",
         "Bullpen edge: Cleveland Guardians",
         "Park factor 98 (pitcher-friendly)",
-        "Expected runs 4.42–3.79 over 10000 sims",
+        "Expected runs 4.46–3.82 over 10000 sims",
         "home: hot bats — 5.0 R/G last 15 (season baseline 4.2)",
         "away: hot bats — 6.0 R/G last 15 (season baseline 4.6)",
-        "Weather: 15°C at first pitch — run environment ×0.957",
-        "Wind: 19 km/h from 337° vs CF bearing 0° — blowing in, run environment ×0.964"
+        "Weather: 15°C at first pitch — run environment ×0.959",
+        "Wind: 18 km/h from 325° vs CF bearing 0° — blowing in, run environment ×0.971"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -111,8 +111,8 @@
       ],
       "lockDeadline": "2026-10-05T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-05T02:41:49.383Z",
-      "predictedRunId": "37256385581"
+      "predictedAt": "2026-10-05T05:43:48.729Z",
+      "predictedRunId": "37269042723"
     },
     {
       "gamePk": 849839,
@@ -181,8 +181,8 @@
       ],
       "lockDeadline": "2026-10-05T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-05T02:41:49.383Z",
-      "predictedRunId": "37256385581"
+      "predictedAt": "2026-10-05T05:43:48.729Z",
+      "predictedRunId": "37269042723"
     }
   ]
 }
