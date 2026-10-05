@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-04T20:13:44.988Z",
-  "updatedAt": "2026-10-04T20:13:44.988Z",
+  "lockedAt": "2026-10-05T01:39:13.597Z",
+  "updatedAt": "2026-10-05T01:39:13.597Z",
   "controlTower": {
     "date": "2026-10-05",
     "season": 1002026,
@@ -29,18 +29,18 @@
     }
   },
   "calibration": {
-    "shrink": 0.873,
+    "shrink": 0.872,
     "tailShrink": 0.888,
     "farTailShrink": 0.88,
-    "handicapShrink": 0.846,
+    "handicapShrink": 0.844,
     "handicapTailShrink": 0.858,
     "handicapFarTailShrink": 0.857,
-    "totalShrink": 0.863,
+    "totalShrink": 0.868,
     "totalTailShrink": 0.844,
     "totalFarTailShrink": 0.818,
-    "gamesSettled": 66,
-    "brierSum": 14.1729,
-    "updatedAt": "2026-10-03T22:52:45.177Z"
+    "gamesSettled": 68,
+    "brierSum": 14.6747,
+    "updatedAt": "2026-10-04T22:01:51.128Z"
   },
   "predictions": [
     {
@@ -51,8 +51,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.579,
-      "rawWinProbability": 0.59,
+      "winProbability": 0.581,
+      "rawWinProbability": 0.593,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -65,39 +65,39 @@
           "marketOver": 0.5
         },
         "pick": null,
-        "coverProbability": 0.556,
-        "rawCoverProbability": 0.566,
-        "ev": 0.056,
+        "coverProbability": 0.554,
+        "rawCoverProbability": 0.565,
+        "ev": 0.053,
         "marketProbability": 0.544,
-        "marketPriceEv": -0.028,
+        "marketPriceEv": -0.03,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 7.5,
-        "predicted": 8.51,
+        "predicted": 8.46,
         "pick": null,
-        "probability": 0.543,
-        "rawProbability": 0.55,
+        "probability": 0.537,
+        "rawProbability": 0.542,
         "marketProbability": 0.5,
-        "ev": 0.031,
+        "ev": 0.02,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.68,
-        "away": 4.59
+        "home": 3.64,
+        "away": 4.55
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
-        "Handicap EV +5.6% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -2.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 54.4% for this side — model 55.6% (+1.2% vs market)",
-        "Market consensus on the total: 50.0% for the OVER — model 54.3% (+4.3% vs market)",
+        "Handicap EV +5.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -3.0% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 54.4% for this side — model 55.4% (+1.0% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 53.7% (+3.7% vs market)",
         "Offense edge: 福岡ソフトバンクホークス (wOBA 0.326 vs 0.290)",
-        "Expected runs 3.68–4.59 over 10000 sims",
+        "Expected runs 3.64–4.55 over 10000 sims",
         "away: hot bats — 5.8 R/G last 15 (season baseline 4.7)",
         "home: no starter data — league-average assumed",
-        "Weather: 20°C at first pitch — run environment ×0.993"
+        "Weather: 19°C at first pitch — run environment ×0.984"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
@@ -109,8 +109,8 @@
       ],
       "lockDeadline": "2026-10-05T08:27:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-04T20:13:44.988Z",
-      "predictedRunId": "37231266951"
+      "predictedAt": "2026-10-05T01:39:13.597Z",
+      "predictedRunId": "37252242182"
     },
     {
       "gamePk": 92026100509,
@@ -120,8 +120,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.524,
-      "rawWinProbability": 0.528,
+      "winProbability": 0.522,
+      "rawWinProbability": 0.525,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -134,7 +134,7 @@
           "marketOver": 0.51
         },
         "pick": null,
-        "coverProbability": 0.617,
+        "coverProbability": 0.616,
         "rawCoverProbability": 0.638,
         "ev": 0.171,
         "marketProbability": 0.627,
@@ -144,30 +144,30 @@
       },
       "total": {
         "line": 7,
-        "predicted": 7.49,
+        "predicted": 7.43,
         "pick": null,
-        "probability": 0.507,
-        "rawProbability": 0.508,
-        "marketProbability": 0.51,
-        "ev": -0.032,
+        "probability": 0.5,
+        "rawProbability": 0.5,
+        "marketProbability": 0.49,
+        "ev": -0.043,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.48,
-        "away": 3.76
+        "home": 3.46,
+        "away": 3.74
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
         "Handicap EV +17.1% per unit (needs 52.6% to break even after the 10% cut)",
         "At the market's own price this edge is worth -5.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 62.7% for this side — model 61.7% (-1.0% vs market)",
-        "Market consensus on the total: 51.0% for the OVER — model 50.7% (-0.3% vs market)",
+        "Market consensus on the handicap: 62.7% for this side — model 61.6% (-1.1% vs market)",
+        "Market consensus on the total: 49.0% for the UNDER — model 50.0% (+1.0% vs market)",
         "Bullpen edge: 埼玉西武ライオンズ",
         "Park factor 101 (hitter-friendly)",
-        "Expected runs 3.48–3.76 over 10000 sims",
+        "Expected runs 3.46–3.74 over 10000 sims",
         "home: cold bats — 2.7 R/G last 15 (season baseline 3.5)",
         "away: no starter data — league-average assumed",
-        "Weather: 23°C at first pitch — run environment ×1.011"
+        "Weather: 22°C at first pitch — run environment ×1.004"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -180,8 +180,8 @@
       ],
       "lockDeadline": "2026-10-05T08:27:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-04T20:13:44.988Z",
-      "predictedRunId": "37231266951"
+      "predictedAt": "2026-10-05T01:39:13.597Z",
+      "predictedRunId": "37252242182"
     }
   ]
 }
