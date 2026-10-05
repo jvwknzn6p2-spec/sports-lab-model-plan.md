@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-05T08:51:14.109Z",
-  "updatedAt": "2026-10-05T08:51:14.109Z",
+  "lockedAt": "2026-10-05T10:01:06.675Z",
+  "updatedAt": "2026-10-05T10:01:06.675Z",
   "controlTower": {
     "date": "2026-10-05",
     "season": 2026,
@@ -51,8 +51,8 @@
       "pass": false,
       "predictedWinner": "Cleveland Guardians",
       "predictedLoser": "Chicago White Sox",
-      "winProbability": 0.563,
-      "rawWinProbability": 0.568,
+      "winProbability": 0.568,
+      "rawWinProbability": 0.573,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -65,54 +65,56 @@
           "marketOver": 0.522
         },
         "pick": "Chicago White Sox +1.5",
-        "coverProbability": 0.578,
-        "rawCoverProbability": 0.59,
-        "ev": 0.099,
+        "coverProbability": 0.575,
+        "rawCoverProbability": 0.586,
+        "ev": 0.092,
         "marketProbability": 0.617,
-        "marketPriceEv": -0.093,
+        "marketPriceEv": -0.099,
         "recommendedStake": 0.03,
         "noValue": false
       },
       "total": {
         "line": 6.5,
-        "predicted": 8.44,
-        "pick": "OVER",
-        "probability": 0.641,
-        "rawProbability": 0.666,
+        "predicted": 8.47,
+        "pick": null,
+        "probability": 0.643,
+        "rawProbability": 0.668,
         "marketProbability": 0.522,
-        "ev": 0.218,
-        "noValue": false
+        "ev": 0.221,
+        "noValue": true
       },
       "expectedRuns": {
-        "home": 4.47,
-        "away": 3.82
+        "home": 4.48,
+        "away": 3.83
       },
       "reasons": [
-        "Handicap EV +9.9% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -9.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 61.7% for this side — model 57.8% (-3.9% vs market)",
-        "Market consensus on the total: 52.2% for the OVER — model 64.1% (+11.9% vs market)",
+        "Handicap EV +9.2% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -9.9% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 61.7% for this side — model 57.5% (-4.2% vs market)",
+        "No total bet: the model sits +12.1% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 52.2% for the OVER — model 64.3% (+12.1% vs market)",
         "Starter edge: Cleveland Guardians (Gavin Williams projFIP 3.47 vs 4.51)",
         "Offense edge: Chicago White Sox (wOBA 0.317 vs 0.307)",
         "Bullpen edge: Cleveland Guardians",
         "Park factor 98 (pitcher-friendly)",
-        "Expected runs 4.47–3.82 over 10000 sims",
+        "Expected runs 4.48–3.83 over 10000 sims",
         "home: hot bats — 5.0 R/G last 15 (season baseline 4.2)",
         "away: hot bats — 6.0 R/G last 15 (season baseline 4.6)",
         "Weather: 16°C at first pitch — run environment ×0.962",
-        "Wind: 17 km/h from 331° vs CF bearing 0° — blowing in, run environment ×0.970"
+        "Wind: 17 km/h from 326° vs CF bearing 0° — blowing in, run environment ×0.972"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
         "[info] home_lineup_not_posted",
         "[info] away_starter_xfip_estimated",
         "[info] away_lineup_not_posted",
-        "[info] away_players_on_il"
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
       ],
       "lockDeadline": "2026-10-05T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-05T08:51:14.109Z",
-      "predictedRunId": "37286185092"
+      "predictedAt": "2026-10-05T10:01:06.675Z",
+      "predictedRunId": "37293785850"
     },
     {
       "gamePk": 849839,
@@ -181,8 +183,8 @@
       ],
       "lockDeadline": "2026-10-05T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-05T08:51:14.109Z",
-      "predictedRunId": "37286185092"
+      "predictedAt": "2026-10-05T10:01:06.675Z",
+      "predictedRunId": "37293785850"
     }
   ]
 }
