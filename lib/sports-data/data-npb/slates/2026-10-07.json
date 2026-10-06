@@ -1,7 +1,7 @@
 {
   "date": "2026-10-07",
   "season": 1002026,
-  "fetchedAt": "2026-10-06T15:24:15.737Z",
+  "fetchedAt": "2026-10-06T19:21:36.229Z",
   "games": [
     {
       "gamePk": 92026100702,
@@ -23,67 +23,79 @@
       "away": {
         "teamId": 904,
         "teamName": "広島東洋カープ",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 90453699,
+        "probablePitcherName": "玉村 昇悟",
         "score": null
       }
     }
   ],
-  "starters": {},
+  "starters": {
+    "90453699": {
+      "inningsPitched": "78.1",
+      "battersFaced": 316,
+      "hits": 69,
+      "homeRuns": 7,
+      "baseOnBalls": 16,
+      "hitByPitch": 4,
+      "strikeOuts": 56,
+      "runs": 27,
+      "earnedRuns": 24
+    }
+  },
   "batting": {
     "902": {
-      "plateAppearances": 5295,
-      "atBats": 4657,
-      "hits": 1148,
-      "doubles": 186,
+      "plateAppearances": 5333,
+      "atBats": 4687,
+      "hits": 1157,
+      "doubles": 188,
       "triples": 11,
       "homeRuns": 125,
-      "stolenBases": 70,
+      "stolenBases": 71,
       "caughtStealing": 25,
       "sacFlies": 34,
-      "baseOnBalls": 432,
+      "baseOnBalls": 438,
       "intentionalWalks": 33,
       "hitByPitch": 67,
-      "strikeOuts": 1181
+      "strikeOuts": 1187
     },
     "904": {
-      "plateAppearances": 5235,
-      "atBats": 4670,
-      "hits": 1050,
+      "plateAppearances": 5267,
+      "atBats": 4700,
+      "hits": 1052,
       "doubles": 148,
       "triples": 22,
       "homeRuns": 91,
       "stolenBases": 73,
       "caughtStealing": 37,
       "sacFlies": 32,
-      "baseOnBalls": 392,
+      "baseOnBalls": 394,
       "intentionalWalks": 18,
       "hitByPitch": 44,
-      "strikeOuts": 1059
+      "strikeOuts": 1073
     }
   },
   "bullpens": {
     "902": {
-      "inningsPitched": "1251.1",
-      "battersFaced": 5141,
-      "hits": 1106,
+      "inningsPitched": "1260.1",
+      "battersFaced": 5173,
+      "hits": 1108,
       "homeRuns": 107,
-      "baseOnBalls": 321,
+      "baseOnBalls": 323,
       "hitByPitch": 39,
-      "strikeOuts": 1145,
-      "runs": 433,
-      "earnedRuns": 391
+      "strikeOuts": 1159,
+      "runs": 434,
+      "earnedRuns": 392
     },
     "904": {
-      "inningsPitched": "1264.1",
-      "battersFaced": 5298,
-      "hits": 1147,
-      "homeRuns": 102,
-      "baseOnBalls": 398,
-      "hitByPitch": 46,
-      "strikeOuts": 1072,
-      "runs": 516,
-      "earnedRuns": 479
+      "inningsPitched": "1194",
+      "battersFaced": 5020,
+      "strikeOuts": 1022,
+      "baseOnBalls": 388,
+      "hitByPitch": 42,
+      "homeRuns": 95,
+      "hits": 1087,
+      "earnedRuns": 457,
+      "runs": 491
     }
   },
   "forms": {
@@ -94,8 +106,8 @@
     },
     "902": {
       "games": 15,
-      "runsScoredPerGame": 4,
-      "runsAllowedPerGame": 3.13
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 2.8
     },
     "903": {
       "games": 15,
@@ -104,8 +116,8 @@
     },
     "904": {
       "games": 15,
-      "runsScoredPerGame": 3.33,
-      "runsAllowedPerGame": 3.47
+      "runsScoredPerGame": 3.27,
+      "runsAllowedPerGame": 3.13
     },
     "905": {
       "games": 15,
@@ -129,13 +141,13 @@
     },
     "909": {
       "games": 15,
-      "runsScoredPerGame": 2.8,
-      "runsAllowedPerGame": 3.67
+      "runsScoredPerGame": 2.73,
+      "runsAllowedPerGame": 3.53
     },
     "910": {
       "games": 15,
-      "runsScoredPerGame": 3.4,
-      "runsAllowedPerGame": 4
+      "runsScoredPerGame": 3.07,
+      "runsAllowedPerGame": 3.73
     },
     "911": {
       "games": 15,
@@ -613,18 +625,18 @@
     "runCS": -0.4,
     "runsPerPA": 0.097,
     "runsPerWin": 9.6,
-    "cFIP": 2.782,
-    "lgFIP": 3.318,
+    "cFIP": 2.781,
+    "lgFIP": 3.314,
     "hrPerFB": 0.089
   },
   "weather": {
     "92026100702": {
-      "temperatureC": 20.9,
-      "windSpeedKmh": 15.1,
-      "windDirectionDeg": 12,
+      "temperatureC": 20.8,
+      "windSpeedKmh": 15.3,
+      "windDirectionDeg": 9,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-10-06T15:24:16.030Z"
+      "fetchedAt": "2026-10-06T19:21:37.032Z"
     }
   }
 }
