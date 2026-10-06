@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-06T08:39:05.672Z",
-  "updatedAt": "2026-10-06T08:39:05.672Z",
+  "lockedAt": "2026-10-06T09:54:50.475Z",
+  "updatedAt": "2026-10-06T09:54:50.475Z",
   "controlTower": {
     "date": "2026-10-06",
     "season": 2026,
@@ -101,8 +101,8 @@
         "Park factor 101 (hitter-friendly)",
         "Expected runs 3.74–3.97 over 10000 sims",
         "away: cold bats — 4.5 R/G last 15 (season baseline 5.0)",
-        "Weather: 23°C at first pitch — run environment ×1.014",
-        "Wind: 7 km/h from 72° vs CF bearing 145° — blowing in, run environment ×0.996"
+        "Weather: 23°C at first pitch — run environment ×1.013",
+        "Wind: 7 km/h from 73° vs CF bearing 145° — blowing in, run environment ×0.996"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -116,8 +116,8 @@
       ],
       "lockDeadline": "2026-10-06T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-06T08:39:05.672Z",
-      "predictedRunId": "37437495934"
+      "predictedAt": "2026-10-06T09:54:50.475Z",
+      "predictedRunId": "37446115813"
     },
     {
       "gamePk": 849826,
@@ -127,8 +127,8 @@
       "pass": false,
       "predictedWinner": "San Diego Padres",
       "predictedLoser": "Milwaukee Brewers",
-      "winProbability": 0.562,
-      "rawWinProbability": 0.568,
+      "winProbability": 0.564,
+      "rawWinProbability": 0.57,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -141,41 +141,41 @@
           "marketOver": 0.514
         },
         "pick": "Milwaukee Brewers +1.5",
-        "coverProbability": 0.574,
-        "rawCoverProbability": 0.585,
-        "ev": 0.091,
+        "coverProbability": 0.572,
+        "rawCoverProbability": 0.582,
+        "ev": 0.087,
         "marketProbability": 0.639,
-        "marketPriceEv": -0.131,
-        "recommendedStake": 0.03,
+        "marketPriceEv": -0.135,
+        "recommendedStake": 0.02,
         "noValue": false
       },
       "total": {
         "line": 7,
-        "predicted": 8.63,
+        "predicted": 8.64,
         "pick": "OVER",
-        "probability": 0.613,
-        "rawProbability": 0.633,
+        "probability": 0.615,
+        "rawProbability": 0.635,
         "marketProbability": 0.514,
-        "ev": 0.145,
+        "ev": 0.148,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.54,
+        "home": 4.55,
         "away": 3.92
       },
       "reasons": [
-        "Handicap EV +9.1% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -13.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 63.9% for this side — model 57.4% (-6.5% vs market)",
-        "Market consensus on the total: 51.4% for the OVER — model 61.3% (+9.9% vs market)",
+        "Handicap EV +8.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -13.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 63.9% for this side — model 57.2% (-6.7% vs market)",
+        "Market consensus on the total: 51.4% for the OVER — model 61.5% (+10.1% vs market)",
         "Starter edge: San Diego Padres (Nick Pivetta projFIP 3.44 vs 3.79)",
         "Offense edge: Milwaukee Brewers (wOBA 0.325 vs 0.314)",
         "Park factor 96 (pitcher-friendly)",
-        "Expected runs 4.54–3.92 over 10000 sims",
+        "Expected runs 4.55–3.92 over 10000 sims",
         "home: hot bats — 5.9 R/G last 15 (season baseline 4.5)",
         "away: cold bats — 4.3 R/G last 15 (season baseline 4.8)",
         "Weather: 34°C at first pitch — run environment ×1.060",
-        "Wind: 17 km/h from 303° vs CF bearing 0° — blowing in, run environment ×0.981"
+        "Wind: 18 km/h from 301° vs CF bearing 0° — blowing in, run environment ×0.982"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -188,8 +188,8 @@
       ],
       "lockDeadline": "2026-10-06T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-06T08:39:05.672Z",
-      "predictedRunId": "37437495934"
+      "predictedAt": "2026-10-06T09:54:50.475Z",
+      "predictedRunId": "37446115813"
     }
   ]
 }
