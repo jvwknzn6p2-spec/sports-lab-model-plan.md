@@ -1,0 +1,108 @@
+{
+  "lockedAt": "2026-10-06T15:24:16.866Z",
+  "updatedAt": "2026-10-06T15:24:16.866Z",
+  "controlTower": {
+    "date": "2026-10-07",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026100702": {
+        "side": "home",
+        "line": -1.5,
+        "total": 5.5,
+        "marketHomeCover": 0.377,
+        "marketHomePayout": 1.53,
+        "marketAwayPayout": 0.541,
+        "marketOver": 0.484
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.872,
+    "tailShrink": 0.888,
+    "farTailShrink": 0.88,
+    "handicapShrink": 0.844,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.868,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.818,
+    "gamesSettled": 68,
+    "brierSum": 14.6747,
+    "updatedAt": "2026-10-05T22:02:04.594Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026100702,
+      "gameDate": "2026-10-07T09:00:00.000Z",
+      "home": "阪神タイガース",
+      "away": "広島東洋カープ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.617,
+      "rawWinProbability": 0.634,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 5.5,
+          "marketHomeCover": 0.377,
+          "marketHomePayout": 1.53,
+          "marketAwayPayout": 0.541,
+          "marketOver": 0.484
+        },
+        "pick": null,
+        "coverProbability": 0.546,
+        "rawCoverProbability": 0.555,
+        "ev": 0.038,
+        "marketProbability": 0.623,
+        "marketPriceEv": -0.158,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 5.5,
+        "predicted": 6.88,
+        "pick": null,
+        "probability": 0.588,
+        "rawProbability": 0.602,
+        "marketProbability": 0.484,
+        "ev": 0.118,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.91,
+        "away": 2.78
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +3.8% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -15.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.3% for this side — model 54.6% (-7.7% vs market)",
+        "Market consensus on the total: 48.4% for the OVER — model 58.8% (+10.4% vs market)",
+        "Offense edge: 阪神タイガース (wOBA 0.301 vs 0.274)",
+        "Park factor 91 (pitcher-friendly)",
+        "Expected runs 3.91–2.78 over 10000 sims",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed",
+        "Weather: 21°C at first pitch — run environment ×0.999"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-10-07T08:27:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-06T15:24:16.866Z",
+      "predictedRunId": "37487150512"
+    }
+  ]
+}
