@@ -4,39 +4,39 @@
 
 _Only picks fixed BEFORE their deadline form the verified record; the market closes at the deadline, so only their P&L was executable. Picks fixed after the deadline are pre-game forecasts (accuracy is fair, P&L is reference). Picks fixed at or after first pitch are excluded. Tiers come from the committed lock files; the ledger (history.jsonl) is not rewritten._
 
-- **on_time** — fixed before the deadline (verified pre-game record): 37-19 (66.1%, 95% CI 53.0%–77.1%), Brier 0.23; handicap 27-23, +1.30 units over 50 stake(s) (ROI +2.6%)
+- **on_time** — fixed before the deadline (verified pre-game record): 37-20 (64.9%, 95% CI 51.9%–76.0%), Brier 0.232; handicap 28-23, +2.20 units over 51 stake(s) (ROI +4.3%)
 - **late_pre_start** — fixed after the deadline, before first pitch (forecast only — the market had closed, P&L is reference): 175-120 (59.3%, 95% CI 53.6%–64.8%), Brier 0.245; handicap 124-92, +19.60 units over 216 stake(s) (ROI +9.1%)
 - **post_start** — fixed at/after first pitch (not a pre-game prediction — excluded): 0-1 (0.0%, 95% CI 0.0%–79.3%), Brier 0.381; no handicap stake
 
 ## All picks (every tier combined — reference)
 
-**212-140** (60.2%) across 60 days, 404 PASS.
+**212-141** (60.1%) across 61 days, 404 PASS.
 
-- Handicap: 151-115 · **+20.90 units** after the cut (ROI +7.9% per bet)
-- Significance (P&L): +7.9% per bet over 266 stakes — z 1.36, **not yet distinguishable from luck**
-- Hit rate: 56.8% over 266 bets (95% CI 50.8%–62.6%) vs 52.6% full-unit break-even
+- Handicap: 152-115 · **+21.80 units** after the cut (ROI +8.2% per bet)
+- Significance (P&L): +8.2% per bet over 267 stakes — z 1.42, **not yet distinguishable from luck**
+- Hit rate: 56.9% over 267 bets (95% CI 50.9%–62.7%) vs 52.6% full-unit break-even
 - Total: 48-37
 - Mean Brier: 0.243 (0.25 = coin flip, lower is better)
-- Calibration: says 59.8%, actually 60.2% — underconfident by 0.4pt
-- Handicap calibration: says 59.0%, actually 56.8% over 266 bets (Brier 0.249)
+- Calibration: says 59.7%, actually 60.1% — underconfident by 0.4pt
+- Handicap calibration: says 59.0%, actually 56.9% over 267 bets (Brier 0.248)
 - Total calibration: says 57.3%, actually 56.5% over 85 bets (Brier 0.251)
-- Mean margin error: 3.406 runs
-- Mean total error: 3.583 runs
-- Learned shrink (core/tail/far) — moneyline 0.927/0.701/0.67, handicap 0.873/0.634/0.619, total 0.85/0.844/0.833 (352 games)
+- Mean margin error: 3.401 runs
+- Mean total error: 3.577 runs
+- Learned shrink (core/tail/far) — moneyline 0.92/0.701/0.67, handicap 0.878/0.634/0.619, total 0.85/0.844/0.833 (353 games)
 
 ## Calibration by band (handicap)
 
 _The headline gap can sit near zero while one band runs hot and another collapses — this is the table that shows it._
 
 - 50.0%–55.0%: said 53.9%, hit 52.8% over 36 (gap -1.1pt)
-- 55.0%–60.0%: said 57.0%, hit 58.3% over 144 (gap 1.3pt)
+- 55.0%–60.0%: said 57.0%, hit 58.6% over 145 (gap 1.6pt)
 - 60.0%–65.0%: said 62.4%, hit 62.0% over 50 (gap -0.4pt)
 - 65.0%–70.0%: said 66.4%, hit 45.2% over 31 (gap -21.3pt) ⚠️ overconfident
 - 70.0%–100.0%: said 73.5%, hit 60.0% over 5 (gap -13.5pt)
 
 ## Calibration by band (winner)
 
-- 55.0%–60.0%: said 57.3%, hit 62.2% over 222 (gap 4.8pt)
+- 55.0%–60.0%: said 57.3%, hit 61.9% over 223 (gap 4.6pt)
 - 60.0%–65.0%: said 62.1%, hit 58.8% over 85 (gap -3.3pt)
 - 65.0%–70.0%: said 66.5%, hit 52.5% over 40 (gap -14.0pt) ⚠️ overconfident
 - 70.0%–100.0%: said 73.5%, hit 60.0% over 5 (gap -13.5pt)
@@ -45,11 +45,12 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 - S: 10-13 (43.5%, -4.00 units over 23 stake(s), n=23 decided)
 - A: 42-24 (63.6%, +7.70 units over 36 stake(s), n=66 decided)
-- B: 160-103 (60.8%, +20.20 units over 204 stake(s), n=263 decided)
+- B: 160-104 (60.6%, +21.10 units over 205 stake(s), n=264 decided)
 - C: 0-0 (no decided winner bet, -3.00 units over 3 stake(s), n=0 decided)
 
 ## By day
 
+- 2026-10-05: 0-1 (1 pick, 0 PASS, Brier 0.324)
 - 2026-10-04: 1-0 (1 pick, 1 PASS, Brier 0.178)
 - 2026-10-03: 1-0 (1 pick, 3 PASS, Brier 0.119)
 - 2026-10-01: 0-0 (0 picks, 1 PASS)
