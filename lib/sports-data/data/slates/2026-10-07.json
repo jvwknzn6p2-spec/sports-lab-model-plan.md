@@ -90,8 +90,8 @@
       "home": {
         "teamId": 135,
         "teamName": "San Diego Padres",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 621111,
+        "probablePitcherName": "Walker Buehler",
         "score": null
       },
       "away": {
@@ -142,6 +142,19 @@
       "runs": 35,
       "atBats": 394,
       "sacFlies": 3
+    },
+    "621111": {
+      "inningsPitched": "153.2",
+      "battersFaced": 651,
+      "strikeOuts": 131,
+      "baseOnBalls": 57,
+      "hitByPitch": 7,
+      "homeRuns": 22,
+      "hits": 150,
+      "earnedRuns": 79,
+      "runs": 81,
+      "atBats": 585,
+      "sacFlies": 1
     },
     "641816": {
       "inningsPitched": "149.0",
@@ -445,7 +458,7 @@
   },
   "lineups": {},
   "lineupBatting": {},
-  "fetchedAt": "2026-10-07T06:38:09.369Z",
+  "fetchedAt": "2026-10-07T08:41:31.405Z",
   "forms": {
     "108": {
       "games": 14,
@@ -797,36 +810,36 @@
   },
   "weather": {
     "849822": {
-      "temperatureC": 24.7,
-      "windSpeedKmh": 6.9,
-      "windDirectionDeg": 340,
+      "temperatureC": 24.3,
+      "windSpeedKmh": 7.4,
+      "windDirectionDeg": 331,
       "roof": "outdoor",
       "cfBearingDeg": 145,
-      "fetchedAt": "2026-10-07T06:38:15.888Z"
+      "fetchedAt": "2026-10-07T08:41:33.711Z"
     },
     "849827": {
-      "temperatureC": 29.3,
-      "windSpeedKmh": 15.8,
-      "windDirectionDeg": 303,
+      "temperatureC": 30.3,
+      "windSpeedKmh": 17.6,
+      "windDirectionDeg": 314,
       "roof": "outdoor",
       "cfBearingDeg": 0,
-      "fetchedAt": "2026-10-07T06:38:16.228Z"
+      "fetchedAt": "2026-10-07T08:41:33.742Z"
     },
     "849833": {
-      "temperatureC": 23.8,
-      "windSpeedKmh": 6.5,
-      "windDirectionDeg": 9,
+      "temperatureC": 24.5,
+      "windSpeedKmh": 2.9,
+      "windDirectionDeg": 353,
       "roof": "outdoor",
       "cfBearingDeg": 127,
-      "fetchedAt": "2026-10-07T06:38:15.726Z"
+      "fetchedAt": "2026-10-07T08:41:33.696Z"
     },
     "849838": {
-      "temperatureC": 15.1,
-      "windSpeedKmh": 9.8,
-      "windDirectionDeg": 178,
+      "temperatureC": 14.4,
+      "windSpeedKmh": 10,
+      "windDirectionDeg": 165,
       "roof": "outdoor",
       "cfBearingDeg": 75,
-      "fetchedAt": "2026-10-07T06:38:16.066Z"
+      "fetchedAt": "2026-10-07T08:41:33.727Z"
     }
   }
 }
