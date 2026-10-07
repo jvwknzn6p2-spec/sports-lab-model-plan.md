@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-07T02:38:33.289Z",
-  "updatedAt": "2026-10-07T02:38:33.289Z",
+  "lockedAt": "2026-10-07T05:33:58.659Z",
+  "updatedAt": "2026-10-07T05:33:58.659Z",
   "controlTower": {
     "date": "2026-10-07",
     "season": 2026,
@@ -58,7 +58,7 @@
     "totalFarTailShrink": 0.833,
     "gamesSettled": 353,
     "brierSum": 85.7253,
-    "updatedAt": "2026-10-07T02:33:33.518Z"
+    "updatedAt": "2026-10-07T04:22:43.587Z"
   },
   "predictions": [
     {
@@ -69,8 +69,8 @@
       "pass": false,
       "predictedWinner": "Chicago White Sox",
       "predictedLoser": "Cleveland Guardians",
-      "winProbability": 0.559,
-      "rawWinProbability": 0.565,
+      "winProbability": 0.562,
+      "rawWinProbability": 0.568,
       "confidence": "B",
       "handicap": {
         "input": {
@@ -83,41 +83,41 @@
           "marketOver": 0.485
         },
         "pick": "Cleveland Guardians +1.5",
-        "coverProbability": 0.573,
-        "rawCoverProbability": 0.583,
-        "ev": 0.088,
+        "coverProbability": 0.571,
+        "rawCoverProbability": 0.581,
+        "ev": 0.084,
         "marketProbability": 0.648,
-        "marketPriceEv": -0.142,
+        "marketPriceEv": -0.145,
         "recommendedStake": 0.02,
         "noValue": false
       },
       "total": {
         "line": 8,
-        "predicted": 9.26,
+        "predicted": 9.49,
         "pick": "OVER",
-        "probability": 0.565,
-        "rawProbability": 0.576,
+        "probability": 0.583,
+        "rawProbability": 0.598,
         "marketProbability": 0.485,
-        "ev": 0.068,
+        "ev": 0.099,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.86,
-        "away": 4.18
+        "home": 4.97,
+        "away": 4.28
       },
       "reasons": [
-        "Handicap EV +8.8% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -14.2% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 64.8% for this side — model 57.3% (-7.5% vs market)",
-        "Market consensus on the total: 48.5% for the OVER — model 56.5% (+8.0% vs market)",
+        "Handicap EV +8.4% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -14.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 64.8% for this side — model 57.1% (-7.7% vs market)",
+        "Market consensus on the total: 48.5% for the OVER — model 58.3% (+9.8% vs market)",
         "Offense edge: Chicago White Sox (wOBA 0.317 vs 0.307)",
         "Bullpen edge: Cleveland Guardians",
         "Park factor 101 (hitter-friendly)",
-        "Expected runs 4.86–4.18 over 10000 sims",
+        "Expected runs 4.97–4.28 over 10000 sims",
         "home: hot bats — 5.9 R/G last 15 (season baseline 4.6)",
         "away: hot bats — 5.0 R/G last 15 (season baseline 4.2)",
-        "Weather: 23°C at first pitch — run environment ×1.015",
-        "Wind: 5 km/h from 39° vs CF bearing 127° — blowing in, run environment ×1.000"
+        "Weather: 24°C at first pitch — run environment ×1.024",
+        "Wind: 9 km/h from 338° vs CF bearing 127° — blowing out, run environment ×1.015"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -129,8 +129,8 @@
       ],
       "lockDeadline": "2026-10-07T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-07T02:38:33.289Z",
-      "predictedRunId": "37562914008"
+      "predictedAt": "2026-10-07T05:33:58.659Z",
+      "predictedRunId": "37576910781"
     },
     {
       "gamePk": 849822,
@@ -203,8 +203,8 @@
       ],
       "lockDeadline": "2026-10-07T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-07T02:38:33.289Z",
-      "predictedRunId": "37562914008"
+      "predictedAt": "2026-10-07T05:33:58.659Z",
+      "predictedRunId": "37576910781"
     },
     {
       "gamePk": 849838,
@@ -273,8 +273,8 @@
       ],
       "lockDeadline": "2026-10-07T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-07T02:38:33.289Z",
-      "predictedRunId": "37562914008"
+      "predictedAt": "2026-10-07T05:33:58.659Z",
+      "predictedRunId": "37576910781"
     },
     {
       "gamePk": 849827,
@@ -284,8 +284,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.535,
-      "rawWinProbability": 0.538,
+      "winProbability": 0.532,
+      "rawWinProbability": 0.535,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -298,38 +298,38 @@
           "marketOver": 0.504
         },
         "pick": null,
-        "coverProbability": 0.589,
-        "rawCoverProbability": 0.602,
-        "ev": 0.12,
+        "coverProbability": 0.593,
+        "rawCoverProbability": 0.606,
+        "ev": 0.127,
         "marketProbability": 0.426,
-        "marketPriceEv": 0.273,
+        "marketPriceEv": 0.282,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 6.5,
-        "predicted": 9.27,
+        "predicted": 9.16,
         "pick": null,
-        "probability": 0.687,
-        "rawProbability": 0.721,
+        "probability": 0.681,
+        "rawProbability": 0.714,
         "marketProbability": 0.504,
-        "ev": 0.305,
+        "ev": 0.294,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 4.76,
+        "home": 4.66,
         "away": 4.31
       },
       "reasons": [
         "PASS: incomplete/downgraded data",
-        "Handicap EV +12.0% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth +27.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 42.6% for this side — model 58.9% (+16.3% vs market)",
-        "Market consensus on the total: 50.4% for the OVER — model 68.7% (+18.3% vs market)",
+        "Handicap EV +12.7% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +28.2% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 42.6% for this side — model 59.3% (+16.7% vs market)",
+        "Market consensus on the total: 50.4% for the OVER — model 68.1% (+17.7% vs market)",
         "Offense edge: Milwaukee Brewers (wOBA 0.325 vs 0.314)",
         "Park factor 96 (pitcher-friendly)",
-        "Expected runs 4.76–4.31 over 10000 sims",
-        "home: hot bats — 5.9 R/G last 15 (season baseline 4.5)",
+        "Expected runs 4.66–4.31 over 10000 sims",
+        "home: hot bats — 5.6 R/G last 15 (season baseline 4.5)",
         "away: cold bats — 4.3 R/G last 15 (season baseline 4.8)",
         "home: no starter data — league-average assumed",
         "away: no starter data — league-average assumed",
@@ -347,8 +347,8 @@
       ],
       "lockDeadline": "2026-10-07T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-07T02:38:33.289Z",
-      "predictedRunId": "37562914008"
+      "predictedAt": "2026-10-07T05:33:58.659Z",
+      "predictedRunId": "37576910781"
     }
   ]
 }
