@@ -1,7 +1,7 @@
 {
   "date": "2026-10-08",
   "season": 1002026,
-  "fetchedAt": "2026-10-07T15:35:02.233Z",
+  "fetchedAt": "2026-10-07T19:23:54.960Z",
   "games": [
     {
       "gamePk": 92026100802,
@@ -16,8 +16,8 @@
       "home": {
         "teamId": 902,
         "teamName": "阪神タイガース",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 90259734,
+        "probablePitcherName": "ルーカス",
         "score": null
       },
       "away": {
@@ -29,22 +29,34 @@
       }
     }
   ],
-  "starters": {},
+  "starters": {
+    "90259734": {
+      "inningsPitched": "25.2",
+      "battersFaced": 111,
+      "hits": 27,
+      "homeRuns": 3,
+      "baseOnBalls": 9,
+      "hitByPitch": 0,
+      "strikeOuts": 25,
+      "runs": 12,
+      "earnedRuns": 12
+    }
+  },
   "batting": {
     "902": {
-      "plateAppearances": 5333,
-      "atBats": 4687,
-      "hits": 1157,
-      "doubles": 188,
+      "plateAppearances": 5376,
+      "atBats": 4723,
+      "hits": 1165,
+      "doubles": 189,
       "triples": 11,
       "homeRuns": 125,
-      "stolenBases": 71,
-      "caughtStealing": 25,
+      "stolenBases": 73,
+      "caughtStealing": 26,
       "sacFlies": 34,
-      "baseOnBalls": 438,
-      "intentionalWalks": 33,
+      "baseOnBalls": 444,
+      "intentionalWalks": 34,
       "hitByPitch": 67,
-      "strikeOuts": 1187
+      "strikeOuts": 1192
     },
     "905": {
       "plateAppearances": 5232,
@@ -64,15 +76,15 @@
   },
   "bullpens": {
     "902": {
-      "inningsPitched": "1260.1",
-      "battersFaced": 5173,
-      "hits": 1108,
-      "homeRuns": 107,
-      "baseOnBalls": 323,
+      "inningsPitched": "1245.2",
+      "battersFaced": 5101,
+      "strikeOuts": 1144,
+      "baseOnBalls": 317,
       "hitByPitch": 39,
-      "strikeOuts": 1159,
-      "runs": 434,
-      "earnedRuns": 392
+      "homeRuns": 104,
+      "hits": 1087,
+      "earnedRuns": 381,
+      "runs": 423
     },
     "905": {
       "inningsPitched": "1249.1",
@@ -94,8 +106,8 @@
     },
     "902": {
       "games": 15,
-      "runsScoredPerGame": 4.13,
-      "runsAllowedPerGame": 2.8
+      "runsScoredPerGame": 4.2,
+      "runsAllowedPerGame": 2.6
     },
     "903": {
       "games": 15,
@@ -150,7 +162,7 @@
   },
   "parkFactors": {
     "9101": 97,
-    "9102": 91,
+    "9102": 90,
     "9103": 103,
     "9104": 96,
     "9105": 106,
@@ -593,18 +605,18 @@
     "runCS": -0.4,
     "runsPerPA": 0.097,
     "runsPerWin": 9.6,
-    "cFIP": 2.781,
-    "lgFIP": 3.314,
+    "cFIP": 2.779,
+    "lgFIP": 3.311,
     "hrPerFB": 0.089
   },
   "weather": {
     "92026100802": {
-      "temperatureC": 23,
-      "windSpeedKmh": 16.3,
-      "windDirectionDeg": 14,
+      "temperatureC": 22.9,
+      "windSpeedKmh": 13.9,
+      "windDirectionDeg": 21,
       "roof": "outdoor",
       "cfBearingDeg": null,
-      "fetchedAt": "2026-10-07T15:35:02.708Z"
+      "fetchedAt": "2026-10-07T19:23:55.524Z"
     }
   }
 }
