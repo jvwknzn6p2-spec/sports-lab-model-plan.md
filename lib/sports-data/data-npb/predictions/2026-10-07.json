@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-06T19:21:37.668Z",
-  "updatedAt": "2026-10-06T19:21:37.668Z",
+  "lockedAt": "2026-10-07T01:35:47.979Z",
+  "updatedAt": "2026-10-07T01:35:47.979Z",
   "controlTower": {
     "date": "2026-10-07",
     "season": 1002026,
@@ -20,18 +20,18 @@
     }
   },
   "calibration": {
-    "shrink": 0.872,
+    "shrink": 0.877,
     "tailShrink": 0.888,
     "farTailShrink": 0.88,
-    "handicapShrink": 0.844,
+    "handicapShrink": 0.849,
     "handicapTailShrink": 0.858,
     "handicapFarTailShrink": 0.857,
-    "totalShrink": 0.868,
+    "totalShrink": 0.861,
     "totalTailShrink": 0.844,
     "totalFarTailShrink": 0.818,
-    "gamesSettled": 68,
-    "brierSum": 14.6747,
-    "updatedAt": "2026-10-05T22:02:04.594Z"
+    "gamesSettled": 69,
+    "brierSum": 14.8176,
+    "updatedAt": "2026-10-06T22:02:06.613Z"
   },
   "predictions": [
     {
@@ -60,7 +60,7 @@
         "rawCoverProbability": 0.563,
         "ev": 0.051,
         "marketProbability": 0.623,
-        "marketPriceEv": -0.148,
+        "marketPriceEv": -0.147,
         "recommendedStake": null,
         "noValue": false
       },
@@ -68,10 +68,10 @@
         "line": 5.5,
         "predicted": 6.61,
         "pick": null,
-        "probability": 0.563,
+        "probability": 0.562,
         "rawProbability": 0.572,
         "marketProbability": 0.484,
-        "ev": 0.069,
+        "ev": 0.068,
         "noValue": false
       },
       "expectedRuns": {
@@ -81,14 +81,14 @@
       "reasons": [
         "PASS: incomplete/downgraded data",
         "Handicap EV +5.1% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -14.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "At the market's own price this edge is worth -14.7% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
         "Market consensus on the handicap: 62.3% for this side — model 55.3% (-7.0% vs market)",
-        "Market consensus on the total: 48.4% for the OVER — model 56.3% (+7.9% vs market)",
+        "Market consensus on the total: 48.4% for the OVER — model 56.2% (+7.8% vs market)",
         "Offense edge: 阪神タイガース (wOBA 0.302 vs 0.273)",
         "Park factor 91 (pitcher-friendly)",
         "Expected runs 3.69–2.68 over 10000 sims",
         "home: no starter data — league-average assumed",
-        "Weather: 21°C at first pitch — run environment ×0.999"
+        "Weather: 21°C at first pitch — run environment ×0.998"
       ],
       "flags": [
         "[downgrade] home_no_probable_pitcher",
@@ -100,8 +100,8 @@
       ],
       "lockDeadline": "2026-10-07T08:27:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-06T19:21:37.668Z",
-      "predictedRunId": "37518322468"
+      "predictedAt": "2026-10-07T01:35:47.979Z",
+      "predictedRunId": "37557860060"
     }
   ]
 }
