@@ -96,7 +96,8 @@ const toRecord = (r: BenchRow): MatchRecord => ({
  * 学習は「試合日の 2 日前まで（現地の日付）」の試合だけ。予想できない試合（学習に出ていない
  * チーム・学習データ不足）は出さない（本番と同じ）。
  */
-export function predictYear(rows: readonly BenchRow[], year: BenchmarkYear, cfg: ModelConfig = CANONICAL): BenchPrediction[] {
+/** `year` は採点する年か、記憶の年（2023・市場基盤モデルの係数の学習にだけ使う。採点しない） */
+export function predictYear(rows: readonly BenchRow[], year: BenchmarkYear | "2023", cfg: ModelConfig = CANONICAL): BenchPrediction[] {
   const out: BenchPrediction[] = [];
   const leagues = [...new Set(rows.map((r) => r.division))].sort();
   for (const lg of leagues) {

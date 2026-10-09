@@ -11,7 +11,7 @@ import {
   BENCHMARK, benjaminiHochberg, compareYear, devig, loadBenchmark, outcomeOf, pTwoSided, predictYear, yearOf,
   type BenchPrediction, type Triple,
 } from "../benchmark.ts";
-import { MKT_GAMMA } from "../marketModel.ts";
+import { blend, fitBlend, type BlendWeights } from "../marketModel.ts";
 import { adjust, fitGamma } from "../marketResiduals.ts";
 
 const arg = (n: string, f?: string) => {
@@ -26,9 +26,12 @@ let preds: BenchPrediction[];
 if (cache && existsSync(cache)) {
   preds = readFileSync(cache, "utf8").trim().split("\n").map((l) => JSON.parse(l) as BenchPrediction);
 } else {
-  preds = BENCHMARK.years.flatMap((y) => predictYear(rows, y));
+  preds = (["2023", ...BENCHMARK.years] as const).flatMap((y) => predictYear(rows, y));
   if (cache) writeFileSync(cache, preds.map((p) => JSON.stringify(p)).join("\n") + "\n");
 }
+const allWithOdds = preds.filter((p) => p.odds && p.odds.home > 1 && p.odds.draw > 1 && p.odds.away > 1);
+// 2023 は記憶（市場基盤モデルの係数の学習）だけ。採点は 2024 年以降
+preds = preds.filter((p) => yearOf(p.date) >= "2024");
 const withOdds = preds.filter((p) => p.odds && p.odds.home > 1 && p.odds.draw > 1 && p.odds.away > 1);
 const f3 = (x: number) => x.toFixed(4);
 const pc = (x: number, d = 1) => (x * 100).toFixed(d);
@@ -47,13 +50,37 @@ for (const y of BENCHMARK.years) {
 }
 console.log(`\n予想できた試合 / 全試合: ${BENCHMARK.years.map((y) => `${y} ${preds.filter((p) => yearOf(p.date) === y).length}/${rows.filter((r) => yearOf(r.date) === y).length}`).join("・")}`);
 
-console.log("\n### 参考: 市場補正 mkt-flb-v1（γ=1.11）vs 市場");
-console.log("γ=1.11 は 2023-24・2024-25 季（〜2025-06）のデータで決めた値。**規則 2 により 2024 年・2025 年の数字は採用しない**（その年を含むデータで決めたため）。2026 年だけが規則に合う。");
-console.log("| 年 | 試合 | RPS 補正 / 市場 | 差（t） | 規則に合うか |");
-console.log("|---|---|---|---|---|");
-for (const y of BENCHMARK.years) {
-  const c = compareYear(y, withOdds.filter((p) => yearOf(p.date) === y).map((p) => ({ date: p.date, a: adjust(devig(p.odds!), 0, { gamma: MKT_GAMMA, b: 0 }) as Triple, b: devig(p.odds!), o: outcomeOf(p) })));
-  console.log(`| ${y} | ${c.n} | ${f3(c.a.rps)} / ${f3(c.b.rps)} | ${c.diff >= 0 ? "+" : ""}${f3(c.diff)}（${c.t.toFixed(2)}） | ${y === "2026" ? "合う" : "不採用"} |`);
+console.log("\n## 1b. 市場基盤モデル mkt-blend-v1（市場 ＋ 正準の情報）vs 市場（同じ試合）");
+console.log("係数（a 市場・b 正準・c 引き分け）は試合日ごとに、その 2 日前までの試合（2023 年〜）だけで当て直す。");
+console.log("| 年 | 試合 | RPS 市場基盤 / 市場 | 差（t） | 的中率 市場基盤 / 市場 | 較正誤差 市場基盤 / 市場 | その年の最後の係数 a / b / c |");
+console.log("|---|---|---|---|---|---|---|");
+{
+  const pairs = allWithOdds.map((p) => ({ date: p.date, m: devig(p.odds!), q: p.p, o: outcomeOf(p) })).sort((x, y) => x.date.localeCompare(y.date));
+  const out = new Map<string, Triple>();
+  const last = new Map<string, BlendWeights>();
+  let w: BlendWeights = { a: 1, b: 0, c: 0 };
+  let fitFor = "";
+  let i0 = 0; // pairs[0..i0) が学習に使える（date ≤ D−2）
+  for (let i = 0; i < pairs.length; i++) {
+    const x = pairs[i]!;
+    if (yearOf(x.date) < "2024") continue;
+    if (x.date !== fitFor) {
+      const lim = new Date(Date.parse(`${x.date}T00:00:00Z`) - 2 * 86_400_000).toISOString().slice(0, 10);
+      while (i0 < pairs.length && pairs[i0]!.date <= lim) i0++;
+      w = fitBlend(pairs.slice(0, i0), 6);
+      fitFor = x.date;
+    }
+    out.set(`${x.date}|${i}`, blend(x.m, x.q, w) as Triple);
+    last.set(yearOf(x.date), w);
+  }
+  for (const y of BENCHMARK.years) {
+    const ys = pairs.map((x, i) => ({ x, i })).filter(({ x }) => yearOf(x.date) === y);
+    const c = compareYear(y, ys.map(({ x, i }) => ({ date: x.date, a: out.get(`${x.date}|${i}`)!, b: x.m, o: x.o })));
+    const lw = last.get(y)!;
+    console.log(`| ${y} | ${c.n} | ${f3(c.a.rps)} / ${f3(c.b.rps)} | ${c.diff >= 0 ? "+" : ""}${f3(c.diff)}（${c.t.toFixed(2)}） | ${pc(c.a.hit)}% / ${pc(c.b.hit)}% | ${pc(c.a.ece, 2)}pp / ${pc(c.b.ece, 2)}pp | ${lw.a.toFixed(3)} / ${lw.b.toFixed(3)} / ${lw.c.toFixed(3)} |`);
+  }
+  const prod = fitBlend(pairs, 10);
+  console.log(`\n本番の係数（基準の全期間 ${pairs.length} 試合で当てた値・未来の試合にだけ使う）: a = ${prod.a.toFixed(4)} / b = ${prod.b.toFixed(4)} / c = ${prod.c.toFixed(4)}`);
 }
 
 // ---------------------------------------------------------------------------
