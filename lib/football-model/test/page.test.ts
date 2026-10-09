@@ -187,3 +187,45 @@ test("指紋: 公開済みのページ自身が状態を持つ（状態ファイ
   // 指紋の無い旧版のページは null（＝変わったと見なして再公開する側へ倒す）
   assert.equal(extractFingerprint("<title>old</title>"), null);
 });
+
+test("2 つ目のモデル（市場補正）: 同じ試合に並べ、推奨・見送り・比較を同じ集合で出す", () => {
+  const ko1 = "2026-09-01T12:00:00Z";
+  const ko2 = "2026-09-02T12:00:00Z";
+  const matches = [match("p1", "Arsenal", "Chelsea", ko1), match("p2", "Liverpool", "Everton", ko2)];
+  const predictions = [
+    prediction("e1", "p1", ko1, [0.5, 0.3, 0.2], [0.5, 0.3, 0.2]),
+    prediction("e2", "p2", ko2, [0.4, 0.3, 0.3], [0.4, 0.3, 0.3]),
+  ];
+  const mkt = (id: string, providerId: string, ko: string, p: [number, number, number], extra: Partial<LedgerPrediction>): LedgerPrediction => ({
+    ...prediction(id, providerId, ko, p, p), model: "mkt-flb-v1", nTrain: 0, lambdaHome: 0, lambdaAway: 0, ...extra,
+  });
+  const mktPredictions = [
+    mkt("m1", "p1", ko1, [0.55, 0.28, 0.17], { bestOdds: [2.0, 3.4, 5.5], expectedValue: [0.1, -0.05, -0.07], recommend: "H" }),
+    mkt("m2", "p2", ko2, [0.42, 0.3, 0.28], { bestOdds: [2.3, 3.2, 3.3], expectedValue: [-0.03, -0.04, -0.08], recommend: null }),
+  ];
+  const evaluations = [evaluation("e1", "p1", "H", 0.2, 0.21), evaluation("e2", "p2", "A", 0.3, 0.31)];
+  const mktEvaluations = [evaluation("m1", "p1", "H", 0.18, 0.21), evaluation("m2", "p2", "A", 0.29, 0.31)];
+  const { html, fingerprint } = render({
+    matches, predictions, evaluations, mktPredictions, mktEvaluations,
+    publishedProviderIds: new Set(["p1", "p2"]),
+  });
+  assert.match(html, /市場補正/);
+  assert.match(html, /推奨 <b>[^<]+ 勝<\/b>/);
+  assert.match(html, /見送り（得になる結果なし）/);
+  assert.match(html, /推奨 的中/);
+  // 比較は同じ 2 試合で。回収率は粗（100% が損益ゼロ）: 推奨 1 件・的中・オッズ 2.0 → 200.0%
+  assert.match(html, /同じ 2 試合/);
+  assert.match(html, /回収率 200\.0%/);
+  // 予想の表記: 勝利 / 敗北・オッズ換算
+  assert.match(html, /勝利 <b>/);
+  assert.match(html, /オッズ換算/);
+  // 市場補正の予想が変われば指紋も変わる（再公開の判定に入っている）
+  const other = render({
+    matches, predictions, evaluations, mktEvaluations,
+    mktPredictions: [mktPredictions[0], { ...mktPredictions[1], id: "m3" }],
+    publishedProviderIds: new Set(["p1", "p2"]),
+  }).fingerprint;
+  assert.notEqual(fingerprint, other);
+  // 黄色・ゴールドを使わない（追加した CSS を含めて）
+  assert.ok(!/#(ff[cd]|ffd700|f5c518|fbbf24|eab308|facc15)/i.test(html));
+});

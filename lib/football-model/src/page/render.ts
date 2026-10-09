@@ -57,6 +57,12 @@ export interface RenderInput {
    * 状態色の規定（赤 = 外れ / 緑 = 的中）に合わせ、**正常の案内を赤で出さない**。
    */
   noticeTone?: "alert" | "info";
+  /**
+   * 2 つ目のモデル（市場補正・marketModel.ts）の予想と決済。同じ試合に正準と並べて出す。
+   * 無ければ出さない（旧版の呼び出しと互換）
+   */
+  mktPredictions?: LedgerPrediction[];
+  mktEvaluations?: LedgerEvaluation[];
 }
 
 export interface RenderStats {
@@ -80,6 +86,9 @@ interface Row extends LedgerPrediction {
   m: Partial<LedgerMatch>;
   ev: LedgerEvaluation | undefined;
   preview: boolean;
+  /** 同じ試合の市場補正モデルの予想と決済（無ければ undefined） */
+  mkt: LedgerPrediction | undefined;
+  mktEv: LedgerEvaluation | undefined;
 }
 
 const JST_OFFSET_MS = 9 * 3_600_000;
@@ -119,6 +128,10 @@ export function renderPage(input: RenderInput): RenderResult {
 
   const M = new Map(matches.map((m) => [m.providerId, m]));
   const E = new Map(evaluations.map((e) => [e.predictionId, e]));
+  const mktPredictions = input.mktPredictions ?? [];
+  const mktEvaluations = input.mktEvaluations ?? [];
+  const MK = new Map(mktPredictions.map((p) => [p.providerId, p]));
+  const MKE = new Map(mktEvaluations.map((e) => [e.predictionId, e]));
   const genLabel = `${md(now)} ${hm(now)} JST`;
 
   const rows: Row[] = predictions
@@ -127,6 +140,8 @@ export function renderPage(input: RenderInput): RenderResult {
       m: M.get(p.providerId) ?? {},
       ev: E.get(p.id),
       preview: isPreview && !publishedProviderIds.has(p.providerId),
+      mkt: MK.get(p.providerId),
+      mktEv: MK.get(p.providerId) ? MKE.get(MK.get(p.providerId)!.id) : undefined,
     }))
     .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
 
@@ -137,6 +152,41 @@ export function renderPage(input: RenderInput): RenderResult {
     .filter((r) => !r.ev && new Date(r.kickoffAt) <= now)
     .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt));
   const settled = rows.filter((r) => r.ev).sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt));
+
+  /** ご指定の形: 「勝利 ◯◯ ／ 敗北 ◯◯」。引き分けが最大なら「引き分け」、1pt 未満の差なら「五分」 */
+  function verdictText(r: Row, h: number, d: number, a: number): string {
+    const top = Math.max(h, d, a);
+    const second = [h, d, a].sort((x, y) => y - x)[1]!;
+    if (top - second < 0.01) return "五分";
+    if (top === d) return "<b>引き分け</b>";
+    const [w, l] = top === h ? [r.m.home, r.m.away] : [r.m.away, r.m.home];
+    return `勝利 <b>${esc(kana(w))}</b> ／ 敗北 ${esc(kana(l))}`;
+  }
+  /** 確率をオッズに換算（1 ÷ 確率・控除なし） */
+  const fairOdds = (p: number): string => (p > 0 ? (1 / p).toFixed(2) : "—");
+
+  /** 2 つ目のモデル（市場補正）の行。推奨は EV（補正後の確率 × 最良のオッズ − 1）が閾値を超えた結果だけ */
+  function mktRow(r: Row): string {
+    const k = r.mkt!;
+    const lab = { H: `${esc(kana(r.m.home))} 勝`, D: "引き分け", A: `${esc(kana(r.m.away))} 勝` } as const;
+    const idx = { H: 0, D: 1, A: 2 } as const;
+    let rec = `<span class="dim">見送り（得になる結果なし）</span>`;
+    if (k.recommend && k.expectedValue && k.bestOdds) {
+      const j = idx[k.recommend];
+      rec = `推奨 <b>${lab[k.recommend]}</b> <span class="dim">EV ${(k.expectedValue[j]! * 100).toFixed(1)}%・最良 ${k.bestOdds[j]!.toFixed(2)}</span>`;
+    } else if (!k.bestOdds) {
+      rec = `<span class="dim">見送り（最良のオッズが無い取得元）</span>`;
+    }
+    let res = "";
+    if (r.mktEv) {
+      const e = r.mktEv;
+      const top = Math.max(k.pHome, k.pDraw, k.pAway);
+      const hit = (e.result === "H" && top === k.pHome) || (e.result === "D" && top === k.pDraw) || (e.result === "A" && top === k.pAway);
+      const recHit = k.recommend ? (k.recommend === e.result ? `<span class="chip hit">推奨 的中</span>` : `<span class="chip miss">推奨 外れ</span>`) : "";
+      res = `<span class="chip ${hit ? "hit" : "miss"}">${hit ? "的中" : "外れ"}</span>${recHit}<span class="rps">RPS ${e.rps.toFixed(3)}</span>`;
+    }
+    return `<div class="alt"><div class="alt-head"><span class="tag">市場補正</span><span class="probs-s">${pct(k.pHome)} / ${pct(k.pDraw)} / ${pct(k.pAway)}</span><span class="dim">オッズ換算 ${fairOdds(k.pHome)} / ${fairOdds(k.pDraw)} / ${fairOdds(k.pAway)}</span></div><div class="alt-foot">${rec}${res}</div></div>`;
+  }
 
   function matchRow(r: Row, { showResult = false }: { showResult?: boolean } = {}): string {
     const h = r.pHome;
@@ -175,8 +225,10 @@ export function renderPage(input: RenderInput): RenderResult {
   <div class="probs"><span class="p h">${pct(h)}</span><span class="p d">${pct(d)}</span><span class="p a">${pct(a)}</span></div>
   ${bar(h, d, a, "model")}
   ${hasMarket ? bar(mh!, mdw!, ma!, "market") : ""}
-  <div class="foot"><span>最尤 ${pick}</span><span class="dim">${hasMarket ? `市場 ${pct(mh!)}/${pct(mdw!)}/${pct(ma!)}` : "市場データなし"}</span></div>
+  <div class="foot"><span>予想 ${verdictText(r, h, d, a)}</span><span class="dim">${hasMarket ? `市場 ${pct(mh!)}/${pct(mdw!)}/${pct(ma!)}` : "市場データなし"}</span></div>
+  <div class="odds"><span>オッズ換算 ${fairOdds(h)} / ${fairOdds(d)} / ${fairOdds(a)}</span><span class="dim">${hasMarket ? `市場 ${fairOdds(mh!)} / ${fairOdds(mdw!)} / ${fairOdds(ma!)}` : ""}</span></div>
   ${result}
+  ${r.mkt ? mktRow(r) : ""}
 </article>`;
   }
 
@@ -205,6 +257,22 @@ export function renderPage(input: RenderInput): RenderResult {
   const bothSet = settled.filter((r) => r.ev!.marketRps != null);
   const meanOn = (list: Row[], k: "rps" | "marketRps"): number =>
     list.reduce((s, r) => s + (r.ev![k] as number), 0) / (list.length || 1);
+
+  /**
+   * 2 つのモデルの比較。**同じ決着試合の集合**（両モデルの決済と市場がそろう試合）で並べる。
+   * 推奨の成績は「最良のオッズで 1 単位ずつ買った場合」の回収率で、件数を必ず併記する
+   */
+  function compareBlock(): string {
+    const both = settled.filter((r) => r.mktEv && r.ev!.marketRps != null);
+    if (!mktPredictions.length) return "";
+    if (!both.length) return `<p class="sub">2 つのモデルの比較: 決着がそろった試合はまだありません（市場補正 ${mktPredictions.length} 件を発行済み）。</p>`;
+    const avg = (f: (r: Row) => number): string => (both.reduce((a, r) => a + f(r), 0) / both.length).toFixed(3);
+    const recs = both.filter((r) => r.mkt!.recommend && r.mkt!.bestOdds);
+    const idx = { H: 0, D: 1, A: 2 } as const;
+    const ret = recs.reduce((a, r) => a + (r.mktEv!.result === r.mkt!.recommend ? r.mkt!.bestOdds![idx[r.mkt!.recommend!]]! - 1 : -1), 0);
+    const recHit = recs.filter((r) => r.mktEv!.result === r.mkt!.recommend).length;
+    return `<p class="sub">2 つのモデルの比較（同じ ${both.length} 試合・RPS は小さいほど良い）: 正準 <b>${avg((r) => r.ev!.rps)}</b> ／ 市場補正 <b>${avg((r) => r.mktEv!.rps)}</b> ／ 市場 ${avg((r) => r.ev!.marketRps!)}。市場補正の推奨 ${recs.length} 件・的中 ${recHit}・最良のオッズで 1 単位ずつ買った場合の回収率 ${recs.length ? `${(((ret + recs.length) / recs.length) * 100).toFixed(1)}%` : "—"}（100% が損益ゼロ・件数が少ないうちは判断に使わない）。</p>`;
+  }
 
   const nPreview = rows.filter((r) => r.preview).length;
   const modelsUsed = [...new Set([...upcoming, ...upcomingJ].map((r) => r.model))];
@@ -270,6 +338,12 @@ h2 small{color:var(--muted);letter-spacing:0;text-transform:none;margin-left:8px
 .bar.market i{background:var(--mkt)}
 .foot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:1px}
 .foot b{color:var(--text);font-weight:500}
+.odds{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.alt{border-top:1px dashed var(--line);padding-top:6px;margin-top:2px;display:grid;gap:3px;font-size:11px;color:var(--muted)}
+.alt-head,.alt-foot{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.alt .tag{color:var(--cyan2);border:1px solid rgba(57,196,234,.4);border-radius:999px;padding:0 7px;font-size:10px;white-space:nowrap}
+.alt .probs-s{font-family:"JetBrains Mono",monospace;color:var(--text);font-variant-numeric:tabular-nums}
+.alt b{color:var(--text);font-weight:500}
 .dim{color:var(--dim)}
 .result{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
 .score{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--text);font-weight:600}
@@ -325,6 +399,7 @@ ${upcomingJ.length ? `<h2>J1（未開始）<small>${upcomingJ.length} 試合</sm
 <details><summary>一覧を開く（J1 を含む）</summary>${group(started)}</details>
 
 <h2>決着済み<small>${settled.length} 試合・平均 RPS モデル ${meanRps("rps").toFixed(3)}${bothSet.length ? `／<b>市場と同じ ${bothSet.length} 件で比べると モデル ${meanOn(bothSet, "rps").toFixed(3)} 対 市場 ${meanOn(bothSet, "marketRps").toFixed(3)}</b>` : ""}</small></h2>
+${compareBlock()}
 ${group(settled, { showResult: true })}
 
 <div class="note">
@@ -344,6 +419,8 @@ ${group(settled, { showResult: true })}
       JSON.stringify([
         predictions.map((p) => p.id).sort(),
         evaluations.map((e) => e.predictionId).sort(),
+        mktPredictions.map((p) => p.id).sort(),
+        mktEvaluations.map((e) => e.predictionId).sort(),
         [upcoming.length, upcomingJ.length, started.length, settled.length, nHit],
         notice,
         noticeTone,

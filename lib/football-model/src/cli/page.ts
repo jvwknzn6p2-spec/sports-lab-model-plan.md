@@ -11,7 +11,7 @@
  * `--preview-ledger` は試算用。台帳を差し替えて描くが、**本物の台帳に無い予想行は
  * 「試算・台帳未発行」と明示する**（発行済みと見分けが付かなくなると記録の意味が消える）。
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "../ledger.ts";
 import { extractFingerprint, renderPage } from "../page/render.ts";
@@ -41,6 +41,9 @@ function main(): void {
   const predictions = readNdjson<LedgerPrediction>(readFrom, "predictions.ndjson");
   const matches = readNdjson<LedgerMatch>(readFrom, "matches.ndjson");
   const evaluations = readNdjson<LedgerEvaluation>(readFrom, "evaluations.ndjson");
+  // 2 つ目のモデル（市場補正）。ファイルが無い台帳（旧版）では空
+  const mktPredictions = existsSync(join(readFrom, "predictions.mkt.ndjson")) ? readNdjson<LedgerPrediction>(readFrom, "predictions.mkt.ndjson") : [];
+  const mktEvaluations = existsSync(join(readFrom, "evaluations.mkt.ndjson")) ? readNdjson<LedgerEvaluation>(readFrom, "evaluations.mkt.ndjson") : [];
   // 発行済みの権威は常に本物の台帳。試算はここに入らない
   const publishedProviderIds = new Set(
     readNdjson<LedgerPrediction>(ledgerDir, "predictions.ndjson").map((p) => p.providerId),
@@ -56,6 +59,8 @@ function main(): void {
     now: new Date(arg("now", process.env.NOW) ?? Date.now()),
     notice: arg("notice", process.env.NOTICE) ?? "",
     noticeTone,
+    mktPredictions,
+    mktEvaluations,
   });
 
   // 公開済みページ（--previous）と指紋が同じなら再公開は要らない。状態ファイルを持たずに
