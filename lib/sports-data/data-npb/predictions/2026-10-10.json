@@ -1,0 +1,187 @@
+{
+  "lockedAt": "2026-10-09T15:24:12.397Z",
+  "updatedAt": "2026-10-09T15:24:12.397Z",
+  "controlTower": {
+    "date": "2026-10-10",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026101001": {
+        "side": "home",
+        "line": 1.5,
+        "total": 5,
+        "marketHomeCover": 0.638,
+        "marketHomePayout": 0.5,
+        "marketAwayPayout": 1.6,
+        "marketOver": 0.505
+      },
+      "92026101010": {
+        "side": "home",
+        "line": -1.5,
+        "total": 5.5,
+        "marketHomeCover": 0.367,
+        "marketHomePayout": 1.6,
+        "marketAwayPayout": 0.505,
+        "marketOver": 0.517
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.877,
+    "tailShrink": 0.888,
+    "farTailShrink": 0.88,
+    "handicapShrink": 0.849,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.861,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.818,
+    "gamesSettled": 69,
+    "brierSum": 14.8176,
+    "updatedAt": "2026-10-08T22:02:05.442Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026101001,
+      "gameDate": "2026-10-10T05:00:00.000Z",
+      "home": "読売ジャイアンツ",
+      "away": "横浜DeNAベイスターズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.519,
+      "rawWinProbability": 0.522,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 5,
+          "marketHomeCover": 0.638,
+          "marketHomePayout": 0.5,
+          "marketAwayPayout": 1.6,
+          "marketOver": 0.505
+        },
+        "pick": null,
+        "coverProbability": 0.631,
+        "rawCoverProbability": 0.654,
+        "ev": 0.199,
+        "marketProbability": 0.638,
+        "marketPriceEv": -0.053,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 5,
+        "predicted": 7.1,
+        "pick": null,
+        "probability": 0.699,
+        "rawProbability": 0.734,
+        "marketProbability": 0.505,
+        "ev": 0.28,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.38,
+        "away": 3.49
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +19.9% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -5.3% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 63.8% for this side — model 63.1% (-0.7% vs market)",
+        "Market consensus on the total: 50.5% for the OVER — model 69.9% (+19.4% vs market)",
+        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.299 vs 0.285)",
+        "Park factor 97 (pitcher-friendly)",
+        "Expected runs 3.38–3.49 over 10000 sims",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
+      ],
+      "lockDeadline": "2026-10-10T04:27:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-09T15:24:12.397Z",
+      "predictedRunId": "37951418546"
+    },
+    {
+      "gamePk": 92026101010,
+      "gameDate": "2026-10-10T05:00:00.000Z",
+      "home": "埼玉西武ライオンズ",
+      "away": "北海道日本ハムファイターズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.521,
+      "rawWinProbability": 0.524,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 5.5,
+          "marketHomeCover": 0.367,
+          "marketHomePayout": 1.6,
+          "marketAwayPayout": 0.505,
+          "marketOver": 0.517
+        },
+        "pick": null,
+        "coverProbability": 0.654,
+        "rawCoverProbability": 0.681,
+        "ev": 0.242,
+        "marketProbability": 0.633,
+        "marketPriceEv": -0.016,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 5.5,
+        "predicted": 7.69,
+        "pick": null,
+        "probability": 0.654,
+        "rawProbability": 0.68,
+        "marketProbability": 0.517,
+        "ev": 0.243,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.66,
+        "away": 3.89
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +24.2% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -1.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 63.3% for this side — model 65.4% (+2.1% vs market)",
+        "Market consensus on the total: 51.7% for the OVER — model 65.4% (+13.7% vs market)",
+        "Offense edge: 北海道日本ハムファイターズ (wOBA 0.312 vs 0.293)",
+        "Park factor 94 (pitcher-friendly)",
+        "Expected runs 3.66–3.89 over 10000 sims",
+        "home: cold bats — 3.1 R/G last 15 (season baseline 3.7)",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
+      ],
+      "lockDeadline": "2026-10-10T04:27:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-09T15:24:12.397Z",
+      "predictedRunId": "37951418546"
+    }
+  ]
+}
