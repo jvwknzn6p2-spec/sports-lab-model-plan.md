@@ -1,0 +1,510 @@
+{
+  "date": "2026-10-05",
+  "season": 2026,
+  "games": [
+    {
+      "gamePk": 849834,
+      "gameDate": "2026-10-05T21:00:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "D",
+      "venue": {
+        "id": 5,
+        "name": "Progressive Field"
+      },
+      "home": {
+        "teamId": 114,
+        "teamName": "Cleveland Guardians",
+        "probablePitcherId": 668909,
+        "probablePitcherName": "Gavin Williams",
+        "score": null
+      },
+      "away": {
+        "teamId": 145,
+        "teamName": "Chicago White Sox",
+        "probablePitcherId": 641743,
+        "probablePitcherName": "Anthony Kay",
+        "score": null
+      }
+    },
+    {
+      "gamePk": 849839,
+      "gameDate": "2026-10-06T00:00:00Z",
+      "status": "Scheduled",
+      "abstractState": "Preview",
+      "gameType": "D",
+      "venue": {
+        "id": 12,
+        "name": "Tropicana Field"
+      },
+      "home": {
+        "teamId": 139,
+        "teamName": "Tampa Bay Rays",
+        "probablePitcherId": 642547,
+        "probablePitcherName": "Freddy Peralta",
+        "score": null
+      },
+      "away": {
+        "teamId": 147,
+        "teamName": "New York Yankees",
+        "probablePitcherId": 693645,
+        "probablePitcherName": "Cam Schlittler",
+        "score": null
+      }
+    }
+  ],
+  "starters": {
+    "641743": {
+      "inningsPitched": "158.0",
+      "battersFaced": 710,
+      "strikeOuts": 129,
+      "baseOnBalls": 56,
+      "hitByPitch": 26,
+      "homeRuns": 21,
+      "hits": 161,
+      "earnedRuns": 78,
+      "runs": 85,
+      "atBats": 615,
+      "sacFlies": 6
+    },
+    "642547": {
+      "inningsPitched": "169.0",
+      "battersFaced": 730,
+      "strikeOuts": 156,
+      "baseOnBalls": 63,
+      "hitByPitch": 8,
+      "homeRuns": 23,
+      "hits": 161,
+      "earnedRuns": 83,
+      "runs": 91,
+      "atBats": 652,
+      "sacFlies": 3
+    },
+    "668909": {
+      "inningsPitched": "184.1",
+      "battersFaced": 746,
+      "strikeOuts": 248,
+      "baseOnBalls": 61,
+      "hitByPitch": 6,
+      "homeRuns": 28,
+      "hits": 144,
+      "earnedRuns": 77,
+      "runs": 81,
+      "atBats": 675,
+      "sacFlies": 0
+    },
+    "693645": {
+      "inningsPitched": "193.2",
+      "battersFaced": 761,
+      "strikeOuts": 239,
+      "baseOnBalls": 49,
+      "hitByPitch": 6,
+      "homeRuns": 16,
+      "hits": 129,
+      "earnedRuns": 42,
+      "runs": 52,
+      "atBats": 696,
+      "sacFlies": 4
+    }
+  },
+  "batting": {
+    "114": {
+      "plateAppearances": 6117,
+      "atBats": 5410,
+      "hits": 1291,
+      "doubles": 249,
+      "triples": 16,
+      "homeRuns": 162,
+      "baseOnBalls": 574,
+      "intentionalWalks": 14,
+      "hitByPitch": 58,
+      "sacFlies": 45,
+      "strikeOuts": 1271,
+      "stolenBases": 146,
+      "caughtStealing": 31
+    },
+    "139": {
+      "plateAppearances": 6106,
+      "atBats": 5444,
+      "hits": 1405,
+      "doubles": 230,
+      "triples": 22,
+      "homeRuns": 169,
+      "baseOnBalls": 514,
+      "intentionalWalks": 27,
+      "hitByPitch": 58,
+      "sacFlies": 42,
+      "strikeOuts": 1145,
+      "stolenBases": 164,
+      "caughtStealing": 54
+    },
+    "145": {
+      "plateAppearances": 6187,
+      "atBats": 5430,
+      "hits": 1282,
+      "doubles": 252,
+      "triples": 18,
+      "homeRuns": 211,
+      "baseOnBalls": 589,
+      "intentionalWalks": 21,
+      "hitByPitch": 101,
+      "sacFlies": 38,
+      "strikeOuts": 1494,
+      "stolenBases": 93,
+      "caughtStealing": 35
+    },
+    "147": {
+      "plateAppearances": 5997,
+      "atBats": 5330,
+      "hits": 1250,
+      "doubles": 224,
+      "triples": 19,
+      "homeRuns": 223,
+      "baseOnBalls": 572,
+      "intentionalWalks": 18,
+      "hitByPitch": 38,
+      "sacFlies": 42,
+      "strikeOuts": 1480,
+      "stolenBases": 153,
+      "caughtStealing": 49
+    }
+  },
+  "bullpens": {
+    "114": {
+      "inningsPitched": "574.2",
+      "battersFaced": 2457,
+      "strikeOuts": 652,
+      "baseOnBalls": 230,
+      "hitByPitch": 47,
+      "homeRuns": 63,
+      "hits": 488,
+      "earnedRuns": 226,
+      "runs": 254,
+      "atBats": 2145,
+      "sacFlies": 24
+    },
+    "139": {
+      "inningsPitched": "632.0",
+      "battersFaced": 2652,
+      "strikeOuts": 590,
+      "baseOnBalls": 220,
+      "hitByPitch": 26,
+      "homeRuns": 95,
+      "hits": 539,
+      "earnedRuns": 280,
+      "runs": 310,
+      "atBats": 2360,
+      "sacFlies": 31
+    },
+    "145": {
+      "inningsPitched": "766.0",
+      "battersFaced": 3240,
+      "strikeOuts": 716,
+      "baseOnBalls": 324,
+      "hitByPitch": 32,
+      "homeRuns": 87,
+      "hits": 661,
+      "earnedRuns": 315,
+      "runs": 354,
+      "atBats": 2837,
+      "sacFlies": 30
+    },
+    "147": {
+      "inningsPitched": "574.1",
+      "battersFaced": 2414,
+      "strikeOuts": 542,
+      "baseOnBalls": 218,
+      "hitByPitch": 27,
+      "homeRuns": 63,
+      "hits": 484,
+      "earnedRuns": 200,
+      "runs": 246,
+      "atBats": 2144,
+      "sacFlies": 16
+    }
+  },
+  "workloads": {
+    "114": {
+      "last3DaysIP": 4.7
+    },
+    "119": {
+      "last3DaysIP": 8.3
+    },
+    "135": {
+      "last3DaysIP": 9
+    },
+    "139": {
+      "last3DaysIP": 1
+    },
+    "144": {
+      "last3DaysIP": 11.3
+    },
+    "145": {
+      "last3DaysIP": 6.3
+    },
+    "147": {
+      "last3DaysIP": 3
+    },
+    "158": {
+      "last3DaysIP": 9
+    }
+  },
+  "parkFactors": {
+    "5": 98,
+    "12": 96
+  },
+  "lineups": {},
+  "lineupBatting": {},
+  "fetchedAt": "2026-10-05T13:03:58.969Z",
+  "forms": {
+    "108": {
+      "games": 15,
+      "runsScoredPerGame": 4.07,
+      "runsAllowedPerGame": 5.6
+    },
+    "109": {
+      "games": 14,
+      "runsScoredPerGame": 5.86,
+      "runsAllowedPerGame": 5.71
+    },
+    "110": {
+      "games": 13,
+      "runsScoredPerGame": 3.85,
+      "runsAllowedPerGame": 3.62
+    },
+    "111": {
+      "games": 15,
+      "runsScoredPerGame": 2.13,
+      "runsAllowedPerGame": 3.67
+    },
+    "112": {
+      "games": 15,
+      "runsScoredPerGame": 3.67,
+      "runsAllowedPerGame": 3.87
+    },
+    "113": {
+      "games": 15,
+      "runsScoredPerGame": 3.67,
+      "runsAllowedPerGame": 4.87
+    },
+    "114": {
+      "games": 15,
+      "runsScoredPerGame": 5,
+      "runsAllowedPerGame": 3.6
+    },
+    "115": {
+      "games": 15,
+      "runsScoredPerGame": 4.27,
+      "runsAllowedPerGame": 6.53
+    },
+    "116": {
+      "games": 15,
+      "runsScoredPerGame": 5.07,
+      "runsAllowedPerGame": 4.27
+    },
+    "117": {
+      "games": 15,
+      "runsScoredPerGame": 5,
+      "runsAllowedPerGame": 4.73
+    },
+    "118": {
+      "games": 14,
+      "runsScoredPerGame": 4.14,
+      "runsAllowedPerGame": 6.5
+    },
+    "119": {
+      "games": 15,
+      "runsScoredPerGame": 4.47,
+      "runsAllowedPerGame": 2.33
+    },
+    "120": {
+      "games": 13,
+      "runsScoredPerGame": 4.69,
+      "runsAllowedPerGame": 4.31
+    },
+    "121": {
+      "games": 15,
+      "runsScoredPerGame": 4.53,
+      "runsAllowedPerGame": 3.87
+    },
+    "133": {
+      "games": 14,
+      "runsScoredPerGame": 3.71,
+      "runsAllowedPerGame": 7.43
+    },
+    "134": {
+      "games": 14,
+      "runsScoredPerGame": 4,
+      "runsAllowedPerGame": 3.86
+    },
+    "135": {
+      "games": 15,
+      "runsScoredPerGame": 5.93,
+      "runsAllowedPerGame": 3.73
+    },
+    "136": {
+      "games": 14,
+      "runsScoredPerGame": 5.57,
+      "runsAllowedPerGame": 4.36
+    },
+    "137": {
+      "games": 14,
+      "runsScoredPerGame": 3.36,
+      "runsAllowedPerGame": 4.57
+    },
+    "138": {
+      "games": 14,
+      "runsScoredPerGame": 3.21,
+      "runsAllowedPerGame": 4.71
+    },
+    "139": {
+      "games": 15,
+      "runsScoredPerGame": 4.6,
+      "runsAllowedPerGame": 2.73
+    },
+    "140": {
+      "games": 14,
+      "runsScoredPerGame": 4.43,
+      "runsAllowedPerGame": 4.21
+    },
+    "141": {
+      "games": 14,
+      "runsScoredPerGame": 3.93,
+      "runsAllowedPerGame": 4.21
+    },
+    "142": {
+      "games": 15,
+      "runsScoredPerGame": 4.13,
+      "runsAllowedPerGame": 4.27
+    },
+    "143": {
+      "games": 15,
+      "runsScoredPerGame": 3.13,
+      "runsAllowedPerGame": 4.53
+    },
+    "144": {
+      "games": 15,
+      "runsScoredPerGame": 4,
+      "runsAllowedPerGame": 3.67
+    },
+    "145": {
+      "games": 15,
+      "runsScoredPerGame": 6,
+      "runsAllowedPerGame": 4.13
+    },
+    "146": {
+      "games": 14,
+      "runsScoredPerGame": 4.21,
+      "runsAllowedPerGame": 4.21
+    },
+    "147": {
+      "games": 15,
+      "runsScoredPerGame": 5.33,
+      "runsAllowedPerGame": 3.47
+    },
+    "158": {
+      "games": 15,
+      "runsScoredPerGame": 4.27,
+      "runsAllowedPerGame": 2.93
+    }
+  },
+  "injuries": {
+    "114": [],
+    "139": [
+      {
+        "name": "Edwin Uceta",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Gavin Lux",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jacob Melton",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jonathan Heasley",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ryan Pepiot",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "145": [
+      {
+        "name": "Brooks Baldwin",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Jordan Leasure",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Ky Bush",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Luis Castillo",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Mike Vasil",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Prelander Berroa",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Tanner Murray",
+        "position": "LF",
+        "status": "Injured 60-Day"
+      }
+    ],
+    "147": [
+      {
+        "name": "Clarke Schmidt",
+        "position": "P",
+        "status": "Injured 15-Day"
+      },
+      {
+        "name": "Fernando Cruz",
+        "position": "P",
+        "status": "Injured 60-Day"
+      },
+      {
+        "name": "Kervin Castro",
+        "position": "P",
+        "status": "Injured 60-Day"
+      }
+    ]
+  },
+  "weather": {
+    "849834": {
+      "temperatureC": 15.8,
+      "windSpeedKmh": 16.1,
+      "windDirectionDeg": 326,
+      "roof": "outdoor",
+      "cfBearingDeg": 0,
+      "fetchedAt": "2026-10-05T13:04:03.443Z"
+    },
+    "849839": {
+      "temperatureC": null,
+      "windSpeedKmh": null,
+      "roof": "dome"
+    }
+  }
+}

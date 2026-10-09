@@ -256,19 +256,46 @@ test("決済: ±1 日で結べた試合は従来どおり（matchedBy=kickoff）
   assert.equal(L.evaluations()[0]!.resultDate, "2026-09-05");
 });
 
-test("決済: 同じカードの幽霊日程を 2 回数えない（本番の Sevilla v Valencia）", () => {
+test("決済: 同じカードの幽霊日程は発行時に止まり、2 回数えない（本番の Sevilla v Valencia）", () => {
   const L = fresh();
   // 取得元が同じ試合を 09-11 と 09-13 の 2 つの日程として返していた。実際に行われたのは 1 試合
   withPrediction(L, "SP1", fixture("sev-val-11", "2026-09-11T19:00:00Z", "Sevilla", "Valencia"));
-  withPrediction(L, "SP1", fixture("sev-val-13", "2026-09-13T19:00:00Z", "Sevilla", "Valencia"));
+  // 2 本目は fixtureIdentity.ts（PR #43）が発行時に止める。決済の窓に頼らず元から作らせない
+  const ghost = fixture("sev-val-13", "2026-09-13T19:00:00Z", "Sevilla", "Valencia");
+  L.recordFixtures([ghost], "SP1", "2026-09-01T00:00:00Z");
+  const r = L.publishPrediction({
+    providerId: ghost.providerId, league: "SP1", kickoffAt: ghost.kickoffAt, publishedAt: "2026-09-01T01:00:00Z",
+    model: "dc-v5-shots", asOf: "2026-09-01T00:00:00Z", nTrain: 900,
+    pHome: 0.4, pDraw: 0.3, pAway: 0.3, lambdaHome: 1.4, lambdaAway: 1.2, market: null, marketFetchedAt: null,
+  });
+  assert.equal(r.ok, false);
   L.recordResults([resultRow("SP1", "2026-09-11", "Sevilla", "Valencia", 1, 0)], "football-data", "2026-09-15T00:00:00Z");
-  // 09-11 の予想だけが決済される。09-13 の幽霊は未決済のまま残す（フェイルクローズ）
   assert.equal(L.settle("2026-09-15T00:10:00Z"), 1);
   assert.equal(L.evaluations()[0]!.providerId, "sev-val-11");
   assert.equal(L.evaluations()[0]!.matchedBy, "kickoff");
   // 何度回しても増えない＝二重計上しない
   assert.equal(L.settle("2026-09-20T00:00:00Z"), 0);
   assert.equal(L.settle("2026-10-20T00:00:00Z"), 0);
+});
+
+test("決済: 延期は 7 日まで追い（rescheduled）、前倒しと 8 日以上の延期は結ばない", () => {
+  const cases: Array<[string, string, boolean]> = [
+    ["2026-09-13", "kickoff", true], // 当日
+    ["2026-09-12", "kickoff", true], // 前日（現地日付のずれ）
+    ["2026-09-20", "rescheduled", true], // +7 日
+    ["2026-09-21", "-", false], // +8 日は追わない
+    ["2026-09-11", "-", false], // 2 日前倒しは追わない（登録より早く行われた試合に後の予想を結ばない）
+  ];
+  for (const [date, by, settles] of cases) {
+    const L = fresh();
+    withPrediction(L, "N1", fixture("p", "2026-09-13T16:45:00Z", "Utrecht", "Twente"));
+    L.recordResults([resultRow("N1", date, "Utrecht", "Twente", 2, 1)], "football-data", "2026-09-25T00:00:00Z");
+    assert.equal(L.settle("2026-09-25T00:10:00Z"), settles ? 1 : 0, date);
+    if (settles) {
+      assert.equal(L.evaluations()[0]!.matchedBy, by, date);
+      assert.equal(L.evaluations()[0]!.resultDate, date, date);
+    }
+  }
 });
 
 test("決済: 結果が無い試合は決済しない（推測で埋めない）", () => {

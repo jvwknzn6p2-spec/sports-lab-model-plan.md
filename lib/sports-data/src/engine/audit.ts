@@ -49,6 +49,11 @@ import {
   predictionDeadline,
   type LeagueDeadlines,
 } from "./deadline";
+import {
+  LATE_FLAG,
+  pickLockTier,
+  POST_START_FLAG,
+} from "./lock-provenance";
 import { settle, type GameResult, type SettlementReport } from "./settle";
 import { SHARED_ENV_SD, TEAM_RUN_DISPERSION } from "./simulate";
 
@@ -469,7 +474,7 @@ export function flagRates(days: AuditDay[]): FlagRate[] {
       // Count each flag once per game; the audit's own lateness/outlier
       // flags are cohort material (A-5), not input-data health.
       for (const f of new Set(p.flags)) {
-        if (f === "[warn] predicted_after_deadline") continue;
+        if (f === LATE_FLAG || f === POST_START_FLAG) continue;
         if (f === "[warn] ev_outlier") continue;
         counts.set(f, (counts.get(f) ?? 0) + 1);
       }
@@ -833,6 +838,31 @@ export function runAudit(
         detail: `${m.date}: locked ${Math.abs(m.marginMinutes)} min after the deadline`,
       });
     }
+  }
+
+  // A pick fixed at or after first pitch is not a pre-game prediction. Since
+  // 2026-09-25 predict withholds every market on such a row, so a STAKED
+  // post-start pick means that guard failed or the row predates it. Same
+  // 14-day error window as late_lock (older ones stay visible as warnings —
+  // history cannot be un-late, and a permanently red audit trains the
+  // operator to ignore red).
+  for (const d of days) {
+    if (!d.lock) continue;
+    const post = d.lock.predictions.filter(
+      (p) =>
+        pickLockTier(p, d.lock!.lockedAt) === "post_start" &&
+        (!p.pass || p.handicap.pick !== null || p.total.pick !== null),
+    );
+    if (post.length === 0) continue;
+    const lockedAt = d.lock.lockedAt ? Date.parse(d.lock.lockedAt) : NaN;
+    issues.push({
+      severity:
+        !Number.isNaN(lockedAt) && lockedAt >= windowStart ? "error" : "warn",
+      code: "post_start_pick",
+      detail:
+        `${d.date}: ${post.length} pick(s) fixed at or after first pitch ` +
+        `(${post.map((p) => p.gamePk).join(", ")}) — excluded from the verified record`,
+    });
   }
 
   return {

@@ -10,8 +10,28 @@
  * - 色は Obsidian Glass の規定どおり（シアン = モデルの予想 / 緑 = 的中 / 赤 = 外れ）。
  *   **黄色・ゴールドは使わない。**
  */
+import { createHash } from "node:crypto";
 import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "../ledger.ts";
 import { kanaTable, leagueLabel } from "./labels.ts";
+
+/**
+ * ページに埋め込む「何を描いたか」の指紋。**公開済みのページ自身が状態を持つ**ようにするためのもの。
+ *
+ * 以前は定例が「前回の予想・評価の件数」をスクラッチパッドの状態ファイルに持ち、増えたときだけ
+ * 再生成していた。コンテナが作り直されるとこのファイルは消える（2026-10-07 に実発生）。
+ * 状態を別に持つと、本体（公開ページ）とずれたり消えたりする。公開ページに指紋を埋めておけば、
+ * 「今のページ」と「今の台帳」を直接比べられ、持ち運ぶ状態が無くなる。
+ *
+ * 指紋に入れるのは**描画結果を左右するもの**だけ: 予想・評価の id（件数だけでは差し替えを見逃す）、
+ * 各区分の件数（キックオフを過ぎると台帳が変わらなくても「これから」→「開始済み」に動く）、
+ * 注意書きとその色。**生成時刻は入れない**（毎回変わって比較にならない）。
+ */
+const FINGERPRINT_RE = /<!-- vorte-ft-fingerprint: ([0-9a-f]{16}) -->/;
+
+/** 公開済みページの HTML から指紋を取り出す。無ければ null（旧版のページ・別物） */
+export function extractFingerprint(html: string): string | null {
+  return FINGERPRINT_RE.exec(html)?.[1] ?? null;
+}
 
 export interface RenderInput {
   predictions: LedgerPrediction[];
@@ -52,6 +72,8 @@ export interface RenderStats {
 export interface RenderResult {
   html: string;
   stats: RenderStats;
+  /** 描画内容の指紋（html の末尾にも埋め込む）。公開済みページと比べて再公開が要るか判定する */
+  fingerprint: string;
 }
 
 interface Row extends LedgerPrediction {
@@ -316,8 +338,23 @@ ${group(settled, { showResult: true })}
 </div>
 `;
 
+  const fingerprint = createHash("sha256")
+    .update(
+      JSON.stringify([
+        predictions.map((p) => p.id).sort(),
+        evaluations.map((e) => e.predictionId).sort(),
+        [upcoming.length, upcomingJ.length, started.length, settled.length, nHit],
+        notice,
+        noticeTone,
+        isPreview,
+      ]),
+    )
+    .digest("hex")
+    .slice(0, 16);
+
   return {
-    html,
+    html: `${html}<!-- vorte-ft-fingerprint: ${fingerprint} -->\n`,
+    fingerprint,
     stats: {
       upcoming: upcoming.length,
       upcomingJ: upcomingJ.length,

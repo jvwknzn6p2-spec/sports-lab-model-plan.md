@@ -23,7 +23,9 @@ import type { MatchWithOdds } from "../footballData.ts";
 import { assertFootballDataCsv, parseFootballDataRaw } from "../footballDataRaw.ts";
 import { Ledger } from "../ledger.ts";
 import { parseOddsEvents, type OddsEvent } from "../oddsApi.ts";
-import { renderSummary, selectToPredict } from "../pipeline.ts";
+import { NAMES, renderSummary, selectToPredict } from "../pipeline.ts";
+import { footballWeeklyMarkdown, lastCompleteWeek } from "../weekly.ts";
+import { countedPredictions } from "../fixtureIdentity.ts";
 import {
   countMissingResults,
   historyFromFootballData,
@@ -43,8 +45,8 @@ import {
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import {
-  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, RESULT_DUE_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestDue, ingestHealth, ingestLevel, missedSeals,
-  nextZeroFixtureRuns, publishLevel, runTotals, seasonLive, settlementBacklog,
+  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, RESULT_DUE_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestHealth, ingestLevel, missedSeals,
+  nextZeroFixtureRuns, publishLevel, resultsExpected, runTotals, seasonLive, settlementBacklog,
   type RunLeague, type RunReport,
 } from "../health.ts";
 import { closingMarketResolver } from "../marketSnapshots.ts";
@@ -510,8 +512,9 @@ function scoresNeeded(): void {
   const now = Date.parse(NOW);
   const settled = new Set(L.evaluations().map((e) => e.predictionId));
   const sports = new Set<string>();
+  const { counted } = countedPredictions(L.predictions(), L.currentMatches());
   for (const p of L.predictions()) {
-    if (settled.has(p.id)) continue;
+    if (settled.has(p.id) || !counted.has(p.id)) continue;
     const age = now - Date.parse(p.kickoffAt);
     if (age < SCORES_MIN_AGE_H * 3_600_000 || age > SCORES_MAX_AGE_D * 86_400_000) continue;
     const src = SOURCES[p.league];
@@ -699,24 +702,19 @@ function quote(): void {
 function health(): void {
   const L = new Ledger(join(ROOT, "ledger"));
   const h = ingestHealth(L.results(), NOW);
-  // 沈黙を数える前に「結果が出ているはずの試合があるか」を見る（国際試合週間で全リーグが
-  // 同時に止まるため。2026-09-25 の実測で、時間だけの判定は 2 週間赤くなることが分かった）
-  const due = ingestDue(L.currentMatches().values(), h.lastRecordedAt, NOW);
-  const level = ingestLevel(h, due);
-  const backlog = settlementBacklog(L.predictions(), L.evaluations(), NOW);
+  const matches = L.currentMatches();
+  const expected = resultsExpected([...matches.values()].map((m) => m.kickoffAt), h.lastMatchDate, NOW);
+  const level = ingestLevel(h, undefined, undefined, expected);
+  // 同じ試合の 2 本目・封緘後の予想は決済待ちに数えない（永久に結べないものがある・fixtureIdentity.ts）
+  const { counted, excluded } = countedPredictions(L.predictions(), matches);
+  const backlog = settlementBacklog(L.predictions().filter((p) => counted.has(p.id)), L.evaluations(), NOW);
+  if (!expected) {
+    console.log(`ingest: 最新の試合日 ${h.lastMatchDate} より後にキックオフし ${RESULT_DUE_HOURS}h 以上経った登録が無い — 結果が入らないのは正常（代表ウィーク・結果 CSV の反映待ち）`);
+  }
+  if (excluded.size > 0) console.log(`集計から除く予想 ${excluded.size} 件（二重登録の 2 本目・封緘後の発行）`);
 
   const since = h.hoursSinceRecord === null ? "—" : `${h.hoursSinceRecord.toFixed(1)}h`;
   console.log(`ingest ${level}: 結果 ${h.results} 件・最後の取込 ${h.lastRecordedAt ?? "なし"}（${since} 前）・最新の試合日 ${h.lastMatchDate ?? "なし"}`);
-  if (due === null) {
-    // 「何も来ていない」と「来るはずのものが無い」を取り違えないよう、必ず理由を出す
-    const next = [...L.currentMatches().values()]
-      .map((m) => m.kickoffAt)
-      .filter((k) => Date.parse(k) > Date.parse(NOW))
-      .sort()[0];
-    console.log(`  沈黙は期待どおり: 結果が出ているはずの未取込の試合は 0 件（猶予 ${RESULT_DUE_HOURS}h）` + (next ? `・次の試合 ${next}` : ""));
-  } else {
-    console.log(`  未取込の最古: ${due.league} ${due.kickoffAt}（${due.ageHours.toFixed(1)}h 前・猶予 ${RESULT_DUE_HOURS}h）`);
-  }
   console.log(`決済待ち ${backlog.length} 件` + (backlog.length ? `・最古 ${backlog[0].ageHours.toFixed(1)}h（${backlog[0].league} ${backlog[0].kickoffAt}）` : ""));
   for (const b of backlog.slice(0, 10)) {
     console.log(`  ${b.league} ${b.kickoffAt} ${b.ageHours.toFixed(1)}h ${b.providerId}`);
@@ -792,7 +790,8 @@ function health(): void {
  */
 function clv(): void {
   const L = new Ledger(join(ROOT, "ledger"));
-  const entries = clvEntries(L.predictions(), L.evaluations(), closingMarketResolver(join(ROOT, "market")));
+  const { counted } = countedPredictions(L.predictions(), L.currentMatches());
+  const entries = clvEntries(L.predictions().filter((p) => counted.has(p.id)), L.evaluations(), closingMarketResolver(join(ROOT, "market")));
   const s = summarizeClv(entries);
   if (s.n === 0) {
     console.log("CLV: 対象 0 件（発行時点と直前の市場が両方ある決済済みの予想が無い）");
@@ -882,7 +881,40 @@ function fdorgAliases(): void {
 }
 
 
+/**
+ * 運用週報（src/weekly.ts）。既定は JST で見た直近の完了週。日次から毎日呼ばれるので、
+ * 「基準:」行（生成時刻）以外が前回と同じなら書き直さない（毎日のコミットを増やさない）。
+ */
+function weekly(): void {
+  const L = new Ledger(join(ROOT, "ledger"));
+  const week = arg("week") ?? lastCompleteWeek(NOW);
+  const h = ingestHealth(L.results(), NOW);
+  const md = footballWeeklyMarkdown({
+    week,
+    leagues: LEAGUES,
+    names: NAMES,
+    predictions: L.predictions(),
+    evaluations: L.evaluations(),
+    matches: L.currentMatches(),
+    nowIso: NOW,
+    commit: process.env.GITHUB_SHA ?? null,
+    lastRecordedAt: h.lastRecordedAt,
+    lastMatchDate: h.lastMatchDate,
+  });
+  const dir = join(ROOT, "reports", "weekly");
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${week}.md`);
+  const strip = (s: string) => s.split("\n").filter((l) => !l.startsWith("基準: ")).join("\n");
+  if (existsSync(path) && strip(readFileSync(path, "utf8")) === strip(md)) {
+    console.log(`weekly ${week}: 変更なし（${path}）`);
+    return;
+  }
+  writeFileSync(path, md);
+  console.log(`weekly ${week} → ${path}`);
+}
+
 if (cmd === "daily") daily();
+else if (cmd === "weekly") weekly();
 else if (cmd === "scores-needed") scoresNeeded();
 else if (cmd === "health") health();
 else if (cmd === "clv") clv();
@@ -890,6 +922,6 @@ else if (cmd === "history-import") historyImport();
 else if (cmd === "fdorg-aliases") fdorgAliases();
 else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|health|clv|scores-needed|history-import|fdorg-aliases|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
+  console.error("usage: football.ts daily|weekly|health|clv|scores-needed|history-import|fdorg-aliases|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }

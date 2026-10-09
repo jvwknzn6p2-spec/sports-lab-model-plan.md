@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { EN_TO_KANA, LEAGUE, kanaTable, leagueLabel } from "../src/page/labels.ts";
-import { renderPage, type RenderInput } from "../src/page/render.ts";
+import { extractFingerprint, renderPage, type RenderInput } from "../src/page/render.ts";
 import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "../src/ledger.ts";
 
 const src = (rel: string): string =>
@@ -160,4 +160,30 @@ test("日次が出す 10 リーグすべてに日本語名がある", () => {
   // 未知のコードはコードのまま出す（落とさない・推測しない）
   assert.equal(leagueLabel("ZZ9"), "ZZ9");
   assert.ok(Object.keys(EN_TO_KANA).length > 150);
+});
+
+test("指紋: 公開済みのページ自身が状態を持つ（状態ファイルに頼らない）", () => {
+  const matches = [match("p1", "Arsenal", "Chelsea", "2026-09-01T12:00:00Z"), match("p2", "Liverpool", "Everton", "2026-12-01T12:00:00Z")];
+  const predictions = [
+    prediction("e1", "p1", "2026-09-01T12:00:00Z", [0.5, 0.3, 0.2]),
+    prediction("e2", "p2", "2026-12-01T12:00:00Z", [0.4, 0.3, 0.3]),
+  ];
+  const a = render({ matches, predictions });
+  // HTML に埋まっていて、取り出せる
+  assert.equal(extractFingerprint(a.html), a.fingerprint);
+  assert.match(a.fingerprint, /^[0-9a-f]{16}$/);
+  // 生成時刻だけが違っても同じ（毎回変わる値を入れると比較にならない）
+  const b = render({ matches, predictions, now: new Date("2026-09-23T00:00:05Z") });
+  assert.equal(b.fingerprint, a.fingerprint);
+  // 評価が増えると変わる
+  const c = render({ matches, predictions, evaluations: [evaluation("e1", "p1", "H", 0.2, 0.1)] });
+  assert.notEqual(c.fingerprint, a.fingerprint);
+  // 台帳が同じでも、試合が始まって「これから」→「開始済み」に動けば変わる
+  const d = render({ matches, predictions, now: new Date("2026-09-01T13:00:00Z") });
+  const e = render({ matches, predictions, now: new Date("2026-08-31T00:00:00Z") });
+  assert.notEqual(d.fingerprint, e.fingerprint);
+  // 注意書きを変えても変わる（文面だけの更新も再公開される）
+  assert.notEqual(render({ matches, predictions, notice: "<b>x</b>" }).fingerprint, a.fingerprint);
+  // 指紋の無い旧版のページは null（＝変わったと見なして再公開する側へ倒す）
+  assert.equal(extractFingerprint("<title>old</title>"), null);
 });

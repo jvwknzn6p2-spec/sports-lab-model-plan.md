@@ -3,7 +3,7 @@
  *
  *   node --experimental-strip-types src/cli/page.ts \
  *     --ledger football/ledger --out /path/vorte-ft-soccer.html \
- *     [--preview-ledger DIR] [--notice HTML] [--notice-tone alert|info] [--now ISO]
+ *     [--preview-ledger DIR] [--notice HTML] [--notice-tone alert|info] [--now ISO] [--previous 公開済みHTML]
  *
  * 以前この生成器はスクラッチパッドにしか無く、コンテナが作り直されると毎日のページ更新が
  * 止まる状態だった。リポジトリに入れて恒久化したのが本ファイル（2026-09-23）。
@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "../ledger.ts";
-import { renderPage } from "../page/render.ts";
+import { extractFingerprint, renderPage } from "../page/render.ts";
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -47,7 +47,7 @@ function main(): void {
   );
 
   const noticeTone = arg("notice-tone", process.env.NOTICE_TONE) === "info" ? "info" : "alert";
-  const { html, stats } = renderPage({
+  const { html, stats, fingerprint } = renderPage({
     predictions,
     matches,
     evaluations,
@@ -58,8 +58,20 @@ function main(): void {
     noticeTone,
   });
 
+  // 公開済みページ（--previous）と指紋が同じなら再公開は要らない。状態ファイルを持たずに
+  // 「前回から変わったか」を判定する（指紋の説明は page/render.ts）
+  const previousPath = arg("previous", process.env.PREVIOUS_HTML);
+  let changed = true;
+  if (previousPath) {
+    try {
+      changed = extractFingerprint(readFileSync(previousPath, "utf8")) !== fingerprint;
+    } catch {
+      changed = true; // 読めない・指紋が無い旧版は「変わった」側へ倒す（再公開は害が小さい）
+    }
+  }
+
   writeFileSync(out, html);
-  console.log(JSON.stringify({ out, ...stats }));
+  console.log(JSON.stringify({ out, fingerprint, changed, ...stats }));
 }
 
 main();

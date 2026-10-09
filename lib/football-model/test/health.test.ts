@@ -9,9 +9,9 @@ import {
   INGEST_WARN_HOURS,
   RESULT_DUE_HOURS,
   ZERO_FIXTURE_FAIL_RUNS,
-  ingestDue,
   ingestHealth,
   ingestLevel,
+  resultsExpected,
   missedSeals,
   nextZeroFixtureRuns,
   publishLevel,
@@ -21,12 +21,7 @@ import {
   type MissedSeal,
   type RunReport,
 } from "../src/health.ts";
-import type { LedgerEvaluation, LedgerMatch, LedgerPrediction, LedgerResult } from "../src/ledger.ts";
-
-const ledgerMatch = (kickoffAt: string, league = "E0"): LedgerMatch => ({
-  providerId: `m-${league}-${kickoffAt}`, league, kickoffAt, cutoffAt: kickoffAt,
-  home: "Arsenal", away: "Chelsea", recordedAt: kickoffAt,
-});
+import type { LedgerEvaluation, LedgerPrediction, LedgerResult } from "../src/ledger.ts";
 
 const result = (date: string, recordedAt: string): LedgerResult => ({
   league: "E0", date, home: "Arsenal", away: "Chelsea", homeGoals: 1, awayGoals: 0, source: "test", recordedAt,
@@ -59,15 +54,9 @@ test("ingestHealth: 行の順序に依存しない（台帳は追記順とは限
   assert.equal(ingestHealth(rows, "2026-09-17T01:00:00.000Z").lastRecordedAt, "2026-09-15T00:29:00.000Z");
 });
 
-test("ingestLevel: 取り込むべき試合があるとき 36h で warn・72h で fail", () => {
-  const base = "2026-09-14T00:00:00.000Z";
-  // 最後の取込より後にキックオフし、猶予も過ぎた試合を 1 つ置く（＝結果が来ているはず）
-  const due = { league: "E0", kickoffAt: "2026-09-14T01:00:00.000Z", ageHours: 999 };
-  const at = (hours: number) =>
-    ingestLevel(
-      ingestHealth([result("2026-09-14", base)], new Date(Date.parse(base) + hours * 3_600_000).toISOString()),
-      due,
-    );
+test("ingestLevel: 36h で warn・72h で fail", () => {
+  const at = (hours: number) => ingestLevel(ingestHealth([result("2026-09-14", "2026-09-14T00:00:00.000Z")],
+    new Date(Date.parse("2026-09-14T00:00:00.000Z") + hours * 3_600_000).toISOString()));
   assert.equal(at(1), "ok");
   assert.equal(at(INGEST_WARN_HOURS - 0.1), "ok");
   assert.equal(at(INGEST_WARN_HOURS), "warn");
@@ -80,52 +69,7 @@ test("ingestLevel: 取り込むべき試合があるとき 36h で warn・72h �
 });
 
 test("ingestLevel: 結果が 1 件も無い台帳は故障ではない（立ち上げ直後）", () => {
-  assert.equal(ingestLevel(ingestHealth([], "2026-09-17T01:00:00.000Z"), null), "ok");
-});
-
-test("ingestLevel: 取り込むべき試合が無ければ、何時間沈黙していても ok", () => {
-  // 国際試合週間（2026-09-22〜10-09）の再現。時間だけで測ると 2 週間赤くなる
-  const h = ingestHealth([result("2026-09-20", "2026-09-23T00:20:16.826Z")], "2026-10-05T00:29:00.000Z");
-  assert.ok((h.hoursSinceRecord ?? 0) > INGEST_FAIL_HOURS * 4, `${h.hoursSinceRecord}`);
-  assert.equal(ingestLevel(h, null), "ok");
-});
-
-test("ingestDue: 最後の取込より後にキックオフし、猶予を過ぎた試合だけを数える", () => {
-  const last = "2026-09-23T00:20:00.000Z";
-  // 10/09 18:30Z の試合が猶予 120h を超えるのは 10/14 18:30Z 以降
-  const now = "2026-10-15T00:29:00.000Z";
-  // 取込より前 → 対象外（その結果はもう台帳にある）
-  assert.equal(ingestDue([ledgerMatch("2026-09-20T14:00:00.000Z")], last, now), null);
-  // 取込より後だが猶予の内側 → まだ来ていないだけ
-  assert.equal(ingestDue([ledgerMatch("2026-10-09T18:30:00.000Z")], last, "2026-10-10T00:29:00.000Z"), null);
-  // 猶予を過ぎた → 最古の 1 件を返す
-  // 同じ呼び出しでも、猶予の内側の 10/10 の試合は数えない（1 試合ごとに判定する）
-  const due = ingestDue(
-    [ledgerMatch("2026-10-10T14:00:00.000Z"), ledgerMatch("2026-10-09T18:30:00.000Z", "D1")],
-    last,
-    now,
-  );
-  assert.equal(due?.kickoffAt, "2026-10-09T18:30:00.000Z");
-  assert.equal(due?.league, "D1");
-  assert.ok((due?.ageHours ?? 0) > RESULT_DUE_HOURS);
-  assert.ok((due?.ageHours ?? 0) < RESULT_DUE_HOURS + 12, `${due?.ageHours}`);
-  // 結果が 1 件も無い台帳（lastRecordedAt = null）は判断しない
-  assert.equal(ingestDue([ledgerMatch("2026-10-09T18:30:00.000Z")], null, now), null);
-});
-
-test("ingestDue: 実測した平常運転の取込間隔で誤警報を出さない", () => {
-  // 本番台帳の実測（2026-09-25）。健全に動いていた期間にも 96.6h / 127.6h の間隔があり、
-  // 猶予 120h ならどの回も「取り込むべき試合」が立たない
-  const last = "2026-09-18T00:06:24.135Z";
-  const played = [
-    ledgerMatch("2026-09-18T20:00:00.000Z", "SP1"),
-    ledgerMatch("2026-09-19T15:15:00.000Z", "SP1"),
-    ledgerMatch("2026-09-20T17:30:00.000Z", "SP1"),
-  ];
-  for (const runAt of ["2026-09-19T00:06:00.000Z", "2026-09-20T00:06:00.000Z", "2026-09-21T00:06:00.000Z", "2026-09-22T00:43:00.000Z"]) {
-    assert.equal(ingestDue(played, last, runAt), null, `誤警報: ${runAt}`);
-    assert.equal(ingestLevel(ingestHealth([result("2026-09-17", last)], runAt), ingestDue(played, last, runAt)), "ok", runAt);
-  }
+  assert.equal(ingestLevel(ingestHealth([], "2026-09-17T01:00:00.000Z")), "ok");
 });
 
 test("settlementBacklog: 開始済み・未決済を古い順で返し、決済済みは外す", () => {
@@ -239,4 +183,23 @@ test("記録開始日より前の取りこぼしは報告するが赤くしな�
   const fresh = publishLevel(null, [m("2026-09-23T11:00:00Z")], start);
   assert.equal(fresh.level, "fail", "記録開始日より後の取りこぼしは赤");
   assert.equal(fresh.missed.length, 1);
+});
+
+test("resultsExpected: 健全だった取込の間隔（実測 96.6h・127.6h）で誤警報を出さない", () => {
+  // 本番台帳の再現（2026-09-25）。9/18 00:06Z が最後の取込で、結果が届いたのは 9/22 00:43Z
+  // （間隔 96.6h）。猶予 6 時間では 9/22 00:40（届く 3 分前）に fail が出ていた。
+  const last = "2026-09-18T00:06:24.135Z";
+  const h = (now: string) => ingestHealth([result("2026-09-17", last)], now);
+  const played = ["2026-09-18T20:00:00Z", "2026-09-19T15:15:00Z", "2026-09-20T17:30:00Z"];
+  for (const now of ["2026-09-19T00:06:00Z", "2026-09-20T00:06:00Z", "2026-09-21T00:06:00Z", "2026-09-22T00:40:00Z"]) {
+    const exp = resultsExpected(played, "2026-09-17", now);
+    assert.equal(ingestLevel(h(now), undefined, undefined, exp), "ok", now);
+    // 旧猶予（6h）なら 9/21 は warn・9/22 は fail だった（結果が届く 3 分前に赤）
+    const old = resultsExpected(played, "2026-09-17", now, 6);
+    if (now >= "2026-09-21") assert.notEqual(ingestLevel(h(now), undefined, undefined, old), "ok", `旧猶予 ${now}`);
+    if (now >= "2026-09-22") assert.equal(ingestLevel(h(now), undefined, undefined, old), "fail", `旧猶予 ${now}`);
+  }
+  // 猶予を過ぎれば鳴る（取得元が全部落ちたまま 5 日たった）
+  assert.equal(resultsExpected(played, "2026-09-17", "2026-09-26T00:06:00Z"), true);
+  assert.equal(RESULT_DUE_HOURS, 120);
 });

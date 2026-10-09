@@ -1,0 +1,346 @@
+{
+  "lockedAt": "2026-09-27T06:24:24.463Z",
+  "updatedAt": "2026-09-27T13:56:19.198Z",
+  "controlTower": {
+    "date": "2026-09-27",
+    "season": 1002026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "92026092701": {
+        "side": "home",
+        "notation": null
+      },
+      "92026092703": {
+        "side": "home",
+        "notation": null
+      },
+      "92026092710": {
+        "side": "home",
+        "notation": null
+      },
+      "92026092709": {
+        "side": "home",
+        "notation": null
+      },
+      "92026092707": {
+        "side": "home",
+        "notation": null
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.87,
+    "tailShrink": 0.896,
+    "farTailShrink": 0.87,
+    "handicapShrink": 0.836,
+    "handicapTailShrink": 0.858,
+    "handicapFarTailShrink": 0.857,
+    "totalShrink": 0.87,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.834,
+    "gamesSettled": 54,
+    "brierSum": 11.5151,
+    "updatedAt": "2026-09-26T23:58:57.810Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 92026092701,
+      "gameDate": "2026-09-27T09:00:00.000Z",
+      "home": "読売ジャイアンツ",
+      "away": "東京ヤクルトスワローズ",
+      "pass": false,
+      "predictedWinner": "読売ジャイアンツ",
+      "predictedLoser": "東京ヤクルトスワローズ",
+      "winProbability": 0.598,
+      "rawWinProbability": 0.613,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 6.62,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.65,
+        "away": 2.77
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 読売ジャイアンツ (小笠原 慎之介 projFIP 3.00 vs 3.31)",
+        "Bullpen edge: 読売ジャイアンツ",
+        "Park factor 96 (pitcher-friendly)",
+        "Expected runs 3.65–2.77 over 10000 sims"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-27T08:27:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 92026092703,
+      "gameDate": "2026-09-27T05:00:00.000Z",
+      "home": "横浜DeNAベイスターズ",
+      "away": "広島東洋カープ",
+      "pass": false,
+      "predictedWinner": "横浜DeNAベイスターズ",
+      "predictedLoser": "広島東洋カープ",
+      "winProbability": 0.617,
+      "rawWinProbability": 0.634,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 7.48,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.25,
+        "away": 3.03
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 広島東洋カープ (栗林 良吏 projFIP 2.82 vs 3.53)",
+        "Offense edge: 横浜DeNAベイスターズ (wOBA 0.310 vs 0.283)",
+        "Park factor 103 (hitter-friendly)",
+        "Expected runs 4.25–3.03 over 10000 sims",
+        "away: cold bats — 2.7 R/G last 15 (season baseline 3.4)",
+        "Weather: 23°C at first pitch — run environment ×1.015"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] home_lineup_applied",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_applied",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-27T04:27:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 92026092710,
+      "gameDate": "2026-09-27T09:00:00.000Z",
+      "home": "埼玉西武ライオンズ",
+      "away": "東北楽天ゴールデンイーグルス",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.533,
+      "rawWinProbability": 0.538,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 6.93,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.57,
+        "away": 3.24
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 53.3% < 55%) — moneyline and total only",
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 東北楽天ゴールデンイーグルス (早川 隆久 projFIP 2.96 vs 3.21)",
+        "Bullpen edge: 埼玉西武ライオンズ",
+        "Park factor 95 (pitcher-friendly)",
+        "Expected runs 3.57–3.24 over 10000 sims"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[warn] home_starter_starter_low_sample",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-27T08:27:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 92026092709,
+      "gameDate": "2026-09-27T09:00:00.000Z",
+      "home": "千葉ロッテマリーンズ",
+      "away": "北海道日本ハムファイターズ",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.514,
+      "rawWinProbability": 0.516,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 8.78,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.2,
+        "away": 4.36
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Offense edge: 北海道日本ハムファイターズ (wOBA 0.312 vs 0.290)",
+        "Bullpen edge: 北海道日本ハムファイターズ",
+        "Park factor 102 (hitter-friendly)",
+        "Expected runs 4.20–4.36 over 10000 sims",
+        "home: no starter data — league-average assumed",
+        "Weather: 23°C at first pitch — run environment ×1.010"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-09-27T08:27:00.000Z",
+      "final": true
+    },
+    {
+      "gamePk": 92026092707,
+      "gameDate": "2026-09-27T05:00:00.000Z",
+      "home": "福岡ソフトバンクホークス",
+      "away": "オリックス・バファローズ",
+      "pass": false,
+      "predictedWinner": "福岡ソフトバンクホークス",
+      "predictedLoser": "オリックス・バファローズ",
+      "winProbability": 0.729,
+      "rawWinProbability": 0.762,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "notation": null
+        },
+        "pick": null,
+        "coverProbability": null,
+        "rawCoverProbability": null,
+        "ev": null,
+        "marketProbability": null,
+        "marketPriceEv": null,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": null,
+        "predicted": 9.82,
+        "pick": null,
+        "probability": null,
+        "rawProbability": null,
+        "marketProbability": null,
+        "ev": null,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 6.26,
+        "away": 3.34
+      },
+      "reasons": [
+        "No handicap line entered — run line not quoted (moneyline and total only)",
+        "Starter edge: 福岡ソフトバンクホークス (大津 亮介 projFIP 3.48 vs 3.84)",
+        "Offense edge: 福岡ソフトバンクホークス (wOBA 0.323 vs 0.298)",
+        "Park factor 107 (hitter-friendly)",
+        "Expected runs 6.26–3.34 over 10000 sims",
+        "home: hot bats — 6.3 R/G last 15 (season baseline 4.6)",
+        "away: cold bats — 2.9 R/G last 15 (season baseline 3.8)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_applied",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_applied",
+        "[info] away_players_on_il",
+        "[warn] predicted_after_deadline"
+      ],
+      "lockDeadline": "2026-09-27T04:27:00.000Z",
+      "final": true
+    }
+  ]
+}

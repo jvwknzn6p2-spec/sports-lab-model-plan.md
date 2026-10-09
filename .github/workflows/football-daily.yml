@@ -203,6 +203,12 @@ jobs:
       - name: 日次パイプライン
         run: node --experimental-strip-types lib/football-model/src/cli/football.ts daily --root football --cache football/cache --leagues E0,I1,SP1,D1,N1,F1,P1,B1,SC0,JAP
 
+      # 運用週報（直近の完了週・JST）。内容が変わらなければ書き直さないので毎日呼んでよい。
+      # 失敗しても日次は止めない（台帳の追記が主で、週報は読み物）
+      - name: 運用週報
+        continue-on-error: true
+        run: node --experimental-strip-types lib/football-model/src/cli/football.ts weekly --root football --leagues E0,I1,SP1,D1,N1,F1,P1,B1,SC0,JAP
+
       - name: コミット（台帳・市場の写し・レポート）
         run: |
           set -euo pipefail

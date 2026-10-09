@@ -486,19 +486,52 @@ export function settle(
     });
   }
 
+  const calibrationAfter = updateCalibration(calibration, games, now);
+  const t = dayTotals(games);
+
+  // Field order is the ledger's (history.jsonl) — keep it stable.
+  return {
+    date,
+    gamesSettled: t.gamesSettled,
+    gamesPassed: t.gamesPassed,
+    gamesMissingResults: missing,
+    winnerRecord: t.winnerRecord,
+    handicapRecord: t.handicapRecord,
+    handicapProfit: t.handicapProfit,
+    totalRecord: t.totalRecord,
+    meanBrier: t.meanBrier,
+    statedVsActual: t.statedVsActual,
+    meanMarginError: t.meanMarginError,
+    meanTotalError: t.meanTotalError,
+    games,
+    calibrationBefore: calibration,
+    calibrationAfter,
+  };
+}
+
+/**
+ * A day's aggregate fields, computed from its settled games. The one
+ * definition both settlement and the report's per-tier re-aggregation use,
+ * so a subset of a day's games is summed exactly the way the whole day is.
+ */
+export function dayTotals(
+  games: SettledGame[],
+): Omit<
+  SettlementReport,
+  | "date"
+  | "gamesMissingResults"
+  | "games"
+  | "calibrationBefore"
+  | "calibrationAfter"
+> {
   const scored = games.filter((g) => g.winnerCorrect !== null);
   const record = (xs: (boolean | null)[]) => ({
     wins: xs.filter((x) => x === true).length,
     losses: xs.filter((x) => x === false).length,
   });
-
-  const calibrationAfter = updateCalibration(calibration, games, now);
-
   return {
-    date,
     gamesSettled: scored.length,
     gamesPassed: games.filter((g) => g.pass).length,
-    gamesMissingResults: missing,
     winnerRecord: record(games.map((g) => g.winnerCorrect)),
     handicapRecord: record(games.map((g) => g.handicapCorrect)),
     handicapProfit: sumProfit(games),
@@ -521,9 +554,6 @@ export function settle(
     meanTotalError: mean(
       games.filter((g) => g.totalError !== null).map((g) => g.totalError!),
     ),
-    games,
-    calibrationBefore: calibration,
-    calibrationAfter,
   };
 }
 

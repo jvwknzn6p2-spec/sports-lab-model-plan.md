@@ -1,0 +1,107 @@
+{
+  "lockedAt": "2026-10-01T13:01:16.927Z",
+  "updatedAt": "2026-10-01T13:01:16.927Z",
+  "controlTower": {
+    "date": "2026-10-01",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "849844": {
+        "side": "home",
+        "line": 1.5,
+        "total": 7.5,
+        "marketHomeCover": 0.625,
+        "marketHomePayout": 0.546,
+        "marketAwayPayout": 1.575,
+        "marketOver": 0.478
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.922,
+    "tailShrink": 0.693,
+    "farTailShrink": 0.67,
+    "handicapShrink": 0.868,
+    "handicapTailShrink": 0.634,
+    "handicapFarTailShrink": 0.619,
+    "totalShrink": 0.85,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.833,
+    "gamesSettled": 350,
+    "brierSum": 85.1044,
+    "updatedAt": "2026-10-01T06:33:34.583Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 849844,
+      "gameDate": "2026-10-02T00:00:00Z",
+      "home": "Atlanta Braves",
+      "away": "Philadelphia Phillies",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.551,
+      "rawWinProbability": 0.555,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": 1.5,
+          "total": 7.5,
+          "marketHomeCover": 0.625,
+          "marketHomePayout": 0.546,
+          "marketAwayPayout": 1.575,
+          "marketOver": 0.478
+        },
+        "pick": null,
+        "coverProbability": 0.66,
+        "rawCoverProbability": 0.696,
+        "ev": 0.253,
+        "marketProbability": 0.625,
+        "marketPriceEv": 0.02,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 7.5,
+        "predicted": 8.78,
+        "pick": null,
+        "probability": 0.564,
+        "rawProbability": 0.576,
+        "marketProbability": 0.478,
+        "ev": 0.072,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.6,
+        "away": 4.04
+      },
+      "reasons": [
+        "PASS: incomplete/downgraded data",
+        "Handicap EV +25.3% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth +2.0% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 62.5% for this side — model 66.0% (+3.5% vs market)",
+        "Market consensus on the total: 47.8% for the OVER — model 56.4% (+8.6% vs market)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 4.60–4.04 over 10000 sims",
+        "away: cold bats — 3.6 R/G last 15 (season baseline 4.3)",
+        "home: no starter data — league-average assumed",
+        "away: no starter data — league-average assumed",
+        "Weather: 28°C at first pitch — run environment ×1.050",
+        "Wind: 7 km/h from 145° vs CF bearing 145° — blowing in, run environment ×0.986"
+      ],
+      "flags": [
+        "[downgrade] home_no_probable_pitcher",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[downgrade] away_no_probable_pitcher",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il"
+      ],
+      "lockDeadline": "2026-10-01T13:59:00.000Z",
+      "final": false
+    }
+  ]
+}

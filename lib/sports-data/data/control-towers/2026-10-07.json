@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-07",
+  "season": 2026,
+  "sims": 10000,
+  "passThreshold": 0.55,
+  "minEv": 0,
+  "handicaps": {
+    "849822": {
+      "side": "home",
+      "line": 1.5,
+      "total": 7.5,
+      "marketHomeCover": 0.575,
+      "marketHomePayout": 0.683,
+      "marketAwayPayout": 1.26,
+      "marketOver": 0.478
+    },
+    "849827": {
+      "side": "home",
+      "line": -1.5,
+      "total": 6.5,
+      "marketHomeCover": 0.574,
+      "marketHomePayout": 0.633,
+      "marketAwayPayout": 1.16,
+      "marketOver": 0.504
+    },
+    "849833": {
+      "side": "home",
+      "line": -1.5,
+      "total": 8,
+      "marketHomeCover": 0.352,
+      "marketHomePayout": 1.75,
+      "marketAwayPayout": 0.498,
+      "marketOver": 0.485
+    },
+    "849838": {
+      "side": "home",
+      "line": -1.5,
+      "total": 7,
+      "marketHomeCover": 0.398,
+      "marketHomePayout": 1.41,
+      "marketAwayPayout": 0.606,
+      "marketOver": 0.526
+    }
+  }
+}

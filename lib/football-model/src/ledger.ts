@@ -21,6 +21,7 @@ import type { MatchWithOdds } from "./footballData.ts";
 import type { ProbabilityTriple } from "./scoring.ts";
 import { outcomeOf, rps, multiclassBrier, logLoss } from "./scoring.ts";
 import type { ClosingMarketResolver } from "./marketSnapshots.ts";
+import { fixtureRegistrations } from "./fixtureIdentity.ts";
 
 /**
  * 封緘の規則（Founder 確定 2026-09-09）: **試合日（JST）の前日 20:00 JST**。
@@ -28,20 +29,6 @@ import type { ClosingMarketResolver } from "./marketSnapshots.ts";
  * 台帳に残る（追記専用・行は書き換えない）。判定は常に行自身の cutoffAt で行う。
  */
 export const CUTOFF_JST_HOUR = 20;
-/**
- * 延期・前倒しで日付が動いた試合を結ぶときの窓（日）。
- *
- * **なぜ要るか（2026-09-25 の実測）**: 決済は「キックオフ日の ±1 日」で結んでいたため、
- * 日程が動いた試合は結果が自分の履歴にあっても**永久に決済されず、静かに記録から落ちていた**
- * （Utrecht v Go Ahead Eagles 09-05 → 実際は 09-08）。「全件記録して見せる」が崩れる。
- *
- * **窓を広げるだけでは危ない**。同じ実測で、同じカードの予想が 2 つ出ている例が見つかった
- * （Sevilla v Valencia の 09-11 と 09-13。実際に行われたのは 09-11 の 1 試合だけで、
- * 09-13 は取得元が返した幽霊の日程）。窓を広げて素朴に結ぶと、**1 試合を 2 回数える**。
- * そこで下の `settle` は、他の予想が ±1 日で取れる結果を候補から外し、
- * 候補がちょうど 1 件で、同じカードの未決済がほかに無いときだけ結ぶ（フェイルクローズ）。
- */
-export const RESCHEDULE_WINDOW_DAYS = 21;
 const JST_OFFSET_MS = 9 * 3_600_000;
 
 export interface LedgerMatch {
@@ -142,10 +129,11 @@ export interface LedgerEvaluation {
   /** 上で使ったスナップショットの取得時刻。どれだけ直前の市場かを後から検証できるように */
   marketClosingFetchedAt?: string | null;
   /**
-   * 決済に使った結果の試合日（YYYY-MM-DD）と、どう結んだか。
-   * `kickoff` = 予想したキックオフ日の ±1 日 / `rescheduled` = 延期・前倒しで日付が動いた試合
-   * （下記 `RESCHEDULE_WINDOW_DAYS`）。**どの結果で決済したかを行だけで検証できるようにする**
-   * ための記録。2026-09-25 以前の行には無い（台帳は追記専用なので既存行は書き換えない）
+   * 決済に使った結果の試合日（YYYY-MM-DD・現地日付）と、どう結んだか。
+   * `kickoff` = 予想したキックオフ日の前後 1 日 / `rescheduled` = 延期で日付が後ろへ動いた試合
+   * （`settle` の窓。最大 7 日）。**どの結果で決済したかを行だけで検証できる**ようにするための記録で、
+   * 延期で結んだ決済だけを後から数え直せる。2026-10-09 以前の行には無い（台帳は追記専用なので
+   * 既存行は書き換えない）。
    */
   resultDate?: string;
   matchedBy?: "kickoff" | "rescheduled";
@@ -270,6 +258,15 @@ export class Ledger {
     if (match.kickoffAt !== p.kickoffAt) return { ok: false, reason: "kickoff differs from registry" };
     if (p.publishedAt >= match.cutoffAt) return { ok: false, reason: `sealed (cutoff ${match.cutoffAt})` };
     if (this.predictions().some((x) => x.providerId === p.providerId)) return { ok: false, reason: "already published" };
+    // 同じ試合の別登録（日程変更・取得元違い。fixtureIdentity.ts）: 1 試合 1 予想、封緘は最も早い登録のもの
+    const regs = fixtureRegistrations(match, this.currentMatches().values());
+    const siblings = new Set(regs.map((r) => r.providerId));
+    const twin = this.predictions().find((x) => x.providerId !== p.providerId && siblings.has(x.providerId));
+    if (twin) return { ok: false, reason: `already published for the same fixture (${twin.providerId} kickoff ${twin.kickoffAt})` };
+    const earliest = regs.reduce((a, b) => (b.cutoffAt < a.cutoffAt ? b : a), match);
+    if (p.publishedAt >= earliest.cutoffAt) {
+      return { ok: false, reason: `sealed by an earlier registration of the same fixture (kickoff ${earliest.kickoffAt}, cutoff ${earliest.cutoffAt})` };
+    }
     if (Math.abs(p.pHome + p.pDraw + p.pAway - 1) > 5e-4) return { ok: false, reason: "probabilities do not sum to 1" };
     const fingerprint = createHash("sha256")
       .update(`${p.providerId}|${p.model}|${p.pHome.toFixed(4)}|${p.pDraw.toFixed(4)}|${p.pAway.toFixed(4)}|${match.cutoffAt}`)
@@ -308,14 +305,7 @@ export class Ledger {
   }
 
   /**
-   * 決済。**2 段で結ぶ。**
-   *
-   * 1 段目（従来どおり）: league・両チーム・日付 ±1 日（時差で現地日付がずれうる）。
-   * 2 段目（2026-09-25 追加）: 日程が動いた試合。`RESCHEDULE_WINDOW_DAYS` まで窓を広げるが、
-   *   **ほかの予想が ±1 日で取れる結果は候補から外し**、候補がちょうど 1 件で、
-   *   同じカードの未決済がほかに無いときだけ結ぶ。1 試合を 2 回数えないための
-   *   フェイルクローズで、判断が付かない試合は決済しないまま残す（推測で埋めない）。
-   *
+   * 決済。予想 × 結果を league・両チーム・日付（±1 日。時差で現地日付がずれうる）で結ぶ。
    * 結果が無ければ何もしない。
    *
    * `closingMarket` を渡すと、キックオフ直前の市場スナップショットでも RPS を測って
@@ -325,86 +315,41 @@ export class Ledger {
   settle(nowIso: string, closingMarket?: ClosingMarketResolver): number {
     const done = new Set(this.evaluations().map((e) => e.predictionId));
     const results = this.results();
-    const current = this.currentMatches();
-    const day = (iso: string): number => Date.parse(iso.slice(0, 10) + "T00:00:00Z");
-    const pairOf = (league: string, home: string, away: string): string => `${league}|${home}|${away}`;
-    const DAY_MS = 86_400_000;
-
-    // 予想を「リーグ + 両チーム」で束ねる。2 段目の判断に要る
-    const byPair = new Map<string, Array<{ p: LedgerPrediction; kickoffDay: number }>>();
-    for (const q of this.predictions()) {
-      const mm = current.get(q.providerId);
-      if (!mm) continue;
-      const k = pairOf(q.league, mm.home, mm.away);
-      const list = byPair.get(k);
-      const entry = { p: q, kickoffDay: day(q.kickoffAt) };
-      if (list) list.push(entry);
-      else byPair.set(k, [entry]);
-    }
-
     const rows: LedgerEvaluation[] = [];
-    const settledNow = new Set<string>();
-    const pending: Array<{ p: LedgerPrediction; m: LedgerMatch }> = [];
-
-    /** 日程が動いた試合の結果を 1 件だけ特定する。決められなければ null（フェイルクローズ） */
-    const rescheduledResult = (p: LedgerPrediction, m: LedgerMatch): LedgerResult | null => {
-      const peers = (byPair.get(pairOf(p.league, m.home, m.away)) ?? []).filter((x) => x.p.id !== p.id);
-      // 同じカードの未決済がほかにもあるなら、どの結果がどの予想のものか決められない
-      if (peers.some((x) => !done.has(x.p.id) && !settledNow.has(x.p.id))) return null;
-      const kickoffDay = day(p.kickoffAt);
-      const cands = results.filter((x) => {
+    for (const p of this.predictions()) {
+      if (done.has(p.id)) continue;
+      const m = this.currentMatches().get(p.providerId);
+      if (!m) continue;
+      const kickoffDay = Date.parse(p.kickoffAt.slice(0, 10) + "T00:00:00Z");
+      // 結果の日付は現地日付なので前後 1 日を同じ試合とみなす。**後ろ倒し（延期）は 7 日まで**
+      // 追う（Utrecht–Go Ahead Eagles は 9/5 の登録で 9/8 に開催・決済待ちのまま残っていた）。
+      // 前倒しは追わない: 登録より早く行われた試合に、その後に出た予想を結ばないため
+      const r = results.find((x) => {
         if (x.league !== p.league || x.home !== m.home || x.away !== m.away) return false;
-        if (Math.abs(day(x.date) - kickoffDay) > RESCHEDULE_WINDOW_DAYS * DAY_MS) return false;
-        // ほかの予想が ±1 日で取れる結果は、その予想のもの。取り上げない
-        return !peers.some((x2) => Math.abs(day(x.date) - x2.kickoffDay) <= DAY_MS);
+        const d = Date.parse(x.date + "T00:00:00Z") - kickoffDay;
+        return d >= -86_400_000 && d <= 7 * 86_400_000;
       });
-      return cands.length === 1 ? cands[0]! : null;
-    };
-
-    for (const pass of [1, 2] as const) {
-      const list =
-        pass === 1
-          ? this.predictions().flatMap((p) => {
-              if (done.has(p.id)) return [];
-              const m = current.get(p.providerId);
-              return m ? [{ p, m }] : [];
-            })
-          : pending;
-      for (const { p, m } of list) {
-        const kickoffDay = day(p.kickoffAt);
-        const r =
-          pass === 1
-            ? results.find(
-                (x) => x.league === p.league && x.home === m.home && x.away === m.away && Math.abs(day(x.date) - kickoffDay) <= DAY_MS,
-              )
-            : rescheduledResult(p, m);
-        if (!r) {
-          if (pass === 1) pending.push({ p, m });
-          continue;
-        }
-        settledNow.add(p.id);
-        const matchedBy: "kickoff" | "rescheduled" = pass === 1 ? "kickoff" : "rescheduled";
-        const outcome = outcomeOf(r.homeGoals, r.awayGoals);
-        const probs: ProbabilityTriple = [p.pHome, p.pDraw, p.pAway];
-        const closing = closingMarket ? closingMarket(p.providerId, p.kickoffAt) : null;
-        rows.push({
-          predictionId: p.id,
-          providerId: p.providerId,
-          league: p.league,
-          result: outcome === 0 ? "H" : outcome === 1 ? "D" : "A",
-          homeGoals: r.homeGoals,
-          awayGoals: r.awayGoals,
-          rps: rps(probs, outcome),
-          brier: multiclassBrier(probs, outcome),
-          logloss: logLoss(probs, outcome),
-          marketRps: p.market ? rps(p.market, outcome) : null,
-          marketRpsClosing: closing ? rps(closing.market, outcome) : null,
-          marketClosingFetchedAt: closing ? closing.fetchedAt : null,
-          resultDate: r.date,
-          matchedBy,
-          evaluatedAt: nowIso,
-        });
-      }
+      if (!r) continue;
+      const outcome = outcomeOf(r.homeGoals, r.awayGoals);
+      const probs: ProbabilityTriple = [p.pHome, p.pDraw, p.pAway];
+      const closing = closingMarket ? closingMarket(p.providerId, p.kickoffAt) : null;
+      rows.push({
+        predictionId: p.id,
+        providerId: p.providerId,
+        league: p.league,
+        result: outcome === 0 ? "H" : outcome === 1 ? "D" : "A",
+        homeGoals: r.homeGoals,
+        awayGoals: r.awayGoals,
+        rps: rps(probs, outcome),
+        brier: multiclassBrier(probs, outcome),
+        logloss: logLoss(probs, outcome),
+        marketRps: p.market ? rps(p.market, outcome) : null,
+        marketRpsClosing: closing ? rps(closing.market, outcome) : null,
+        marketClosingFetchedAt: closing ? closing.fetchedAt : null,
+        resultDate: r.date,
+        matchedBy: Math.abs(Date.parse(r.date + "T00:00:00Z") - kickoffDay) <= 86_400_000 ? "kickoff" : "rescheduled",
+        evaluatedAt: nowIso,
+      });
     }
     append(this.p("evaluations"), rows);
     return rows.length;
