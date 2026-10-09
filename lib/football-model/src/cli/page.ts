@@ -41,7 +41,7 @@ function main(): void {
   const predictions = readNdjson<LedgerPrediction>(readFrom, "predictions.ndjson");
   const matches = readNdjson<LedgerMatch>(readFrom, "matches.ndjson");
   const evaluations = readNdjson<LedgerEvaluation>(readFrom, "evaluations.ndjson");
-  // 2 つ目のモデル（市場補正）。ファイルが無い台帳（旧版）では空
+  // 2 つ目のモデル（市場基盤）。ファイルが無い台帳（旧版）では空
   const mktPredictions = existsSync(join(readFrom, "predictions.mkt.ndjson")) ? readNdjson<LedgerPrediction>(readFrom, "predictions.mkt.ndjson") : [];
   const mktEvaluations = existsSync(join(readFrom, "evaluations.mkt.ndjson")) ? readNdjson<LedgerEvaluation>(readFrom, "evaluations.mkt.ndjson") : [];
   // 発行済みの権威は常に本物の台帳。試算はここに入らない

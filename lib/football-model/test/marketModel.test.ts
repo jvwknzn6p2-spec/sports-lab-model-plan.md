@@ -1,42 +1,57 @@
 /**
- * 2 つ目のモデル（市場補正・mkt-flb-v1）の不変条件。
- *  1. 市場確率に γ 補正を掛けるだけ（本命を強め、大穴を弱める）
- *  2. 「得になるか」は最良オッズとの比較でだけ決める。最良オッズが無ければ推奨しない
- *  3. 系統ごとに別ファイルの台帳（日程と結果は共有）
+ * 2 つ目のモデル（市場基盤・mkt-blend-v1）の不変条件。
+ *  1. a=1, b=0, c=0 なら市場そのもの（土台は市場）
+ *  2. 係数の推定は、仕込んだ係数を取り戻せる
+ *  3. 「得になるか」は最良オッズとの比較でだけ決める。最良オッズが無ければ推奨しない
+ *  4. 系統ごとに別ファイルの台帳（日程と結果は共有）
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MKT_GAMMA, MKT_MODEL, marketModel } from "../src/marketModel.ts";
+import { MKT_MODEL, MKT_WEIGHTS, blend, fitBlend, marketModel } from "../src/marketModel.ts";
 import { Ledger } from "../src/ledger.ts";
 import { parseOddsEvents, type OddsEvent } from "../src/oddsApi.ts";
+import { rng } from "../src/subgroups.ts";
 
-test("marketModel: 合計 1・本命を強め大穴を弱める（γ>1）", () => {
-  assert.ok(MKT_GAMMA > 1);
-  assert.equal(MKT_MODEL, "mkt-flb-v1");
-  const m: [number, number, number] = [0.7, 0.18, 0.12];
-  const { p } = marketModel(m, null);
-  assert.ok(Math.abs(p[0] + p[1] + p[2] - 1) < 1e-12);
-  assert.ok(p[0] > m[0]);
-  assert.ok(p[2] < m[2]);
-  // 3 等分は動かない（補正は順位を作らない）
-  const flat = marketModel([1 / 3, 1 / 3, 1 / 3], null).p;
-  for (const x of flat) assert.ok(Math.abs(x - 1 / 3) < 1e-12);
+test("blend: 係数 (1, 0, 0) は市場そのもの・合計 1", () => {
+  assert.equal(MKT_MODEL, "mkt-blend-v1");
+  const m: [number, number, number] = [0.6, 0.25, 0.15];
+  const q: [number, number, number] = [0.3, 0.3, 0.4];
+  const p = blend(m, q, { a: 1, b: 0, c: 0 });
+  for (let k = 0; k < 3; k++) assert.ok(Math.abs(p[k]! - m[k]!) < 1e-12);
+  const r = blend(m, q, MKT_WEIGHTS);
+  assert.ok(Math.abs(r[0] + r[1] + r[2] - 1) < 1e-12);
+});
+
+test("fitBlend: 仕込んだ係数（a 1.2・b 0.3・c 0.1）を取り戻す", () => {
+  const rand = rng(3);
+  const truth = { a: 1.2, b: 0.3, c: 0.1 };
+  const rows = Array.from({ length: 20000 }, () => {
+    const h = 0.2 + 0.5 * rand();
+    const d = 0.2 + 0.1 * rand();
+    const m: [number, number, number] = [h, d, 1 - h - d];
+    const qh = Math.min(0.85, Math.max(0.05, h + 0.2 * (rand() - 0.5)));
+    const q: [number, number, number] = [qh, d, 1 - qh - d];
+    const p = blend(m, q, truth);
+    const u = rand();
+    return { m, q, o: (u < p[0] ? 0 : u < p[0] + p[1] ? 1 : 2) as 0 | 1 | 2 };
+  });
+  const w = fitBlend(rows);
+  assert.ok(Math.abs(w.a - 1.2) < 0.15 && Math.abs(w.b - 0.3) < 0.15 && Math.abs(w.c - 0.1) < 0.1, JSON.stringify(w));
 });
 
 test("marketModel: 最良オッズが無ければ推奨しない・あれば EV 最大の正の結果だけ", () => {
   const m: [number, number, number] = [0.6, 0.25, 0.15];
-  assert.deepEqual(marketModel(m, null).recommend, null);
-  assert.equal(marketModel(m, null).ev, null);
-  assert.equal(marketModel(m, [1.5, 0, 6]).ev, null); // 1 以下のオッズは不正
-  // 控除の大きいオッズ → 全結果で損 → 見送り
-  const pass = marketModel(m, [1.5, 3.6, 6.0]);
+  const w = { a: 1, b: 0, c: 0 };
+  assert.equal(marketModel(m, m, null, w).recommend, null);
+  assert.equal(marketModel(m, m, null, w).ev, null);
+  assert.equal(marketModel(m, m, [1.5, 0, 6], w).ev, null); // 1 以下のオッズは不正
+  const pass = marketModel(m, m, [1.5, 3.6, 6.0], w);
   assert.equal(pass.recommend, null);
   assert.ok(pass.ev!.every((e) => e <= 0));
-  // ホームに甘いオッズ → ホームを推奨。EV = p × odds − 1
-  const { p, ev, recommend } = marketModel(m, [1.8, 3.6, 6.0]);
+  const { p, ev, recommend } = marketModel(m, m, [1.8, 3.6, 6.0], w);
   assert.equal(recommend, "H");
   assert.ok(Math.abs(ev![0] - (p[0] * 1.8 - 1)) < 1e-12);
 });

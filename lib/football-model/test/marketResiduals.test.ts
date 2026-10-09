@@ -1,5 +1,5 @@
 /**
- * 市場補正の土台（A）。リークが無いこと・補正が恒等から始まること・CSV の読み取りを固定する。
+ * 市場基盤の土台（A）。リークが無いこと・補正が恒等から始まること・CSV の読み取りを固定する。
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
