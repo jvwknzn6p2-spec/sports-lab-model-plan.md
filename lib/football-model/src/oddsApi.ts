@@ -41,7 +41,7 @@ export interface MarketFixture {
   market: ProbabilityTriple | null;
   /**
    * 各結果（H, D, A）の**最良のオッズ**（全ブックの最大値）と、それを出したブック。
-   * 市場補正モデル（marketModel.ts）が「得になるか」を判定するのに使う。控除は平均 5.4% に対し
+   * 市場基盤モデル（marketModel.ts）が「得になるか」を判定するのに使う。控除は平均 5.4% に対し
    * 最良値の組み合わせで 1.4%（取得元 CSV 7,154 試合の実測・marketResiduals.ts）。
    * The Odds API 以外の取得元には無い（undefined）
    */
