@@ -22,7 +22,7 @@ import { fitDixonColes, fitShotLayer, predictMatch, predictWithShots } from "../
 import type { MatchWithOdds } from "../footballData.ts";
 import { assertFootballDataCsv, parseFootballDataRaw } from "../footballDataRaw.ts";
 import { Ledger, OFFICIAL_RECORD_START } from "../ledger.ts";
-import { MKT_GAMMA, MKT_MODEL, marketModel } from "../marketModel.ts";
+import { MKT_MODEL, MKT_WEIGHTS, marketModel } from "../marketModel.ts";
 import { parseOddsEvents, type OddsEvent } from "../oddsApi.ts";
 import { NAMES, renderSummary, selectToPredict } from "../pipeline.ts";
 import { footballWeeklyMarkdown, lastCompleteWeek } from "../weekly.ts";
@@ -360,7 +360,7 @@ function readRunReport(): RunReport | null {
 
 function daily(): void {
   const L = openLedger();
-  // 市場補正モデルの系統（predictions.mkt / evaluations.mkt）。日程と結果は L と共有する
+  // 市場基盤モデルの系統（predictions.mkt / evaluations.mkt）。日程と結果は L と共有する
   const Lm = openLedger("mkt");
   let mktPublished = 0;
   const log: string[] = [];
@@ -462,17 +462,17 @@ function daily(): void {
         });
         if (res.ok) publishedCount++;
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
-        // 2 つ目のモデル（市場補正・marketModel.ts）。土台が市場なので、市場が無い試合には出さない。
+        // 2 つ目のモデル（市場基盤・marketModel.ts）。市場の上に正準の情報を足す。市場が無い試合には出さない。
         // 同じ試合・同じ封緘で正準と並べる（系統 "mkt" の台帳。日程と結果は共有）
         if (market) {
-          const mm = marketModel(market, mk?.market ? mk.bestOdds : null);
+          const mm = marketModel(market, [p.outcome.home, p.outcome.draw, 1 - p.outcome.home - p.outcome.draw], mk?.market ? mk.bestOdds : null);
           const h4 = Number(mm.p[0].toFixed(4));
           const d4 = Number(mm.p[1].toFixed(4));
           const r2 = Lm.publishPrediction({
             providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MKT_MODEL, asOf: NOW, nTrain: 0,
             pHome: h4, pDraw: d4, pAway: Number((1 - h4 - d4).toFixed(4)), lambdaHome: 0, lambdaAway: 0,
             market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
-            gamma: MKT_GAMMA,
+            weights: MKT_WEIGHTS,
             bestOdds: mk?.market ? (mk.bestOdds ?? null) : null,
             bestBooks: mk?.market ? (mk.bestBooks ?? null) : null,
             expectedValue: mm.ev ? [Number(mm.ev[0].toFixed(4)), Number(mm.ev[1].toFixed(4)), Number(mm.ev[2].toFixed(4))] : null,

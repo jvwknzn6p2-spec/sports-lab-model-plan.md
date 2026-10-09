@@ -58,7 +58,7 @@ export interface RenderInput {
    */
   noticeTone?: "alert" | "info";
   /**
-   * 2 つ目のモデル（市場補正・marketModel.ts）の予想と決済。同じ試合に正準と並べて出す。
+   * 2 つ目のモデル（市場基盤・marketModel.ts）の予想と決済。同じ試合に正準と並べて出す。
    * 無ければ出さない（旧版の呼び出しと互換）
    */
   mktPredictions?: LedgerPrediction[];
@@ -86,7 +86,7 @@ interface Row extends LedgerPrediction {
   m: Partial<LedgerMatch>;
   ev: LedgerEvaluation | undefined;
   preview: boolean;
-  /** 同じ試合の市場補正モデルの予想と決済（無ければ undefined） */
+  /** 同じ試合の市場基盤モデルの予想と決済（無ければ undefined） */
   mkt: LedgerPrediction | undefined;
   mktEv: LedgerEvaluation | undefined;
 }
@@ -165,7 +165,7 @@ export function renderPage(input: RenderInput): RenderResult {
   /** 確率をオッズに換算（1 ÷ 確率・控除なし） */
   const fairOdds = (p: number): string => (p > 0 ? (1 / p).toFixed(2) : "—");
 
-  /** 2 つ目のモデル（市場補正）の行。推奨は EV（補正後の確率 × 最良のオッズ − 1）が閾値を超えた結果だけ */
+  /** 2 つ目のモデル（市場基盤）の行。推奨は EV（補正後の確率 × 最良のオッズ − 1）が閾値を超えた結果だけ */
   function mktRow(r: Row): string {
     const k = r.mkt!;
     const lab = { H: `${esc(kana(r.m.home))} 勝`, D: "引き分け", A: `${esc(kana(r.m.away))} 勝` } as const;
@@ -185,7 +185,7 @@ export function renderPage(input: RenderInput): RenderResult {
       const recHit = k.recommend ? (k.recommend === e.result ? `<span class="chip hit">推奨 的中</span>` : `<span class="chip miss">推奨 外れ</span>`) : "";
       res = `<span class="chip ${hit ? "hit" : "miss"}">${hit ? "的中" : "外れ"}</span>${recHit}<span class="rps">RPS ${e.rps.toFixed(3)}</span>`;
     }
-    return `<div class="alt"><div class="alt-head"><span class="tag">市場補正</span><span class="probs-s">${pct(k.pHome)} / ${pct(k.pDraw)} / ${pct(k.pAway)}</span><span class="dim">オッズ換算 ${fairOdds(k.pHome)} / ${fairOdds(k.pDraw)} / ${fairOdds(k.pAway)}</span></div><div class="alt-foot">${rec}${res}</div></div>`;
+    return `<div class="alt"><div class="alt-head"><span class="tag">市場基盤</span><span class="probs-s">${pct(k.pHome)} / ${pct(k.pDraw)} / ${pct(k.pAway)}</span><span class="dim">オッズ換算 ${fairOdds(k.pHome)} / ${fairOdds(k.pDraw)} / ${fairOdds(k.pAway)}</span></div><div class="alt-foot">${rec}${res}</div></div>`;
   }
 
   function matchRow(r: Row, { showResult = false }: { showResult?: boolean } = {}): string {
@@ -265,13 +265,13 @@ export function renderPage(input: RenderInput): RenderResult {
   function compareBlock(): string {
     const both = settled.filter((r) => r.mktEv && r.ev!.marketRps != null);
     if (!mktPredictions.length) return "";
-    if (!both.length) return `<p class="sub">2 つのモデルの比較: 決着がそろった試合はまだありません（市場補正 ${mktPredictions.length} 件を発行済み）。</p>`;
+    if (!both.length) return `<p class="sub">2 つのモデルの比較: 決着がそろった試合はまだありません（市場基盤 ${mktPredictions.length} 件を発行済み）。</p>`;
     const avg = (f: (r: Row) => number): string => (both.reduce((a, r) => a + f(r), 0) / both.length).toFixed(3);
     const recs = both.filter((r) => r.mkt!.recommend && r.mkt!.bestOdds);
     const idx = { H: 0, D: 1, A: 2 } as const;
     const ret = recs.reduce((a, r) => a + (r.mktEv!.result === r.mkt!.recommend ? r.mkt!.bestOdds![idx[r.mkt!.recommend!]]! - 1 : -1), 0);
     const recHit = recs.filter((r) => r.mktEv!.result === r.mkt!.recommend).length;
-    return `<p class="sub">2 つのモデルの比較（同じ ${both.length} 試合・RPS は小さいほど良い）: 正準 <b>${avg((r) => r.ev!.rps)}</b> ／ 市場補正 <b>${avg((r) => r.mktEv!.rps)}</b> ／ 市場 ${avg((r) => r.ev!.marketRps!)}。市場補正の推奨 ${recs.length} 件・的中 ${recHit}・最良のオッズで 1 単位ずつ買った場合の回収率 ${recs.length ? `${(((ret + recs.length) / recs.length) * 100).toFixed(1)}%` : "—"}（100% が損益ゼロ・件数が少ないうちは判断に使わない）。</p>`;
+    return `<p class="sub">2 つのモデルの比較（同じ ${both.length} 試合・RPS は小さいほど良い）: 正準 <b>${avg((r) => r.ev!.rps)}</b> ／ 市場基盤 <b>${avg((r) => r.mktEv!.rps)}</b> ／ 市場 ${avg((r) => r.ev!.marketRps!)}。市場基盤の推奨 ${recs.length} 件・的中 ${recHit}・最良のオッズで 1 単位ずつ買った場合の回収率 ${recs.length ? `${(((ret + recs.length) / recs.length) * 100).toFixed(1)}%` : "—"}（100% が損益ゼロ・件数が少ないうちは判断に使わない）。</p>`;
   }
 
   const nPreview = rows.filter((r) => r.preview).length;

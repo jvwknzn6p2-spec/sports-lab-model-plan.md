@@ -105,11 +105,11 @@ export interface LedgerPrediction {
    */
   xi?: number;
   /**
-   * 市場補正モデル（marketModel.ts・系統 "mkt"）だけが持つ列。
-   * `gamma` = 本命・大穴バイアスの補正（市場確率の γ 乗）、`bestOdds` = 発行時点の最良のオッズ（H, D, A）、
+   * 市場基盤モデル（marketModel.ts・系統 "mkt"）だけが持つ列。
+   * `weights` = 市場基盤モデルの係数（a: 市場・b: 正準・c: 引き分け。marketModel.ts）、`bestOdds` = 発行時点の最良のオッズ（H, D, A）、
    * `expectedValue` = 補正後の確率 × 最良のオッズ − 1、`recommend` = EV が閾値を超えた結果（無ければ null＝見送り）
    */
-  gamma?: number;
+  weights?: { a: number; b: number; c: number };
   bestOdds?: [number, number, number] | null;
   bestBooks?: [string, string, string] | null;
   expectedValue?: [number, number, number] | null;
@@ -193,7 +193,7 @@ export class Ledger {
   /** 公式記録の開始（ISO）。渡したときだけ、それより前の試合・結果を台帳に入れない */
   readonly recordStart: string | undefined;
   /**
-   * 予想の系統。省略すると正準モデル（predictions / evaluations）、`"mkt"` なら市場補正モデル
+   * 予想の系統。省略すると正準モデル（predictions / evaluations）、`"mkt"` なら市場基盤モデル
    * （predictions.mkt / evaluations.mkt）。**日程と結果は全系統で共有する**（同じ試合・同じ結果で
    * 比べるため）。系統ごとに「1 試合 1 予想・封緘後は不変」が別々に成り立つ。
    */
