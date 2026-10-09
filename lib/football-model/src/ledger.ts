@@ -105,6 +105,16 @@ export interface LedgerPrediction {
    */
   xi?: number;
   /**
+   * 市場補正モデル（marketModel.ts・系統 "mkt"）だけが持つ列。
+   * `gamma` = 本命・大穴バイアスの補正（市場確率の γ 乗）、`bestOdds` = 発行時点の最良のオッズ（H, D, A）、
+   * `expectedValue` = 補正後の確率 × 最良のオッズ − 1、`recommend` = EV が閾値を超えた結果（無ければ null＝見送り）
+   */
+  gamma?: number;
+  bestOdds?: [number, number, number] | null;
+  bestBooks?: [string, string, string] | null;
+  expectedValue?: [number, number, number] | null;
+  recommend?: "H" | "D" | "A" | null;
+  /**
    * 学習窓の中での「両チームのうち少ない方の試合数」。標本の薄いチームが絡む予想を
    * 後から層別するための記録（2026-09-16 に MIN_TEAM_MATCHES を 5 → 1 へ下げた際に追加）。
    * それ以前の行には無い
@@ -182,11 +192,19 @@ export class Ledger {
   readonly dir: string;
   /** 公式記録の開始（ISO）。渡したときだけ、それより前の試合・結果を台帳に入れない */
   readonly recordStart: string | undefined;
-  constructor(dir: string, opts: { recordStart?: string } = {}) {
+  /**
+   * 予想の系統。省略すると正準モデル（predictions / evaluations）、`"mkt"` なら市場補正モデル
+   * （predictions.mkt / evaluations.mkt）。**日程と結果は全系統で共有する**（同じ試合・同じ結果で
+   * 比べるため）。系統ごとに「1 試合 1 予想・封緘後は不変」が別々に成り立つ。
+   */
+  readonly track: string | undefined;
+  constructor(dir: string, opts: { recordStart?: string; track?: string } = {}) {
     this.dir = dir;
     this.recordStart = opts.recordStart;
+    this.track = opts.track;
   }
   private p(name: string): string {
+    if (this.track && (name === "predictions" || name === "evaluations")) return join(this.dir, `${name}.${this.track}.ndjson`);
     return join(this.dir, `${name}.ndjson`);
   }
   matches(): LedgerMatch[] {
