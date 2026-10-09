@@ -205,6 +205,8 @@ test("本番台帳: 数える予想は 1 試合 1 本で、全て同じ試合の
   }
   // 要約は除外件数を明示する
   const md = renderSummary(["SP1", "I1"], preds, L.evaluations(), matches, "2026-09-25T00:00:00Z");
-  assert.match(md, /件は、上の表にも下の一覧にも数えない/);
+  // 除外が 1 件でもあるときだけ、要約が件数を明示する。台帳が空（2026-10-10 に 0 から再開）や
+  // 除外が無いときは要求しない＝このテストを特定の日の台帳の中身に縛らない
+  if (excluded.size > 0) assert.match(md, /件は、上の表にも下の一覧にも数えない/);
   assert.equal(readFileSync(join(LEDGER, "predictions.ndjson"), "utf8").split("\n").filter(Boolean).length, preds.length);
 });

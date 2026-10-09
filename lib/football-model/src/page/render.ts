@@ -11,7 +11,7 @@
  *   **黄色・ゴールドは使わない。**
  */
 import { createHash } from "node:crypto";
-import type { LedgerEvaluation, LedgerMatch, LedgerPrediction } from "../ledger.ts";
+import { OFFICIAL_RECORD_START, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../ledger.ts";
 import { kanaTable, leagueLabel } from "./labels.ts";
 
 /**
@@ -294,6 +294,7 @@ footer{margin-top:28px;font-size:11px;color:var(--dim);text-align:center}
   <h1>海外サッカー 封緘済み予想</h1>
   <p class="sub scope">サッカー専用ページ。台帳は sports-lab リポジトリの <code>football/ledger/</code> のみを読み、野球（MLB/NPB・VORTE EV）のデータは一切参照しない。記録・予想・分析はこの URL に集約する。</p>
   <p class="sub">最終発行 ${md(lastPub)} ${hm(lastPub)} JST・封緘は試合日（JST）の前日 20:00 JST（9/8 以前の発行分はキックオフ 60 分前）・発行後は変更しない。モデル <code>${esc(modelLabel)}</code>（Dixon-Coles）。市場は The Odds API の h2h 中央値（発行時点）。ページ生成 ${genLabel}。</p>
+  <p class="sub scope">公式記録は <b>${md(OFFICIAL_RECORD_START)}（JST）以降にキックオフする試合</b>から。旧実装の期間（〜2026-10-09）の試合・予想の記録は 2026-10-10 に破棄して 0 から再開した。この日より前の数字はこのページにも通算にも含まない。</p>
   <div class="legend"><span><i style="background:var(--cyan)"></i>ホーム勝</span><span><i style="background:var(--draw)"></i>引き分け</span><span><i style="background:var(--cyan2);opacity:.65"></i>アウェイ勝</span><span><i style="background:var(--mkt)"></i>細い帯＝市場</span></div>
 </header>
 
@@ -329,7 +330,7 @@ ${group(settled, { showResult: true })}
 <div class="note">
   <p><b>読み方。</b>H/D/A は ホーム勝／引き分け／アウェイ勝 の確率（%）。引き分けは結果の 1 つとして分母に入れる。主指標は RPS（小さいほど良い）で、的中率は件数つきでしか読まない。決着 ${settled.length} 件では何も言えない。</p>
   <p><b>「市場と乖離」の札。</b>モデルと市場の差が 25pt 以上の試合。実測では乖離が大きい群ほど成績が悪く、<b>乖離はエッジではなく雑音</b>（全 10 リーグ 11,085 試合で市場のほうが RPS 0.0072 良い・t=13.65）。この札が付いた試合をモデル側から買う根拠にはならない。</p>
-  <p><b>モデルにエッジはあるか（2026-09-17 実測）。</b>結果の運に左右されない指標として <b>CLV</b> を測った。モデルが市場より高く見た側へ、市場が発行時点からキックオフ直前までに動いたかを見るもの。決着 151 件で <b>平均 +0.16pp・正方向 54%（95% [46%, 62%]）</b>。符号は正だが有意ではなく、同じ器で測った野球（VORTE EV）の +1.41pp・正方向 68.5% の約 1/9。RPS の対照（同集合でモデル 0.209 対 市場 0.201）と整合しており、<b>このモデルに市場を超えるエッジがあるとは言えない</b>。だからこのページは確率だけを出し、ハンデの EV も賭けの推奨も出さない。</p>
+  <p><b>モデルにエッジはあるか（2026-09-17 実測・旧実装期間のもので、公式記録ではない）。</b>結果の運に左右されない指標として <b>CLV</b> を測った。モデルが市場より高く見た側へ、市場が発行時点からキックオフ直前までに動いたかを見るもの。決着 151 件で <b>平均 +0.16pp・正方向 54%（95% [46%, 62%]）</b>。符号は正だが有意ではなく、同じ器で測った野球（VORTE EV）の +1.41pp・正方向 68.5% の約 1/9。RPS の対照（同集合でモデル 0.209 対 市場 0.201）と整合しており、<b>このモデルに市場を超えるエッジがあるとは言えない</b>。だからこのページは確率だけを出し、ハンデの EV も賭けの推奨も出さない。</p>
   <p><b>チーム名。</b>台帳は英語表記（football-data.co.uk）。このページのカタカナは表示だけの読み替えで、台帳・指紋には影響しない。</p>
   <p><b>台帳の分離。</b>この URL は VORTE FT（サッカー）専用。野球の VORTE EV とはリポジトリ・台帳・URL が別で、このページのビルドは <code>football/</code> 配下しか読まない。野球の試合・予想・成績は今後も混在しない。</p>
   <p>分析専用。ベッティングやギャンブルに関する助言ではありません。</p>

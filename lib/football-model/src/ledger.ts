@@ -29,6 +29,21 @@ import { fixtureRegistrations } from "./fixtureIdentity.ts";
  * 台帳に残る（追記専用・行は書き換えない）。判定は常に行自身の cutoffAt で行う。
  */
 export const CUTOFF_JST_HOUR = 20;
+
+/**
+ * **公式記録の開始**（2026-10-10・Founder 指示で旧実装の記録を 0 に戻した）。
+ *
+ * これ以降にキックオフする試合だけを日程に登録し、その結果だけを台帳に残す。
+ * 2026-10-10T15:00:00Z = 2026-10-11 00:00 JST。リセットを決めた時点（2026-10-10 01:09 JST）で
+ * まだ封緘（試合日の前日 20:00 JST）が閉じていない最初の試合日が JST 10/11 だから。
+ * 10/10 JST の試合は 10/09 20:00 JST に封緘済みで、今から予想を出せば後知恵になる＝記録に入れない。
+ *
+ * **これが無いと、台帳を空にしても翌日の日次が復活させてしまう**: 日程の取得元は過去の試合も返し
+ * （co.uk の凍結は過去 198 行）、結果の取り込みは直近 30 日ぶんを無条件に追記するため。
+ * 旧実装の記録は git の履歴とタグ（football-pre-reset-2026-10-09）に残してあり、台帳の中には戻さない。
+ * `football/history`（学習データ）と `football/market`（生のオッズ）は記録ではないので対象外。
+ */
+export const OFFICIAL_RECORD_START = "2026-10-10T15:00:00Z";
 const JST_OFFSET_MS = 9 * 3_600_000;
 
 export interface LedgerMatch {
@@ -165,8 +180,11 @@ export class Ledger {
   // 引数プロパティは使わない（node --experimental-strip-types は型を落とすだけで、
   // 意味を持つ構文があると動かない。VORTE EV の elo.ts と同じ理由）
   readonly dir: string;
-  constructor(dir: string) {
+  /** 公式記録の開始（ISO）。渡したときだけ、それより前の試合・結果を台帳に入れない */
+  readonly recordStart: string | undefined;
+  constructor(dir: string, opts: { recordStart?: string } = {}) {
     this.dir = dir;
+    this.recordStart = opts.recordStart;
   }
   private p(name: string): string {
     return join(this.dir, `${name}.ndjson`);
@@ -201,7 +219,11 @@ export class Ledger {
    * 同じ 2 チームが 2 日以内に再戦することはリーグ戦では起きない。
    * 適用時の実測: 既存 333 試合に正準重複 0 件（この検査は既存の挙動を変えない）。
    */
-  recordFixtures(fixtures: MarketFixture[], league: string, nowIso: string): { added: number; unresolved: number; duplicates: number } {
+  recordFixtures(
+    fixtures: MarketFixture[],
+    league: string,
+    nowIso: string,
+  ): { added: number; unresolved: number; duplicates: number; outOfRecord?: number } {
     const cur = this.currentMatches();
     // 正準同一性（リーグ|ホーム|アウェイ → キックオフの一覧）。この回で足した行も足しながら見る
     const canon = new Map<string, Array<{ providerId: string; kickoffAt: string }>>();
@@ -214,9 +236,15 @@ export class Ledger {
     const rows: LedgerMatch[] = [];
     let unresolved = 0;
     let duplicates = 0;
+    let outOfRecord = 0;
     for (const f of fixtures) {
       if (!f.resolved) {
         unresolved++;
+        continue;
+      }
+      // 公式記録の開始より前の試合は台帳に入れない（OFFICIAL_RECORD_START）
+      if (this.recordStart !== undefined && f.kickoffAt < this.recordStart) {
+        outOfRecord++;
         continue;
       }
       const ck = `${league}|${f.home}|${f.away}`;
@@ -245,7 +273,9 @@ export class Ledger {
       else canon.set(ck, [{ providerId: f.providerId, kickoffAt: f.kickoffAt }]);
     }
     append(this.p("matches"), rows);
-    return { added: rows.length, unresolved, duplicates };
+    return this.recordStart === undefined
+      ? { added: rows.length, unresolved, duplicates }
+      : { added: rows.length, unresolved, duplicates, outOfRecord };
   }
 
   /**
@@ -293,9 +323,29 @@ export class Ledger {
       return (seen.get(`${league}|${home}|${away}`) ?? []).some((x) => Math.abs(Date.parse(x + "T00:00:00Z") - d) <= 86_400_000);
     };
     for (const r of this.results()) mark(r.league, r.home, r.away, r.date);
+    // 公式記録の開始が決まっているときは、**台帳に登録された試合の結果だけ**を入れる。
+    // 取り込みは直近 30 日ぶんを無条件に追記していたので、台帳を空にしても旧実装の試合の結果が
+    // 翌日に戻ってくる。登録済みの試合（＝開始後にキックオフする試合）の結果だけを通せば、
+    // 決済に要る結果は全て入り、記録の外の結果は入らない。窓は settle と同じ（前日〜7 日後）
+    const registered = new Map<string, number[]>();
+    if (this.recordStart !== undefined) {
+      for (const cm of this.currentMatches().values()) {
+        const k = `${cm.league}|${cm.home}|${cm.away}`;
+        const day = Date.parse(cm.kickoffAt.slice(0, 10) + "T00:00:00Z");
+        const list = registered.get(k);
+        if (list) list.push(day);
+        else registered.set(k, [day]);
+      }
+    }
+    const inRecord = (league: string, home: string, away: string, date: string): boolean => {
+      if (this.recordStart === undefined) return true;
+      const d = Date.parse(date + "T00:00:00Z");
+      return (registered.get(`${league}|${home}|${away}`) ?? []).some((k) => d - k >= -86_400_000 && d - k <= 7 * 86_400_000);
+    };
     const rows: LedgerResult[] = [];
     for (const m of matches) {
       const date = m.date.slice(0, 10);
+      if (!inRecord(m.division, m.home, m.away, date)) continue;
       if (known(m.division, m.home, m.away, date)) continue;
       mark(m.division, m.home, m.away, date);
       rows.push({ league: m.division, date, home: m.home, away: m.away, homeGoals: m.homeGoals, awayGoals: m.awayGoals, source: m.source ?? source, recordedAt: nowIso });

@@ -192,7 +192,9 @@ export const MISSED_SEAL_WINDOW_DAYS = 14;
  * `handiedge_record_start()` と同じ考え方で、記録開始日より後のものだけを判定に使い、
  * 過去の分は参考として一覧に出す。
  */
-export const PUBLISH_HEALTH_START = "2026-09-22T00:00:00Z";
+export const PUBLISH_HEALTH_START = "2026-10-10T00:00:00Z";
+// 2026-10-10 に公式記録を 0 から再開した（ledger.ts の OFFICIAL_RECORD_START）。旧実装の期間
+// （2026-09-22〜10-09）の取りこぼしは、台帳ごと破棄したので判定にも参考表示にも出さない。
 
 export interface RunLeague {
   league: string;

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { appendFileSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Ledger, cutoffOf } from "../src/ledger.ts";
+import { Ledger, OFFICIAL_RECORD_START, cutoffOf } from "../src/ledger.ts";
 import { parseOddsEvents, type MarketFixture, type OddsEvent } from "../src/oddsApi.ts";
 import { parseFootballDataRaw } from "../src/footballDataRaw.ts";
 import { buildTeamResolver } from "../src/teamAliases.ts";
@@ -314,4 +314,58 @@ test("決済: 窓の外の結果は結ばない（別の対戦に食い付かせ
   L.recordResults([resultRow("SC0", "2026-12-20", "Celtic", "Rangers", 2, 1)], "football-data", "2026-12-22T00:00:00Z");
   assert.equal(L.settle("2026-12-22T00:10:00Z"), 0);
   assert.equal(L.evaluations().length, 0);
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * 公式記録の開始（2026-10-10・旧実装の記録を 0 に戻した）
+ *
+ * 台帳を空にしただけでは、翌日の日次が旧実装の試合を復活させる: 日程の取得元は過去の試合も返し、
+ * 結果の取り込みは直近 30 日ぶんを無条件に追記する。開始日より前を台帳に入れない保証を固定する。
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const freshFrom = (recordStart?: string): Ledger =>
+  new Ledger(mkdtempSync(join(tmpdir(), "ledger-")), recordStart ? { recordStart } : {});
+
+test("公式記録の開始: 開始前にキックオフした試合は日程に入れない", () => {
+  assert.equal(OFFICIAL_RECORD_START, "2026-10-10T15:00:00Z"); // = JST 2026-10-11 00:00
+  const L = freshFrom(OFFICIAL_RECORD_START);
+  const r = L.recordFixtures(
+    [
+      fixture("old-past", "2026-09-05T16:45:00Z", "Utrecht", "Twente"), // 旧実装の期間
+      fixture("old-sealed", "2026-10-10T14:00:00Z", "Arsenal", "Chelsea"), // JST 10/10: 10/09 20:00 JST に封緘済み
+      fixture("first", "2026-10-10T15:00:00Z", "Liverpool", "Everton"), // 開始ちょうど = 記録に入る
+      fixture("later", "2026-10-18T13:00:00Z", "Fulham", "Brentford"),
+    ],
+    "E0",
+    "2026-10-10T00:00:00Z",
+  );
+  assert.equal(r.added, 2);
+  assert.equal(r.outOfRecord, 2);
+  assert.deepEqual(L.matches().map((m) => m.providerId).sort(), ["first", "later"]);
+  // 開始日を決めない台帳（従来・テスト用）は何も除かず、戻り値の形も変わらない
+  const plain = freshFrom();
+  assert.deepEqual(plain.recordFixtures([fixture("a", "2026-09-05T16:45:00Z", "Utrecht", "Twente")], "N1", "t"), {
+    added: 1, unresolved: 0, duplicates: 0,
+  });
+});
+
+test("公式記録の開始: 登録された試合の結果だけを入れる（旧実装の試合の結果は戻ってこない）", () => {
+  const L = freshFrom(OFFICIAL_RECORD_START);
+  L.recordFixtures([fixture("first", "2026-10-11T13:00:00Z", "Liverpool", "Everton")], "E0", "2026-10-10T00:00:00Z");
+  const feed = [
+    resultRow("E0", "2026-10-11", "Liverpool", "Everton", 2, 1), // 登録済み → 入る
+    resultRow("N1", "2026-09-08", "Utrecht", "Go Ahead Eagles", 3, 3), // 旧実装の試合 → 入らない
+    resultRow("E0", "2026-10-03", "Arsenal", "Chelsea", 1, 0), // 開始前 → 入らない
+    resultRow("E0", "2026-10-11", "Fulham", "Brentford", 0, 0), // 未登録 → 入らない
+  ];
+  assert.equal(L.recordResults(feed, "football-data", "2026-10-12T00:00:00Z"), 1);
+  assert.equal(L.results().length, 1);
+  assert.equal(L.results()[0]!.home, "Liverpool");
+  // 同じものをもう一度流しても増えない（毎日 30 日ぶんが流れ込む）
+  assert.equal(L.recordResults(feed, "football-data", "2026-10-13T00:00:00Z"), 0);
+  // 延期（+7 日まで）の結果も、登録済みの試合なら入る。+8 日は入らない
+  const M = freshFrom(OFFICIAL_RECORD_START);
+  M.recordFixtures([fixture("p", "2026-10-11T13:00:00Z", "Fulham", "Brentford")], "E0", "2026-10-10T00:00:00Z");
+  assert.equal(M.recordResults([resultRow("E0", "2026-10-19", "Fulham", "Brentford", 1, 1)], "x", "t"), 0);
+  assert.equal(M.recordResults([resultRow("E0", "2026-10-18", "Fulham", "Brentford", 1, 1)], "x", "t"), 1);
 });
