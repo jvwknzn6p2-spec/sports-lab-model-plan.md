@@ -7,9 +7,11 @@ import assert from "node:assert/strict";
 import {
   INGEST_FAIL_HOURS,
   INGEST_WARN_HOURS,
+  RESULT_DUE_HOURS,
   ZERO_FIXTURE_FAIL_RUNS,
   ingestHealth,
   ingestLevel,
+  resultsExpected,
   missedSeals,
   nextZeroFixtureRuns,
   publishLevel,
@@ -181,4 +183,23 @@ test("記録開始日より前の取りこぼしは報告するが赤くしな�
   const fresh = publishLevel(null, [m("2026-09-23T11:00:00Z")], start);
   assert.equal(fresh.level, "fail", "記録開始日より後の取りこぼしは赤");
   assert.equal(fresh.missed.length, 1);
+});
+
+test("resultsExpected: 健全だった取込の間隔（実測 96.6h・127.6h）で誤警報を出さない", () => {
+  // 本番台帳の再現（2026-09-25）。9/18 00:06Z が最後の取込で、結果が届いたのは 9/22 00:43Z
+  // （間隔 96.6h）。猶予 6 時間では 9/22 00:40（届く 3 分前）に fail が出ていた。
+  const last = "2026-09-18T00:06:24.135Z";
+  const h = (now: string) => ingestHealth([result("2026-09-17", last)], now);
+  const played = ["2026-09-18T20:00:00Z", "2026-09-19T15:15:00Z", "2026-09-20T17:30:00Z"];
+  for (const now of ["2026-09-19T00:06:00Z", "2026-09-20T00:06:00Z", "2026-09-21T00:06:00Z", "2026-09-22T00:40:00Z"]) {
+    const exp = resultsExpected(played, "2026-09-17", now);
+    assert.equal(ingestLevel(h(now), undefined, undefined, exp), "ok", now);
+    // 旧猶予（6h）なら 9/21 は warn・9/22 は fail だった（結果が届く 3 分前に赤）
+    const old = resultsExpected(played, "2026-09-17", now, 6);
+    if (now >= "2026-09-21") assert.notEqual(ingestLevel(h(now), undefined, undefined, old), "ok", `旧猶予 ${now}`);
+    if (now >= "2026-09-22") assert.equal(ingestLevel(h(now), undefined, undefined, old), "fail", `旧猶予 ${now}`);
+  }
+  // 猶予を過ぎれば鳴る（取得元が全部落ちたまま 5 日たった）
+  assert.equal(resultsExpected(played, "2026-09-17", "2026-09-26T00:06:00Z"), true);
+  assert.equal(RESULT_DUE_HOURS, 120);
 });

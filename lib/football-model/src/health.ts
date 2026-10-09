@@ -26,6 +26,20 @@ export const INGEST_WARN_HOURS = 36;
  */
 export const INGEST_FAIL_HOURS = 72;
 
+/**
+ * 試合が終わってから「結果はもう台帳に入っているはずだ」と言えるまでの猶予（時間）。
+ *
+ * 実測（2026-09-25・日次が回り始めた 2026-09-10 以降の結果 189 件。キックオフ日の 00:00Z から
+ * 取込までの時間）: 中央値 48.7h / p75 72.7h / p95 96.3h / **最大 111.5h**。
+ * 健全に動いていた期間の取込の間隔にも **96.6h**（9/18→9/22）・**127.6h**（9/04→9/09）があり、
+ * 猶予 6 時間では 9/22 00:40（結果が届く 3 分前）に fail を出す（再現して確認）。
+ *
+ * 111.5 をそのまま書かないのは、標本 189 件に対して精度を詐称しないため。
+ * **検知は遅くなる**: 取得元が全部落ちたとき、気付くのは試合日から 5 日後。それでも
+ * 「平常運転で鳴り、鳴っても故障と区別が付かない」警報よりは良い。
+ */
+export const RESULT_DUE_HOURS = 120;
+
 export interface IngestHealth {
   /** 結果を最後に台帳へ書いた時刻（ISO）。1 件も無ければ null */
   lastRecordedAt: string | null;
@@ -58,12 +72,16 @@ export function ingestHealth(results: LedgerResult[], nowIso: string): IngestHea
  * 72 時間で日次が赤くなるところだった。VORTE EV の `expected_24h` と同じく、
  * 生の事実（hoursSinceRecord）は変えず、判断にだけ「仕事があったか」を足す。
  * 取得元が死んで試合だけが進んでいる場合は、その試合の登録がここで数えられて落ちる。
+ *
+ * **「結果が来ているはず」と言える猶予は `RESULT_DUE_HOURS`（120 時間）**（2026-10-09 Founder 承認）。
+ * 当初の 6 時間は「試合が終われば結果が入る」前提だったが、結果の取得元（football-data.co.uk の CSV）
+ * は週明けにまとめて更新されるため、平常でも 2〜5 日かかる。
  */
 export function resultsExpected(
   kickoffs: Iterable<string>,
   lastMatchDate: string | null,
   nowIso: string,
-  minAgeHours = 6,
+  minAgeHours = RESULT_DUE_HOURS,
 ): boolean {
   const now = Date.parse(nowIso);
   const after = lastMatchDate === null ? -Infinity : Date.parse(lastMatchDate + "T00:00:00Z") + 86_400_000;
@@ -174,7 +192,9 @@ export const MISSED_SEAL_WINDOW_DAYS = 14;
  * `handiedge_record_start()` と同じ考え方で、記録開始日より後のものだけを判定に使い、
  * 過去の分は参考として一覧に出す。
  */
-export const PUBLISH_HEALTH_START = "2026-09-22T00:00:00Z";
+export const PUBLISH_HEALTH_START = "2026-10-10T00:00:00Z";
+// 2026-10-10 に公式記録を 0 から再開した（ledger.ts の OFFICIAL_RECORD_START）。旧実装の期間
+// （2026-09-22〜10-09）の取りこぼしは、台帳ごと破棄したので判定にも参考表示にも出さない。
 
 export interface RunLeague {
   league: string;

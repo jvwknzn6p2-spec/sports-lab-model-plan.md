@@ -21,7 +21,8 @@ import { join } from "node:path";
 import { fitDixonColes, fitShotLayer, predictMatch, predictWithShots } from "../fit.ts";
 import type { MatchWithOdds } from "../footballData.ts";
 import { assertFootballDataCsv, parseFootballDataRaw } from "../footballDataRaw.ts";
-import { Ledger } from "../ledger.ts";
+import { Ledger, OFFICIAL_RECORD_START } from "../ledger.ts";
+import { MKT_GAMMA, MKT_MODEL, marketModel } from "../marketModel.ts";
 import { parseOddsEvents, type OddsEvent } from "../oddsApi.ts";
 import { NAMES, renderSummary, selectToPredict } from "../pipeline.ts";
 import { footballWeeklyMarkdown, lastCompleteWeek } from "../weekly.ts";
@@ -45,7 +46,7 @@ import {
 import { buildTeamResolver } from "../teamAliases.ts";
 import { HANDICAP_RULES_VERSION, shareGiving } from "../handicap.ts";
 import {
-  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestHealth, ingestLevel, missedSeals,
+  INGEST_FAIL_HOURS, INGEST_WARN_HOURS, RESULT_DUE_HOURS, ZERO_FIXTURE_FAIL_RUNS, ingestHealth, ingestLevel, missedSeals,
   nextZeroFixtureRuns, publishLevel, resultsExpected, runTotals, seasonLive, settlementBacklog,
   type RunLeague, type RunReport,
 } from "../health.ts";
@@ -55,6 +56,11 @@ import { FixtureMarketIndex, fixturesAsMatches, parseFixturesCsv } from "../foot
 import { FDORG_COMPETITIONS, foldedIndexOf, historyFromFootballDataOrg, resolveOrgTeam, type FdOrgPayload } from "../footballDataOrg.ts";
 import type { FixtureMarket } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
+
+/** 台帳を開く。公式記録の開始（OFFICIAL_RECORD_START）より前の試合・結果は入れない */
+function openLedger(track?: string): Ledger {
+  return new Ledger(join(ROOT, "ledger"), { recordStart: OFFICIAL_RECORD_START, ...(track ? { track } : {}) });
+}
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -353,7 +359,10 @@ function readRunReport(): RunReport | null {
 }
 
 function daily(): void {
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
+  // 市場補正モデルの系統（predictions.mkt / evaluations.mkt）。日程と結果は L と共有する
+  const Lm = openLedger("mkt");
+  let mktPublished = 0;
   const log: string[] = [];
   // 1 回分の実績。取得元が返した試合数はこの回にしか存在しない事実で、
   // 書き残さないと「同じ日程を返した」と「何も返さなかった」の区別が永久に付かない
@@ -380,7 +389,7 @@ function daily(): void {
       const r = L.recordFixtures(fixtures, league, NOW);
       fixtureAdded += r.added;
       futureFixtureCount += fixtures.filter((f) => Date.parse(f.kickoffAt) > Date.parse(NOW)).length;
-      log.push(`${league}: fixtures ${fixtures.length} (added ${r.added}, unresolved ${r.unresolved}) odds@${odds.fetchedAt}`);
+      log.push(`${league}: fixtures ${fixtures.length} (added ${r.added}, unresolved ${r.unresolved}, 記録開始前 ${r.outOfRecord ?? 0}) odds@${odds.fetchedAt}`);
       for (const f of fixtures.filter((x) => !x.resolved)) log.push(`  unresolved: ${f.home} v ${f.away}`);
       // 市場の写し（小さく）
       const mdir = join(ROOT, "market", src.sport);
@@ -402,7 +411,7 @@ function daily(): void {
     if (freeFixtures.length > 0) {
       const rf = L.recordFixtures(freeFixtures, league, NOW);
       fixtureAdded += rf.added;
-      log.push(`${league}: fd-fixtures ${freeFixtures.length} (added ${rf.added}, 重複 ${rf.duplicates}, unresolved ${rf.unresolved})`);
+      log.push(`${league}: fd-fixtures ${freeFixtures.length} (added ${rf.added}, 重複 ${rf.duplicates}, unresolved ${rf.unresolved}, 記録開始前 ${rf.outOfRecord ?? 0})`);
     }
 
     // 2) 予想（封緘前・未発行・48h 以内）
@@ -453,6 +462,25 @@ function daily(): void {
         });
         if (res.ok) publishedCount++;
         log.push(res.ok ? `  published ${m.home} v ${m.away} ${(p.outcome.home * 100).toFixed(0)}/${(p.outcome.draw * 100).toFixed(0)}/${(p.outcome.away * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  rejected ${m.home} v ${m.away}: ${res.reason}`);
+        // 2 つ目のモデル（市場補正・marketModel.ts）。土台が市場なので、市場が無い試合には出さない。
+        // 同じ試合・同じ封緘で正準と並べる（系統 "mkt" の台帳。日程と結果は共有）
+        if (market) {
+          const mm = marketModel(market, mk?.market ? mk.bestOdds : null);
+          const h4 = Number(mm.p[0].toFixed(4));
+          const d4 = Number(mm.p[1].toFixed(4));
+          const r2 = Lm.publishPrediction({
+            providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MKT_MODEL, asOf: NOW, nTrain: 0,
+            pHome: h4, pDraw: d4, pAway: Number((1 - h4 - d4).toFixed(4)), lambdaHome: 0, lambdaAway: 0,
+            market, marketSource, marketFetchedAt: mk?.market && odds ? odds.fetchedAt : free?.market ? fixturesFetchedAt() : null,
+            gamma: MKT_GAMMA,
+            bestOdds: mk?.market ? (mk.bestOdds ?? null) : null,
+            bestBooks: mk?.market ? (mk.bestBooks ?? null) : null,
+            expectedValue: mm.ev ? [Number(mm.ev[0].toFixed(4)), Number(mm.ev[1].toFixed(4)), Number(mm.ev[2].toFixed(4))] : null,
+            recommend: mm.recommend,
+          });
+          if (r2.ok) mktPublished++;
+          else if (!/already published/.test(r2.reason)) log.push(`  mkt rejected ${m.home} v ${m.away}: ${r2.reason}`);
+        }
       }
     } else {
       log.push(`${league}: 発行対象なし`);
@@ -485,6 +513,7 @@ function daily(): void {
   // 発行時点の値で、発行範囲 720 時間では最大 25 日前になるため、それだけで対照し続けると
   // ベンチマークが古い市場に固定されてモデルを不当に良く見せる
   log.push(`settled ${L.settle(NOW, closingMarketResolver(join(ROOT, "market")))}`);
+  log.push(`mkt: published ${mktPublished}・settled ${Lm.settle(NOW, closingMarketResolver(join(ROOT, "market")))}`);
   // 6) レポート
   mkdirSync(join(ROOT, "reports"), { recursive: true });
   writeFileSync(join(ROOT, "reports", "summary.md"), renderSummary(LEAGUES, L.predictions(), L.evaluations(), L.currentMatches(), NOW));
@@ -508,7 +537,7 @@ function daily(): void {
  * 毎日 10 競技を叩くと月 600 クレジットで無料枠（500）を超えるため、必要な日だけにする。
  */
 function scoresNeeded(): void {
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   const now = Date.parse(NOW);
   const settled = new Set(L.evaluations().map((e) => e.predictionId));
   const sports = new Set<string>();
@@ -533,7 +562,7 @@ function historyImport(): void {
     console.error("usage: football.ts history-import --root football --leagues … --source <name> --observed-at ISO [--since YYYY-MM-DD] <csv…>");
     process.exit(2);
   }
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   for (const league of LEAGUES) {
     let rows = readHistory(HISTORY, league);
     const before = rows.length;
@@ -576,7 +605,7 @@ function quote(): void {
   if (!pastePath) throw new Error("--paste <file> が要る");
   const cards = parsePasteText(readFileSync(pastePath, "utf8"));
 
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   const matches = [...L.currentMatches().values()];
   const preds = L.predictions();
   // 終了済みの試合は答え合わせまで出す（貼られたハンデが実際いくらになったか）
@@ -700,7 +729,7 @@ function quote(): void {
  * **warn では落とさない**。1 日の欠けは取得元の一時的な不調で起こり、翌日に自然回復する。
  */
 function health(): void {
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   const h = ingestHealth(L.results(), NOW);
   const matches = L.currentMatches();
   const expected = resultsExpected([...matches.values()].map((m) => m.kickoffAt), h.lastMatchDate, NOW);
@@ -709,7 +738,7 @@ function health(): void {
   const { counted, excluded } = countedPredictions(L.predictions(), matches);
   const backlog = settlementBacklog(L.predictions().filter((p) => counted.has(p.id)), L.evaluations(), NOW);
   if (!expected) {
-    console.log(`ingest: 最新の試合日 ${h.lastMatchDate} より後にキックオフした登録が無い — 結果が入らないのは正常（代表ウィーク等）`);
+    console.log(`ingest: 最新の試合日 ${h.lastMatchDate} より後にキックオフし ${RESULT_DUE_HOURS}h 以上経った登録が無い — 結果が入らないのは正常（代表ウィーク・結果 CSV の反映待ち）`);
   }
   if (excluded.size > 0) console.log(`集計から除く予想 ${excluded.size} 件（二重登録の 2 本目・封緘後の発行）`);
 
@@ -789,7 +818,7 @@ function health(): void {
  * 有無を見る器**であり、ここでは EV も推奨も出さない。
  */
 function clv(): void {
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   const { counted } = countedPredictions(L.predictions(), L.currentMatches());
   const entries = clvEntries(L.predictions().filter((p) => counted.has(p.id)), L.evaluations(), closingMarketResolver(join(ROOT, "market")));
   const s = summarizeClv(entries);
@@ -830,7 +859,7 @@ function clv(): void {
  */
 function fdorgAliases(): void {
   const dir = arg("fdorg", "probe/football")!;
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   const ledgerMatches = [...L.currentMatches().values()];
   const votes = new Map<string, Map<string, number>>();
   const ambiguous: string[] = [];
@@ -886,7 +915,7 @@ function fdorgAliases(): void {
  * 「基準:」行（生成時刻）以外が前回と同じなら書き直さない（毎日のコミットを増やさない）。
  */
 function weekly(): void {
-  const L = new Ledger(join(ROOT, "ledger"));
+  const L = openLedger();
   const week = arg("week") ?? lastCompleteWeek(NOW);
   const h = ingestHealth(L.results(), NOW);
   const md = footballWeeklyMarkdown({

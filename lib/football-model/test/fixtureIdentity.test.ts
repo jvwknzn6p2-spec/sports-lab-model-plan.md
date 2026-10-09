@@ -167,11 +167,12 @@ test("取込の沈黙: 最新の試合日より後にキックオフした登録
   const breakWeek = resultsExpected(["2026-09-20T19:30:00Z", "2026-10-10T14:00:00Z"], h.lastMatchDate, "2026-09-27T00:20:00Z");
   assert.equal(breakWeek, false);
   assert.equal(ingestLevel(h, undefined, undefined, breakWeek), "ok");
-  // 9/26 に試合があったのに取れていない → 従来どおり失敗
-  const live = resultsExpected(["2026-09-26T14:00:00Z"], h.lastMatchDate, "2026-09-27T00:20:00Z");
+  // 9/26 に試合があったのに、猶予（RESULT_DUE_HOURS = 120h）を過ぎても取れていない → 従来どおり失敗
+  const live = resultsExpected(["2026-09-26T14:00:00Z"], h.lastMatchDate, "2026-10-02T00:20:00Z");
   assert.equal(live, true);
   assert.equal(ingestLevel(h, undefined, undefined, live), "fail");
-  // 終わったばかり（6 時間未満）の試合は数えない
+  // 結果 CSV の反映待ちは平常でも 2〜5 日かかる（実測 最大 111.5h）。猶予の内側は数えない
+  assert.equal(resultsExpected(["2026-09-26T14:00:00Z"], h.lastMatchDate, "2026-09-27T00:20:00Z"), false);
   assert.equal(resultsExpected(["2026-09-26T22:00:00Z"], h.lastMatchDate, "2026-09-27T00:20:00Z"), false);
 });
 
@@ -204,6 +205,8 @@ test("本番台帳: 数える予想は 1 試合 1 本で、全て同じ試合の
   }
   // 要約は除外件数を明示する
   const md = renderSummary(["SP1", "I1"], preds, L.evaluations(), matches, "2026-09-25T00:00:00Z");
-  assert.match(md, /件は、上の表にも下の一覧にも数えない/);
+  // 除外が 1 件でもあるときだけ、要約が件数を明示する。台帳が空（2026-10-10 に 0 から再開）や
+  // 除外が無いときは要求しない＝このテストを特定の日の台帳の中身に縛らない
+  if (excluded.size > 0) assert.match(md, /件は、上の表にも下の一覧にも数えない/);
   assert.equal(readFileSync(join(LEDGER, "predictions.ndjson"), "utf8").split("\n").filter(Boolean).length, preds.length);
 });

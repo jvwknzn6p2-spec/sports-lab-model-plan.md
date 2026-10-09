@@ -39,6 +39,14 @@ export interface MarketFixture {
   bookmakers: number;
   /** 中央値の含意確率（h2h・正規化済み）。ブックが 0 なら null */
   market: ProbabilityTriple | null;
+  /**
+   * 各結果（H, D, A）の**最良のオッズ**（全ブックの最大値）と、それを出したブック。
+   * 市場補正モデル（marketModel.ts）が「得になるか」を判定するのに使う。控除は平均 5.4% に対し
+   * 最良値の組み合わせで 1.4%（取得元 CSV 7,154 試合の実測・marketResiduals.ts）。
+   * The Odds API 以外の取得元には無い（undefined）
+   */
+  bestOdds?: [number, number, number] | null;
+  bestBooks?: [string, string, string] | null;
 }
 
 function median(xs: number[]): number {
@@ -53,6 +61,8 @@ export function parseOddsEvents(
 ): MarketFixture[] {
   return events.map((e) => {
     const trips: ProbabilityTriple[] = [];
+    const best: [number, number, number] = [0, 0, 0];
+    const bestBy: [string, string, string] = ["", "", ""];
     for (const b of e.bookmakers) {
       const m = b.markets.find((x) => x.key === "h2h");
       if (!m) continue;
@@ -60,6 +70,12 @@ export function parseOddsEvents(
       const a = m.outcomes.find((o) => o.name === e.away_team)?.price;
       const d = m.outcomes.find((o) => o.name === "Draw")?.price;
       if (!h || !a || !d || h <= 1 || a <= 1 || d <= 1) continue;
+      for (const [k, price] of [[0, h], [1, d], [2, a]] as const) {
+        if (price > best[k]) {
+          best[k] = price;
+          bestBy[k] = (b as { key?: string }).key ?? "";
+        }
+      }
       const inv = [1 / h, 1 / d, 1 / a];
       const s = inv[0] + inv[1] + inv[2];
       trips.push([inv[0] / s, inv[1] / s, inv[2] / s]);
@@ -82,6 +98,8 @@ export function parseOddsEvents(
       resolved: home !== null && away !== null,
       bookmakers: trips.length,
       market,
+      bestOdds: trips.length ? best : null,
+      bestBooks: trips.length ? bestBy : null,
     };
   });
 }

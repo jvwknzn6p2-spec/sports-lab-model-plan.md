@@ -1,3 +1,4 @@
+import { countedPredictions } from "../src/fixtureIdentity.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -37,6 +38,8 @@ test("本番台帳: 除外した予想は数えず、指標の定義を明記す
   });
   assert.match(md, /3 分類 Brier は 0〜2（正規化なし・一様予想で 0\.667）/);
   assert.match(md, /RPS は 0〜1（K−1=2 で正規化）/);
-  assert.match(md, /集計から除いた予想 5 件/);
+  // 除外した件数は台帳から数える（特定の日の台帳の件数を固定しない。台帳は 2026-10-10 に 0 から再開した）
+  const { excluded } = countedPredictions(L.predictions(), L.currentMatches());
+  if (excluded.size > 0) assert.match(md, new RegExp(`集計から除いた予想 ${excluded.size} 件`));
   assert.doesNotMatch(md, /NaN|undefined/);
 });

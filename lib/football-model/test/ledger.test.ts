@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { appendFileSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Ledger, cutoffOf } from "../src/ledger.ts";
-import { parseOddsEvents, type OddsEvent } from "../src/oddsApi.ts";
+import { Ledger, OFFICIAL_RECORD_START, cutoffOf } from "../src/ledger.ts";
+import { parseOddsEvents, type MarketFixture, type OddsEvent } from "../src/oddsApi.ts";
 import { parseFootballDataRaw } from "../src/footballDataRaw.ts";
 import { buildTeamResolver } from "../src/teamAliases.ts";
 
@@ -202,4 +202,170 @@ test("決済: 解決子を渡さなければ従来どおり（既存の呼び出
   );
   assert.equal(L.settle("2026-09-06T00:10:00Z"), 1);
   assert.equal(L.evaluations()[0].marketRpsClosing, null);
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * 日程が動いた試合の決済（2026-09-25・本番台帳の実測から）
+ *
+ * 決済は「キックオフ日の ±1 日」でしか結んでいなかったため、延期・前倒しされた試合は
+ * 結果が自分の履歴にあっても永久に決済されず、静かに記録から落ちていた。
+ * ただし**窓を広げるだけでは 1 試合を 2 回数える**（同じカードの幽霊日程が実在した）。
+ * この 3 件が本番で実際に詰まっていた形そのものである。
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const fixture = (providerId: string, kickoffAt: string, home: string, away: string): MarketFixture => ({
+  provider: "football-data", providerId, sportKey: "test", kickoffAt, home, away,
+  resolved: true, bookmakers: 0, market: null,
+});
+
+function withPrediction(L: Ledger, league: string, f: MarketFixture): void {
+  L.recordFixtures([f], league, "2026-09-01T00:00:00Z");
+  const r = L.publishPrediction({
+    providerId: f.providerId, league, kickoffAt: f.kickoffAt, publishedAt: "2026-09-01T01:00:00Z",
+    model: "dc-v5-shots", asOf: "2026-09-01T00:00:00Z", nTrain: 900,
+    pHome: 0.4, pDraw: 0.3, pAway: 0.3, lambdaHome: 1.4, lambdaAway: 1.2, market: null, marketFetchedAt: null,
+  });
+  assert.ok(r.ok, `発行できていない: ${JSON.stringify(r)}`);
+}
+
+const resultRow = (league: string, date: string, home: string, away: string, hg: number, ag: number) => ({
+  division: league, date, home, away, homeGoals: hg, awayGoals: ag, odds: null,
+});
+
+test("決済: 延期で日付が動いた試合も結ぶ（結果は台帳にあるのに落ちていた）", () => {
+  const L = fresh();
+  // 本番の実例: Utrecht v Go Ahead Eagles を 09-05 で予想 → 実際は 09-08 に 3-3
+  withPrediction(L, "N1", fixture("utr-gae", "2026-09-05T16:45:00Z", "Utrecht", "Go Ahead Eagles"));
+  L.recordResults([resultRow("N1", "2026-09-08", "Utrecht", "Go Ahead Eagles", 3, 3)], "football-data", "2026-09-11T00:00:00Z");
+  assert.equal(L.settle("2026-09-11T00:10:00Z"), 1);
+  const e = L.evaluations()[0]!;
+  assert.equal(e.result, "D");
+  assert.equal(e.homeGoals, 3);
+  assert.equal(e.resultDate, "2026-09-08");
+  assert.equal(e.matchedBy, "rescheduled");
+  // 冪等
+  assert.equal(L.settle("2026-09-11T00:20:00Z"), 0);
+});
+
+test("決済: ±1 日で結べた試合は従来どおり（matchedBy=kickoff）", () => {
+  const L = fresh();
+  withPrediction(L, "N1", fixture("a", "2026-09-05T16:45:00Z", "Utrecht", "Twente"));
+  L.recordResults([resultRow("N1", "2026-09-05", "Utrecht", "Twente", 1, 0)], "football-data", "2026-09-08T00:00:00Z");
+  assert.equal(L.settle("2026-09-08T00:10:00Z"), 1);
+  assert.equal(L.evaluations()[0]!.matchedBy, "kickoff");
+  assert.equal(L.evaluations()[0]!.resultDate, "2026-09-05");
+});
+
+test("決済: 同じカードの幽霊日程は発行時に止まり、2 回数えない（本番の Sevilla v Valencia）", () => {
+  const L = fresh();
+  // 取得元が同じ試合を 09-11 と 09-13 の 2 つの日程として返していた。実際に行われたのは 1 試合
+  withPrediction(L, "SP1", fixture("sev-val-11", "2026-09-11T19:00:00Z", "Sevilla", "Valencia"));
+  // 2 本目は fixtureIdentity.ts（PR #43）が発行時に止める。決済の窓に頼らず元から作らせない
+  const ghost = fixture("sev-val-13", "2026-09-13T19:00:00Z", "Sevilla", "Valencia");
+  L.recordFixtures([ghost], "SP1", "2026-09-01T00:00:00Z");
+  const r = L.publishPrediction({
+    providerId: ghost.providerId, league: "SP1", kickoffAt: ghost.kickoffAt, publishedAt: "2026-09-01T01:00:00Z",
+    model: "dc-v5-shots", asOf: "2026-09-01T00:00:00Z", nTrain: 900,
+    pHome: 0.4, pDraw: 0.3, pAway: 0.3, lambdaHome: 1.4, lambdaAway: 1.2, market: null, marketFetchedAt: null,
+  });
+  assert.equal(r.ok, false);
+  L.recordResults([resultRow("SP1", "2026-09-11", "Sevilla", "Valencia", 1, 0)], "football-data", "2026-09-15T00:00:00Z");
+  assert.equal(L.settle("2026-09-15T00:10:00Z"), 1);
+  assert.equal(L.evaluations()[0]!.providerId, "sev-val-11");
+  assert.equal(L.evaluations()[0]!.matchedBy, "kickoff");
+  // 何度回しても増えない＝二重計上しない
+  assert.equal(L.settle("2026-09-20T00:00:00Z"), 0);
+  assert.equal(L.settle("2026-10-20T00:00:00Z"), 0);
+});
+
+test("決済: 延期は 7 日まで追い（rescheduled）、前倒しと 8 日以上の延期は結ばない", () => {
+  const cases: Array<[string, string, boolean]> = [
+    ["2026-09-13", "kickoff", true], // 当日
+    ["2026-09-12", "kickoff", true], // 前日（現地日付のずれ）
+    ["2026-09-20", "rescheduled", true], // +7 日
+    ["2026-09-21", "-", false], // +8 日は追わない
+    ["2026-09-11", "-", false], // 2 日前倒しは追わない（登録より早く行われた試合に後の予想を結ばない）
+  ];
+  for (const [date, by, settles] of cases) {
+    const L = fresh();
+    withPrediction(L, "N1", fixture("p", "2026-09-13T16:45:00Z", "Utrecht", "Twente"));
+    L.recordResults([resultRow("N1", date, "Utrecht", "Twente", 2, 1)], "football-data", "2026-09-25T00:00:00Z");
+    assert.equal(L.settle("2026-09-25T00:10:00Z"), settles ? 1 : 0, date);
+    if (settles) {
+      assert.equal(L.evaluations()[0]!.matchedBy, by, date);
+      assert.equal(L.evaluations()[0]!.resultDate, date, date);
+    }
+  }
+});
+
+test("決済: 結果が無い試合は決済しない（推測で埋めない）", () => {
+  const L = fresh();
+  // 本番の Levante v Ath Bilbao。9 月の結果がどこにも無い（中止か日程側の誤りか UNKNOWN）
+  withPrediction(L, "SP1", fixture("lev-ath", "2026-09-16T19:30:00Z", "Levante", "Ath Bilbao"));
+  L.recordResults([resultRow("SP1", "2026-09-13", "Levante", "Barcelona", 2, 4)], "football-data", "2026-09-18T00:00:00Z");
+  assert.equal(L.settle("2026-10-20T00:00:00Z"), 0);
+  assert.equal(L.evaluations().length, 0);
+});
+
+test("決済: 窓の外の結果は結ばない（別の対戦に食い付かせない）", () => {
+  const L = fresh();
+  withPrediction(L, "SC0", fixture("cel-ran", "2026-09-05T14:00:00Z", "Celtic", "Rangers"));
+  // 同じ並びの対戦がシーズン内でもう一度ある（SC0 は同一カードを 3〜4 回やる）
+  L.recordResults([resultRow("SC0", "2026-12-20", "Celtic", "Rangers", 2, 1)], "football-data", "2026-12-22T00:00:00Z");
+  assert.equal(L.settle("2026-12-22T00:10:00Z"), 0);
+  assert.equal(L.evaluations().length, 0);
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * 公式記録の開始（2026-10-10・旧実装の記録を 0 に戻した）
+ *
+ * 台帳を空にしただけでは、翌日の日次が旧実装の試合を復活させる: 日程の取得元は過去の試合も返し、
+ * 結果の取り込みは直近 30 日ぶんを無条件に追記する。開始日より前を台帳に入れない保証を固定する。
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const freshFrom = (recordStart?: string): Ledger =>
+  new Ledger(mkdtempSync(join(tmpdir(), "ledger-")), recordStart ? { recordStart } : {});
+
+test("公式記録の開始: 開始前にキックオフした試合は日程に入れない", () => {
+  assert.equal(OFFICIAL_RECORD_START, "2026-10-10T15:00:00Z"); // = JST 2026-10-11 00:00
+  const L = freshFrom(OFFICIAL_RECORD_START);
+  const r = L.recordFixtures(
+    [
+      fixture("old-past", "2026-09-05T16:45:00Z", "Utrecht", "Twente"), // 旧実装の期間
+      fixture("old-sealed", "2026-10-10T14:00:00Z", "Arsenal", "Chelsea"), // JST 10/10: 10/09 20:00 JST に封緘済み
+      fixture("first", "2026-10-10T15:00:00Z", "Liverpool", "Everton"), // 開始ちょうど = 記録に入る
+      fixture("later", "2026-10-18T13:00:00Z", "Fulham", "Brentford"),
+    ],
+    "E0",
+    "2026-10-10T00:00:00Z",
+  );
+  assert.equal(r.added, 2);
+  assert.equal(r.outOfRecord, 2);
+  assert.deepEqual(L.matches().map((m) => m.providerId).sort(), ["first", "later"]);
+  // 開始日を決めない台帳（従来・テスト用）は何も除かず、戻り値の形も変わらない
+  const plain = freshFrom();
+  assert.deepEqual(plain.recordFixtures([fixture("a", "2026-09-05T16:45:00Z", "Utrecht", "Twente")], "N1", "t"), {
+    added: 1, unresolved: 0, duplicates: 0,
+  });
+});
+
+test("公式記録の開始: 登録された試合の結果だけを入れる（旧実装の試合の結果は戻ってこない）", () => {
+  const L = freshFrom(OFFICIAL_RECORD_START);
+  L.recordFixtures([fixture("first", "2026-10-11T13:00:00Z", "Liverpool", "Everton")], "E0", "2026-10-10T00:00:00Z");
+  const feed = [
+    resultRow("E0", "2026-10-11", "Liverpool", "Everton", 2, 1), // 登録済み → 入る
+    resultRow("N1", "2026-09-08", "Utrecht", "Go Ahead Eagles", 3, 3), // 旧実装の試合 → 入らない
+    resultRow("E0", "2026-10-03", "Arsenal", "Chelsea", 1, 0), // 開始前 → 入らない
+    resultRow("E0", "2026-10-11", "Fulham", "Brentford", 0, 0), // 未登録 → 入らない
+  ];
+  assert.equal(L.recordResults(feed, "football-data", "2026-10-12T00:00:00Z"), 1);
+  assert.equal(L.results().length, 1);
+  assert.equal(L.results()[0]!.home, "Liverpool");
+  // 同じものをもう一度流しても増えない（毎日 30 日ぶんが流れ込む）
+  assert.equal(L.recordResults(feed, "football-data", "2026-10-13T00:00:00Z"), 0);
+  // 延期（+7 日まで）の結果も、登録済みの試合なら入る。+8 日は入らない
+  const M = freshFrom(OFFICIAL_RECORD_START);
+  M.recordFixtures([fixture("p", "2026-10-11T13:00:00Z", "Fulham", "Brentford")], "E0", "2026-10-10T00:00:00Z");
+  assert.equal(M.recordResults([resultRow("E0", "2026-10-19", "Fulham", "Brentford", 1, 1)], "x", "t"), 0);
+  assert.equal(M.recordResults([resultRow("E0", "2026-10-18", "Fulham", "Brentford", 1, 1)], "x", "t"), 1);
 });
