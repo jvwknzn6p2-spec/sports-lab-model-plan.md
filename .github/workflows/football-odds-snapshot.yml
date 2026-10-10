@@ -29,9 +29,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "24"
 
       - name: 締切に近いオッズを取得（必要な競技だけ・枠の残りを守る）
         env:
