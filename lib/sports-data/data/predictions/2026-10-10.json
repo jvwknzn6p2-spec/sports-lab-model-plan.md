@@ -1,0 +1,115 @@
+{
+  "lockedAt": "2026-10-10T02:36:55.519Z",
+  "updatedAt": "2026-10-10T02:36:55.519Z",
+  "controlTower": {
+    "date": "2026-10-10",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "849831": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7,
+        "marketHomeCover": 0.37,
+        "marketHomePayout": 1.62,
+        "marketAwayPayout": 0.518,
+        "marketOver": 0.522
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.917,
+    "tailShrink": 0.701,
+    "farTailShrink": 0.67,
+    "handicapShrink": 0.886,
+    "handicapTailShrink": 0.634,
+    "handicapFarTailShrink": 0.619,
+    "totalShrink": 0.849,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.833,
+    "gamesSettled": 357,
+    "brierSum": 86.7382,
+    "updatedAt": "2026-10-09T04:23:50.786Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 849831,
+      "gameDate": "2026-10-11T00:00:00Z",
+      "home": "Cleveland Guardians",
+      "away": "Chicago White Sox",
+      "pass": false,
+      "predictedWinner": "Cleveland Guardians",
+      "predictedLoser": "Chicago White Sox",
+      "winProbability": 0.551,
+      "rawWinProbability": 0.556,
+      "confidence": "B",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7,
+          "marketHomeCover": 0.37,
+          "marketHomePayout": 1.62,
+          "marketAwayPayout": 0.518,
+          "marketOver": 0.522
+        },
+        "pick": "Chicago White Sox +1.5",
+        "coverProbability": 0.574,
+        "rawCoverProbability": 0.584,
+        "ev": 0.091,
+        "marketProbability": 0.63,
+        "marketPriceEv": -0.128,
+        "recommendedStake": 0.03,
+        "noValue": false
+      },
+      "total": {
+        "line": 7,
+        "predicted": 9.25,
+        "pick": null,
+        "probability": 0.667,
+        "rawProbability": 0.697,
+        "marketProbability": 0.522,
+        "ev": 0.238,
+        "noValue": true
+      },
+      "expectedRuns": {
+        "home": 4.79,
+        "away": 4.27
+      },
+      "reasons": [
+        "Handicap EV +9.1% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -12.8% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 63.0% for this side — model 57.4% (-5.6% vs market)",
+        "No total bet: the model sits +14.5% from the market consensus on this line — disagreement this large has historically been model error, not value",
+        "Market consensus on the total: 52.2% for the OVER — model 66.7% (+14.5% vs market)",
+        "Starter edge: Cleveland Guardians (Gavin Williams projFIP 3.47 vs 3.79)",
+        "Offense edge: Chicago White Sox (wOBA 0.317 vs 0.307)",
+        "Bullpen edge: Cleveland Guardians",
+        "Cleveland Guardians bullpen fatigued (+0.36 R/9)",
+        "Chicago White Sox bullpen fatigued (+0.38 R/9)",
+        "Park factor 98 (pitcher-friendly)",
+        "Expected runs 4.79–4.27 over 10000 sims",
+        "home: hot bats — 5.4 R/G last 15 (season baseline 4.2)",
+        "away: hot bats — 6.0 R/G last 15 (season baseline 4.6)",
+        "Weather: 22°C at first pitch — run environment ×1.004",
+        "Wind: 11 km/h from 128° vs CF bearing 0° — blowing out, run environment ×1.013"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[warn] home_bullpen_bullpen_heavy_usage",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[warn] away_bullpen_bullpen_heavy_usage",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
+      ],
+      "lockDeadline": "2026-10-10T13:59:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-10T02:36:55.519Z",
+      "predictedRunId": "38017585534"
+    }
+  ]
+}
