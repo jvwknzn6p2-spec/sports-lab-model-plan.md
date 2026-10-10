@@ -6,7 +6,7 @@
  * 出す数字は全て「その年の試合だけ」で計算する。年をまたぐ合算・持ち越しはしない。
  * 台帳には触れない（凍結データを読むだけ）。
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import {
   BENCHMARK, benjaminiHochberg, compareYear, devig, loadBenchmark, outcomeOf, pTwoSided, predictYear, yearOf,
   type BenchPrediction, type Triple,
@@ -50,13 +50,14 @@ for (const y of BENCHMARK.years) {
 }
 console.log(`\n予想できた試合 / 全試合: ${BENCHMARK.years.map((y) => `${y} ${preds.filter((p) => yearOf(p.date) === y).length}/${rows.filter((r) => yearOf(r.date) === y).length}`).join("・")}`);
 
-console.log("\n## 1b. 市場基盤モデル mkt-blend-v1（市場 ＋ 正準の情報）vs 市場（同じ試合）");
-console.log("係数（a 市場・b 正準・c 引き分け）は試合日ごとに、その 2 日前までの試合（2023 年〜）だけで当て直す。");
-console.log("| 年 | 試合 | RPS 市場基盤 / 市場 | 差（t） | 的中率 市場基盤 / 市場 | 較正誤差 市場基盤 / 市場 | その年の最後の係数 a / b / c |");
-console.log("|---|---|---|---|---|---|---|");
-{
-  const pairs = allWithOdds.map((p) => ({ date: p.date, m: devig(p.odds!), q: p.p, o: outcomeOf(p) })).sort((x, y) => x.date.localeCompare(y.date));
-  const out = new Map<string, Triple>();
+/** 市場基盤モデルを年ごとに測る。係数は試合日ごとに 2 日前までの試合（2023 年〜）だけで当て直す */
+function blendSection(title: string, src: Array<{ date: string; m: Triple; q: Triple; o: 0 | 1 | 2; best?: Triple }>): void {
+  console.log(`\n## ${title}`);
+  console.log("係数（a 市場・b 正準・c 引き分け）は試合日ごとに、その 2 日前までの試合（2023 年〜）だけで当て直す。");
+  console.log("| 年 | 試合 | RPS 市場基盤 / 市場 | 差（t） | 的中率 市場基盤 / 市場 | 較正誤差 市場基盤 / 市場 | その年の最後の係数 a / b / c |");
+  console.log("|---|---|---|---|---|---|---|");
+  const pairs = [...src].sort((x, y) => x.date.localeCompare(y.date));
+  const out: Triple[] = [];
   const last = new Map<string, BlendWeights>();
   let w: BlendWeights = { a: 1, b: 0, c: 0 };
   let fitFor = "";
@@ -70,17 +71,84 @@ console.log("|---|---|---|---|---|---|---|");
       w = fitBlend(pairs.slice(0, i0), 6);
       fitFor = x.date;
     }
-    out.set(`${x.date}|${i}`, blend(x.m, x.q, w) as Triple);
+    out[i] = blend(x.m, x.q, w) as Triple;
     last.set(yearOf(x.date), w);
   }
   for (const y of BENCHMARK.years) {
     const ys = pairs.map((x, i) => ({ x, i })).filter(({ x }) => yearOf(x.date) === y);
-    const c = compareYear(y, ys.map(({ x, i }) => ({ date: x.date, a: out.get(`${x.date}|${i}`)!, b: x.m, o: x.o })));
+    if (!ys.length) continue;
+    const c = compareYear(y, ys.map(({ x, i }) => ({ date: x.date, a: out[i]!, b: x.m, o: x.o })));
     const lw = last.get(y)!;
     console.log(`| ${y} | ${c.n} | ${f3(c.a.rps)} / ${f3(c.b.rps)} | ${c.diff >= 0 ? "+" : ""}${f3(c.diff)}（${c.t.toFixed(2)}） | ${pc(c.a.hit)}% / ${pc(c.b.hit)}% | ${pc(c.a.ece, 2)}pp / ${pc(c.b.ece, 2)}pp | ${lw.a.toFixed(3)} / ${lw.b.toFixed(3)} / ${lw.c.toFixed(3)} |`);
   }
+  if (pairs.some((x) => x.best)) {
+    console.log("\n推奨（EV = 確率 × 最高値 − 1 が 0 超の最大の結果・最高値の逆数の和 < 1 の試合は見送り）を価格（既定は各社平均・--price max で最高値）で 1 単位ずつ買った場合:");
+    for (const y of BENCHMARK.years) {
+      const r: number[] = [];
+      const bands: Record<string, number[]> = {};
+      let n = 0;
+      let arb = 0;
+      pairs.forEach((x, i) => {
+        if (yearOf(x.date) !== y || !x.best || !out[i]) return;
+        n++;
+        const b = x.best;
+        if (1 / b[0] + 1 / b[1] + 1 / b[2] < 1) {
+          arb++;
+          return;
+        }
+        let k = -1;
+        let best = 0;
+        for (let j = 0; j < 3; j++) {
+          const ev = out[i]![j]! * b[j]! - 1;
+          if (ev > best) {
+            best = ev;
+            k = j;
+          }
+        }
+        if (k >= 0) {
+          const ret = x.o === k ? b[k]! - 1 : -1;
+          r.push(ret);
+          const band = best < 0.02 ? "0-2%" : best < 0.05 ? "2-5%" : best < 0.1 ? "5-10%" : "10%+";
+          (bands[band] ??= []).push(ret);
+        }
+      });
+      if (!n) continue;
+      const m = r.reduce((a, v) => a + v, 0) / Math.max(1, r.length);
+      const sd = Math.sqrt(r.reduce((a, v) => a + (v - m) ** 2, 0) / Math.max(1, r.length - 1));
+      const bt = Object.keys(bands).sort().map((k) => { const v = bands[k]!; const mm = v.reduce((a, x) => a + x, 0) / v.length; return `EV ${k} ${v.length} 回 ${pc(1 + mm)}%`; }).join("・");
+      console.log(`- ${y}: ${n} 試合中 推奨 ${r.length}（${pc(r.length / n)}%）・裁定で見送り ${arb}・回収率 ${pc(1 + m)}%（t ${(m / (sd / Math.sqrt(r.length))).toFixed(2)}）／${bt}`);
+    }
+  }
   const prod = fitBlend(pairs, 10);
-  console.log(`\n本番の係数（基準の全期間 ${pairs.length} 試合で当てた値・未来の試合にだけ使う）: a = ${prod.a.toFixed(4)} / b = ${prod.b.toFixed(4)} / c = ${prod.c.toFixed(4)}`);
+  console.log(`\n本番の係数（全期間 ${pairs.length} 試合で当てた値・未来の試合にだけ使う）: a = ${prod.a.toFixed(4)} / b = ${prod.b.toFixed(4)} / c = ${prod.c.toFixed(4)}`);
+}
+blendSection("1b. 市場基盤モデル mkt-blend-v1（市場 ＋ 正準の情報）vs 市場（Bet365・同じ試合）", allWithOdds.map((p) => ({ date: p.date, m: devig(p.odds!) as Triple, q: p.p, o: outcomeOf(p) })));
+
+// 本番の市場は各社の中央値。凍結データ（Bet365 1 社）より近いのは取得元 CSV の「各社平均」（AvgH/D/A）
+const csvDir = arg("csv");
+if (csvDir) {
+  const avg = new Map<string, { m: Triple; best: Triple }>();
+  for (const f of readdirSync(csvDir).filter((f) => /^fd-[A-Z0-9]+-\d{4}\.csv$/.test(f))) {
+    const div = f.split("-")[1]!;
+    const lines = readFileSync(`${csvDir}/${f}`, "utf8").replace(/^\uFEFF/, "").trim().split(/\r?\n/);
+    const h = lines[0]!.split(",");
+    const ix = (k: string) => h.indexOf(k);
+    for (const l of lines.slice(1)) {
+      const c = l.split(",");
+      const o = ["AvgH", "AvgD", "AvgA"].map((k) => parseFloat(c[ix(k)] ?? ""));
+      const mx = ["MaxH", "MaxD", "MaxA"].map((k) => parseFloat(c[ix(k)] ?? "")) as Triple;
+      const d = (c[ix("Date")] ?? "").split("/");
+      if (!o.every((x) => x > 1) || !mx.every((x) => x > 1) || d.length < 3) continue;
+      const date = `${d[2]!.length === 2 ? `20${d[2]}` : d[2]}-${d[1]}-${d[0]}`;
+      // 価格は各社平均（Max は 40 社超の外れ値を拾い、ほぼ全試合で「得」に見える＝2026-10-10 実測）
+      avg.set(`${div}|${date}|${c[ix("HomeTeam")]}|${c[ix("AwayTeam")]}`, { m: devig({ home: o[0]!, draw: o[1]!, away: o[2]! }), best: (arg("price") === "max" ? mx : o) as Triple });
+    }
+  }
+  const src = allWithOdds.flatMap((p) => {
+    const a = avg.get(`${p.league}|${p.date}|${p.home}|${p.away}`);
+    return a ? [{ date: p.date, m: a.m, q: p.p, o: outcomeOf(p), best: a.best }] : [];
+  });
+  blendSection("1c. 同じモデルを各社平均のオッズ（本番の各社中央値に近い・取得元 CSV）で", src);
 }
 
 // ---------------------------------------------------------------------------
