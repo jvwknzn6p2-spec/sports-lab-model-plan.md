@@ -1,7 +1,7 @@
 {
   "date": "2026-10-11",
   "season": 1002026,
-  "fetchedAt": "2026-10-10T15:22:41.232Z",
+  "fetchedAt": "2026-10-10T19:20:01.724Z",
   "games": [
     {
       "gamePk": 92026101101,
@@ -16,8 +16,8 @@
       "home": {
         "teamId": 901,
         "teamName": "読売ジャイアンツ",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 90186568,
+        "probablePitcherName": "竹丸 和幸",
         "score": null
       },
       "away": {
@@ -48,13 +48,36 @@
       "away": {
         "teamId": 908,
         "teamName": "北海道日本ハムファイターズ",
-        "probablePitcherId": null,
-        "probablePitcherName": null,
+        "probablePitcherId": 90838546,
+        "probablePitcherName": "達 孝太",
         "score": null
       }
     }
   ],
-  "starters": {},
+  "starters": {
+    "90186568": {
+      "inningsPitched": "126.2",
+      "battersFaced": 535,
+      "hits": 121,
+      "homeRuns": 14,
+      "baseOnBalls": 40,
+      "hitByPitch": 3,
+      "strikeOuts": 142,
+      "runs": 53,
+      "earnedRuns": 46
+    },
+    "90838546": {
+      "inningsPitched": "124.2",
+      "battersFaced": 506,
+      "hits": 95,
+      "homeRuns": 12,
+      "baseOnBalls": 29,
+      "hitByPitch": 6,
+      "strikeOuts": 126,
+      "runs": 44,
+      "earnedRuns": 41
+    }
+  },
   "batting": {
     "901": {
       "plateAppearances": 5239,
@@ -119,15 +142,15 @@
   },
   "bullpens": {
     "901": {
-      "inningsPitched": "1281.1",
-      "battersFaced": 5308,
-      "hits": 1088,
-      "homeRuns": 98,
-      "baseOnBalls": 424,
-      "hitByPitch": 63,
-      "strikeOuts": 1172,
-      "runs": 444,
-      "earnedRuns": 399
+      "inningsPitched": "1154.2",
+      "battersFaced": 4773,
+      "strikeOuts": 1030,
+      "baseOnBalls": 384,
+      "hitByPitch": 60,
+      "homeRuns": 84,
+      "hits": 967,
+      "earnedRuns": 353,
+      "runs": 391
     },
     "903": {
       "inningsPitched": "1280.2",
@@ -141,15 +164,15 @@
       "earnedRuns": 465
     },
     "908": {
-      "inningsPitched": "1276.1",
-      "battersFaced": 5317,
-      "hits": 1160,
-      "homeRuns": 133,
-      "baseOnBalls": 363,
-      "hitByPitch": 42,
-      "strikeOuts": 1106,
-      "runs": 529,
-      "earnedRuns": 479
+      "inningsPitched": "1151.2",
+      "battersFaced": 4811,
+      "strikeOuts": 980,
+      "baseOnBalls": 334,
+      "hitByPitch": 36,
+      "homeRuns": 121,
+      "hits": 1065,
+      "earnedRuns": 438,
+      "runs": 485
     },
     "910": {
       "inningsPitched": "1291.2",
@@ -166,8 +189,8 @@
   "forms": {
     "901": {
       "games": 15,
-      "runsScoredPerGame": 3.27,
-      "runsAllowedPerGame": 3.13
+      "runsScoredPerGame": 3.33,
+      "runsAllowedPerGame": 2.93
     },
     "902": {
       "games": 15,
@@ -176,8 +199,8 @@
     },
     "903": {
       "games": 15,
-      "runsScoredPerGame": 3.8,
-      "runsAllowedPerGame": 3.33
+      "runsScoredPerGame": 3.67,
+      "runsAllowedPerGame": 3.2
     },
     "904": {
       "games": 15,
@@ -211,8 +234,8 @@
     },
     "910": {
       "games": 15,
-      "runsScoredPerGame": 3.07,
-      "runsAllowedPerGame": 3.73
+      "runsScoredPerGame": 3,
+      "runsAllowedPerGame": 3.53
     },
     "911": {
       "games": 15,
@@ -226,7 +249,7 @@
     }
   },
   "parkFactors": {
-    "9101": 97,
+    "9101": 96,
     "9102": 90,
     "9103": 103,
     "9104": 96,
