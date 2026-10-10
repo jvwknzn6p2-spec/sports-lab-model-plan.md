@@ -49,6 +49,13 @@ export interface MarketFixture {
   bestBooks?: [string, string, string] | null;
 }
 
+/**
+ * 最良のオッズの候補から外すブック。取引所（Betfair・Matchbook など）の価格は手数料（2〜5%）を引く前の
+ * 値で、ブックメーカーの価格と同じ物差しではない。含めると最良値が実際より高く見え、推奨が水増しされる
+ * （2026-10-10 の初日に 112 試合中 109 試合で推奨が出た実発生）。中央値（市場確率）には含めたままにする
+ */
+export const EXCHANGE_BOOK = /^(betfair_ex|matchbook|smarkets|betdaq)/;
+
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   const m = Math.floor(s.length / 2);
@@ -71,6 +78,7 @@ export function parseOddsEvents(
       const d = m.outcomes.find((o) => o.name === "Draw")?.price;
       if (!h || !a || !d || h <= 1 || a <= 1 || d <= 1) continue;
       for (const [k, price] of [[0, h], [1, d], [2, a]] as const) {
+        if (EXCHANGE_BOOK.test((b as { key?: string }).key ?? "")) continue;
         if (price > best[k]) {
           best[k] = price;
           bestBy[k] = (b as { key?: string }).key ?? "";
@@ -98,8 +106,8 @@ export function parseOddsEvents(
       resolved: home !== null && away !== null,
       bookmakers: trips.length,
       market,
-      bestOdds: trips.length ? best : null,
-      bestBooks: trips.length ? bestBy : null,
+      bestOdds: best.every((x) => x > 1) ? best : null,
+      bestBooks: best.every((x) => x > 1) ? bestBy : null,
     };
   });
 }
