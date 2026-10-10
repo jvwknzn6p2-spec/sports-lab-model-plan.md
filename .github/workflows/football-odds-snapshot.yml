@@ -1,0 +1,75 @@
+name: Football — odds snapshot near kickoff
+
+# 締切に近い市場の写し（Founder 承認 2026-10-10「1」）。日次（07:05 JST 起点）の写しは試合の
+# 十数時間前なので、それより試合に近い時点のオッズを 1 日 1 回だけ追加で記録する。
+#  - 決済の「締切に最も近い市場」（closingMarketResolver）はキックオフ前の最新の写しを使うので、
+#    写しを足すだけで市場 RPS と CLV（予想が締切の市場より良かったか）が締切に近づく
+#  - 台帳（予想・決済）には触れない。書くのは football/market/ の写しだけ
+#  - 取るのは「今から 20 時間以内に試合がある競技」だけ（1 クレジット/競技）
+#  - The Odds API の枠は VORTE EV と共有で、尽きた実績がある（2026-09-17）。残りが 150 未満なら
+#    取らない（日次の日程・予想を優先する）。残りは無料の /v4/sports で確かめる（クレジットを使わない）
+# 実行は 09:05 UTC（18:05 JST）。このアカウントの schedule は 2〜6 時間遅れて着地するので、
+# 実際の取得は 11〜15 UTC 前後（欧州の午後〜夜の試合の数時間前）になる。正確な「直前」ではない
+
+on:
+  schedule:
+    - cron: "5 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: football-daily
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: 締切に近いオッズを取得（必要な競技だけ・枠の残りを守る）
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -u
+          if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi
+          LEAGUES=E0,I1,SP1,D1,N1,F1,P1,B1,SC0
+          node --experimental-strip-types lib/football-model/src/cli/football.ts snapshot-needed --root football --leagues $LEAGUES > /tmp/need.txt
+          echo "必要な競技: $(tr '\n' ' ' < /tmp/need.txt)"
+          if [ ! -s /tmp/need.txt ]; then echo "20 時間以内の試合なし — 取らない"; exit 0; fi
+          curl -sS --max-time 30 -o /dev/null -D /tmp/h0.txt "https://api.the-odds-api.com/v4/sports?apiKey=$ODDS_API_KEY" || true
+          remaining=$(grep -i '^x-requests-remaining:' /tmp/h0.txt | tr -d '\r' | awk '{print $2}' | cut -d. -f1)
+          echo "枠の残り: ${remaining:-不明}"
+          if [ -z "${remaining:-}" ] || [ "$remaining" -lt 150 ] 2>/dev/null; then echo "::warning::枠の残り ${remaining:-不明} < 150（または不明）のため取らない"; exit 0; fi
+          ts=$(date -u +%Y%m%dT%H%M%SZ)
+          while read -r sport; do
+            [ -n "$sport" ] || continue
+            mkdir -p "football/cache/odds/$sport"
+            code=$(curl -sS --max-time 30 -o "football/cache/odds/$sport/$ts.json" -D /tmp/h.txt -w "%{http_code}" \
+              "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
+            echo "$sport HTTP $code $(grep -i x-requests-remaining /tmp/h.txt | tr -d '\r')"
+            if [ "$code" != "200" ]; then rm -f "football/cache/odds/$sport/$ts.json"; fi
+          done < /tmp/need.txt
+          node --experimental-strip-types lib/football-model/src/cli/football.ts snapshot --root football --leagues $LEAGUES
+
+      - name: コミット（市場の写しだけ）
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add football/market
+          if git diff --cached --quiet; then echo "変更なし"; exit 0; fi
+          git commit -m "football: $(date -u +%Y-%m-%dT%H:%MZ) odds snapshot"
+          for i in 1 2 3; do
+            if git push origin HEAD; then exit 0; fi
+            git fetch origin && git rebase origin/main
+          done
+          git push origin HEAD
