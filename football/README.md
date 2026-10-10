@@ -437,6 +437,16 @@ node --experimental-strip-types lib/football-model/src/cli/football.ts fdorg-ali
 - 既知の限界: CSV は 2 時点だけで、いつ・どれだけ急に動いたかは分からない。本当の Steam（数分での急変）は
   頻繁な取得の記録が要り、The Odds API の枠（VORTE EV と共有・枯渇の実績あり）が制約になる
 
+## 締切に近い市場の写し（2026-10-10・Founder 承認「1」）
+`.github/workflows/football-odds-snapshot.yml` が 1 日 1 回（09:05 UTC 起点・着地は 2〜6 時間遅れ）、
+**今から 20 時間以内に試合がある競技だけ**オッズを取り、`football/market/` に写しを足す（台帳には触れない）。
+- 決済は「キックオフ前の最新の写し」を締切の市場として使うので、写しが試合に近づいた分だけ市場 RPS と
+  CLV が締切に近づく。写しには最良のオッズも残す（推奨の CLV 用）
+- The Odds API の枠は VORTE EV と共有で尽きた実績がある。**残りが 150 未満なら取らない**（無料の
+  /v4/sports で確認）。1 競技 1 クレジットで、試合のある日だけ取る
+- 限界: GitHub の schedule の遅れで「直前」には合わせられない。日次の写し（試合の十数時間前）より
+  近い、という位置付け
+
 ## 欧州カップ戦の過密日程（2026-10-10・Founder 指示「2」）
 手順は `lib/football-model/src/cli/congestion.ts`（**年ごとに独立**）。日程は openfootball の公開データ
 （`probe/football/uefa/`・CL 2023-24〜2025-26・EL / ECL は 2024-25 まで＝**2026 年は CL だけ**）。
