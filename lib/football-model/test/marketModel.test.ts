@@ -99,3 +99,30 @@ test("台帳の系統: 予想と評価は別ファイル・日程と結果は共
   assert.equal(C.evaluations().length, 1);
   assert.ok(existsSync(join(dir, "evaluations.mkt.ndjson")));
 });
+
+test("最良のオッズ: 取引所（手数料前の価格）は候補から外す・中央値には含める", () => {
+  const ev: OddsEvent[] = [{
+    id: "x", sport_key: "soccer_epl", commence_time: "2026-10-11T14:00:00Z", home_team: "A", away_team: "B",
+    bookmakers: [
+      { key: "b1", markets: [{ key: "h2h", outcomes: [{ name: "A", price: 2.0 }, { name: "Draw", price: 3.4 }, { name: "B", price: 3.6 }] }] },
+      { key: "betfair_ex_eu", markets: [{ key: "h2h", outcomes: [{ name: "A", price: 2.3 }, { name: "Draw", price: 3.9 }, { name: "B", price: 4.2 }] }] },
+      { key: "matchbook", markets: [{ key: "h2h", outcomes: [{ name: "A", price: 2.25 }, { name: "Draw", price: 3.8 }, { name: "B", price: 4.1 }] }] },
+    ],
+  }];
+  const [f] = parseOddsEvents(ev);
+  assert.deepEqual(f.bestOdds, [2.0, 3.4, 3.6]);
+  assert.deepEqual(f.bestBooks, ["b1", "b1", "b1"]);
+  assert.equal(f.bookmakers, 3);
+  // 取引所しか無い試合は最良値なし（推奨しない）
+  const [only] = parseOddsEvents([{ ...ev[0], bookmakers: ev[0].bookmakers.slice(1) }]);
+  assert.equal(only.bestOdds, null);
+});
+
+test("marketModel: 最良値の組み合わせで裁定が成立する試合は推奨しない（どれかの価格が古い）", () => {
+  const m: [number, number, number] = [0.5, 0.27, 0.23];
+  const w = { a: 1, b: 0, c: 0 };
+  const arb: [number, number, number] = [2.2, 4.0, 5.0]; // 1/2.2+1/4+1/5 = 0.9045
+  const r = marketModel(m, m, arb, w);
+  assert.ok(r.ev!.some((e) => e > 0));
+  assert.equal(r.recommend, null);
+});

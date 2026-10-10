@@ -96,6 +96,8 @@ export function marketModel(
   const p = blend(market, canonical, w);
   if (!bestOdds || !bestOdds.every((o) => o > 1)) return { p, ev: null, recommend: null };
   const ev: [number, number, number] = [p[0] * bestOdds[0] - 1, p[1] * bestOdds[1] - 1, p[2] * bestOdds[2] - 1];
+  // 最良値の組み合わせで裁定が成立する（逆数の和 < 1）なら、どれかの価格が古い・誤り。推奨しない
+  if (1 / bestOdds[0] + 1 / bestOdds[1] + 1 / bestOdds[2] < 1) return { p, ev, recommend: null };
   let k = -1;
   for (let j = 0; j < 3; j++) if (ev[j]! > MKT_EV_THRESHOLD && (k < 0 || ev[j]! > ev[k]!)) k = j;
   return { p, ev, recommend: k < 0 ? null : (["H", "D", "A"] as const)[k]! };
