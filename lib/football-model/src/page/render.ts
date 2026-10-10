@@ -12,7 +12,7 @@
  */
 import { createHash } from "node:crypto";
 import { OFFICIAL_RECORD_START, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../ledger.ts";
-import { kanaTable, leagueLabel } from "./labels.ts";
+import { LEAGUE, kanaTable, leagueLabel } from "./labels.ts";
 
 /**
  * ページに埋め込む「何を描いたか」の指紋。**公開済みのページ自身が状態を持つ**ようにするためのもの。
@@ -219,7 +219,8 @@ export function renderPage(input: RenderInput): RenderResult {
         e.marketRps != null ? `<span class="dim">／市場 ${e.marketRps.toFixed(3)}</span>` : "";
       result = `<div class="result"><span class="score">${e.homeGoals}-${e.awayGoals}</span><span class="chip ${hit ? "hit" : "miss"}">${hit ? "的中" : "外れ"}</span><span class="rps">RPS ${e.rps.toFixed(3)} ${marketRps}</span></div>`;
     }
-    return `<article class="match">
+    const q = [kana(r.m.home), kana(r.m.away), r.m.home, r.m.away, leagueLabel(r.league), r.league].join(" ");
+    return `<article class="match" data-q="${esc(q)}" data-lg="${esc(r.league)}">
   <div class="meta"><span class="ko">${md(r.kickoffAt)} ${hm(r.kickoffAt)}</span><span class="lg">${leagueLabel(r.league)}</span>${previewFlag}${flag}${noMarketFlag}</div>
   <div class="teams"><span class="home">${esc(kana(r.m.home))}</span><span class="vs">v</span><span class="away">${esc(kana(r.m.away))}</span></div>
   <div class="probs"><span class="p h">${pct(h)}</span><span class="p d">${pct(d)}</span><span class="p a">${pct(a)}</span></div>
@@ -244,6 +245,29 @@ export function renderPage(input: RenderInput): RenderResult {
       out += matchRow(r, opts);
     }
     return out;
+  }
+
+  /** リーグごとに区切る（リーグの並びは LEAGUE の順。各リーグの中はキックオフ順・日付の見出し付き） */
+  function groupByLeague(list: Row[]): string {
+    const order = Object.keys(LEAGUE);
+    const codes = [...new Set(list.map((r) => r.league))].sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
+    return codes
+      .map((c) => {
+        const ls = list.filter((r) => r.league === c);
+        return `<section class="lgsec" data-lg="${esc(c)}"><h3 class="lghead">${esc(leagueLabel(c))}<small>${ls.length} 試合</small></h3>${group(ls)}</section>`;
+      })
+      .join("");
+  }
+  /** 検索窓とリーグの絞り込み（ページ内の全試合が対象。ひらがなはカタカナとして探す） */
+  function finder(list: Row[]): string {
+    const order = Object.keys(LEAGUE);
+    const codes = [...new Set(list.map((r) => r.league))].sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
+    const chips = [`<button type="button" class="lgchip on" data-lg="">すべて</button>`, ...codes.map((c) => `<button type="button" class="lgchip" data-lg="${esc(c)}">${esc(leagueLabel(c))}</button>`)].join("");
+    return `<div class="finder">
+  <input id="q" type="search" placeholder="チーム名・リーグ名で探す" autocomplete="off" enterkeyhint="search">
+  <div class="lgchips">${chips}</div>
+  <p class="sub" id="qcount"></p>
+</div>`;
   }
 
   const nHit = settled.filter((r) => isHit(r, r.ev!)).length;
@@ -361,6 +385,15 @@ summary{cursor:pointer;color:var(--muted);font-size:12px;padding:6px 0}
 .notice.preview-notice b{color:#b79cff}
 .notice code{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--cyan)}
 footer{margin-top:28px;font-size:11px;color:var(--dim);text-align:center}
+.finder{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 6px;margin-top:8px;border-bottom:1px solid var(--line)}
+.finder input{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;outline:none}
+.finder input:focus{border-color:rgba(127,227,255,.55)}
+.lgchips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.lgchip{flex-shrink:0;white-space:nowrap;font:inherit;font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
+.lgchip.on{color:var(--cyan);border-color:rgba(127,227,255,.5);background:rgba(127,227,255,.08)}
+#qcount{margin-top:4px;min-height:1em}
+.lghead{font-size:14px;font-weight:700;color:var(--text);margin:18px 0 2px;padding-left:8px;border-left:3px solid var(--cyan2)}
+.lghead small{color:var(--muted);font-weight:400;font-size:11px;margin-left:8px}
 </style>
 <div class="wrap">
 <header>
@@ -389,8 +422,9 @@ ${
   <div class="tile"><small>決着</small><strong>${nHit}/${settled.length}</strong> <span>的中</span></div>
 </div>
 
-<h2>これから始まる試合<small>海外 ${upcoming.length} 試合・キックオフ順</small></h2>
-${group(upcoming)}
+<h2>これから始まる試合<small>海外 ${upcoming.length} 試合・リーグ別</small></h2>
+${finder(upcoming)}
+${groupByLeague(upcoming)}
 
 ${upcomingJ.length ? `<h2>J1（未開始）<small>${upcomingJ.length} 試合</small></h2>${group(upcomingJ)}` : ""}
 
@@ -410,6 +444,40 @@ ${group(settled, { showResult: true })}
   <p><b>台帳の分離。</b>この URL は VORTE FT（サッカー）専用。野球の VORTE EV とはリポジトリ・台帳・URL が別で、このページのビルドは <code>football/</code> 配下しか読まない。野球の試合・予想・成績は今後も混在しない。</p>
   <p>分析専用。ベッティングやギャンブルに関する助言ではありません。</p>
 </div>
+<script>
+(function(){
+  var q=document.getElementById('q'); if(!q) return;
+  var chips=[].slice.call(document.querySelectorAll('.lgchip'));
+  var cards=[].slice.call(document.querySelectorAll('article.match'));
+  var count=document.getElementById('qcount');
+  var lg='';
+  // 表記ゆれを吸収: 全角半角・大小文字・ひらがな→カタカナ・中黒と空白を除く
+  function norm(t){return (t||'').normalize('NFKC').toLowerCase().replace(/[\\u3041-\\u3096]/g,function(c){return String.fromCharCode(c.charCodeAt(0)+0x60)}).replace(/[\\s・･\\-\\.]/g,'')}
+  var keys=cards.map(function(c){return norm(c.getAttribute('data-q'))});
+  function apply(){
+    var t=norm(q.value), n=0, active=t||lg;
+    cards.forEach(function(c,i){
+      var ok=(!t||keys[i].indexOf(t)>=0)&&(!lg||c.getAttribute('data-lg')===lg);
+      c.style.display=ok?'':'none'; if(ok&&c.closest('.lgsec,details')) n++;
+    });
+    // 中身が全部隠れた日付見出し・リーグ区分は隠す
+    [].slice.call(document.querySelectorAll('h3.day')).forEach(function(h){
+      var el=h.nextElementSibling, vis=false;
+      while(el&&el.tagName==='ARTICLE'){ if(el.style.display!=='none'){vis=true;break} el=el.nextElementSibling }
+      h.style.display=vis?'':'none';
+    });
+    [].slice.call(document.querySelectorAll('.lgsec')).forEach(function(s){
+      s.style.display=s.querySelector('article.match:not([style*="none"])')?'':'none';
+    });
+    if(active){ [].slice.call(document.querySelectorAll('details')).forEach(function(d){d.open=true}) }
+    count.textContent=active?('該当 '+n+' 試合（これから・決済待ち・決着済みを含む）'):'';
+  }
+  q.addEventListener('input',apply);
+  chips.forEach(function(b){b.addEventListener('click',function(){
+    lg=b.getAttribute('data-lg'); chips.forEach(function(x){x.classList.toggle('on',x===b)}); apply();
+  })});
+})();
+</script>
 <footer>VORTE FT · サッカー専用（野球は含まない） · 台帳 sports-lab <code>football/ledger/</code> · 全件記録</footer>
 </div>
 `;

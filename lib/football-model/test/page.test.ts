@@ -229,3 +229,17 @@ test("2 つ目のモデル（市場基盤）: 同じ試合に並べ、推奨・�
   // 黄色・ゴールドを使わない（追加した CSS を含めて）
   assert.ok(!/#(ff[cd]|ffd700|f5c518|fbbf24|eab308|facc15)/i.test(html));
 });
+
+test("探しやすさ: これからの試合はリーグ別に区切り、各試合に日本語・英語・リーグ名の検索語を持たせる", () => {
+  const ko = "2099-09-01T12:00:00Z";
+  const matches = [match("p1", "Arsenal", "Chelsea", ko), { ...match("p2", "Inter", "Milan", ko), league: "I1" }];
+  const predictions = [prediction("e1", "p1", ko, [0.5, 0.3, 0.2]), { ...prediction("e2", "p2", ko, [0.4, 0.3, 0.3]), league: "I1" }];
+  const { html } = render({ matches, predictions, publishedProviderIds: new Set(["p1", "p2"]) });
+  assert.equal((html.match(/class="lgsec"/g) ?? []).length, 2);
+  assert.ok(html.indexOf("プレミアリーグ") < html.indexOf("セリエA"));
+  assert.match(html, /data-q="[^"]*Arsenal[^"]*プレミアリーグ[^"]*E0"/);
+  assert.match(html, /id="q" type="search"/);
+  // テンプレートリテラルで正規表現の \ が落ちると検索が全く効かなくなる（2026-10-10 に実発生）
+  assert.ok(html.includes("/[\\s・･\\-\\.]/g"), "検索の正規表現が壊れている");
+  assert.ok(html.includes("/[\\u3041-\\u3096]/g"), "ひらがな→カタカナの正規表現が壊れている");
+});
