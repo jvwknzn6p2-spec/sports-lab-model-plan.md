@@ -358,6 +358,54 @@ function readRunReport(): RunReport | null {
   }
 }
 
+/**
+ * 市場の写し（小さく）。決済の「締切に最も近い市場」（closingMarketResolver）はキックオフ前の最新の写しを
+ * 使うので、写しが試合に近いほど CLV と市場 RPS が締切に近づく。最良のオッズも残す（推奨の CLV 用）
+ */
+function writeMarketSnapshot(sport: string, fetchedAt: string, fixtures: ReturnType<typeof parseOddsEvents>): void {
+  const mdir = join(ROOT, "market", sport);
+  mkdirSync(mdir, { recursive: true });
+  writeFileSync(
+    join(mdir, `${fetchedAt.replace(/[-:]/g, "").replace(".000", "")}.json`),
+    JSON.stringify(fixtures.map((f) => ({ providerId: f.providerId, kickoffAt: f.kickoffAt, home: f.home, away: f.away, resolved: f.resolved, bookmakers: f.bookmakers, market: f.market, bestOdds: f.bestOdds ?? null })), null, 0) + "\n",
+  );
+}
+
+/** 締切に近い写しが要る競技（登録済みで、今から SNAPSHOT_HOURS 以内に始まる試合がある）。1 行 1 競技 */
+const SNAPSHOT_HOURS = 20;
+function snapshotNeeded(): void {
+  const L = openLedger();
+  const now = Date.parse(NOW);
+  const sports = new Set<string>();
+  for (const m of L.currentMatches().values()) {
+    const t = Date.parse(m.kickoffAt) - now;
+    if (t <= 0 || t > SNAPSHOT_HOURS * 3_600_000) continue;
+    const src = SOURCES[m.league];
+    if (src && LEAGUES.includes(m.league)) sports.add(src.sport);
+  }
+  for (const x of [...sports].sort()) console.log(x);
+}
+
+/**
+ * 締切に近い市場の写しだけを作る（予想は出さない・台帳には書かない）。
+ * cache のオッズのうち、この回に取った（NOW から 3 時間以内の）ものだけを使う
+ */
+function snapshot(): void {
+  let n = 0;
+  for (const league of LEAGUES) {
+    const src = SOURCES[league];
+    if (!src) continue;
+    const odds = latestOdds(src.sport);
+    if (!odds || Date.parse(NOW) - Date.parse(odds.fetchedAt) > 3 * 3_600_000) continue;
+    const names = new Set(readHistory(HISTORY, league).flatMap((r) => [r.home, r.away]));
+    const fixtures = parseOddsEvents(odds.events, buildTeamResolver(names));
+    writeMarketSnapshot(src.sport, odds.fetchedAt, fixtures);
+    n += fixtures.length;
+    console.log(`${league}: 写し ${fixtures.length} 試合 odds@${odds.fetchedAt}`);
+  }
+  console.log(`snapshot: ${n} 試合`);
+}
+
 function daily(): void {
   const L = openLedger();
   // 市場基盤モデルの系統（predictions.mkt / evaluations.mkt）。日程と結果は L と共有する
@@ -391,13 +439,7 @@ function daily(): void {
       futureFixtureCount += fixtures.filter((f) => Date.parse(f.kickoffAt) > Date.parse(NOW)).length;
       log.push(`${league}: fixtures ${fixtures.length} (added ${r.added}, unresolved ${r.unresolved}, 記録開始前 ${r.outOfRecord ?? 0}) odds@${odds.fetchedAt}`);
       for (const f of fixtures.filter((x) => !x.resolved)) log.push(`  unresolved: ${f.home} v ${f.away}`);
-      // 市場の写し（小さく）
-      const mdir = join(ROOT, "market", src.sport);
-      mkdirSync(mdir, { recursive: true });
-      writeFileSync(
-        join(mdir, `${odds.fetchedAt.replace(/[-:]/g, "").replace(".000", "")}.json`),
-        JSON.stringify(fixtures.map((f) => ({ providerId: f.providerId, kickoffAt: f.kickoffAt, home: f.home, away: f.away, resolved: f.resolved, bookmakers: f.bookmakers, market: f.market })), null, 0) + "\n",
-      );
+      writeMarketSnapshot(src.sport, odds.fetchedAt, fixtures);
     } else {
       log.push(`${league}: The Odds API のオッズが無い`);
     }
@@ -945,12 +987,14 @@ function weekly(): void {
 if (cmd === "daily") daily();
 else if (cmd === "weekly") weekly();
 else if (cmd === "scores-needed") scoresNeeded();
+else if (cmd === "snapshot-needed") snapshotNeeded();
+else if (cmd === "snapshot") snapshot();
 else if (cmd === "health") health();
 else if (cmd === "clv") clv();
 else if (cmd === "history-import") historyImport();
 else if (cmd === "fdorg-aliases") fdorgAliases();
 else if (cmd === "quote") quote();
 else {
-  console.error("usage: football.ts daily|weekly|health|clv|scores-needed|history-import|fdorg-aliases|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
+  console.error("usage: football.ts daily|weekly|health|clv|scores-needed|snapshot-needed|snapshot|history-import|fdorg-aliases|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }
