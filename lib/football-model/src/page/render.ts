@@ -262,13 +262,13 @@ export function renderPage(input: RenderInput): RenderResult {
    * 検索窓・日付・リーグの絞り込み（ページ内の全試合が対象。ひらがなはカタカナとして探す）。
    * 日付は JST の試合日。日付を選ぶと、これから・決済待ち・決着済みのどれもリーグ別に並ぶ
    */
-  function finder(list: Row[]): string {
+  function finder(list: Row[], preDays: Set<string> = new Set(), postDays: Set<string> = new Set()): string {
     const order = Object.keys(LEAGUE);
     const codes = [...new Set(list.map((r) => r.league))].sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
     const chips = [`<button type="button" class="lgchip on" data-lg="">すべて</button>`, ...codes.map((c) => `<button type="button" class="lgchip" data-lg="${esc(c)}">${esc(leagueLabel(c))}</button>`)].join("");
     const WD = ["日", "月", "火", "水", "木", "金", "土"];
     const days = [...new Set(list.map((r) => ymd(r.kickoffAt)))].sort();
-    const dayChips = [`<button type="button" class="daychip on" data-day="">全日程</button>`, ...days.map((d) => `<button type="button" class="daychip" data-day="${d}">${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}（${WD[new Date(`${d}T00:00:00Z`).getUTCDay()]}）</button>`)].join("");
+    const dayChips = [`<button type="button" class="daychip on" data-day="">全日程</button>`, ...days.map((d) => `<button type="button" class="daychip" data-day="${d}" data-panes="${[preDays.has(d) ? "pre" : "", postDays.has(d) ? "post" : ""].join(" ").trim()}">${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}（${WD[new Date(`${d}T00:00:00Z`).getUTCDay()]}）</button>`)].join("");
     return `<div class="finder">
   <input id="q" type="search" placeholder="チーム名・リーグ名で探す" autocomplete="off" enterkeyhint="search">
   <div class="dayrow"><label for="qd">日付（JST）</label><input id="qd" type="date" value=""${days.length ? ` min="${days[0]}" max="${days[days.length - 1]}"` : ""}></div>
@@ -400,6 +400,11 @@ footer{margin-top:28px;font-size:11px;color:var(--dim);text-align:center}
 .lgchip{flex-shrink:0;white-space:nowrap;font:inherit;font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
 .lgchip.on{color:var(--cyan);border-color:rgba(127,227,255,.5);background:rgba(127,227,255,.08)}
 #qcount{margin-top:4px;min-height:1em}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 0}
+.tab{font:inherit;font-size:15px;font-weight:700;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:11px 8px;cursor:pointer}
+.tab small{font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:400;margin-left:8px;color:var(--dim)}
+.tab.on{color:var(--cyan);border-color:rgba(127,227,255,.55);background:rgba(127,227,255,.09)}
+.tab.on small{color:var(--cyan)}
 .dayrow label{white-space:nowrap}
 .dayrow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
 .dayrow input{font:inherit;font-size:16px;color:var(--text);background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;color-scheme:dark}
@@ -435,19 +440,27 @@ ${
   <div class="tile"><small>決着</small><strong>${nHit}/${settled.length}</strong> <span>的中</span></div>
 </div>
 
-${finder([...upcoming, ...started, ...settled])}
+<nav class="tabs" role="tablist">
+  <button type="button" class="tab on" data-pane="pre" role="tab">試合前<small>${upcoming.length + upcomingJ.length}</small></button>
+  <button type="button" class="tab" data-pane="post" role="tab">試合後<small>${started.length + settled.length}</small></button>
+</nav>
+${finder([...upcoming, ...started, ...settled], new Set([...upcoming, ...upcomingJ].map((r) => ymd(r.kickoffAt))), new Set([...started, ...settled].map((r) => ymd(r.kickoffAt))))}
+<div class="pane" data-pane="pre">
 <h2>これから始まる試合<small>海外 ${upcoming.length} 試合・リーグ別</small></h2>
 ${groupByLeague(upcoming)}
 
 ${upcomingJ.length ? `<h2>J1（未開始）<small>${upcomingJ.length} 試合</small></h2>${group(upcomingJ)}` : ""}
+</div>
 
-<h2>開始済み・決済待ち<small>${started.length} 試合・新しい順</small></h2>
+<div class="pane" data-pane="post" hidden>
+<h2>開始済み・決済待ち<small>${started.length} 試合・リーグ別</small></h2>
 <p class="sub">結果は football-data.co.uk の CSV 反映後、翌日 12:05 JST の回で決済される。</p>
-<details><summary>一覧を開く（J1 を含む）</summary>${groupByLeague(started)}</details>
+${groupByLeague(started)}
 
 <h2>決着済み<small>${settled.length} 試合・平均 RPS モデル ${meanRps("rps").toFixed(3)}${bothSet.length ? `／<b>市場と同じ ${bothSet.length} 件で比べると モデル ${meanOn(bothSet, "rps").toFixed(3)} 対 市場 ${meanOn(bothSet, "marketRps").toFixed(3)}</b>` : ""}</small></h2>
 ${compareBlock()}
 ${groupByLeague(settled, { showResult: true })}
+</div>
 
 <div class="note">
   <p><b>読み方。</b>H/D/A は ホーム勝／引き分け／アウェイ勝 の確率（%）。引き分けは結果の 1 つとして分母に入れる。主指標は RPS（小さいほど良い）で、的中率は件数つきでしか読まない。決着 ${settled.length} 件では何も言えない。</p>
@@ -463,7 +476,22 @@ ${groupByLeague(settled, { showResult: true })}
   var chips=[].slice.call(document.querySelectorAll('.lgchip'));
   var cards=[].slice.call(document.querySelectorAll('article.match'));
   var count=document.getElementById('qcount');
-  var lg='', day='';
+  var lg='', day='', pane='pre';
+  var tabs=[].slice.call(document.querySelectorAll('.tab'));
+  var panes=[].slice.call(document.querySelectorAll('.pane'));
+  function setPane(pn){
+    pane=pn==='post'?'post':'pre';
+    tabs.forEach(function(b){b.classList.toggle('on',b.getAttribute('data-pane')===pane)});
+    panes.forEach(function(x){x.hidden=x.getAttribute('data-pane')!==pane});
+    // そのページに試合のある日付だけを出す。選択中の日付がそのページに無ければ解除
+    var keep=false;
+    [].slice.call(document.querySelectorAll('.daychip[data-panes]')).forEach(function(c){
+      var ok=(' '+c.getAttribute('data-panes')+' ').indexOf(' '+pane+' ')>=0;
+      c.style.display=ok?'':'none'; if(ok&&c.getAttribute('data-day')===day) keep=true;
+    });
+    try{ history.replaceState(null,'',pane==='post'?'#post':'#pre') }catch(e){}
+    if(day&&!keep){ setDay('') } else { apply() }
+  }
   var qd=document.getElementById('qd');
   var dchips=[].slice.call(document.querySelectorAll('.daychip'));
   function setDay(d){ day=d||''; if(qd) qd.value=day; dchips.forEach(function(x){x.classList.toggle('on',x.getAttribute('data-day')===day)}); apply(); }
@@ -474,7 +502,7 @@ ${groupByLeague(settled, { showResult: true })}
     var t=norm(q.value), n=0, active=t||lg||day;
     cards.forEach(function(c,i){
       var ok=(!t||keys[i].indexOf(t)>=0)&&(!lg||c.getAttribute('data-lg')===lg)&&(!day||c.getAttribute('data-day')===day);
-      c.style.display=ok?'':'none'; if(ok&&c.closest('.lgsec,details')) n++;
+      c.style.display=ok?'':'none'; var pe=c.closest('.pane'); if(ok&&pe&&pe.getAttribute('data-pane')===pane) n++;
     });
     // 中身が全部隠れた日付見出し・リーグ区分は隠す
     [].slice.call(document.querySelectorAll('h3.day')).forEach(function(h){
@@ -488,14 +516,17 @@ ${groupByLeague(settled, { showResult: true })}
       if(sm){ if(!sm.getAttribute('data-all')) sm.setAttribute('data-all',sm.textContent); sm.textContent=active?(v+' 試合'):sm.getAttribute('data-all'); }
     });
     if(active){ [].slice.call(document.querySelectorAll('details')).forEach(function(d){d.open=true}) }
-    count.textContent=active?('該当 '+n+' 試合（これから・決済待ち・決着済みを含む）'):'';
+    count.textContent=active?('該当 '+n+' 試合（'+(pane==='post'?'試合後':'試合前')+'）'):'';
   }
   q.addEventListener('input',apply);
+  tabs.forEach(function(b){b.addEventListener('click',function(){setPane(b.getAttribute('data-pane'))})});
   if(qd) qd.addEventListener('change',function(){setDay(qd.value)});
   dchips.forEach(function(b){b.addEventListener('click',function(){setDay(b.getAttribute('data-day'))})});
   chips.forEach(function(b){b.addEventListener('click',function(){
     lg=b.getAttribute('data-lg'); chips.forEach(function(x){x.classList.toggle('on',x===b)}); apply();
   })});
+  setPane(location.hash==='#post'?'post':'pre');
+  window.addEventListener('hashchange',function(){ var h=location.hash==='#post'?'post':'pre'; if(h!==pane) setPane(h) });
 })();
 </script>
 <footer>VORTE FT · サッカー専用（野球は含まない） · 台帳 sports-lab <code>football/ledger/</code> · 全件記録</footer>

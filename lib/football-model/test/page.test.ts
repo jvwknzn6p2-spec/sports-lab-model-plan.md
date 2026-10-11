@@ -253,5 +253,19 @@ test("日付（JST）で絞り込める: 各試合が JST の試合日を持ち�
   assert.match(html, /data-q="[^"]*Arsenal[^"]*" data-lg="E0" data-day="2099-09-01"/);
   assert.match(html, /data-q="[^"]*Fulham[^"]*" data-lg="E0" data-day="2099-09-02"/);
   assert.match(html, /id="qd" type="date"/);
-  assert.match(html, /class="daychip" data-day="2099-09-02">9\/2/);
+  assert.match(html, /class="daychip" data-day="2099-09-02" data-panes="pre">9\/2/);
+});
+
+test("試合前と試合後を 2 つのボタンで切り替える 2 ページに分ける", () => {
+  const future = "2099-09-01T14:00:00Z";
+  const past = "2020-09-01T14:00:00Z";
+  const matches = [match("p1", "Arsenal", "Chelsea", future), match("p2", "Fulham", "Brentford", past)];
+  const predictions = [prediction("e1", "p1", future, [0.5, 0.3, 0.2]), prediction("e2", "p2", past, [0.4, 0.3, 0.3])];
+  const { html } = render({ matches, predictions, evaluations: [evaluation("e2", "p2", "H", 0.2, null)], publishedProviderIds: new Set(["p1", "p2"]) });
+  assert.match(html, /class="tab on" data-pane="pre"[^>]*>試合前/);
+  assert.match(html, /class="tab" data-pane="post"[^>]*>試合後/);
+  const pre = html.slice(html.indexOf('class="pane" data-pane="pre"'), html.indexOf('class="pane" data-pane="post"'));
+  const post = html.slice(html.indexOf('class="pane" data-pane="post"'));
+  assert.ok(pre.includes("Arsenal") && !pre.includes("Fulham"), "試合前のページに試合後の試合が混ざる");
+  assert.ok(post.includes("Fulham") && !post.includes('data-q="アーセナル'), "試合後のページに試合前の試合が混ざる");
 });
