@@ -10,7 +10,7 @@ _Only picks fixed BEFORE their deadline form the verified record; the market clo
 
 ## All picks (every tier combined — reference)
 
-**48-21** (69.6%) across 40 days, 97 PASS.
+**48-21** (69.6%) across 41 days, 99 PASS.
 
 - Handicap: 18-12 · **+4.20 units** after the cut (ROI +14.0% per bet)
 - Significance (P&L): +14.0% per bet over 30 stakes — z 0.81, **not yet distinguishable from luck**
@@ -48,6 +48,7 @@ _The headline gap can sit near zero while one band runs hot and another collapse
 
 ## By day
 
+- 2026-10-11: 0-0 (0 picks, 2 PASS)
 - 2026-10-10: 0-0 (0 picks, 2 PASS)
 - 2026-10-08: 0-0 (0 picks, 1 PASS)
 - 2026-10-07: 0-0 (0 picks, 1 PASS)
