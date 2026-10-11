@@ -220,7 +220,7 @@ export function renderPage(input: RenderInput): RenderResult {
       result = `<div class="result"><span class="score">${e.homeGoals}-${e.awayGoals}</span><span class="chip ${hit ? "hit" : "miss"}">${hit ? "的中" : "外れ"}</span><span class="rps">RPS ${e.rps.toFixed(3)} ${marketRps}</span></div>`;
     }
     const q = [kana(r.m.home), kana(r.m.away), r.m.home, r.m.away, leagueLabel(r.league), r.league].join(" ");
-    return `<article class="match" data-q="${esc(q)}" data-lg="${esc(r.league)}">
+    return `<article class="match" data-q="${esc(q)}" data-lg="${esc(r.league)}" data-day="${ymd(r.kickoffAt)}">
   <div class="meta"><span class="ko">${md(r.kickoffAt)} ${hm(r.kickoffAt)}</span><span class="lg">${leagueLabel(r.league)}</span>${previewFlag}${flag}${noMarketFlag}</div>
   <div class="teams"><span class="home">${esc(kana(r.m.home))}</span><span class="vs">v</span><span class="away">${esc(kana(r.m.away))}</span></div>
   <div class="probs"><span class="p h">${pct(h)}</span><span class="p d">${pct(d)}</span><span class="p a">${pct(a)}</span></div>
@@ -248,23 +248,31 @@ export function renderPage(input: RenderInput): RenderResult {
   }
 
   /** リーグごとに区切る（リーグの並びは LEAGUE の順。各リーグの中はキックオフ順・日付の見出し付き） */
-  function groupByLeague(list: Row[]): string {
+  function groupByLeague(list: Row[], opts?: { showResult?: boolean }): string {
     const order = Object.keys(LEAGUE);
     const codes = [...new Set(list.map((r) => r.league))].sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
     return codes
       .map((c) => {
         const ls = list.filter((r) => r.league === c);
-        return `<section class="lgsec" data-lg="${esc(c)}"><h3 class="lghead">${esc(leagueLabel(c))}<small>${ls.length} 試合</small></h3>${group(ls)}</section>`;
+        return `<section class="lgsec" data-lg="${esc(c)}"><h3 class="lghead">${esc(leagueLabel(c))}<small>${ls.length} 試合</small></h3>${group(ls, opts)}</section>`;
       })
       .join("");
   }
-  /** 検索窓とリーグの絞り込み（ページ内の全試合が対象。ひらがなはカタカナとして探す） */
+  /**
+   * 検索窓・日付・リーグの絞り込み（ページ内の全試合が対象。ひらがなはカタカナとして探す）。
+   * 日付は JST の試合日。日付を選ぶと、これから・決済待ち・決着済みのどれもリーグ別に並ぶ
+   */
   function finder(list: Row[]): string {
     const order = Object.keys(LEAGUE);
     const codes = [...new Set(list.map((r) => r.league))].sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
     const chips = [`<button type="button" class="lgchip on" data-lg="">すべて</button>`, ...codes.map((c) => `<button type="button" class="lgchip" data-lg="${esc(c)}">${esc(leagueLabel(c))}</button>`)].join("");
+    const WD = ["日", "月", "火", "水", "木", "金", "土"];
+    const days = [...new Set(list.map((r) => ymd(r.kickoffAt)))].sort();
+    const dayChips = [`<button type="button" class="daychip on" data-day="">全日程</button>`, ...days.map((d) => `<button type="button" class="daychip" data-day="${d}">${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}（${WD[new Date(`${d}T00:00:00Z`).getUTCDay()]}）</button>`)].join("");
     return `<div class="finder">
   <input id="q" type="search" placeholder="チーム名・リーグ名で探す" autocomplete="off" enterkeyhint="search">
+  <div class="dayrow"><label for="qd">日付（JST）</label><input id="qd" type="date" value=""${days.length ? ` min="${days[0]}" max="${days[days.length - 1]}"` : ""}></div>
+  <div class="lgchips">${dayChips}</div>
   <div class="lgchips">${chips}</div>
   <p class="sub" id="qcount"></p>
 </div>`;
@@ -392,6 +400,11 @@ footer{margin-top:28px;font-size:11px;color:var(--dim);text-align:center}
 .lgchip{flex-shrink:0;white-space:nowrap;font:inherit;font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
 .lgchip.on{color:var(--cyan);border-color:rgba(127,227,255,.5);background:rgba(127,227,255,.08)}
 #qcount{margin-top:4px;min-height:1em}
+.dayrow label{white-space:nowrap}
+.dayrow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
+.dayrow input{font:inherit;font-size:16px;color:var(--text);background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;color-scheme:dark}
+.daychip{flex-shrink:0;white-space:nowrap;font:inherit;font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
+.daychip.on{color:var(--cyan);border-color:rgba(127,227,255,.5);background:rgba(127,227,255,.08)}
 .lghead{font-size:14px;font-weight:700;color:var(--text);margin:18px 0 2px;padding-left:8px;border-left:3px solid var(--cyan2)}
 .lghead small{color:var(--muted);font-weight:400;font-size:11px;margin-left:8px}
 </style>
@@ -422,19 +435,19 @@ ${
   <div class="tile"><small>決着</small><strong>${nHit}/${settled.length}</strong> <span>的中</span></div>
 </div>
 
+${finder([...upcoming, ...started, ...settled])}
 <h2>これから始まる試合<small>海外 ${upcoming.length} 試合・リーグ別</small></h2>
-${finder(upcoming)}
 ${groupByLeague(upcoming)}
 
 ${upcomingJ.length ? `<h2>J1（未開始）<small>${upcomingJ.length} 試合</small></h2>${group(upcomingJ)}` : ""}
 
 <h2>開始済み・決済待ち<small>${started.length} 試合・新しい順</small></h2>
 <p class="sub">結果は football-data.co.uk の CSV 反映後、翌日 12:05 JST の回で決済される。</p>
-<details><summary>一覧を開く（J1 を含む）</summary>${group(started)}</details>
+<details><summary>一覧を開く（J1 を含む）</summary>${groupByLeague(started)}</details>
 
 <h2>決着済み<small>${settled.length} 試合・平均 RPS モデル ${meanRps("rps").toFixed(3)}${bothSet.length ? `／<b>市場と同じ ${bothSet.length} 件で比べると モデル ${meanOn(bothSet, "rps").toFixed(3)} 対 市場 ${meanOn(bothSet, "marketRps").toFixed(3)}</b>` : ""}</small></h2>
 ${compareBlock()}
-${group(settled, { showResult: true })}
+${groupByLeague(settled, { showResult: true })}
 
 <div class="note">
   <p><b>読み方。</b>H/D/A は ホーム勝／引き分け／アウェイ勝 の確率（%）。引き分けは結果の 1 つとして分母に入れる。主指標は RPS（小さいほど良い）で、的中率は件数つきでしか読まない。決着 ${settled.length} 件では何も言えない。</p>
@@ -450,14 +463,17 @@ ${group(settled, { showResult: true })}
   var chips=[].slice.call(document.querySelectorAll('.lgchip'));
   var cards=[].slice.call(document.querySelectorAll('article.match'));
   var count=document.getElementById('qcount');
-  var lg='';
+  var lg='', day='';
+  var qd=document.getElementById('qd');
+  var dchips=[].slice.call(document.querySelectorAll('.daychip'));
+  function setDay(d){ day=d||''; if(qd) qd.value=day; dchips.forEach(function(x){x.classList.toggle('on',x.getAttribute('data-day')===day)}); apply(); }
   // 表記ゆれを吸収: 全角半角・大小文字・ひらがな→カタカナ・中黒と空白を除く
   function norm(t){return (t||'').normalize('NFKC').toLowerCase().replace(/[\\u3041-\\u3096]/g,function(c){return String.fromCharCode(c.charCodeAt(0)+0x60)}).replace(/[\\s・･\\-\\.]/g,'')}
   var keys=cards.map(function(c){return norm(c.getAttribute('data-q'))});
   function apply(){
-    var t=norm(q.value), n=0, active=t||lg;
+    var t=norm(q.value), n=0, active=t||lg||day;
     cards.forEach(function(c,i){
-      var ok=(!t||keys[i].indexOf(t)>=0)&&(!lg||c.getAttribute('data-lg')===lg);
+      var ok=(!t||keys[i].indexOf(t)>=0)&&(!lg||c.getAttribute('data-lg')===lg)&&(!day||c.getAttribute('data-day')===day);
       c.style.display=ok?'':'none'; if(ok&&c.closest('.lgsec,details')) n++;
     });
     // 中身が全部隠れた日付見出し・リーグ区分は隠す
@@ -467,12 +483,16 @@ ${group(settled, { showResult: true })}
       h.style.display=vis?'':'none';
     });
     [].slice.call(document.querySelectorAll('.lgsec')).forEach(function(s){
-      s.style.display=s.querySelector('article.match:not([style*="none"])')?'':'none';
+      var v=s.querySelectorAll('article.match:not([style*="none"])').length, sm=s.querySelector('.lghead small');
+      s.style.display=v?'':'none';
+      if(sm){ if(!sm.getAttribute('data-all')) sm.setAttribute('data-all',sm.textContent); sm.textContent=active?(v+' 試合'):sm.getAttribute('data-all'); }
     });
     if(active){ [].slice.call(document.querySelectorAll('details')).forEach(function(d){d.open=true}) }
     count.textContent=active?('該当 '+n+' 試合（これから・決済待ち・決着済みを含む）'):'';
   }
   q.addEventListener('input',apply);
+  if(qd) qd.addEventListener('change',function(){setDay(qd.value)});
+  dchips.forEach(function(b){b.addEventListener('click',function(){setDay(b.getAttribute('data-day'))})});
   chips.forEach(function(b){b.addEventListener('click',function(){
     lg=b.getAttribute('data-lg'); chips.forEach(function(x){x.classList.toggle('on',x===b)}); apply();
   })});

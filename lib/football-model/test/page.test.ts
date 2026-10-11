@@ -243,3 +243,15 @@ test("探しやすさ: これからの試合はリーグ別に区切り、各試
   assert.ok(html.includes("/[\\s・･\\-\\.]/g"), "検索の正規表現が壊れている");
   assert.ok(html.includes("/[\\u3041-\\u3096]/g"), "ひらがな→カタカナの正規表現が壊れている");
 });
+
+test("日付（JST）で絞り込める: 各試合が JST の試合日を持ち、日付の選択肢と入力欄がある", () => {
+  const ko1 = "2099-09-01T14:00:00Z"; // JST 9/1 23:00
+  const ko2 = "2099-09-01T16:00:00Z"; // JST 9/2 01:00（JST では翌日）
+  const matches = [match("p1", "Arsenal", "Chelsea", ko1), match("p2", "Fulham", "Brentford", ko2)];
+  const predictions = [prediction("e1", "p1", ko1, [0.5, 0.3, 0.2]), prediction("e2", "p2", ko2, [0.4, 0.3, 0.3])];
+  const { html } = render({ matches, predictions, publishedProviderIds: new Set(["p1", "p2"]) });
+  assert.match(html, /data-q="[^"]*Arsenal[^"]*" data-lg="E0" data-day="2099-09-01"/);
+  assert.match(html, /data-q="[^"]*Fulham[^"]*" data-lg="E0" data-day="2099-09-02"/);
+  assert.match(html, /id="qd" type="date"/);
+  assert.match(html, /class="daychip" data-day="2099-09-02">9\/2/);
+});
