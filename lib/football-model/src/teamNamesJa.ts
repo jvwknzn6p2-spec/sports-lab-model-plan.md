@@ -190,6 +190,12 @@ export const JA_TO_EN: Readonly<Record<string, readonly string[]>> = {
   "マリティモ": ["Maritimo"],
   "マルセイユ": ["Marseille"],
   "マンチェスター・C": ["Man City"],
+  // 貼り付けで実際に使われた略称（2026-10-11）
+  "マンC": ["Man City"],
+  "ギマラインス": ["Guimaraes"],
+  "エストレラ": ["Estrela"],
+  "ルーヴェン": ["Oud-Heverlee Leuven"],
+  "シント": ["St Truiden"],
   "マンチェスター・U": ["Man United"],
   "ミラン": ["Milan"],
   "メヘレン": ["Mechelen"],
