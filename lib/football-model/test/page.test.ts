@@ -235,7 +235,8 @@ test("探しやすさ: これからの試合はリーグ別に区切り、各試
   const matches = [match("p1", "Arsenal", "Chelsea", ko), { ...match("p2", "Inter", "Milan", ko), league: "I1" }];
   const predictions = [prediction("e1", "p1", ko, [0.5, 0.3, 0.2]), { ...prediction("e2", "p2", ko, [0.4, 0.3, 0.3]), league: "I1" }];
   const { html } = render({ matches, predictions, publishedProviderIds: new Set(["p1", "p2"]) });
-  assert.equal((html.match(/class="lgsec"/g) ?? []).length, 2);
+  // 決着前の試合は 3 ページ（試合前・試合中・試合後の結果待ち）に置くので、リーグの区分も 3 倍
+  assert.equal((html.match(/class="lgsec"/g) ?? []).length, 6);
   assert.ok(html.indexOf("プレミアリーグ") < html.indexOf("セリエA"));
   assert.match(html, /data-q="[^"]*Arsenal[^"]*プレミアリーグ[^"]*E0"/);
   assert.match(html, /id="q" type="search"/);
@@ -253,19 +254,25 @@ test("日付（JST）で絞り込める: 各試合が JST の試合日を持ち�
   assert.match(html, /data-q="[^"]*Arsenal[^"]*" data-lg="E0" data-day="2099-09-01"/);
   assert.match(html, /data-q="[^"]*Fulham[^"]*" data-lg="E0" data-day="2099-09-02"/);
   assert.match(html, /id="qd" type="date"/);
-  assert.match(html, /class="daychip" data-day="2099-09-02" data-panes="pre">9\/2/);
+  assert.match(html, /class="daychip" data-day="2099-09-02" data-panes="pre live post">9\/2/);
 });
 
-test("試合前と試合後を 2 つのボタンで切り替える 2 ページに分ける", () => {
+test("試合前・試合中・試合後の 3 ページ: 決着前の試合は 3 ページに置き、ページを開いた時刻で出す場所を決める", () => {
   const future = "2099-09-01T14:00:00Z";
   const past = "2020-09-01T14:00:00Z";
   const matches = [match("p1", "Arsenal", "Chelsea", future), match("p2", "Fulham", "Brentford", past)];
   const predictions = [prediction("e1", "p1", future, [0.5, 0.3, 0.2]), prediction("e2", "p2", past, [0.4, 0.3, 0.3])];
   const { html } = render({ matches, predictions, evaluations: [evaluation("e2", "p2", "H", 0.2, null)], publishedProviderIds: new Set(["p1", "p2"]) });
-  assert.match(html, /class="tab on" data-pane="pre"[^>]*>試合前/);
-  assert.match(html, /class="tab" data-pane="post"[^>]*>試合後/);
-  const pre = html.slice(html.indexOf('class="pane" data-pane="pre"'), html.indexOf('class="pane" data-pane="post"'));
-  const post = html.slice(html.indexOf('class="pane" data-pane="post"'));
-  assert.ok(pre.includes("Arsenal") && !pre.includes("Fulham"), "試合前のページに試合後の試合が混ざる");
-  assert.ok(post.includes("Fulham") && !post.includes('data-q="アーセナル'), "試合後のページに試合前の試合が混ざる");
+  for (const [k, lab] of [["pre", "試合前"], ["live", "試合中"], ["post", "試合後"]]) assert.match(html, new RegExp(`data-pane="${k}" role="tab">${lab}`));
+  const pane = (k: string) => {
+    const i = html.indexOf(`class="pane" data-pane="${k}"`);
+    const j = html.indexOf('class="pane" data-pane=', i + 10);
+    return html.slice(i, j < 0 ? undefined : j);
+  };
+  // 決着前（Arsenal）は 3 ページすべてに置く。決着済み（Fulham）は試合後だけ
+  for (const k of ["pre", "live", "post"]) assert.ok(pane(k).includes('data-pid="p1"'), `決着前の試合が ${k} に無い`);
+  assert.ok(!pane("pre").includes('data-pid="p2"') && !pane("live").includes('data-pid="p2"'), "決着済みが試合前・試合中に混ざる");
+  assert.match(pane("post"), /data-pid="p2" data-settled="1"/);
+  assert.match(html, /data-ko="2099-09-01T14:00:00Z"/);
+  assert.match(html, /LIVE_MIN=130/);
 });
