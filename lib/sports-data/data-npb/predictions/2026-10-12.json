@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-11T15:22:49.781Z",
-  "updatedAt": "2026-10-11T15:22:49.781Z",
+  "lockedAt": "2026-10-11T19:20:47.140Z",
+  "updatedAt": "2026-10-11T19:20:47.140Z",
   "controlTower": {
     "date": "2026-10-12",
     "season": 1002026,
@@ -42,8 +42,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.523,
-      "rawWinProbability": 0.527,
+      "winProbability": 0.538,
+      "rawWinProbability": 0.543,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -56,53 +56,52 @@
           "marketOver": 0.5
         },
         "pick": null,
-        "coverProbability": 0.656,
-        "rawCoverProbability": 0.683,
-        "ev": 0.246,
+        "coverProbability": 0.68,
+        "rawCoverProbability": 0.711,
+        "ev": 0.291,
         "marketProbability": 0.67,
-        "marketPriceEv": -0.065,
+        "marketPriceEv": -0.031,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 5.5,
-        "predicted": 7.69,
+        "predicted": 7.02,
         "pick": null,
-        "probability": 0.658,
-        "rawProbability": 0.685,
+        "probability": 0.604,
+        "rawProbability": 0.621,
         "marketProbability": 0.5,
-        "ev": 0.251,
+        "ev": 0.148,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.64,
-        "away": 3.84
+        "home": 3.26,
+        "away": 3.55
       },
       "reasons": [
-        "PASS: incomplete/downgraded data",
-        "Handicap EV +24.6% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -6.5% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
-        "Market consensus on the handicap: 67.0% for this side — model 65.6% (-1.4% vs market)",
-        "Market consensus on the total: 50.0% for the OVER — model 65.8% (+15.8% vs market)",
+        "PASS: edge too small (win prob 53.8% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +29.1% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -3.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 67.0% for this side — model 68.0% (+1.0% vs market)",
+        "Market consensus on the total: 50.0% for the OVER — model 60.4% (+10.4% vs market)",
         "Offense edge: 北海道日本ハムファイターズ (wOBA 0.312 vs 0.293)",
+        "Bullpen edge: 埼玉西武ライオンズ",
         "Park factor 94 (pitcher-friendly)",
-        "Expected runs 3.64–3.84 over 10000 sims",
-        "home: cold bats — 3.0 R/G last 15 (season baseline 3.7)",
-        "home: no starter data — league-average assumed",
-        "away: no starter data — league-average assumed"
+        "Expected runs 3.26–3.55 over 10000 sims",
+        "home: cold bats — 2.8 R/G last 15 (season baseline 3.7)"
       ],
       "flags": [
-        "[downgrade] home_no_probable_pitcher",
+        "[info] home_starter_xfip_estimated",
         "[info] home_lineup_not_posted",
-        "[downgrade] away_no_probable_pitcher",
+        "[info] away_starter_xfip_estimated",
         "[info] away_lineup_not_posted",
-        "[info] away_players_on_il",
-        "[warn] total_market_disagreement"
+        "[info] away_players_on_il"
       ],
       "lockDeadline": "2026-10-12T04:27:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-11T15:22:49.781Z",
-      "predictedRunId": "38151003052"
+      "predictedAt": "2026-10-11T19:20:47.140Z",
+      "predictedRunId": "38167596807"
     }
   ]
 }
