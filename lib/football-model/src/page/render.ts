@@ -455,7 +455,7 @@ ${upcomingJ.length ? `<h2>J1（未開始）<small>${upcomingJ.length} 試合</sm
 
 <div class="pane" data-pane="live" hidden>
 <h2>試合中<small>キックオフから 2 時間 10 分まで・リーグ別</small></h2>
-<p class="sub" id="live-note">スコアの自動取得はまだ接続していない（取得元は Founder の判断待ち）。経過時間はキックオフ時刻からの目安で、実際の試合時間ではない。</p>
+<p class="sub" id="live-note">試合中のスコアは表示しない（Founder 判断 2026-10-11）。経過時間はキックオフ時刻からの目安で、実際の試合時間ではない。結果は試合後のページに決済後に出る。</p>
 ${groupByLeague([...started, ...upcoming].sort((x, y) => x.kickoffAt.localeCompare(y.kickoffAt)))}
 <p class="sub" id="live-empty" hidden>いま試合中の試合はない。</p>
 </div>
