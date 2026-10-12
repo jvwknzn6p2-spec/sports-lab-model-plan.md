@@ -1,12 +1,9 @@
 # HandiEdge — standing audit
 
-_Generated 2026-10-05T17:14:37.279Z over 37 day(s)._
+_Generated 2026-10-12T08:59:28.858Z over 42 day(s)._
 
 ## S-3 / B-2 — Integrity
 
-- ❌ `late_lock` 2026-09-23: locked 72.1 min after the deadline
-- ❌ `late_lock` 2026-09-26: locked 91.1 min after the deadline
-- ❌ `late_lock` 2026-09-27: locked 117.4 min after the deadline
 - ⚠️ `post_start_pick` 2026-08-27: 1 pick(s) fixed at or after first pitch (92026082709) — excluded from the verified record
 - ⚠️ `post_start_pick` 2026-08-30: 1 pick(s) fixed at or after first pitch (92026083008) — excluded from the verified record
 - ⚠️ `post_start_pick` 2026-09-12: 2 pick(s) fixed at or after first pitch (92026091206, 92026091204) — excluded from the verified record
@@ -14,13 +11,13 @@ _Generated 2026-10-05T17:14:37.279Z over 37 day(s)._
 - ⚠️ `post_start_pick` 2026-09-19: 1 pick(s) fixed at or after first pitch (92026091908) — excluded from the verified record
 - ⚠️ `post_start_pick` 2026-09-20: 3 pick(s) fixed at or after first pitch (92026092001, 92026092008, 92026092012) — excluded from the verified record
 - ⚠️ `post_start_pick` 2026-09-21: 1 pick(s) fixed at or after first pitch (92026092102) — excluded from the verified record
-- ❌ `post_start_pick` 2026-09-23: 2 pick(s) fixed at or after first pitch (92026092305, 92026092307) — excluded from the verified record
-- ❌ `post_start_pick` 2026-09-26: 1 pick(s) fixed at or after first pitch (92026092610) — excluded from the verified record
-- ❌ `post_start_pick` 2026-09-27: 2 pick(s) fixed at or after first pitch (92026092703, 92026092707) — excluded from the verified record
+- ⚠️ `post_start_pick` 2026-09-23: 2 pick(s) fixed at or after first pitch (92026092305, 92026092307) — excluded from the verified record
+- ⚠️ `post_start_pick` 2026-09-26: 1 pick(s) fixed at or after first pitch (92026092610) — excluded from the verified record
+- ⚠️ `post_start_pick` 2026-09-27: 2 pick(s) fixed at or after first pitch (92026092703, 92026092707) — excluded from the verified record
 
 ## S-4 — Lock discipline
 
-❌ 11 of 37 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 2.3 minutes.
+❌ 11 of 42 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 2.3 minutes.
 - ❌ 2026-08-23: locked 3.1 min AFTER the deadline
 - ❌ 2026-08-27: locked 153.8 min AFTER the deadline
 - ❌ 2026-08-30: locked 173.5 min AFTER the deadline
@@ -40,9 +37,9 @@ _Generated 2026-10-05T17:14:37.279Z over 37 day(s)._
 
 ## A-1 — Distribution validity
 
-- Margin residual variance: empirical 13.72 vs model 13.94 (ratio 0.98) over 159 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
-- Same-game run correlation: empirical -0.033 vs model 0
-- Mean |margin error|: 2.86 runs
+- Margin residual variance: empirical 13.47 vs model 13.85 (ratio 0.97) over 169 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
+- Same-game run correlation: empirical -0.031 vs model 0
+- Mean |margin error|: 2.82 runs
 
 ## A-3 — Tail trust (S-cap watch)
 
@@ -53,23 +50,23 @@ _Generated 2026-10-05T17:14:37.279Z over 37 day(s)._
 
 ## A-4 — Input-data health
 
-- `[info] away_players_on_il`: 158 games (92.9%)
-- `[info] home_players_on_il`: 157 games (92.4%)
-- `[info] home_starter_xfip_estimated`: 139 games (81.8%)
-- `[info] away_starter_xfip_estimated`: 137 games (80.6%)
-- `[info] home_lineup_not_posted`: 125 games (73.5%)
-- `[info] away_lineup_not_posted`: 125 games (73.5%)
-- `[info] home_lineup_applied`: 45 games (26.5%)
-- `[info] away_lineup_applied`: 45 games (26.5%)
-- `[downgrade] away_no_probable_pitcher`: 33 games (19.4%)
-- `[downgrade] home_no_probable_pitcher`: 31 games (18.2%)
-- `[warn] away_starter_starter_low_sample`: 27 games (15.9%)
-- `[warn] home_starter_starter_low_sample`: 19 games (11.2%)
-- `[warn] total_market_disagreement`: 11 games (6.5%)
-- `[info] weather_missing`: 9 games (5.3%)
-- `[warn] away_lineup_bats_missing_stats`: 4 games (2.4%)
-- `[warn] market_disagreement`: 3 games (1.8%)
-- `[warn] home_lineup_bats_missing_stats`: 2 games (1.2%)
+- `[info] away_players_on_il`: 165 games (93.2%)
+- `[info] home_players_on_il`: 161 games (91.0%)
+- `[info] home_starter_xfip_estimated`: 146 games (82.5%)
+- `[info] away_starter_xfip_estimated`: 144 games (81.4%)
+- `[info] home_lineup_not_posted`: 132 games (74.6%)
+- `[info] away_lineup_not_posted`: 132 games (74.6%)
+- `[info] home_lineup_applied`: 45 games (25.4%)
+- `[info] away_lineup_applied`: 45 games (25.4%)
+- `[downgrade] away_no_probable_pitcher`: 33 games (18.6%)
+- `[downgrade] home_no_probable_pitcher`: 31 games (17.5%)
+- `[warn] away_starter_starter_low_sample`: 28 games (15.8%)
+- `[warn] home_starter_starter_low_sample`: 21 games (11.9%)
+- `[warn] total_market_disagreement`: 13 games (7.3%)
+- `[info] weather_missing`: 9 games (5.1%)
+- `[warn] away_lineup_bats_missing_stats`: 4 games (2.3%)
+- `[warn] market_disagreement`: 3 games (1.7%)
+- `[warn] home_lineup_bats_missing_stats`: 2 games (1.1%)
 - `[warn] weather_high_wind`: 1 games (0.6%)
 
 ## A-2 — Real-line settlements (hand-check these)
@@ -134,6 +131,8 @@ _Each row shows the whole arithmetic: the line as quoted, the final margin from 
   - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
 - 2026-10-04 東北楽天ゴールデンイーグルス @ 千葉ロッテマリーンズ — backed **千葉ロッテマリーンズ +1.5** (quoted 〈line 1.5〉), margin +1
   - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-10-06 広島東洋カープ @ 阪神タイガース — backed **広島東洋カープ +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
 
 ## A-5 / A-2 — Watched cohorts
 
@@ -142,5 +141,5 @@ _Cohorts deliberately left without their own correction; judge at n≈50 per coh
 - starter+offense edges aligned: 4-5 (44.4%, -1.40 units, n=9)
 - away-team picks: 6-4 (60.0%, +1.40 units, n=10)
 - ev_outlier flagged: 1-0 (100.0%, +0.90 units, n=1)
-- real handicap line (non-zero): 17-12 (58.6%, +3.30 units, n=29)
-- new engine (post-overhaul): 17-12 (58.6%, +3.30 units, n=29)
+- real handicap line (non-zero): 18-12 (60.0%, +4.20 units, n=30)
+- new engine (post-overhaul): 18-12 (60.0%, +4.20 units, n=30)

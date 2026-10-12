@@ -1,23 +1,18 @@
 # HandiEdge — standing audit
 
-_Generated 2026-10-05T17:14:36.721Z over 63 day(s)._
+_Generated 2026-10-12T08:59:28.223Z over 70 day(s)._
 
 ## S-3 / B-2 — Integrity
 
 - ❌ `missing_lock` 2026-09-28: a slate exists but no prediction lock was ever produced
 - ❌ `missing_lock` 2026-10-02: a slate exists but no prediction lock was ever produced
-- ❌ `late_lock` 2026-09-22: locked 102 min after the deadline
-- ❌ `late_lock` 2026-09-23: locked 95.1 min after the deadline
-- ❌ `late_lock` 2026-09-24: locked 116.1 min after the deadline
-- ❌ `late_lock` 2026-09-25: locked 116.6 min after the deadline
-- ❌ `late_lock` 2026-09-26: locked 66.9 min after the deadline
-- ❌ `late_lock` 2026-09-27: locked 108.3 min after the deadline
+- ❌ `missing_lock` 2026-10-09: a slate exists but no prediction lock was ever produced
 - ❌ `late_lock` 2026-09-29: locked 181.8 min after the deadline
 - ⚠️ `post_start_pick` 2026-08-28: 1 pick(s) fixed at or after first pitch (824638) — excluded from the verified record
 
 ## S-4 — Lock discipline
 
-❌ 46 of 61 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 2.4 minutes.
+❌ 46 of 67 slates locked late (each judged by the deadline in force when it locked). Tightest on-time margin: 2.4 minutes.
 - ❌ 2026-07-28: locked 139 min AFTER the deadline
 - ❌ 2026-07-29: locked 123.3 min AFTER the deadline
 - ❌ 2026-07-30: locked 127 min AFTER the deadline
@@ -72,9 +67,9 @@ _Generated 2026-10-05T17:14:36.721Z over 63 day(s)._
 
 ## A-1 — Distribution validity
 
-- Margin residual variance: empirical 20 vs model 18.47 (ratio 1.08) over 756 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
-- Same-game run correlation: empirical -0.023 vs model 0
-- Mean |margin error|: 3.4 runs
+- Margin residual variance: empirical 19.83 vs model 18.43 (ratio 1.08) over 767 games. The residual folds in mean-estimation error on top of scoring variance, so modestly above 1.0 is expected; a ratio well above ~1.3 says the simulator's spread is still too narrow, well below 1.0 says too wide.
+- Same-game run correlation: empirical -0.021 vs model 0
+- Mean |margin error|: 3.39 runs
 
 ## A-3 — Tail trust (S-cap watch)
 
@@ -85,23 +80,23 @@ _Generated 2026-10-05T17:14:36.721Z over 63 day(s)._
 
 ## A-4 — Input-data health
 
-- `[info] away_starter_xfip_estimated`: 716 games (94.1%)
-- `[info] home_starter_xfip_estimated`: 713 games (93.7%)
-- `[info] away_players_on_il`: 433 games (56.9%)
-- `[info] home_players_on_il`: 431 games (56.6%)
-- `[info] away_lineup_not_posted`: 372 games (48.9%)
-- `[info] home_lineup_not_posted`: 357 games (46.9%)
-- `[warn] home_bullpen_bullpen_heavy_usage`: 338 games (44.4%)
-- `[warn] away_bullpen_bullpen_heavy_usage`: 285 games (37.5%)
-- `[info] away_bullpen_bullpen_heavy_usage`: 138 games (18.1%)
-- `[info] home_bullpen_bullpen_heavy_usage`: 126 games (16.6%)
-- `[warn] away_starter_starter_low_sample`: 94 games (12.4%)
-- `[warn] home_starter_starter_low_sample`: 87 games (11.4%)
-- `[info] home_lineup_applied`: 76 games (10.0%)
-- `[info] away_lineup_applied`: 61 games (8.0%)
-- `[downgrade] home_no_probable_pitcher`: 42 games (5.5%)
-- `[downgrade] away_no_probable_pitcher`: 38 games (5.0%)
-- `[warn] total_market_disagreement`: 36 games (4.7%)
+- `[info] away_starter_xfip_estimated`: 726 games (94.0%)
+- `[info] home_starter_xfip_estimated`: 724 games (93.8%)
+- `[info] home_players_on_il`: 441 games (57.1%)
+- `[info] away_players_on_il`: 441 games (57.1%)
+- `[info] away_lineup_not_posted`: 383 games (49.6%)
+- `[info] home_lineup_not_posted`: 368 games (47.7%)
+- `[warn] home_bullpen_bullpen_heavy_usage`: 340 games (44.0%)
+- `[warn] away_bullpen_bullpen_heavy_usage`: 287 games (37.2%)
+- `[info] away_bullpen_bullpen_heavy_usage`: 138 games (17.9%)
+- `[info] home_bullpen_bullpen_heavy_usage`: 128 games (16.6%)
+- `[warn] away_starter_starter_low_sample`: 95 games (12.3%)
+- `[warn] home_starter_starter_low_sample`: 89 games (11.5%)
+- `[info] home_lineup_applied`: 76 games (9.8%)
+- `[info] away_lineup_applied`: 61 games (7.9%)
+- `[downgrade] home_no_probable_pitcher`: 42 games (5.4%)
+- `[warn] total_market_disagreement`: 40 games (5.2%)
+- `[downgrade] away_no_probable_pitcher`: 39 games (5.1%)
 - `[info] weather_missing`: 17 games (2.2%)
 - `[downgrade] away_starter_stats_missing`: 7 games (0.9%)
 - `[downgrade] home_starter_stats_missing`: 6 games (0.8%)
@@ -308,13 +303,25 @@ _Each row shows the whole arithmetic: the line as quoted, the final margin from 
   - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
 - 2026-10-04 San Diego Padres @ Milwaukee Brewers — backed **San Diego Padres +1.5** (quoted 〈line -1.5〉), margin -1
   - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-10-05 Chicago White Sox @ Cleveland Guardians — backed **Chicago White Sox +1.5** (quoted 〈line -1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-10-06 Milwaukee Brewers @ San Diego Padres — backed **Milwaukee Brewers +1.5** (quoted 〈line -1.5〉), margin -1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-10-07 Cleveland Guardians @ Chicago White Sox — backed **Cleveland Guardians +1.5** (quoted 〈line -1.5〉), margin +6
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-10-07 Los Angeles Dodgers @ Atlanta Braves — backed **Atlanta Braves +1.5** (quoted 〈line 1.5〉), margin -3
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
+- 2026-10-07 Tampa Bay Rays @ New York Yankees — backed **Tampa Bay Rays +1.5** (quoted 〈line -1.5〉), margin +1
+  - stake on +1.5×1 → win 1 / push 0 / loss 0 → **+0.90 units** after the 10% cut (settlement recorded +0.90)
+- 2026-10-10 Chicago White Sox @ Cleveland Guardians — backed **Chicago White Sox +1.5** (quoted 〈line -1.5〉), margin -2
+  - stake on +1.5×1 → win 0 / push 0 / loss 1 → **-1.00 units** after the 10% cut (settlement recorded -1.00)
 
 ## A-5 / A-2 — Watched cohorts
 
 _Cohorts deliberately left without their own correction; judge at n≈50 per cohort. Real-line rows are the A-2 readiness tripwire — the day they stop reading n=0, cross-check those settlements by hand._
 
-- starter+offense edges aligned: 29-30 (49.2%, -3.90 units, n=59)
-- away-team picks: 34-31 (52.3%, -0.40 units, n=65)
+- starter+offense edges aligned: 29-31 (48.3%, -4.90 units, n=60)
+- away-team picks: 34-32 (51.5%, -1.40 units, n=66)
 - ev_outlier flagged: 5-1 (83.3%, +3.50 units, n=6)
-- real handicap line (non-zero): 56-41 (57.7%, +9.40 units, n=97)
-- new engine (post-overhaul): 76-54 (58.5%, +14.40 units, n=130)
+- real handicap line (non-zero): 60-43 (58.3%, +11.00 units, n=103)
+- new engine (post-overhaul): 80-56 (58.8%, +16.00 units, n=136)
