@@ -1,6 +1,6 @@
 {
-  "lockedAt": "2026-10-12T02:47:25.835Z",
-  "updatedAt": "2026-10-12T02:47:25.835Z",
+  "lockedAt": "2026-10-12T05:41:25.574Z",
+  "updatedAt": "2026-10-12T05:41:25.574Z",
   "controlTower": {
     "date": "2026-10-12",
     "season": 2026,
@@ -40,7 +40,7 @@
     "totalFarTailShrink": 0.833,
     "gamesSettled": 358,
     "brierSum": 86.9309,
-    "updatedAt": "2026-10-11T04:22:59.694Z"
+    "updatedAt": "2026-10-12T04:29:41.131Z"
   },
   "predictions": [
     {
@@ -51,8 +51,8 @@
       "pass": true,
       "predictedWinner": null,
       "predictedLoser": null,
-      "winProbability": 0.507,
-      "rawWinProbability": 0.507,
+      "winProbability": 0.501,
+      "rawWinProbability": 0.501,
       "confidence": "C",
       "handicap": {
         "input": {
@@ -66,37 +66,38 @@
         },
         "pick": null,
         "coverProbability": 0.637,
-        "rawCoverProbability": 0.659,
-        "ev": 0.211,
+        "rawCoverProbability": 0.658,
+        "ev": 0.21,
         "marketProbability": 0.811,
-        "marketPriceEv": -0.261,
+        "marketPriceEv": -0.262,
         "recommendedStake": null,
         "noValue": false
       },
       "total": {
         "line": 3.5,
-        "predicted": 8.12,
+        "predicted": 7.94,
         "pick": null,
-        "probability": 0.833,
-        "rawProbability": 0.896,
+        "probability": 0.825,
+        "rawProbability": 0.887,
         "marketProbability": 0.506,
-        "ev": 0.582,
+        "ev": 0.568,
         "noValue": false
       },
       "expectedRuns": {
-        "home": 3.95,
-        "away": 3.96
+        "home": 3.88,
+        "away": 3.85
       },
       "reasons": [
-        "PASS: edge too small (win prob 50.7% < 55%) — moneyline and total only",
+        "PASS: edge too small (win prob 50.1% < 55%) — moneyline and total only",
         "Confidence C is informational-only: the quoted handicap is priced above but not staked",
-        "Handicap EV +21.1% per unit (needs 52.6% to break even after the 10% cut)",
-        "At the market's own price this edge is worth -26.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Handicap EV +21.0% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -26.2% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
         "Market consensus on the handicap: 81.1% for this side — model 63.7% (-17.4% vs market)",
-        "Market consensus on the total: 50.6% for the OVER — model 83.3% (+32.7% vs market)",
+        "Market consensus on the total: 50.6% for the OVER — model 82.5% (+31.9% vs market)",
         "Park factor 101 (hitter-friendly)",
-        "Expected runs 3.95–3.96 over 10000 sims",
-        "home: cold bats — 4.1 R/G last 14 (season baseline 4.8)"
+        "Expected runs 3.88–3.85 over 10000 sims",
+        "home: cold bats — 3.9 R/G last 15 (season baseline 4.8)",
+        "away: cold bats — 4.3 R/G last 15 (season baseline 5.0)"
       ],
       "flags": [
         "[info] home_starter_xfip_estimated",
@@ -109,8 +110,8 @@
       ],
       "lockDeadline": "2026-10-12T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-12T02:47:25.835Z",
-      "predictedRunId": "38197152707"
+      "predictedAt": "2026-10-12T05:41:25.574Z",
+      "predictedRunId": "38209017736"
     },
     {
       "gamePk": 849820,
@@ -179,8 +180,8 @@
       ],
       "lockDeadline": "2026-10-12T13:59:00.000Z",
       "final": false,
-      "predictedAt": "2026-10-12T02:47:25.835Z",
-      "predictedRunId": "38197152707"
+      "predictedAt": "2026-10-12T05:41:25.574Z",
+      "predictedRunId": "38209017736"
     }
   ]
 }
