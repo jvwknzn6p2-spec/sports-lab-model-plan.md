@@ -1,0 +1,186 @@
+{
+  "lockedAt": "2026-10-12T02:47:25.835Z",
+  "updatedAt": "2026-10-12T02:47:25.835Z",
+  "controlTower": {
+    "date": "2026-10-12",
+    "season": 2026,
+    "sims": 10000,
+    "passThreshold": 0.55,
+    "minEv": 0,
+    "handicaps": {
+      "849812": {
+        "side": "home",
+        "line": -1.5,
+        "total": 3.5,
+        "marketHomeCover": 0.189,
+        "marketHomePayout": 3.96,
+        "marketAwayPayout": 0.159,
+        "marketOver": 0.506
+      },
+      "849820": {
+        "side": "home",
+        "line": -1.5,
+        "total": 7,
+        "marketHomeCover": 0.412,
+        "marketHomePayout": 1.35,
+        "marketAwayPayout": 0.645,
+        "marketOver": 0.468
+      }
+    }
+  },
+  "calibration": {
+    "shrink": 0.922,
+    "tailShrink": 0.701,
+    "farTailShrink": 0.67,
+    "handicapShrink": 0.879,
+    "handicapTailShrink": 0.634,
+    "handicapFarTailShrink": 0.619,
+    "totalShrink": 0.849,
+    "totalTailShrink": 0.844,
+    "totalFarTailShrink": 0.833,
+    "gamesSettled": 358,
+    "brierSum": 86.9309,
+    "updatedAt": "2026-10-11T04:22:59.694Z"
+  },
+  "predictions": [
+    {
+      "gamePk": 849812,
+      "gameDate": "2026-10-12T21:00:00Z",
+      "home": "Milwaukee Brewers",
+      "away": "Los Angeles Dodgers",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.507,
+      "rawWinProbability": 0.507,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 3.5,
+          "marketHomeCover": 0.189,
+          "marketHomePayout": 3.96,
+          "marketAwayPayout": 0.159,
+          "marketOver": 0.506
+        },
+        "pick": null,
+        "coverProbability": 0.637,
+        "rawCoverProbability": 0.659,
+        "ev": 0.211,
+        "marketProbability": 0.811,
+        "marketPriceEv": -0.261,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 3.5,
+        "predicted": 8.12,
+        "pick": null,
+        "probability": 0.833,
+        "rawProbability": 0.896,
+        "marketProbability": 0.506,
+        "ev": 0.582,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 3.95,
+        "away": 3.96
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 50.7% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +21.1% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -26.1% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 81.1% for this side — model 63.7% (-17.4% vs market)",
+        "Market consensus on the total: 50.6% for the OVER — model 83.3% (+32.7% vs market)",
+        "Park factor 101 (hitter-friendly)",
+        "Expected runs 3.95–3.96 over 10000 sims",
+        "home: cold bats — 4.1 R/G last 14 (season baseline 4.8)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted",
+        "[info] away_players_on_il",
+        "[warn] total_market_disagreement"
+      ],
+      "lockDeadline": "2026-10-12T13:59:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-12T02:47:25.835Z",
+      "predictedRunId": "38197152707"
+    },
+    {
+      "gamePk": 849820,
+      "gameDate": "2026-10-13T00:00:00Z",
+      "home": "Tampa Bay Rays",
+      "away": "Cleveland Guardians",
+      "pass": true,
+      "predictedWinner": null,
+      "predictedLoser": null,
+      "winProbability": 0.547,
+      "rawWinProbability": 0.551,
+      "confidence": "C",
+      "handicap": {
+        "input": {
+          "side": "home",
+          "line": -1.5,
+          "total": 7,
+          "marketHomeCover": 0.412,
+          "marketHomePayout": 1.35,
+          "marketAwayPayout": 0.645,
+          "marketOver": 0.468
+        },
+        "pick": null,
+        "coverProbability": 0.598,
+        "rawCoverProbability": 0.611,
+        "ev": 0.136,
+        "marketProbability": 0.588,
+        "marketPriceEv": -0.016,
+        "recommendedStake": null,
+        "noValue": false
+      },
+      "total": {
+        "line": 7,
+        "predicted": 7.77,
+        "pick": null,
+        "probability": 0.537,
+        "rawProbability": 0.544,
+        "marketProbability": 0.468,
+        "ev": 0.018,
+        "noValue": false
+      },
+      "expectedRuns": {
+        "home": 4.06,
+        "away": 3.54
+      },
+      "reasons": [
+        "PASS: edge too small (win prob 54.7% < 55%) — moneyline and total only",
+        "Confidence C is informational-only: the quoted handicap is priced above but not staked",
+        "Handicap EV +13.6% per unit (needs 52.6% to break even after the 10% cut)",
+        "At the market's own price this edge is worth -1.6% per unit (benchmark only — the staked EV above prices the fixed-0.9 book)",
+        "Market consensus on the handicap: 58.8% for this side — model 59.8% (+1.0% vs market)",
+        "Market consensus on the total: 46.8% for the OVER — model 53.7% (+6.9% vs market)",
+        "Starter edge: Tampa Bay Rays (Drew Rasmussen projFIP 3.27 vs 3.85)",
+        "Offense edge: Tampa Bay Rays (wOBA 0.317 vs 0.307)",
+        "Bullpen edge: Cleveland Guardians",
+        "Park factor 96 (pitcher-friendly)",
+        "Expected runs 4.06–3.54 over 10000 sims",
+        "away: hot bats — 5.0 R/G last 14 (season baseline 4.2)"
+      ],
+      "flags": [
+        "[info] home_starter_xfip_estimated",
+        "[info] home_lineup_not_posted",
+        "[info] home_players_on_il",
+        "[info] away_starter_xfip_estimated",
+        "[info] away_lineup_not_posted"
+      ],
+      "lockDeadline": "2026-10-12T13:59:00.000Z",
+      "final": false,
+      "predictedAt": "2026-10-12T02:47:25.835Z",
+      "predictedRunId": "38197152707"
+    }
+  ]
+}
