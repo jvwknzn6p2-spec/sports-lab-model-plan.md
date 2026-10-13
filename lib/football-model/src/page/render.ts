@@ -12,6 +12,7 @@
  */
 import { createHash } from "node:crypto";
 import { OFFICIAL_RECORD_START, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../ledger.ts";
+import { MKT_ONLY_MODEL } from "../marketModel.ts";
 import { LEAGUE, kanaTable, leagueLabel } from "./labels.ts";
 
 /**
@@ -89,6 +90,8 @@ interface Row extends LedgerPrediction {
   /** 同じ試合の市場基盤モデルの予想と決済（無ければ undefined） */
   mkt: LedgerPrediction | undefined;
   mktEv: LedgerEvaluation | undefined;
+  /** 正準を出さない大会（CL）の行。本体の確率は市場基盤（市場そのもの）で、正準の集計には入れない */
+  mktOnly?: boolean;
 }
 
 const JST_OFFSET_MS = 9 * 3_600_000;
@@ -143,6 +146,12 @@ export function renderPage(input: RenderInput): RenderResult {
       mkt: MK.get(p.providerId),
       mktEv: MK.get(p.providerId) ? MKE.get(MK.get(p.providerId)!.id) : undefined,
     }))
+    .concat(
+      // 大会（CL）は正準の予想が無く、市場基盤の台帳にだけ載る（Founder 判断 2026-10-13）
+      mktPredictions
+        .filter((p) => p.model === MKT_ONLY_MODEL)
+        .map((p) => ({ ...p, m: M.get(p.providerId) ?? {}, ev: MKE.get(p.id), preview: false, mkt: p, mktEv: MKE.get(p.id), mktOnly: true })),
+    )
     .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
 
   const future = (r: Row): boolean => !r.ev && new Date(r.kickoffAt) > now;
@@ -152,6 +161,8 @@ export function renderPage(input: RenderInput): RenderResult {
     .filter((r) => !r.ev && new Date(r.kickoffAt) <= now)
     .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt));
   const settled = rows.filter((r) => r.ev).sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt));
+  /** 正準の成績（的中数・RPS・比較）は正準の行だけで数える。大会の市場基盤の行を混ぜない */
+  const settledCanon = settled.filter((r) => !r.mktOnly);
 
   /** ご指定の形: 「勝利 ◯◯ ／ 敗北 ◯◯」。引き分けが最大なら「引き分け」、1pt 未満の差なら「五分」 */
   function verdictText(r: Row, h: number, d: number, a: number): string {
@@ -183,8 +194,9 @@ export function renderPage(input: RenderInput): RenderResult {
       const top = Math.max(k.pHome, k.pDraw, k.pAway);
       const hit = (e.result === "H" && top === k.pHome) || (e.result === "D" && top === k.pDraw) || (e.result === "A" && top === k.pAway);
       const recHit = k.recommend ? (k.recommend === e.result ? `<span class="chip hit">推奨 的中</span>` : `<span class="chip miss">推奨 外れ</span>`) : "";
-      res = `<span class="chip ${hit ? "hit" : "miss"}">${hit ? "的中" : "外れ"}</span>${recHit}<span class="rps">RPS ${e.rps.toFixed(3)}</span>`;
+      res = r.mktOnly ? recHit : `<span class="chip ${hit ? "hit" : "miss"}">${hit ? "的中" : "外れ"}</span>${recHit}<span class="rps">RPS ${e.rps.toFixed(3)}</span>`;
     }
+    if (r.mktOnly) return `<div class="alt"><div class="alt-foot">${rec}${res}</div></div>`;
     return `<div class="alt"><div class="alt-head"><span class="tag">市場基盤</span><span class="probs-s">${pct(k.pHome)} / ${pct(k.pDraw)} / ${pct(k.pAway)}</span><span class="dim">オッズ換算 ${fairOdds(k.pHome)} / ${fairOdds(k.pDraw)} / ${fairOdds(k.pAway)}</span></div><div class="alt-foot">${rec}${res}</div></div>`;
   }
 
@@ -211,6 +223,7 @@ export function renderPage(input: RenderInput): RenderResult {
     const noMarketFlag = hasMarket ? "" : `<span class="chip warn">市場データなし</span>`;
     // 台帳に無い行（試算）は必ずそう表示する。発行済みの予想と見分けが付かなくなると記録の意味が消える
     const previewFlag = r.preview ? `<span class="chip preview">試算・台帳未発行</span>` : "";
+    const onlyFlag = r.mktOnly ? `<span class="chip preview">市場基盤のみ（正準は対象外）</span>` : "";
     let result = "";
     if (showResult && r.ev) {
       const e = r.ev;
@@ -221,7 +234,7 @@ export function renderPage(input: RenderInput): RenderResult {
     }
     const q = [kana(r.m.home), kana(r.m.away), r.m.home, r.m.away, leagueLabel(r.league), r.league].join(" ");
     return `<article class="match" data-q="${esc(q)}" data-lg="${esc(r.league)}" data-day="${ymd(r.kickoffAt)}" data-ko="${esc(r.kickoffAt)}" data-pid="${esc(r.providerId)}"${r.ev ? ' data-settled="1"' : ""}>
-  <div class="meta"><span class="ko">${md(r.kickoffAt)} ${hm(r.kickoffAt)}</span><span class="lg">${leagueLabel(r.league)}</span><span class="livechip" hidden></span>${previewFlag}${flag}${noMarketFlag}</div>
+  <div class="meta"><span class="ko">${md(r.kickoffAt)} ${hm(r.kickoffAt)}</span><span class="lg">${leagueLabel(r.league)}</span><span class="livechip" hidden></span>${previewFlag}${onlyFlag}${flag}${noMarketFlag}</div>
   <div class="teams"><span class="home">${esc(kana(r.m.home))}</span><span class="vs">v</span><span class="away">${esc(kana(r.m.away))}</span></div>
   <div class="probs"><span class="p h">${pct(h)}</span><span class="p d">${pct(d)}</span><span class="p a">${pct(a)}</span></div>
   ${bar(h, d, a, "model")}
@@ -278,15 +291,15 @@ export function renderPage(input: RenderInput): RenderResult {
 </div>`;
   }
 
-  const nHit = settled.filter((r) => isHit(r, r.ev!)).length;
+  const nHit = settledCanon.filter((r) => isHit(r, r.ev!)).length;
   const meanRps = (k: "rps" | "marketRps"): number => {
-    const vals = settled.map((r) => r.ev![k]).filter((v): v is number => v != null);
+    const vals = settledCanon.map((r) => r.ev![k]).filter((v): v is number => v != null);
     return vals.reduce((s, v) => s + v, 0) / (vals.length || 1);
   };
   // **モデルと市場は必ず同じ集合で比べる**（2026-09-22 に修正）。市場が無い試合があるため、
   // モデルを全決着・市場を市場ありだけで平均すると、別々の母集団の数字を並べることになる。
   // 実測では決着 248 件のうち市場ありは一部で、見出しの比較が成立していなかった。
-  const bothSet = settled.filter((r) => r.ev!.marketRps != null);
+  const bothSet = settledCanon.filter((r) => r.ev!.marketRps != null);
   const meanOn = (list: Row[], k: "rps" | "marketRps"): number =>
     list.reduce((s, r) => s + (r.ev![k] as number), 0) / (list.length || 1);
 
@@ -295,7 +308,7 @@ export function renderPage(input: RenderInput): RenderResult {
    * 推奨の成績は「最良のオッズで 1 単位ずつ買った場合」の回収率で、件数を必ず併記する
    */
   function compareBlock(): string {
-    const both = settled.filter((r) => r.mktEv && r.ev!.marketRps != null);
+    const both = settledCanon.filter((r) => r.mktEv && r.ev!.marketRps != null);
     if (!mktPredictions.length) return "";
     if (!both.length) return `<p class="sub">2 つのモデルの比較: 決着がそろった試合はまだありません（市場基盤 ${mktPredictions.length} 件を発行済み）。</p>`;
     const avg = (f: (r: Row) => number): string => (both.reduce((a, r) => a + f(r), 0) / both.length).toFixed(3);
@@ -438,7 +451,7 @@ ${
 <div class="tiles">
   <div class="tile"><small>これから</small><strong>${upcoming.length}</strong> <span>試合</span></div>
   <div class="tile"><small>決済待ち</small><strong>${started.length}</strong> <span>試合</span></div>
-  <div class="tile"><small>決着</small><strong>${nHit}/${settled.length}</strong> <span>的中</span></div>
+  <div class="tile"><small>決着</small><strong>${nHit}/${settledCanon.length}</strong> <span>的中</span></div>
 </div>
 
 <nav class="tabs" role="tablist">
@@ -464,7 +477,7 @@ ${groupByLeague([...started, ...upcoming].sort((x, y) => x.kickoffAt.localeCompa
 <h2>試合終了・結果待ち<small>結果は football-data.co.uk の CSV 反映後、翌日 12:05 JST の回で決済される</small></h2>
 ${groupByLeague([...started, ...upcoming].sort((x, y) => x.kickoffAt.localeCompare(y.kickoffAt)))}
 <p class="sub" id="wait-empty" hidden>結果待ちの試合はない。</p>
-<h2>試合結果と予想の答え合わせ<small>${settled.length} 試合・平均 RPS モデル ${meanRps("rps").toFixed(3)}${bothSet.length ? `／<b>市場と同じ ${bothSet.length} 件で比べると モデル ${meanOn(bothSet, "rps").toFixed(3)} 対 市場 ${meanOn(bothSet, "marketRps").toFixed(3)}</b>` : ""}</small></h2>
+<h2>試合結果と予想の答え合わせ<small>${settledCanon.length} 試合・平均 RPS モデル ${meanRps("rps").toFixed(3)}${bothSet.length ? `／<b>市場と同じ ${bothSet.length} 件で比べると モデル ${meanOn(bothSet, "rps").toFixed(3)} 対 市場 ${meanOn(bothSet, "marketRps").toFixed(3)}</b>` : ""}</small></h2>
 ${compareBlock()}
 ${groupByLeague(settled, { showResult: true })}
 </div>
@@ -565,7 +578,7 @@ ${groupByLeague(settled, { showResult: true })}
         evaluations.map((e) => e.predictionId).sort(),
         mktPredictions.map((p) => p.id).sort(),
         mktEvaluations.map((e) => e.predictionId).sort(),
-        [upcoming.length, upcomingJ.length, started.length, settled.length, nHit],
+        [upcoming.length, upcomingJ.length, started.length, settled.length, settledCanon.length, nHit],
         notice,
         noticeTone,
         isPreview,
@@ -581,7 +594,7 @@ ${groupByLeague(settled, { showResult: true })}
       upcoming: upcoming.length,
       upcomingJ: upcomingJ.length,
       started: started.length,
-      settled: settled.length,
+      settled: settledCanon.length,
       nHit,
       unmapped: [...table.unmapped],
     },

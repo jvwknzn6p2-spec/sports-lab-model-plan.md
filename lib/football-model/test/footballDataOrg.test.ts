@@ -23,8 +23,8 @@ const e0Names = (() => {
   return s;
 })();
 
-test("競技コードの対応にベルギー・スコットランド・J1 を入れていない（無料枠の対象外・未実測）", () => {
-  assert.deepEqual(Object.values(FDORG_COMPETITIONS).sort(), ["D1", "E0", "F1", "I1", "N1", "P1", "SP1"]);
+test("競技コードの対応にベルギー・スコットランド・J1 を入れていない（無料枠の対象外・未実測）。CL は無料枠の対象（2026-10-13 追加）", () => {
+  assert.deepEqual(Object.values(FDORG_COMPETITIONS).sort(), ["CL", "D1", "E0", "F1", "I1", "N1", "P1", "SP1"]);
 });
 
 test("応答が持つ shortName / name / tla をそのまま引く（対応表を創作しない）", () => {

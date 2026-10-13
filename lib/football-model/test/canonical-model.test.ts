@@ -52,7 +52,7 @@ test("fitDixonColes に ξ と α を明示して渡す（既定値へ黙って�
 });
 
 test("予想行に ξ と α を記録する（どの設定で出したかを行だけで再現できる）", () => {
-  const pub = /publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli);
+  const pub = /\bL\.publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli);
   assert.ok(pub, "publishPrediction の呼び出しが見つからない");
   for (const key of ["ridge:", "xi:", "nTeamMin", "historyAsOf"]) {
     assert.ok(pub[1].includes(key), `予想行に ${key} を記録していない`);
@@ -83,7 +83,7 @@ test("市場は The Odds API → 無料の fixtures.csv の順に採り、由来
   assert.ok(/freeMarkets\.find\(league, m\.home, m\.away, m\.kickoffAt\)/.test(cli), "無料の市場を引いていない");
   assert.ok(/const market = mk\?\.market \?\? free\?\.market \?\? null;/.test(cli), "Odds API → 無料 の優先順になっていない");
   assert.ok(/marketSource/.test(cli), "市場の由来を記録していない");
-  const pub = /publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
+  const pub = /\bL\.publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
   assert.ok(pub[1].includes("marketSource"), "予想行に marketSource を記録していない");
 });
 
@@ -99,7 +99,7 @@ test("枠内シュート層を予想経路に結線し、使ったかどうか�
   // θ を測って入れた層（2026-09-22）。結線を外すと静かに dc-v3-decay 相当へ戻る
   assert.ok(/fitShotLayer\(train, SHOT_WEIGHT, \{ asOf: NOW, ridge: RIDGE, xi: XI \}, MIN_TRAIN\)/.test(cli), "層を作っていない");
   assert.ok(/predictWithShots\(fit, shotLayer, m\.home, m\.away\)/.test(cli), "層を使って予想していない");
-  const pub = /publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
+  const pub = /\bL\.publishPrediction\(\{([\s\S]*?)\}\);/.exec(cli)!;
   assert.ok(pub[1].includes("shotWeight"), "層を使ったかどうかを行に記録していない");
   // 層が使えなかった試合は 0 を記録する（使ったことにしない）
   assert.ok(/shotWeight: p\.usedShots \? SHOT_WEIGHT : 0/.test(cli), "層が使えなかった試合を 0 として残していない");
