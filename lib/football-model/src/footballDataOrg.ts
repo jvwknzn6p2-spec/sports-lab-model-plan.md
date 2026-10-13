@@ -42,6 +42,7 @@ export const FDORG_COMPETITIONS: Record<string, string> = {
   FL1: "F1",  // Ligue 1
   PPL: "P1",  // Primeira Liga
   DED: "N1",  // Eredivisie
+  CL: "CL",   // UEFA Champions League（大会・市場基盤のみ。名前は国内リーグの履歴と台帳の表記へ解決する）
 };
 
 /**

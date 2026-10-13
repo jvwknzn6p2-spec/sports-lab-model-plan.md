@@ -20,6 +20,7 @@ export const LEAGUE: Readonly<Record<string, readonly [string, string]>> = {
   B1: ["ベルギー", "白"],
   SC0: ["スコットランド", "蘇"],
   JAP: ["J1", "日"],
+  CL: ["チャンピオンズリーグ", "欧"],
 };
 
 /**
