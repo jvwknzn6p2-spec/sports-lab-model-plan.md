@@ -168,3 +168,17 @@ test("対応表は台帳の正式名しか指さない（打ち間違いが静�
   const bad = Object.entries(FOOTBALL_DATA_ORG_ALIASES).filter(([, v]) => !all.has(v));
   assert.deepEqual(bad, [], `台帳に無い名前を指している: ${bad.map(([k, v]) => `${k}→${v}`).join(", ")}`);
 });
+
+test("日次 workflow: 対象は海外リーグだけで J1 を含まない（2026-10-13 Founder 指示）", () => {
+  const raw = readFileSync(new URL("../../../.github/workflows/football-daily.yml", import.meta.url), "utf8");
+  const wf = raw.replace(/^\s*#.*$/gm, ""); // コメントは数えない
+  const leagues = [...wf.matchAll(/--leagues (\S+)/g)].map((m) => m[1]);
+  assert.ok(leagues.length >= 3, "--leagues が見つからない（daily / weekly / scores-needed）");
+  for (const l of leagues) {
+    const set = l.split(",");
+    assert.ok(!set.includes("JAP"), `J1 が対象に入っている: ${l}`);
+    for (const lg of ["E0", "I1", "SP1", "D1", "N1", "F1", "P1", "B1", "SC0"]) assert.ok(set.includes(lg), `${lg} が抜けている: ${l}`);
+  }
+  assert.ok(!/get JPN\.csv/.test(wf), "J1 の結果 CSV を取っている");
+  assert.ok(!/soccer_japan_j_league/.test(wf), "J1 のオッズを取っている");
+});
