@@ -26,6 +26,14 @@ export interface BlendWeights {
 }
 /** 本番の係数（`src/cli/benchmark.ts` の「本番の係数」が出す値。基準の全期間で当てた） */
 export const MKT_WEIGHTS: BlendWeights = { a: 1.2469, b: -0.1109, c: 0.0976 };
+/**
+ * 正準モデルが出せない大会（チャンピオンズリーグ・Founder 判断 2026-10-13「市場基盤だけで記録」）用。
+ * 正準の情報が無いので b=0、係数は当てずに恒等（a=1・c=0）＝**市場の確率そのもの**。
+ * a・c だけを当て直すには正準と同じ年ごとの検証が要り、まだしていないため推測で入れない。
+ * 推奨は「最良のオッズが市場の合意より得な結果」（価格の比較）だけを意味する
+ */
+export const MKT_ONLY_MODEL = "mkt-only-v1";
+export const MKT_ONLY_WEIGHTS: BlendWeights = { a: 1, b: 0, c: 0 };
 /** 推奨の閾値（EV）。公式記録で EV の帯ごとに答え合わせし、決済 1,000 件の時点で見直す */
 export const MKT_EV_THRESHOLD = 0;
 

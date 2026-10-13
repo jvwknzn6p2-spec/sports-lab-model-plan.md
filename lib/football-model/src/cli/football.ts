@@ -22,7 +22,7 @@ import { fitDixonColes, fitShotLayer, predictMatch, predictWithShots } from "../
 import type { MatchWithOdds } from "../footballData.ts";
 import { assertFootballDataCsv, parseFootballDataRaw } from "../footballDataRaw.ts";
 import { Ledger, OFFICIAL_RECORD_START } from "../ledger.ts";
-import { MKT_MODEL, MKT_WEIGHTS, marketModel } from "../marketModel.ts";
+import { MKT_MODEL, MKT_ONLY_MODEL, MKT_ONLY_WEIGHTS, MKT_WEIGHTS, marketModel } from "../marketModel.ts";
 import { parseOddsEvents, type OddsEvent } from "../oddsApi.ts";
 import { NAMES, renderSummary, selectToPredict } from "../pipeline.ts";
 import { footballWeeklyMarkdown, lastCompleteWeek } from "../weekly.ts";
@@ -198,7 +198,11 @@ const MIN_TEAM_MATCHES = 1;
 // mirror: GitHub の写し（xgabora）を履歴の取得元に使うか。J1 は写しの日付が dd/mm と mm/dd で
 // 揺れて JPN.csv と一致しない（2026-09-09 実測: 2022〜24 の 335 行が別の試合として残る）うえ、
 // 写しの J1 は 2024-12 で止まっているので使わない（JPN.csv が 2012 年から完全）
-const SOURCES: Record<string, { csv: string[]; sport: string; mirror: boolean }> = {
+// marketOnly: 正準（リーグ内の Dixon-Coles）が成り立たない大会。チャンピオンズリーグは
+// 別々のリーグのチームが当たり、リーグをまたいだ強さを正準は比べられない。市場基盤（係数は恒等・
+// MKT_ONLY_WEIGHTS）だけを "mkt" の台帳に出す（Founder 判断 2026-10-13「市場基盤だけで記録」）。
+// 結果 CSV は無いので、結果は The Odds API scores と football-data.org（CL）から取る
+const SOURCES: Record<string, { csv: string[]; sport: string; mirror: boolean; marketOnly?: boolean }> = {
   E0: { csv: ["E0-2324.csv", "E0-2425.csv", "E0-2526.csv", "E0-2627.csv"], sport: "soccer_epl", mirror: true },
   I1: { csv: ["I1-2324.csv", "I1-2425.csv", "I1-2526.csv", "I1-2627.csv"], sport: "soccer_italy_serie_a", mirror: true },
   SP1: { csv: ["SP1-2324.csv", "SP1-2425.csv", "SP1-2526.csv", "SP1-2627.csv"], sport: "soccer_spain_la_liga", mirror: true },
@@ -209,7 +213,20 @@ const SOURCES: Record<string, { csv: string[]; sport: string; mirror: boolean }>
   B1: { csv: ["B1-2324.csv", "B1-2425.csv", "B1-2526.csv", "B1-2627.csv"], sport: "soccer_belgium_first_div", mirror: true },
   SC0: { csv: ["SC0-2324.csv", "SC0-2425.csv", "SC0-2526.csv", "SC0-2627.csv"], sport: "soccer_spl", mirror: true },
   JAP: { csv: ["JPN.csv"], sport: "soccer_japan_j_league", mirror: false },
+  CL: { csv: [], sport: "soccer_uefa_champs_league", mirror: false, marketOnly: true },
 };
+
+/**
+ * 大会（marketOnly）のチーム名の解決。国内リーグの履歴に居るチームは**その表記へ寄せる**
+ * （カタカナ・football-data.org の結果の解決が国内リーグと同じ表で効く）。どの履歴にも
+ * 居ないチーム（ガラタサライ等）は取得元の表記のまま使う（推測で別のチームへ寄せない）
+ */
+function cupResolver(league: string, extra: Iterable<string>): (name: string) => string {
+  const domestic = new Set<string>(extra);
+  for (const [lg, s] of Object.entries(SOURCES)) if (lg !== league && !s.marketOnly) for (const r of readHistory(HISTORY, lg)) domestic.add(r.home), domestic.add(r.away);
+  const r = buildTeamResolver(domestic);
+  return (n: string) => r(n) ?? n;
+}
 
 /** 取得物のファイル名から取得時刻（ISO）へ。20260903T030512Z → 2026-09-03T03:05:12Z */
 function tsOfName(name: string): string {
@@ -225,6 +242,11 @@ function fmtStats(label: string, st: MergeStats): string {
  * 履歴（football/history/<league>.ndjson）へ cache の取得物を差分で取り込み、学習データを返す。
  * 取得物が 1 つも無い日は履歴だけで進む（止めない）。
  */
+/** 台帳に登録済みのその大会の試合のチーム名（大会は履歴が空から始まるので、結果の解決に使う） */
+function ledgerNames(L: Ledger, league: string): string[] {
+  return [...L.currentMatches().values()].filter((m) => m.league === league).flatMap((m) => [m.home, m.away]);
+}
+
 function updateHistory(league: string, L: Ledger, log: string[]): { rows: HistoryRow[]; history: Array<MatchWithOdds & { source: string }> } {
   const src = SOURCES[league];
   let rows = readHistory(HISTORY, league);
@@ -268,7 +290,7 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
     if (existsSync(p)) {
       try {
         const payload = JSON.parse(readFileSync(p, "utf8")) as FdOrgPayload;
-        const names = new Set(rows.flatMap((m) => [m.home, m.away]));
+        const names = new Set([...rows.flatMap((m) => [m.home, m.away]), ...(src.marketOnly ? ledgerNames(L, league) : [])]);
         const parsed = historyFromFootballDataOrg(payload, league, names, new Date(statSync(p).mtimeMs).toISOString());
         const r = mergeHistory(rows, parsed.rows.filter((x) => x.date >= sinceIso));
         rows = r.rows;
@@ -288,9 +310,10 @@ function updateHistory(league: string, L: Ledger, log: string[]): { rows: Histor
     const files = readdirSync(sdir).filter((f) => f.endsWith(".json")).sort();
     if (files.length) {
       const f = files[files.length - 1];
-      const names = new Set(rows.flatMap((m) => [m.home, m.away]));
+      const names = new Set([...rows.flatMap((m) => [m.home, m.away]), ...(src.marketOnly ? ledgerNames(L, league) : [])]);
       const events = JSON.parse(readFileSync(join(sdir, f), "utf8")) as OddsScoreEvent[];
-      const parsed = historyFromOddsScores(events, league, buildTeamResolver(names), tsOfName(f), L.currentMatches());
+      const resolveScore = src.marketOnly ? cupResolver(league, names) : buildTeamResolver(names);
+      const parsed = historyFromOddsScores(events, league, resolveScore, tsOfName(f), L.currentMatches());
       const r = mergeHistory(rows, parsed.rows);
       rows = r.rows;
       notes.push(`${fmtStats("scores", r.stats)} (completed ${parsed.rows.length}, unresolved ${parsed.unresolved})`);
@@ -398,7 +421,7 @@ function snapshot(): void {
     const odds = latestOdds(src.sport);
     if (!odds || Date.parse(NOW) - Date.parse(odds.fetchedAt) > 3 * 3_600_000) continue;
     const names = new Set(readHistory(HISTORY, league).flatMap((r) => [r.home, r.away]));
-    const fixtures = parseOddsEvents(odds.events, buildTeamResolver(names));
+    const fixtures = parseOddsEvents(odds.events, src.marketOnly ? cupResolver(league, names) : buildTeamResolver(names));
     writeMarketSnapshot(src.sport, odds.fetchedAt, fixtures);
     n += fixtures.length;
     console.log(`${league}: 写し ${fixtures.length} 試合 odds@${odds.fetchedAt}`);
@@ -423,7 +446,7 @@ function daily(): void {
     if (!src) throw new Error(`unknown league ${league}`);
     const { rows: historyRows, history } = updateHistory(league, L, log);
     const names = new Set(history.flatMap((m) => [m.home, m.away]));
-    const resolve = buildTeamResolver(names);
+    const resolve = src.marketOnly ? cupResolver(league, names) : buildTeamResolver(names);
 
     // 1) 日程と市場
     let fixtureAdded = 0;
@@ -457,8 +480,38 @@ function daily(): void {
     }
 
     // 2) 予想（封緘前・未発行・48h 以内）
-    const todo = selectToPredict(L.currentMatches().values(), L.predictions(), NOW, HORIZON_HOURS).filter((m) => m.league === league);
-    if (todo.length > 0) {
+    const todo = selectToPredict(L.currentMatches().values(), src.marketOnly ? Lm.predictions() : L.predictions(), NOW, HORIZON_HOURS).filter((m) => m.league === league);
+    if (src.marketOnly) {
+      // 大会: 正準は出さず、市場基盤（恒等・MKT_ONLY_WEIGHTS）だけを出す。市場が無い試合は出せない
+      // （中立値で埋めない）。封緘まで余裕があれば次の回へ回す
+      const marketOf = new Map(fixtures.map((f) => [f.providerId, f]));
+      for (const m of todo) {
+        const mk = marketOf.get(m.providerId);
+        if (!mk?.market) {
+          log.push(`  ${Date.parse(m.cutoffAt) - Date.parse(NOW) > MARKET_GRACE_HOURS * 3_600_000 ? "defer" : "skip"} ${m.home} v ${m.away}: 市場が無い（大会は市場基盤だけなので出せない）`);
+          deferredCount++;
+          continue;
+        }
+        const mm = marketModel(mk.market, mk.market, mk.bestOdds ?? null, MKT_ONLY_WEIGHTS);
+        const h4 = Number(mm.p[0].toFixed(4));
+        const d4 = Number(mm.p[1].toFixed(4));
+        const r2 = Lm.publishPrediction({
+          providerId: m.providerId, league, kickoffAt: m.kickoffAt, publishedAt: NOW, model: MKT_ONLY_MODEL, asOf: NOW, nTrain: 0,
+          pHome: h4, pDraw: d4, pAway: Number((1 - h4 - d4).toFixed(4)), lambdaHome: 0, lambdaAway: 0,
+          market: mk.market, marketSource: "odds-api", marketFetchedAt: odds ? odds.fetchedAt : null,
+          weights: MKT_ONLY_WEIGHTS,
+          bestOdds: mk.bestOdds ?? null,
+          bestBooks: mk.bestBooks ?? null,
+          expectedValue: mm.ev ? [Number(mm.ev[0].toFixed(4)), Number(mm.ev[1].toFixed(4)), Number(mm.ev[2].toFixed(4))] : null,
+          recommend: mm.recommend,
+        });
+        if (r2.ok) {
+          mktPublished++;
+          publishedCount++;
+        }
+        log.push(r2.ok ? `  published (市場基盤のみ) ${m.home} v ${m.away} ${(h4 * 100).toFixed(0)}/${(d4 * 100).toFixed(0)}/${((1 - h4 - d4) * 100).toFixed(0)} (kickoff ${m.kickoffAt})` : `  mkt rejected ${m.home} v ${m.away}: ${r2.reason}`);
+      }
+    } else if (todo.length > 0) {
       const train = history.filter((m) => Date.parse(m.date) < Date.parse(NOW) && Date.parse(m.date) >= Date.parse(NOW) - WINDOW_DAYS * 86_400_000);
       if (train.length < MIN_TRAIN) {
         log.push(`${league}: 学習データ ${train.length} 件 < ${MIN_TRAIN}。発行しない（取得失敗か初期化直後）`);
@@ -581,10 +634,13 @@ function daily(): void {
 function scoresNeeded(): void {
   const L = openLedger();
   const now = Date.parse(NOW);
-  const settled = new Set(L.evaluations().map((e) => e.predictionId));
+  // 大会（marketOnly）は正準の予想を持たないので、市場基盤の台帳の未決済も数える
+  const Lm = openLedger("mkt");
+  const settled = new Set([...L.evaluations(), ...Lm.evaluations()].map((e) => e.predictionId));
   const sports = new Set<string>();
-  const { counted } = countedPredictions(L.predictions(), L.currentMatches());
-  for (const p of L.predictions()) {
+  const all = [...L.predictions(), ...Lm.predictions().filter((p) => SOURCES[p.league]?.marketOnly)];
+  const { counted } = countedPredictions(all, L.currentMatches());
+  for (const p of all) {
     if (settled.has(p.id) || !counted.has(p.id)) continue;
     const age = now - Date.parse(p.kickoffAt);
     if (age < SCORES_MIN_AGE_H * 3_600_000 || age > SCORES_MAX_AGE_D * 86_400_000) continue;
@@ -664,6 +720,8 @@ function quote(): void {
   // providerId ごとに最新の予想（台帳は追記専用なので後の行が有効）
   const latest = new Map<string, (typeof preds)[number]>();
   for (const p of preds) latest.set(p.providerId, p);
+  // 大会（CL）は正準が無いので、市場基盤（恒等）の予想を使う
+  for (const p of openLedger("mkt").predictions()) if (p.model === MKT_ONLY_MODEL && !latest.has(p.providerId)) latest.set(p.providerId, p);
 
   const out: string[] = [];
   let resolved = 0;
