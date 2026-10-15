@@ -21,6 +21,7 @@ export const LEAGUE: Readonly<Record<string, readonly [string, string]>> = {
   SC0: ["スコットランド", "蘇"],
   JAP: ["J1", "日"],
   CL: ["チャンピオンズリーグ", "欧"],
+  EL: ["ヨーロッパリーグ", "欧"],
 };
 
 /**
@@ -29,6 +30,13 @@ export const LEAGUE: Readonly<Record<string, readonly [string, string]>> = {
  * 未解決は `KanaTable.unmapped` に溜まるので、生成のたびに取りこぼしが見える。
  */
 export const EN_TO_KANA: Readonly<Record<string, string>> = {
+  // チャンピオンズリーグ（Odds API の表記のまま台帳に入る国内リーグ外のチーム・2026-10-14）
+  LASK: "LASKリンツ",
+  "Shakhtar Donetsk": "シャフタール・ドネツク",
+  "AEK Athens": "AEKアテネ",
+  Fenerbahce: "フェネルバフチェ",
+  "Bodø/Glimt": "ボデ／グリムト",
+  "ŠK Slovan Bratislava": "スロヴァン・ブラチスラヴァ",
   Lyon: "リヨン",
   Auxerre: "オセール",
   "Sparta Rotterdam": "スパルタ・ロッテルダム",

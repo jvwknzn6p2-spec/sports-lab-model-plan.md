@@ -214,6 +214,9 @@ const SOURCES: Record<string, { csv: string[]; sport: string; mirror: boolean; m
   SC0: { csv: ["SC0-2324.csv", "SC0-2425.csv", "SC0-2526.csv", "SC0-2627.csv"], sport: "soccer_spl", mirror: true },
   JAP: { csv: ["JPN.csv"], sport: "soccer_japan_j_league", mirror: false },
   CL: { csv: [], sport: "soccer_uefa_champs_league", mirror: false, marketOnly: true },
+  // ヨーロッパリーグ（Founder 指示 2026-10-15・CL と同じく市場基盤だけ）。football-data.org の
+  // 無料枠に EL は無いので、結果は The Odds API scores だけで取る
+  EL: { csv: [], sport: "soccer_uefa_europa_league", mirror: false, marketOnly: true },
 };
 
 /**
