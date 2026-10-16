@@ -4,7 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -62,6 +62,10 @@ test("CL: 市場基盤だけを発行し、正準は出さない・国内の履�
   assert.equal(evs.length, 1, "決済されない");
   assert.equal(evs[0].result, "D");
   assert.equal(nd(join(root, "ledger", "evaluations.ndjson")).length, 0);
+
+  // health: 大会の市場基盤の発行を「取りこぼし」と数えない（2026-10-15 の誤検知の再発防止）
+  const h = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", CLI, "health", "--root", root, "--history", join(root, "history"), "--now", "2026-10-22T03:00:00Z"], { encoding: "utf8" });
+  assert.match(h.stdout, /取りこぼし 0 件/, h.stdout + h.stderr);
 
   // ページ: 行は出るが、正準の集計（決着の的中・RPS）には入らない
   const matches = nd(join(root, "ledger", "matches.ndjson"));
