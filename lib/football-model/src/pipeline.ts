@@ -93,6 +93,7 @@ export const NAMES: Record<string, string> = {
   SC0: "スコットランド",
   JAP: "J1",
   CL: "チャンピオンズリーグ",
+  EL: "ヨーロッパリーグ",
 };
 
 export function renderSummary(leagues: string[], allPredictions: LedgerPrediction[], evaluations: LedgerEvaluation[], matches: Map<string, LedgerMatch>, nowIso: string): string {

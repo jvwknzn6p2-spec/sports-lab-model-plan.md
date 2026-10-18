@@ -41,7 +41,7 @@ jobs:
         run: |
           set -u
           if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi
-          LEAGUES=E0,I1,SP1,D1,N1,F1,P1,B1,SC0,CL
+          LEAGUES=E0,I1,SP1,D1,N1,F1,P1,B1,SC0,CL,EL
           node --experimental-strip-types lib/football-model/src/cli/football.ts snapshot-needed --root football --leagues $LEAGUES > /tmp/need.txt
           echo "必要な競技: $(tr '\n' ' ' < /tmp/need.txt)"
           if [ ! -s /tmp/need.txt ]; then echo "20 時間以内の試合なし — 取らない"; exit 0; fi

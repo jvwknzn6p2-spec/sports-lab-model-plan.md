@@ -4,7 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -63,6 +63,10 @@ test("CL: 市場基盤だけを発行し、正準は出さない・国内の履�
   assert.equal(evs[0].result, "D");
   assert.equal(nd(join(root, "ledger", "evaluations.ndjson")).length, 0);
 
+  // health: 大会の市場基盤の発行を「取りこぼし」と数えない（2026-10-15 の誤検知の再発防止）
+  const h = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", CLI, "health", "--root", root, "--history", join(root, "history"), "--now", "2026-10-22T03:00:00Z"], { encoding: "utf8" });
+  assert.match(h.stdout, /取りこぼし 0 件/, h.stdout + h.stderr);
+
   // ページ: 行は出るが、正準の集計（決着の的中・RPS）には入らない
   const matches = nd(join(root, "ledger", "matches.ndjson"));
   const r = renderPage({ predictions: [], matches, evaluations: [], publishedProviderIds: new Set(), isPreview: false, now: new Date("2026-10-22T03:00:00Z"), mktPredictions: mkt, mktEvaluations: evs });
@@ -74,8 +78,31 @@ test("CL: 市場基盤だけを発行し、正準は出さない・国内の履�
 
 test("ワークフロー: CL の odds は無料の /events で試合がある日だけ取る・結果は fdorg CL", () => {
   const wf = readFileSync(new URL("../../../.github/workflows/football-daily.yml", import.meta.url), "utf8");
-  assert.match(wf, /sport=soccer_uefa_champs_league\n/);
+  assert.match(wf, /for sport in soccer_uefa_champs_league soccer_uefa_europa_league; do/);
   assert.match(wf, /\$sport\/events\?/);
   assert.match(wf, /for comp in PL BL1 SA PD FL1 PPL DED CL; do/);
-  assert.match(wf, /daily --root football --cache football\/cache --leagues [^\n]*,CL\b/);
+  assert.match(wf, /daily --root football --cache football\/cache --leagues [^\n]*,CL,EL\b/);
+  // EL は football-data.org の無料枠に無い。対応表に入れない（取れない競技を叩かない）
+  assert.ok(!/DED CL EL/.test(wf));
+});
+
+test("EL: CL と同じく市場基盤だけを発行する（ヨーロッパリーグ・Founder 指示 2026-10-15）", () => {
+  const root = mkdtempSync(join(tmpdir(), "el-"));
+  const cache = join(root, "cache");
+  const sport = "soccer_uefa_europa_league";
+  mkdirSync(join(cache, "odds", sport), { recursive: true });
+  writeFileSync(
+    join(cache, "odds", sport, "20261020T020000Z.json"),
+    JSON.stringify([{ id: "elev1", sport_key: sport, commence_time: "2026-10-22T19:00:00Z", home_team: "Roma", away_team: "Midtjylland", bookmakers: [book("b1", 1.6, 4.0, 5.5, "Roma", "Midtjylland"), book("b2", 1.62, 3.9, 5.2, "Roma", "Midtjylland")] }]),
+  );
+  run(["daily", "--root", root, "--cache", cache, "--history", join(root, "history"), "--leagues", "EL", "--now", "2026-10-20T03:00:00Z"]);
+  const mkt = nd(join(root, "ledger", "predictions.mkt.ndjson"));
+  assert.equal(nd(join(root, "ledger", "predictions.ndjson")).length, 0);
+  assert.equal(mkt.length, 1);
+  assert.equal(mkt[0].league, "EL");
+  assert.equal(mkt[0].model, "mkt-only-v1");
+  const need = run(["scores-needed", "--root", root, "--leagues", "EL", "--now", "2026-10-23T03:00:00Z"]);
+  assert.equal(need.trim(), sport);
+  const r = renderPage({ predictions: [], matches: nd(join(root, "ledger", "matches.ndjson")), evaluations: [], publishedProviderIds: new Set(), isPreview: false, now: new Date("2026-10-20T03:00:00Z"), mktPredictions: mkt, mktEvaluations: [] });
+  assert.match(r.html, /ヨーロッパリーグ/);
 });

@@ -1052,6 +1052,7 @@ node --experimental-strip-types lib/football-model/src/cli/page.ts \
 | SC0 | スコットランド | `SC0.csv` | `soccer_spl` |
 | JAP | J1 | `new/JPN.csv` | `soccer_japan_j_league` |
 | CL | チャンピオンズリーグ（大会・**市場基盤のみ**） | なし（結果は Odds API scores と football-data.org `CL`） | `soccer_uefa_champs_league` |
+| EL | ヨーロッパリーグ（大会・**市場基盤のみ**） | なし（結果は Odds API scores だけ） | `soccer_uefa_europa_league` |
 
 - **CL は 2026-10-13 に追加（Founder 指示・判断「市場基盤だけで記録」）**。
   - **正準（dc-v5-shots）は出さない**。正準はリーグごとの Dixon-Coles で、別々のリーグの
@@ -1071,7 +1072,11 @@ node --experimental-strip-types lib/football-model/src/cli/page.ts \
     枠の残りが 150 未満なら取らない（国内リーグを優先）。締切に近い写し・scores も同じ競技キーで動く
   - 正準の集計（ページの「決着 N/M 的中」・平均 RPS・2 つのモデルの比較）に CL は**入れない**。
     ページには「市場基盤のみ（正準は対象外）」の札つきで並ぶ
-- **EL / ECL は未対応**（CL と同じ形で足せる。必要になったら判断を仰ぐ）
+- **EL（ヨーロッパリーグ）は 2026-10-15 に追加（Founder 指示）**。仕組みは CL と同じ（市場基盤
+  `mkt-only-v1` だけ・正準は出さない・/events で試合がある日だけ odds）。**違いは結果の取得元**:
+  football-data.org の無料枠に EL は無いので、結果は The Odds API scores（2 クレジット/回・必要な日だけ）
+  の 1 経路だけ。scores が取れない日が続くと EL の決済は止まる（台帳の予想は残り、取れた日に決済される）
+- **ECL は未対応**（同じ形で足せる。必要になったら判断を仰ぐ）
 - チーム名の対応表は `lib/football-model/src/teamAliases.ts`。Odds API に出た名前が
   CSV の名前へ解決できない試合は**推測で埋めず**スキップし、`summary.md` の
   ログに `unresolved` として残る（昇格チーム等が出たら表へ足す）
