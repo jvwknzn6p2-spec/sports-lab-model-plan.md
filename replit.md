@@ -2,6 +2,16 @@
 
 _An MLB **and NPB** game-prediction and betting-value decision-support system: for every scheduled game it estimates win probability, run line, and total runs, ranks confidence (S/A/B/C), and flags positive-EV bets. See `sports-lab/model-plan.md` for the full technical plan._
 
+## 休止中（2026-10-13・Founder 指示「野球は停止」）
+
+**MLB / NPB の野球系ワークフロー 10 本は GitHub の Actions 設定で無効化している**
+（`handiedge-slate` / `-predict` / `-settle` / `-audit` / `-review` / `-backtest`、
+`npb-slate` / `-predict` / `-settle` / `-probe`）。故障ではない。ファイルも記録も消していない。
+理由: プロジェクトを海外サッカーに集中させるため、および `ODDS_API_KEY`（サッカーと共有・
+無料枠 500/月）を野球が 1 日約 20 クレジット消費していたため。
+再開は Actions の各ワークフロー →「Enable workflow」。開幕前に行い、未決済の予想
+（10/13 までに発行した分）は再開後の settle が拾う。
+
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
