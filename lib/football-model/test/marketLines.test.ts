@@ -48,3 +48,13 @@ test("日次: 市場のハンデ線を football/lines/football-data に残し、
   const wf = readFileSync(new URL("../../../.github/workflows/football-daily.yml", import.meta.url), "utf8");
   assert.match(wf, /if \[ -d football\/lines \]; then git add football\/lines; fi/);
 });
+
+test("OddsPapi の試験ワークフロー: 手動起動のみ・書き込み権限なし・鍵を注釈に出さない", () => {
+  const wf = readFileSync(new URL("../../../.github/workflows/football-oddspapi-probe.yml", import.meta.url), "utf8");
+  assert.match(wf, /on:\n  workflow_dispatch:/);
+  assert.ok(!/schedule:/.test(wf), "定期実行にしない（無料枠 250/月）");
+  assert.match(wf, /contents: read/);
+  assert.ok(!/git push|git commit/.test(wf), "何も書き込まない");
+  assert.match(wf, /grep -qF "\$KEY"/, "応答に鍵が混ざったら出さない");
+  assert.match(wf, /head -10/, "1 回 10 リクエストまで");
+});
