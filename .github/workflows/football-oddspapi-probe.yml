@@ -1,0 +1,49 @@
+name: Football — OddsPapi probe (manual)
+
+# OddsPapi（無料枠・月 250 リクエスト）で CL・EL のオッズとアジアンハンデが取れるかを試す
+# 手動の試験（Founder 判断「②」2026-10-21）。**何も書き込まない**（台帳・ブランチ・成果物なし）。
+# 応答の先頭（各 6000 文字まで）を注釈（::notice）に出す。注釈は check-runs API で読める
+# （Actions のログ・成果物は外部ホストから配信され、この環境からは読めないため）。
+# 叩くのは入力 `paths` の行だけ（1 行 1 リクエスト・上限 10）。鍵は secret ODDSPAPI_API_KEY だけに置き、
+# 注釈には鍵も URL も出さない
+
+on:
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: "叩くパス（/v4 以降・改行区切り・最大 10）"
+        required: true
+        default: "/sports"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: OddsPapi を叩く
+        env:
+          KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+          PATHS: ${{ github.event.inputs.paths }}
+        run: |
+          set -u
+          if [ -z "${KEY:-}" ]; then echo "::warning::ODDSPAPI_API_KEY unset — skip"; exit 0; fi
+          ts=$(date -u +%Y%m%dT%H%M%SZ)
+          out="probe/oddspapi/$ts"
+          mkdir -p "$out"
+          i=0
+          printf '%s\n' "$PATHS" | head -10 | while IFS= read -r p; do
+            p=$(printf '%s' "$p" | tr -d '\r' | sed 's/^ *//;s/ *$//')
+            [ -n "$p" ] || continue
+            i=$((i + 1))
+            case "$p" in *\?*) sep='&' ;; *) sep='?' ;; esac
+            code=$(curl -sS --max-time 30 -o "$out/$i.json" -D "$out/$i.headers" -w "%{http_code}" "https://api.oddspapi.io/v4$p${sep}apiKey=$KEY" || echo ERR)
+            grep -iv '^set-cookie' "$out/$i.headers" > "$out/$i.h" || true; rm -f "$out/$i.headers"
+            printf '%s\t%s\t%s bytes\n' "$i" "$p" "$(wc -c < "$out/$i.json")" >> "$out/index.tsv"
+            if grep -qF "$KEY" "$out/$i.json"; then echo "::error::$i 応答に鍵が含まれている — 出さない"; continue; fi
+            rl=$(grep -iE 'limit|remaining|quota' "$out/$i.h" | tr -d '\r' | tr '\n' ' ')
+            body=$(head -c 6000 "$out/$i.json" | tr '\n\r' '  ' | sed 's/%/%25/g')
+            echo "::notice title=$i $p HTTP $code ($(wc -c < "$out/$i.json") bytes)::[$rl] $body"
+          done
