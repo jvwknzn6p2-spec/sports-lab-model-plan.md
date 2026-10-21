@@ -238,6 +238,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add football/ledger football/history football/market football/reports
+          if [ -d football/lines ]; then git add football/lines; fi
           if git diff --cached --quiet; then echo "変更なし"; exit 0; fi
           git commit -m "football: $(date -u +%Y-%m-%dT%H:%MZ) ledger"
           for i in 1 2 3; do
