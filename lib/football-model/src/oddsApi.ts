@@ -18,7 +18,7 @@ export interface OddsEvent {
   bookmakers: Array<{
     key: string;
     last_update?: string;
-    markets: Array<{ key: string; outcomes: Array<{ name: string; price: number }> }>;
+    markets: Array<{ key: string; outcomes: Array<{ name: string; price: number; point?: number }> }>;
   }>;
 }
 
@@ -47,6 +47,38 @@ export interface MarketFixture {
    */
   bestOdds?: [number, number, number] | null;
   bestBooks?: [string, string, string] | null;
+  /**
+   * アジアンハンデ（The Odds API の `spreads`）。専用キー（2026-10-21 Founder 判断・有料 20K）で取る日だけある。
+   * 行は [ホーム側のライン, ホームの中央値オッズ, アウェイの中央値オッズ, ブック数]。ライン（例 -0.75）ごとに
+   * 各社の価格の中央値を取り、ラインの小さい順に並べる。日本式ハンデとの照合と、勝率の独立な物差しに使う
+   */
+  spreads?: Array<[number, number, number, number]> | null;
+  /** オーバー/アンダー（`totals`）。行は [ライン, オーバーの中央値, アンダーの中央値, ブック数] */
+  totals?: Array<[number, number, number, number]> | null;
+}
+
+/** spreads / totals を「ラインごとの各社中央値」に畳む。片側しか無いブックは数えない */
+function lineSummary(
+  e: OddsEvent,
+  key: "spreads" | "totals",
+): Array<[number, number, number, number]> | null {
+  const byLine = new Map<number, { a: number[]; b: number[] }>();
+  for (const bk of e.bookmakers) {
+    const m = bk.markets.find((x) => x.key === key);
+    if (!m) continue;
+    const [nameA, nameB] = key === "spreads" ? [e.home_team, e.away_team] : ["Over", "Under"];
+    const oa = m.outcomes.find((o) => o.name === nameA);
+    const ob = m.outcomes.find((o) => o.name === nameB);
+    if (!oa || !ob || typeof oa.point !== "number" || !(oa.price > 1) || !(ob.price > 1)) continue;
+    const line = oa.point;
+    const g = byLine.get(line) ?? byLine.set(line, { a: [], b: [] }).get(line)!;
+    g.a.push(oa.price);
+    g.b.push(ob.price);
+  }
+  if (!byLine.size) return null;
+  return [...byLine.entries()]
+    .sort((x, y) => x[0] - y[0])
+    .map(([line, g]) => [line, Number(median(g.a).toFixed(3)), Number(median(g.b).toFixed(3)), g.a.length]);
 }
 
 /**
@@ -108,6 +140,8 @@ export function parseOddsEvents(
       market,
       bestOdds: best.every((x) => x > 1) ? best : null,
       bestBooks: best.every((x) => x > 1) ? bestBy : null,
+      spreads: lineSummary(e, "spreads"),
+      totals: lineSummary(e, "totals"),
     };
   });
 }

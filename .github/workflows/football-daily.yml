@@ -127,10 +127,14 @@ jobs:
 
       - name: 日程とオッズを取得（The Odds API・鍵が無ければ飛ばす）
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.FOOTBALL_ODDS_API_KEY || secrets.ODDS_API_KEY }}
+          FOOTBALL_KEY: ${{ secrets.FOOTBALL_ODDS_API_KEY != '' }}
         run: |
           set -u
           if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi
+          # 専用キー（FOOTBALL_ODDS_API_KEY・有料 20K・Founder 判断 2026-10-21）がある日だけアジアンハンデと
+          # オーバー/アンダーも取る（1 回 3 クレジット）。無ければ共有キーで h2h だけ（従来どおり 1 クレジット）
+          if [ "${FOOTBALL_KEY:-false}" = "true" ]; then MARKETS=h2h,spreads,totals; echo "専用キー: h2h+spreads+totals"; else MARKETS=h2h; echo "共有キー: h2h のみ"; fi
           ts=$(date -u +%Y%m%dT%H%M%SZ)
           # J1（soccer_japan_j_league）は 2026-09-19 に対象から外した（Founder 判断）。
           # 無料の fixtures.csv に J1 が収録されておらず、市場を持つには有料枠を使うしかない
@@ -142,7 +146,7 @@ jobs:
                        soccer_belgium_first_div soccer_spl; do
             mkdir -p "football/cache/odds/$sport"
             code=$(curl -sS --max-time 30 -o "football/cache/odds/$sport/$ts.json" -D /tmp/h.txt -w "%{http_code}" \
-              "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
+              "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=$MARKETS&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
             echo "$sport HTTP $code $(grep -i x-requests-remaining /tmp/h.txt | tr -d '\r')"
             if [ "$code" != "200" ]; then rm -f "football/cache/odds/$sport/$ts.json"; fi
             grep -i '^x-requests-remaining:' /tmp/h.txt | tr -d '\r' | awk '{print $2}' > football/cache/odds-remaining.txt || true
@@ -158,7 +162,7 @@ jobs:
             if [ "${n:-0}" -gt 0 ] 2>/dev/null && [ "${remaining:-0}" -ge 150 ] 2>/dev/null; then
               mkdir -p "football/cache/odds/$sport"
               code=$(curl -sS --max-time 30 -o "football/cache/odds/$sport/$ts.json" -D /tmp/h.txt -w "%{http_code}" \
-                "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
+                "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=$MARKETS&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY")
               echo "$sport HTTP $code $(grep -i x-requests-remaining /tmp/h.txt | tr -d '\r')"
               if [ "$code" != "200" ]; then rm -f "football/cache/odds/$sport/$ts.json"; fi
               grep -i '^x-requests-remaining:' /tmp/h.txt | tr -d '\r' | awk '{print $2}' > football/cache/odds-remaining.txt || true
@@ -167,7 +171,8 @@ jobs:
 
       - name: 結果の速報を取得（The Odds API scores・必要な競技だけ・鍵が無ければ飛ばす）
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.FOOTBALL_ODDS_API_KEY || secrets.ODDS_API_KEY }}
+          FOOTBALL_KEY: ${{ secrets.FOOTBALL_ODDS_API_KEY != '' }}
         run: |
           set -u
           if [ -z "${ODDS_API_KEY:-}" ]; then echo "ODDS_API_KEY unset — skip"; exit 0; fi

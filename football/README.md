@@ -1066,6 +1066,12 @@ node --experimental-strip-types lib/football-model/src/cli/page.ts \
   `mkt-only-v1` だけ・正準は出さない・/events で試合がある日だけ odds）。**違いは結果の取得元**:
   football-data.org の無料枠に EL は無いので、結果は The Odds API scores（2 クレジット/回・必要な日だけ）
   の 1 経路だけ。scores が取れない日が続くと EL の決済は止まる（台帳の予想は残り、取れた日に決済される）
+- **The Odds API の専用キー（2026-10-21 Founder 判断「②」= 有料 20K プラン）**。サッカーの 2 ワークフロー
+  （football-daily / football-odds-snapshot）は secret `FOOTBALL_ODDS_API_KEY` を優先し、無ければ従来の共有キー
+  `ODDS_API_KEY`（野球と共有）で動く。専用キーの日だけ `markets=h2h,spreads,totals`（1 回 3 クレジット）で
+  アジアンハンデとオーバー/アンダーも取り、市場の写し（football/market）に `spreads` / `totals`
+  （ラインごとの各社中央値）を残す。共有キーの日は h2h だけ（1 クレジット）。残り 150 未満で CL/EL を取らない
+  ガードはそのまま（20K 枠では実質かからない）
 - **ECL は未対応**（同じ形で足せる。必要になったら判断を仰ぐ）
 - チーム名の対応表は `lib/football-model/src/teamAliases.ts`。Odds API に出た名前が
   CSV の名前へ解決できない試合は**推測で埋めず**スキップし、`summary.md` の

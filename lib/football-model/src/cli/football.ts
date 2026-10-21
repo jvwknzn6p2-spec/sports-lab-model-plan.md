@@ -393,7 +393,7 @@ function writeMarketSnapshot(sport: string, fetchedAt: string, fixtures: ReturnT
   mkdirSync(mdir, { recursive: true });
   writeFileSync(
     join(mdir, `${fetchedAt.replace(/[-:]/g, "").replace(".000", "")}.json`),
-    JSON.stringify(fixtures.map((f) => ({ providerId: f.providerId, kickoffAt: f.kickoffAt, home: f.home, away: f.away, resolved: f.resolved, bookmakers: f.bookmakers, market: f.market, bestOdds: f.bestOdds ?? null })), null, 0) + "\n",
+    JSON.stringify(fixtures.map((f) => ({ providerId: f.providerId, kickoffAt: f.kickoffAt, home: f.home, away: f.away, resolved: f.resolved, bookmakers: f.bookmakers, market: f.market, bestOdds: f.bestOdds ?? null, ...(f.spreads ? { spreads: f.spreads } : {}), ...(f.totals ? { totals: f.totals } : {}) })), null, 0) + "\n",
   );
 }
 
