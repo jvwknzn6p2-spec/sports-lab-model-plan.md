@@ -7,7 +7,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MKT_MODEL, MKT_WEIGHTS, blend, fitBlend, marketModel } from "../src/marketModel.ts";
@@ -125,4 +125,38 @@ test("marketModel: 最良値の組み合わせで裁定が成立する試合は�
   const r = marketModel(m, m, arb, w);
   assert.ok(r.ev!.some((e) => e > 0));
   assert.equal(r.recommend, null);
+});
+
+test("oddsApi: spreads / totals をラインごとの各社中央値に畳む（専用キーの日だけ届く・2026-10-21）", () => {
+  const ev = {
+    id: "e1", sport_key: "soccer_epl", commence_time: "2026-10-24T14:00:00Z", home_team: "Arsenal", away_team: "Everton",
+    bookmakers: [
+      { key: "b1", markets: [
+        { key: "h2h", outcomes: [{ name: "Arsenal", price: 1.5 }, { name: "Draw", price: 4.2 }, { name: "Everton", price: 7 }] },
+        { key: "spreads", outcomes: [{ name: "Arsenal", price: 1.9, point: -1 }, { name: "Everton", price: 1.95, point: 1 }] },
+        { key: "totals", outcomes: [{ name: "Over", price: 1.8, point: 2.5 }, { name: "Under", price: 2.0, point: 2.5 }] },
+      ] },
+      { key: "b2", markets: [
+        { key: "spreads", outcomes: [{ name: "Arsenal", price: 2.0, point: -1 }, { name: "Everton", price: 1.85, point: 1 }] },
+        { key: "spreads", outcomes: [] },
+      ] },
+      { key: "b3", markets: [{ key: "spreads", outcomes: [{ name: "Arsenal", price: 2.3, point: -1.25 }, { name: "Everton", price: 1.6, point: 1.25 }] }] },
+    ],
+  };
+  const [f] = parseOddsEvents([ev]);
+  assert.deepEqual(f.spreads, [[-1.25, 2.3, 1.6, 1], [-1, 1.95, 1.9, 2]]);
+  assert.deepEqual(f.totals, [[2.5, 1.8, 2, 1]]);
+  // h2h だけの応答（共有キーの日）では null
+  const [g] = parseOddsEvents([{ ...ev, bookmakers: [ev.bookmakers[0]!].map((b) => ({ ...b, markets: [b.markets[0]!] })) }]);
+  assert.equal(g.spreads, null);
+  assert.equal(g.totals, null);
+});
+
+test("ワークフロー: サッカーは専用キー（FOOTBALL_ODDS_API_KEY）を優先し、無ければ共有キーで h2h だけ", () => {
+  for (const f of ["football-daily.yml", "football-odds-snapshot.yml"]) {
+    const wf = readFileSync(new URL(`../../../.github/workflows/${f}`, import.meta.url), "utf8");
+    assert.match(wf, /ODDS_API_KEY: \$\{\{ secrets\.FOOTBALL_ODDS_API_KEY \|\| secrets\.ODDS_API_KEY \}\}/, f);
+    assert.match(wf, /MARKETS=h2h,spreads,totals; .*else MARKETS=h2h;/, f);
+    assert.ok(!/markets=h2h&/.test(wf), `${f}: markets が固定のまま`);
+  }
 });
