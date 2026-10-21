@@ -1066,6 +1066,11 @@ node --experimental-strip-types lib/football-model/src/cli/page.ts \
   `mkt-only-v1` だけ・正準は出さない・/events で試合がある日だけ odds）。**違いは結果の取得元**:
   football-data.org の無料枠に EL は無いので、結果は The Odds API scores（2 クレジット/回・必要な日だけ）
   の 1 経路だけ。scores が取れない日が続くと EL の決済は止まる（台帳の予想は残り、取れた日に決済される）
+- **市場のアジアンハンデと OU2.5（無料・2026-10-21 Founder 判断「①」）**。毎日取っている fixtures.csv の
+  AHh（ホーム側のライン）・PAHH/PAHA・MaxAHH/MaxAHA・AvgAHH/AvgAHA と P/Max/Avg >2.5・<2.5 を読み、台帳の試合へ
+  引き当てて `football/lines/football-data/<取得時刻>.json` に残す（国内リーグのみ・約 3 日先まで・主ラインだけ）。
+  **`football/market` には混ぜない**（決済の「締切に最も近い市場」と CLV の作り方を変えないため）。予想・決済には
+  使わず記録だけ。日本式ハンデとの照合と、勝率の独立な物差しに使う
 - **The Odds API の専用キー（2026-10-21 Founder 判断「②」= 有料 20K プラン）**。サッカーの 2 ワークフロー
   （football-daily / football-odds-snapshot）は secret `FOOTBALL_ODDS_API_KEY` を優先し、無ければ従来の共有キー
   `ODDS_API_KEY`（野球と共有）で動く。専用キーの日だけ `markets=h2h,spreads,totals`（1 回 3 クレジット）で

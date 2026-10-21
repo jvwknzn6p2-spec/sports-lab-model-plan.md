@@ -397,6 +397,20 @@ function writeMarketSnapshot(sport: string, fetchedAt: string, fixtures: ReturnT
   );
 }
 
+/**
+ * 市場のハンデ線の写し（football/lines/football-data/<取得時刻>.json）。`football/market` とは**別の場所**に置く。
+ * market の写しは決済の「締切に最も近い市場」と CLV に使われるので、作り方の違う値を混ぜない。
+ * 取得時刻は fixtures.csv の取得時刻（封緘より前かどうかを後から判別できる）
+ */
+function writeLineSnapshot(rows: Array<Record<string, unknown>>, log: string[]): void {
+  const at = fixturesFetchedAt();
+  if (!rows.length || !at) return;
+  const dir = join(ROOT, "lines", "football-data");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${at.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z")}.json`), JSON.stringify(rows) + "\n");
+  log.push(`lines: アジアンハンデ/OU2.5 ${rows.length} 試合（台帳に引き当て ${rows.filter((r) => r.providerId).length}）`);
+}
+
 /** 締切に近い写しが要る競技（登録済みで、今から SNAPSHOT_HOURS 以内に始まる試合がある）。1 行 1 競技 */
 const SNAPSHOT_HOURS = 20;
 function snapshotNeeded(): void {
@@ -444,6 +458,8 @@ function daily(): void {
   // 無料の市場（football-data の fixtures.csv）。クレジットを使わないので毎回読む
   const freeRows = fixtureRows();
   const freeMarkets = new FixtureMarketIndex(freeRows);
+  // 市場のアジアンハンデとオーバー/アンダー 2.5（fixtures.csv・無料。Founder 判断「①」2026-10-21）
+  const lineRows: Array<Record<string, unknown>> = [];
   for (const league of LEAGUES) {
     const src = SOURCES[league];
     if (!src) throw new Error(`unknown league ${league}`);
@@ -480,6 +496,18 @@ function daily(): void {
       const rf = L.recordFixtures(freeFixtures, league, NOW);
       fixtureAdded += rf.added;
       log.push(`${league}: fd-fixtures ${freeFixtures.length} (added ${rf.added}, 重複 ${rf.duplicates}, unresolved ${rf.unresolved}, 記録開始前 ${rf.outOfRecord ?? 0})`);
+    }
+
+    // 1c) 市場のハンデ線（fixtures.csv）を台帳の試合へ引き当てて残す。予想・決済には使わない（記録だけ）
+    for (const f of freeRows) {
+      if (f.division !== league || (!f.asian && !f.ou25)) continue;
+      const home = resolve(f.home) ?? f.home;
+      const away = resolve(f.away) ?? f.away;
+      const day = Date.parse(`${f.dateLocal}T00:00:00Z`);
+      const hit = [...L.currentMatches().values()].find(
+        (m) => m.league === league && m.home === home && m.away === away && Math.abs(Date.parse(m.kickoffAt.slice(0, 10) + "T00:00:00Z") - day) <= 86_400_000,
+      );
+      lineRows.push({ providerId: hit?.providerId ?? null, league, kickoffAt: f.kickoffAt, home, away, asian: f.asian ?? null, ou25: f.ou25 ?? null });
     }
 
     // 2) 予想（封緘前・未発行・48h 以内）
@@ -606,6 +634,7 @@ function daily(): void {
       openBeforeCutoff: openNow,
     });
   }
+  writeLineSnapshot(lineRows, log);
   // 4) 決済
   // 決済では**キックオフ直前**の市場でも RPS を測る（marketSnapshots.ts）。予想行の market は
   // 発行時点の値で、発行範囲 720 時間では最大 25 日前になるため、それだけで対照し続けると

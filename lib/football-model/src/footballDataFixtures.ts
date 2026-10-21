@@ -47,6 +47,52 @@ export interface FixtureMarket {
   market: ProbabilityTriple | null;
   /** 市場確率に使えたブックの数（0 なら market は null） */
   books: number;
+  /**
+   * アジアンハンデ（2026-10-21 Founder 判断「①」・無料で市場のハンデを持つ）。`line` は**ホーム側**の
+   * ハンデ（AHh。-0.75 ならホームが 0.75 出す）。価格は [ホーム, アウェイ] で、Pinnacle・最高値・各社平均。
+   * 列が無い・読めない行は null（推測で埋めない）
+   */
+  asian?: AsianLine | null;
+  /** オーバー/アンダー 2.5（[オーバー, アンダー]）。Pinnacle・最高値・各社平均 */
+  ou25?: PricePair3 | null;
+}
+
+export type Pair = [number, number];
+export interface PricePair3 {
+  pinnacle: Pair | null;
+  max: Pair | null;
+  avg: Pair | null;
+}
+export interface AsianLine extends PricePair3 {
+  line: number;
+}
+
+/** 2 列を [a, b] に。どちらかが読めなければ null */
+function pair(row: Record<string, string>, a: string, b: string): Pair | null {
+  const x = num(cell(row, a));
+  const y = num(cell(row, b));
+  return x !== null && y !== null ? [x, y] : null;
+}
+
+/** fixtures.csv のアジアンハンデ（AHh / PAHH・PAHA / MaxAHH・MaxAHA / AvgAHH・AvgAHA） */
+export function asianFromRow(row: Record<string, string>): AsianLine | null {
+  const raw = (cell(row, "AHh") ?? "").trim();
+  if (raw === "") return null;
+  const line = Number(raw);
+  if (!Number.isFinite(line)) return null;
+  const pinnacle = pair(row, "PAHH", "PAHA");
+  const max = pair(row, "MaxAHH", "MaxAHA");
+  const avg = pair(row, "AvgAHH", "AvgAHA");
+  if (!pinnacle && !max && !avg) return null;
+  return { line, pinnacle, max, avg };
+}
+
+/** fixtures.csv のオーバー/アンダー 2.5（P>2.5・P<2.5 / Max>2.5・Max<2.5 / Avg>2.5・Avg<2.5） */
+export function ou25FromRow(row: Record<string, string>): PricePair3 | null {
+  const pinnacle = pair(row, "P>2.5", "P<2.5");
+  const max = pair(row, "Max>2.5", "Max<2.5");
+  const avg = pair(row, "Avg>2.5", "Avg<2.5");
+  return pinnacle || max || avg ? { pinnacle, max, avg } : null;
 }
 
 /**
@@ -150,7 +196,7 @@ export function parseFixturesCsv(text: string): FixtureMarket[] {
     const time = (cell(row, "Time") ?? "").trim();
     const { market, books } = marketFromRow(row);
     const timeLocal = /^\d{1,2}:\d{2}$/.test(time) ? time : null;
-    out.push({ division, dateLocal, timeLocal, kickoffAt: ukLocalToUtc(dateLocal, timeLocal), home, away, market, books });
+    out.push({ division, dateLocal, timeLocal, kickoffAt: ukLocalToUtc(dateLocal, timeLocal), home, away, market, books, asian: asianFromRow(row), ou25: ou25FromRow(row) });
   }
   return out;
 }
