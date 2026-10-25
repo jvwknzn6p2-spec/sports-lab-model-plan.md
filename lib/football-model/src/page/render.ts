@@ -11,9 +11,8 @@
  *   **黄色・ゴールドは使わない。**
  */
 import { createHash } from "node:crypto";
-import { OFFICIAL_RECORD_START, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../ledger.ts";
+import { type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../ledger.ts";
 import { MKT_ONLY_MODEL } from "../marketModel.ts";
-import { wilson95 } from "../scoring.ts";
 import { LEAGUE, kanaTable, leagueLabel } from "./labels.ts";
 
 /**
@@ -136,7 +135,6 @@ export function renderPage(input: RenderInput): RenderResult {
   const mktEvaluations = input.mktEvaluations ?? [];
   const MK = new Map(mktPredictions.map((p) => [p.providerId, p]));
   const MKE = new Map(mktEvaluations.map((e) => [e.predictionId, e]));
-  const genLabel = `${md(now)} ${hm(now)} JST`;
 
   const rows: Row[] = predictions
     .map((p) => ({
@@ -329,10 +327,6 @@ export function renderPage(input: RenderInput): RenderResult {
   }
 
   const nPreview = rows.filter((r) => r.preview).length;
-  const modelsUsed = [...new Set([...upcoming, ...upcomingJ].map((r) => r.model))];
-  const modelLabel = modelsUsed.length ? modelsUsed.join(" / ") : "dc-v1";
-  const pubTimes = [...new Set(predictions.map((p) => p.publishedAt))].sort();
-  const lastPub = pubTimes[pubTimes.length - 1] ?? now.toISOString();
 
   const html = `<title>VORTE FT 海外サッカー予想</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -349,7 +343,7 @@ export function renderPage(input: RenderInput): RenderResult {
 body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans JP",system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.55;
   background-image:radial-gradient(900px 420px at 50% -120px,rgba(57,196,234,.14),transparent 70%)}
 .wrap{max-width:720px;margin:0 auto;padding:22px 16px 56px}
-header{display:flex;flex-direction:column;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:4px 0 16px;border-bottom:1px solid var(--line)}
 .logo{font-family:Orbitron,"Noto Sans JP",sans-serif;font-size:22px;letter-spacing:.34em;font-weight:600;color:var(--text)}
 .logo b{letter-spacing:.02em;font-weight:700;margin-left:.1em;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
 h1{font-size:18px;font-weight:700;margin:0;text-wrap:balance}
@@ -357,14 +351,14 @@ h1{font-size:18px;font-weight:700;margin:0;text-wrap:balance}
 .sub.scope{color:var(--cyan);font-size:11px;font-weight:500}
 .sub.scope code{color:var(--cyan)}
 .sub code{font-family:"JetBrains Mono",monospace;color:var(--text);font-size:11px}
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--muted);margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
-.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:16px 0 4px}
-.tile{background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:10px 10px;min-width:0;white-space:nowrap;overflow:hidden}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0 4px}
+.tile{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:12px 12px 11px;min-width:0;white-space:nowrap;overflow:hidden;display:flex;flex-direction:column;gap:3px}
 .tile small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.tile strong{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile strong{font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:600;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile.hit strong{color:var(--cyan)}
 .tile span{font-size:11px;color:var(--muted)}
-.tile .ci{display:block;font-size:10px;color:var(--dim);white-space:normal;margin-top:2px}
 h2{font-size:13px;letter-spacing:.14em;color:var(--cyan);font-weight:500;margin:30px 0 4px;text-transform:uppercase}
 h2 small{color:var(--muted);letter-spacing:0;text-transform:none;margin-left:8px;font-size:12px}
 .day{font-size:12px;color:var(--muted);font-weight:500;margin:14px 0 6px}
@@ -440,10 +434,6 @@ footer{margin-top:28px;font-size:11px;color:var(--dim);text-align:center}
 <div class="wrap">
 <header>
   <div class="logo">VORTE<b>FT</b></div>
-  <h1>海外サッカー 封緘済み予想</h1>
-  <p class="sub scope">サッカー専用ページ。台帳は sports-lab リポジトリの <code>football/ledger/</code> のみを読み、野球（MLB/NPB・VORTE EV）のデータは一切参照しない。記録・予想・分析はこの URL に集約する。</p>
-  <p class="sub">最終発行 ${md(lastPub)} ${hm(lastPub)} JST・封緘は試合日（JST）の前日 20:00 JST（9/8 以前の発行分はキックオフ 60 分前）・発行後は変更しない。モデル <code>${esc(modelLabel)}</code>（Dixon-Coles）。市場は The Odds API の h2h 中央値（発行時点）。ページ生成 ${genLabel}。</p>
-  <p class="sub scope">公式記録は <b>${md(OFFICIAL_RECORD_START)}（JST）以降にキックオフする試合</b>から。旧実装の期間（〜2026-10-09）の試合・予想の記録は 2026-10-10 に破棄して 0 から再開した。この日より前の数字はこのページにも通算にも含まない。</p>
   <div class="legend"><span><i style="background:var(--cyan)"></i>ホーム勝</span><span><i style="background:var(--draw)"></i>引き分け</span><span><i style="background:var(--cyan2);opacity:.65"></i>アウェイ勝</span><span><i style="background:var(--mkt)"></i>細い帯＝市場</span></div>
 </header>
 
@@ -459,9 +449,9 @@ ${
 }
 
 <div class="tiles">
-  <div class="tile"><small>これから</small><strong>${upcoming.length}</strong> <span>試合</span></div>
-  <div class="tile"><small>決済待ち</small><strong>${started.length}</strong> <span>試合</span></div>
-  <div class="tile"><small>的中率</small><strong>${settledCanon.length ? `${((nHit / settledCanon.length) * 100).toFixed(1)}%` : "—"}</strong> <span>${nHit}/${settledCanon.length}</span>${settledCanon.length ? `<span class="ci">95% 区間 ${(wilson95(nHit, settledCanon.length).lo * 100).toFixed(0)}–${(wilson95(nHit, settledCanon.length).hi * 100).toFixed(0)}%</span>` : ""}</div>
+  <div class="tile"><small>これから</small><strong>${upcoming.length}</strong><span>試合</span></div>
+  <div class="tile"><small>決済待ち</small><strong>${started.length}</strong><span>試合</span></div>
+  <div class="tile hit"><small>的中率</small><strong>${settledCanon.length ? `${((nHit / settledCanon.length) * 100).toFixed(1)}%` : "—"}</strong><span>${nHit} / ${settledCanon.length} 試合</span></div>
 </div>
 
 <nav class="tabs" role="tablist">
