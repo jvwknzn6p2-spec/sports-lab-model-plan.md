@@ -276,3 +276,14 @@ test("試合前・試合中・試合後の 3 ページ: 決着前の試合は 3 
   assert.match(html, /data-ko="2099-09-01T14:00:00Z"/);
   assert.match(html, /LIVE_MIN=130/);
 });
+
+test("的中率を件数と Wilson 95% 区間つきで出す・決着欄はリーグごとの的中率も（Founder 依頼 2026-10-25）", () => {
+  const matches = [match("p1", "Arsenal", "Chelsea", "2026-09-01T12:00:00Z"), match("p2", "Liverpool", "Everton", "2026-09-02T12:00:00Z")];
+  const predictions = [prediction("e1", "p1", "2026-09-01T12:00:00Z", [0.5, 0.3, 0.2]), prediction("e2", "p2", "2026-09-02T12:00:00Z", [0.5, 0.3, 0.2])];
+  const evaluations = [evaluation("e1", "p1", "H", 0.2, 0.2), evaluation("e2", "p2", "A", 0.5, 0.5)];
+  const { html } = render({ matches, predictions, evaluations });
+  assert.match(html, /<small>的中率<\/small><strong>50\.0%<\/strong> <span>1\/2<\/span><span class="ci">95% 区間 \d+–\d+%<\/span>/);
+  assert.match(html, /2 試合・的中 1\/2（50%）/);
+  // 決着が 0 件のときは率を出さない（0/0 を 0% と書かない）
+  assert.match(render({}).html, /<small>的中率<\/small><strong>—<\/strong>/);
+});
