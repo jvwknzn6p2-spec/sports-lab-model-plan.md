@@ -275,19 +275,17 @@ export function renderPage(input: RenderInput): RenderResult {
       .join("");
   }
   /**
-   * 検索窓・日付・リーグの絞り込み（ページ内の全試合が対象。ひらがなはカタカナとして探す）。
-   * 日付は JST の試合日。日付を選ぶと、これから・決済待ち・決着済みのどれもリーグ別に並ぶ
+   * 日付・リーグの絞り込み（ページ内の全試合が対象）。日付は JST の試合日。
+   * 検索窓・日付入力・試合前/中/後のタブは外した（Founder 指示 2026-10-25）。3 区分は縦に並べる
    */
-  function finder(list: Row[], preDays: Set<string> = new Set(), postDays: Set<string> = new Set(), liveDays: Set<string> = new Set()): string {
+  function finder(list: Row[]): string {
     const order = Object.keys(LEAGUE);
     const codes = [...new Set(list.map((r) => r.league))].sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
     const chips = [`<button type="button" class="lgchip on" data-lg="">すべて</button>`, ...codes.map((c) => `<button type="button" class="lgchip" data-lg="${esc(c)}">${esc(leagueLabel(c))}</button>`)].join("");
     const WD = ["日", "月", "火", "水", "木", "金", "土"];
     const days = [...new Set(list.map((r) => ymd(r.kickoffAt)))].sort();
-    const dayChips = [`<button type="button" class="daychip on" data-day="">全日程</button>`, ...days.map((d) => `<button type="button" class="daychip" data-day="${d}" data-panes="${[preDays.has(d) ? "pre" : "", liveDays.has(d) ? "live" : "", postDays.has(d) ? "post" : ""].join(" ").trim()}">${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}（${WD[new Date(`${d}T00:00:00Z`).getUTCDay()]}）</button>`)].join("");
+    const dayChips = [`<button type="button" class="daychip on" data-day="">全日程</button>`, ...days.map((d) => `<button type="button" class="daychip" data-day="${d}">${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}（${WD[new Date(`${d}T00:00:00Z`).getUTCDay()]}）</button>`)].join("");
     return `<div class="finder">
-  <input id="q" type="search" placeholder="チーム名・リーグ名で探す" autocomplete="off" enterkeyhint="search">
-  <div class="dayrow"><label for="qd">日付（JST）</label><input id="qd" type="date" value=""${days.length ? ` min="${days[0]}" max="${days[days.length - 1]}"` : ""}></div>
   <div class="lgchips">${dayChips}</div>
   <div class="lgchips">${chips}</div>
   <p class="sub" id="qcount"></p>
@@ -410,24 +408,17 @@ summary{cursor:pointer;color:var(--muted);font-size:12px;padding:6px 0}
 .notice.preview-notice b{color:#b79cff}
 .notice code{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--cyan)}
 footer{margin-top:28px;font-size:11px;color:var(--dim);text-align:center}
-.finder{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 6px;margin-top:8px;border-bottom:1px solid var(--line)}
-.finder input{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;outline:none}
-.finder input:focus{border-color:rgba(127,227,255,.55)}
+.finder{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 4px;margin-top:10px;border-bottom:1px solid var(--line)}
+.finder .lgchips:first-child{padding-top:2px}
 .lgchips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
 .lgchip{flex-shrink:0;white-space:nowrap;font:inherit;font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
 .lgchip.on{color:var(--cyan);border-color:rgba(127,227,255,.5);background:rgba(127,227,255,.08)}
 #qcount{margin-top:4px;min-height:1em}
-.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:18px 0 0}
 .livechip{font-size:10px;font-weight:700;color:var(--bg);background:var(--cyan);border-radius:999px;padding:1px 7px;white-space:nowrap}
-.tab{font:inherit;font-size:15px;font-weight:700;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:11px 8px;cursor:pointer}
-.tab small{font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:400;margin-left:8px;color:var(--dim)}
-.tab.on{color:var(--cyan);border-color:rgba(127,227,255,.55);background:rgba(127,227,255,.09)}
-.tab.on small{color:var(--cyan)}
-.dayrow label{white-space:nowrap}
-.dayrow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
-.dayrow input{font:inherit;font-size:16px;color:var(--text);background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;color-scheme:dark}
 .daychip{flex-shrink:0;white-space:nowrap;font:inherit;font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
 .daychip.on{color:var(--cyan);border-color:rgba(127,227,255,.5);background:rgba(127,227,255,.08)}
+.daychip[data-day=""]{position:sticky;left:0;z-index:1;background:linear-gradient(var(--glass),var(--glass)),var(--bg);box-shadow:-10px 0 0 var(--bg),6px 0 8px -2px var(--bg)}
+.daychip.on[data-day=""]{background:linear-gradient(rgba(127,227,255,.08),rgba(127,227,255,.08)),var(--bg)}
 .lghead{font-size:14px;font-weight:700;color:var(--text);margin:18px 0 2px;padding-left:8px;border-left:3px solid var(--cyan2)}
 .lghead small{color:var(--muted);font-weight:400;font-size:11px;margin-left:8px}
 </style>
@@ -454,26 +445,20 @@ ${
   <div class="tile hit"><small>的中率</small><strong>${settledCanon.length ? `${((nHit / settledCanon.length) * 100).toFixed(1)}%` : "—"}</strong><span>${nHit} / ${settledCanon.length} 試合</span></div>
 </div>
 
-<nav class="tabs" role="tablist">
-  <button type="button" class="tab on" data-pane="pre" role="tab">試合前<small id="n-pre">${upcoming.length + upcomingJ.length}</small></button>
-  <button type="button" class="tab" data-pane="live" role="tab">試合中<small id="n-live">0</small></button>
-  <button type="button" class="tab" data-pane="post" role="tab">試合後<small id="n-post">${started.length + settled.length}</small></button>
-</nav>
-${finder([...upcoming, ...started, ...settled], new Set([...upcoming, ...upcomingJ, ...started].map((r) => ymd(r.kickoffAt))), new Set([...upcoming, ...started, ...settled].map((r) => ymd(r.kickoffAt))), new Set([...upcoming, ...started].map((r) => ymd(r.kickoffAt))))}
+${finder([...upcoming, ...started, ...settled])}
 <div class="pane" data-pane="pre">
 <h2>試合前の予想<small>リーグ別・封緘済み</small></h2>
 ${groupByLeague([...started, ...upcoming].sort((x, y) => x.kickoffAt.localeCompare(y.kickoffAt)))}
 ${upcomingJ.length ? `<h2>J1（未開始）<small>${upcomingJ.length} 試合</small></h2>${group(upcomingJ)}` : ""}
 </div>
 
-<div class="pane" data-pane="live" hidden>
+<div class="pane" data-pane="live">
 <h2>試合中<small>キックオフから 2 時間 10 分まで・リーグ別</small></h2>
 <p class="sub" id="live-note">試合中のスコアは表示しない（Founder 判断 2026-10-11）。経過時間はキックオフ時刻からの目安で、実際の試合時間ではない。結果は試合後のページに決済後に出る。</p>
 ${groupByLeague([...started, ...upcoming].sort((x, y) => x.kickoffAt.localeCompare(y.kickoffAt)))}
-<p class="sub" id="live-empty" hidden>いま試合中の試合はない。</p>
 </div>
 
-<div class="pane" data-pane="post" hidden>
+<div class="pane" data-pane="post">
 <h2>試合終了・結果待ち<small>結果は football-data.co.uk の CSV 反映後、翌日 12:05 JST の回で決済される</small></h2>
 ${groupByLeague([...started, ...upcoming].sort((x, y) => x.kickoffAt.localeCompare(y.kickoffAt)))}
 <p class="sub" id="wait-empty" hidden>結果待ちの試合はない。</p>
@@ -492,45 +477,26 @@ ${groupByLeague(settled, { showResult: true })}
 </div>
 <script>
 (function(){
-  var q=document.getElementById('q'); if(!q) return;
   var chips=[].slice.call(document.querySelectorAll('.lgchip'));
+  if(!chips.length) return;
   var cards=[].slice.call(document.querySelectorAll('article.match'));
   var count=document.getElementById('qcount');
-  var lg='', day='', pane='pre';
+  var lg='', day='';
   var LIVE_MIN=130; // キックオフから 2 時間 10 分（前後半 90 分＋ハーフタイム＋追加時間の目安）
   function phase(c){
     if(c.getAttribute('data-settled')) return 'post';
     var ko=Date.parse(c.getAttribute('data-ko')||''); if(!ko) return 'pre';
     var t=Date.now(); return t<ko?'pre':(t<ko+LIVE_MIN*60000?'live':'post');
   }
-  var tabs=[].slice.call(document.querySelectorAll('.tab'));
-  var panes=[].slice.call(document.querySelectorAll('.pane'));
-  function setPane(pn){
-    pane=(pn==='post'||pn==='live')?pn:'pre';
-    tabs.forEach(function(b){b.classList.toggle('on',b.getAttribute('data-pane')===pane)});
-    panes.forEach(function(x){x.hidden=x.getAttribute('data-pane')!==pane});
-    // そのページに試合のある日付だけを出す。選択中の日付がそのページに無ければ解除
-    var keep=false;
-    [].slice.call(document.querySelectorAll('.daychip[data-panes]')).forEach(function(c){
-      var ok=(' '+c.getAttribute('data-panes')+' ').indexOf(' '+pane+' ')>=0;
-      c.style.display=ok?'':'none'; if(ok&&c.getAttribute('data-day')===day) keep=true;
-    });
-    try{ history.replaceState(null,'','#'+pane) }catch(e){}
-    if(day&&!keep){ setDay('') } else { apply() }
-  }
-  var qd=document.getElementById('qd');
   var dchips=[].slice.call(document.querySelectorAll('.daychip'));
-  function setDay(d){ day=d||''; if(qd) qd.value=day; dchips.forEach(function(x){x.classList.toggle('on',x.getAttribute('data-day')===day)}); apply(); }
-  // 表記ゆれを吸収: 全角半角・大小文字・ひらがな→カタカナ・中黒と空白を除く
-  function norm(t){return (t||'').normalize('NFKC').toLowerCase().replace(/[\\u3041-\\u3096]/g,function(c){return String.fromCharCode(c.charCodeAt(0)+0x60)}).replace(/[\\s・･\\-\\.]/g,'')}
-  var keys=cards.map(function(c){return norm(c.getAttribute('data-q'))});
+  function setDay(d){ day=d||''; dchips.forEach(function(x){x.classList.toggle('on',x.getAttribute('data-day')===day)}); apply(); }
   function apply(){
-    var t=norm(q.value), n=0, active=t||lg||day;
-    cards.forEach(function(c,i){
-      var ok=(!t||keys[i].indexOf(t)>=0)&&(!lg||c.getAttribute('data-lg')===lg)&&(!day||c.getAttribute('data-day')===day);
+    var n=0, active=lg||day;
+    cards.forEach(function(c){
+      var ok=(!lg||c.getAttribute('data-lg')===lg)&&(!day||c.getAttribute('data-day')===day);
       var pe=c.closest('.pane'), home=pe?pe.getAttribute('data-pane'):'', ph=phase(c);
-      ok=ok&&(!home||home===ph); // 同じ試合を 3 ページに置き、今の状態のページでだけ見せる
-      c.style.display=ok?'':'none'; if(ok&&home===pane) n++;
+      ok=ok&&(!home||home===ph); // 同じ試合を 3 区分に置き、今の状態の区分でだけ見せる
+      c.style.display=ok?'':'none'; if(ok) n++;
       var lc=c.querySelector('.livechip');
       if(lc){ if(ph==='live'&&home==='live'){ lc.hidden=false; lc.textContent='LIVE '+Math.max(0,Math.floor((Date.now()-Date.parse(c.getAttribute('data-ko')))/60000))+'分経過'; } else lc.hidden=true; }
     });
@@ -546,24 +512,21 @@ ${groupByLeague(settled, { showResult: true })}
       if(sm){ if(!sm.getAttribute('data-all')) sm.setAttribute('data-all',sm.textContent); sm.textContent=active?(v+' 試合'):sm.getAttribute('data-all'); }
     });
     if(active){ [].slice.call(document.querySelectorAll('details')).forEach(function(d){d.open=true}) }
-    // 各ページの試合数（同じ試合は 1 つと数える）
-    var seen={pre:{},live:{},post:{}};
-    cards.forEach(function(c){ var pe=c.closest('.pane'); if(!pe) return; var h=pe.getAttribute('data-pane'); if(phase(c)===h) seen[h][c.getAttribute('data-pid')]=1; });
-    ['pre','live','post'].forEach(function(h){ var el=document.getElementById('n-'+h); if(el) el.textContent=Object.keys(seen[h]).length; });
-    var le=document.getElementById('live-empty'); if(le) le.hidden=Object.keys(seen.live).length>0;
-    var we=document.getElementById('wait-empty'); if(we){ var w=0; cards.forEach(function(c){ if(!c.getAttribute('data-settled')&&phase(c)==='post') w++; }); we.hidden=w>0; }
-    count.textContent=active?('該当 '+n+' 試合（'+({pre:'試合前',live:'試合中',post:'試合後'}[pane])+'）'):'';
+    // 試合中の区分は、試合中の試合があるときだけ出す
+    var live=0, w=0;
+    cards.forEach(function(c){ var ph=phase(c); if(ph==='live') live++; if(!c.getAttribute('data-settled')&&ph==='post') w++; });
+    var lp=document.querySelector('.pane[data-pane="live"]'); if(lp) lp.hidden=live===0;
+    var we=document.getElementById('wait-empty'); if(we) we.hidden=w>0;
+    count.textContent=active?('該当 '+n+' 試合'):'';
   }
-  q.addEventListener('input',apply);
-  tabs.forEach(function(b){b.addEventListener('click',function(){setPane(b.getAttribute('data-pane'))})});
-  if(qd) qd.addEventListener('change',function(){setDay(qd.value)});
   dchips.forEach(function(b){b.addEventListener('click',function(){setDay(b.getAttribute('data-day'))})});
   chips.forEach(function(b){b.addEventListener('click',function(){
     lg=b.getAttribute('data-lg'); chips.forEach(function(x){x.classList.toggle('on',x===b)}); apply();
   })});
-  function fromHash(){ var h=location.hash.slice(1); return (h==='post'||h==='live')?h:'pre' }
-  setPane(fromHash());
-  window.addEventListener('hashchange',function(){ var h=fromHash(); if(h!==pane) setPane(h) });
+  // 日付の列は過去の決着日から並ぶので、開いたときは今日（JST）の位置まで送っておく（「全日程」は左端に留まる）
+  var today=new Date(Date.now()+9*3600000).toISOString().slice(0,10);
+  for(var i=1;i<dchips.length;i++){ if(dchips[i].getAttribute('data-day')>=today){ var row=dchips[i].parentNode; row.scrollLeft=dchips[i].offsetLeft-dchips[0].offsetLeft-dchips[0].offsetWidth-6; break; } }
+  apply();
   setInterval(apply,60000); // 1 分ごとに、時刻に応じて試合を前・中・後へ移す
 })();
 </script>

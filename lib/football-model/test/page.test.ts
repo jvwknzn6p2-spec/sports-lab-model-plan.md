@@ -239,13 +239,11 @@ test("探しやすさ: これからの試合はリーグ別に区切り、各試
   assert.equal((html.match(/class="lgsec"/g) ?? []).length, 6);
   assert.ok(html.indexOf("プレミアリーグ") < html.indexOf("セリエA"));
   assert.match(html, /data-q="[^"]*Arsenal[^"]*プレミアリーグ[^"]*E0"/);
-  assert.match(html, /id="q" type="search"/);
-  // テンプレートリテラルで正規表現の \ が落ちると検索が全く効かなくなる（2026-10-10 に実発生）
-  assert.ok(html.includes("/[\\s・･\\-\\.]/g"), "検索の正規表現が壊れている");
-  assert.ok(html.includes("/[\\u3041-\\u3096]/g"), "ひらがな→カタカナの正規表現が壊れている");
+  // 検索窓・日付入力・タブは出さない（Founder 指示 2026-10-25）
+  assert.ok(!/id="q" type="search"|id="qd" type="date"|role="tab"/.test(html));
 });
 
-test("日付（JST）で絞り込める: 各試合が JST の試合日を持ち、日付の選択肢と入力欄がある", () => {
+test("日付（JST）で絞り込める: 各試合が JST の試合日を持ち、日付の選択肢がある", () => {
   const ko1 = "2099-09-01T14:00:00Z"; // JST 9/1 23:00
   const ko2 = "2099-09-01T16:00:00Z"; // JST 9/2 01:00（JST では翌日）
   const matches = [match("p1", "Arsenal", "Chelsea", ko1), match("p2", "Fulham", "Brentford", ko2)];
@@ -253,17 +251,17 @@ test("日付（JST）で絞り込める: 各試合が JST の試合日を持ち�
   const { html } = render({ matches, predictions, publishedProviderIds: new Set(["p1", "p2"]) });
   assert.match(html, /data-q="[^"]*Arsenal[^"]*" data-lg="E0" data-day="2099-09-01"/);
   assert.match(html, /data-q="[^"]*Fulham[^"]*" data-lg="E0" data-day="2099-09-02"/);
-  assert.match(html, /id="qd" type="date"/);
-  assert.match(html, /class="daychip" data-day="2099-09-02" data-panes="pre live post">9\/2/);
+  assert.match(html, /class="daychip" data-day="2099-09-02">9\/2/);
 });
 
-test("試合前・試合中・試合後の 3 ページ: 決着前の試合は 3 ページに置き、ページを開いた時刻で出す場所を決める", () => {
+test("試合前・試合中・試合後の 3 区分を縦に並べる: 決着前の試合は 3 区分に置き、ページを開いた時刻で出す場所を決める", () => {
   const future = "2099-09-01T14:00:00Z";
   const past = "2020-09-01T14:00:00Z";
   const matches = [match("p1", "Arsenal", "Chelsea", future), match("p2", "Fulham", "Brentford", past)];
   const predictions = [prediction("e1", "p1", future, [0.5, 0.3, 0.2]), prediction("e2", "p2", past, [0.4, 0.3, 0.3])];
   const { html } = render({ matches, predictions, evaluations: [evaluation("e2", "p2", "H", 0.2, null)], publishedProviderIds: new Set(["p1", "p2"]) });
-  for (const [k, lab] of [["pre", "試合前"], ["live", "試合中"], ["post", "試合後"]]) assert.match(html, new RegExp(`data-pane="${k}" role="tab">${lab}`));
+  // タブで切り替えず、3 区分とも最初から表示（試合中は該当があるときだけスクリプトが出す）
+  for (const k of ["pre", "live", "post"]) assert.match(html, new RegExp(`<div class="pane" data-pane="${k}">`));
   const pane = (k: string) => {
     const i = html.indexOf(`class="pane" data-pane="${k}"`);
     const j = html.indexOf('class="pane" data-pane=', i + 10);
