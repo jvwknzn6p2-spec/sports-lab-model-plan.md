@@ -13,6 +13,7 @@
 import { createHash } from "node:crypto";
 import { OFFICIAL_RECORD_START, type LedgerEvaluation, type LedgerMatch, type LedgerPrediction } from "../ledger.ts";
 import { MKT_ONLY_MODEL } from "../marketModel.ts";
+import { wilson95 } from "../scoring.ts";
 import { LEAGUE, kanaTable, leagueLabel } from "./labels.ts";
 
 /**
@@ -267,7 +268,11 @@ export function renderPage(input: RenderInput): RenderResult {
     return codes
       .map((c) => {
         const ls = list.filter((r) => r.league === c);
-        return `<section class="lgsec" data-lg="${esc(c)}"><h3 class="lghead">${esc(leagueLabel(c))}<small>${ls.length} 試合</small></h3>${group(ls, opts)}</section>`;
+        // 決着済みの欄だけ、リーグごとの的中率を件数つきで添える（件数の少ないリーグは率だけで読まない）
+        const settledHere = opts?.showResult ? ls.filter((r) => r.ev) : [];
+        const k = settledHere.filter((r) => isHit(r, r.ev!)).length;
+        const tail = settledHere.length ? `・的中 ${k}/${settledHere.length}（${((k / settledHere.length) * 100).toFixed(0)}%）` : "";
+        return `<section class="lgsec" data-lg="${esc(c)}"><h3 class="lghead">${esc(leagueLabel(c))}<small>${ls.length} 試合${tail}</small></h3>${group(ls, opts)}</section>`;
       })
       .join("");
   }
@@ -316,7 +321,11 @@ export function renderPage(input: RenderInput): RenderResult {
     const idx = { H: 0, D: 1, A: 2 } as const;
     const ret = recs.reduce((a, r) => a + (r.mktEv!.result === r.mkt!.recommend ? r.mkt!.bestOdds![idx[r.mkt!.recommend!]]! - 1 : -1), 0);
     const recHit = recs.filter((r) => r.mktEv!.result === r.mkt!.recommend).length;
-    return `<p class="sub">2 つのモデルの比較（同じ ${both.length} 試合・RPS は小さいほど良い）: 正準 <b>${avg((r) => r.ev!.rps)}</b> ／ 市場基盤 <b>${avg((r) => r.mktEv!.rps)}</b> ／ 市場 ${avg((r) => r.ev!.marketRps!)}。市場基盤の推奨 ${recs.length} 件・的中 ${recHit}・最良のオッズで 1 単位ずつ買った場合の回収率 ${recs.length ? `${(((ret + recs.length) / recs.length) * 100).toFixed(1)}%` : "—"}（100% が損益ゼロ・件数が少ないうちは判断に使わない）。</p>`;
+    // 的中率（最も高い確率の結果が当たった割合）。同じ試合の集合で並べる
+    const topIs = (p: [number, number, number], res: "H" | "D" | "A"): boolean => ["H", "D", "A"][p.indexOf(Math.max(...p))] === res;
+    const hitPct = (f: (r: Row) => boolean): string => `${((both.filter(f).length / both.length) * 100).toFixed(1)}%`;
+    const hitLine = `的中率は 正準 ${hitPct((r) => topIs([r.pHome, r.pDraw, r.pAway], r.ev!.result))} ／ 市場基盤 ${hitPct((r) => topIs([r.mkt!.pHome, r.mkt!.pDraw, r.mkt!.pAway], r.ev!.result))} ／ 市場 ${hitPct((r) => Array.isArray(r.market) && topIs(r.market as [number, number, number], r.ev!.result))}`;
+    return `<p class="sub">2 つのモデルの比較（同じ ${both.length} 試合・RPS は小さいほど良い）: 正準 <b>${avg((r) => r.ev!.rps)}</b> ／ 市場基盤 <b>${avg((r) => r.mktEv!.rps)}</b> ／ 市場 ${avg((r) => r.ev!.marketRps!)}。${hitLine}。市場基盤の推奨 ${recs.length} 件・的中 ${recHit}・最良のオッズで 1 単位ずつ買った場合の回収率 ${recs.length ? `${(((ret + recs.length) / recs.length) * 100).toFixed(1)}%` : "—"}（100% が損益ゼロ・件数が少ないうちは判断に使わない）。</p>`;
   }
 
   const nPreview = rows.filter((r) => r.preview).length;
@@ -355,6 +364,7 @@ h1{font-size:18px;font-weight:700;margin:0;text-wrap:balance}
 .tile small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .tile strong{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 .tile span{font-size:11px;color:var(--muted)}
+.tile .ci{display:block;font-size:10px;color:var(--dim);white-space:normal;margin-top:2px}
 h2{font-size:13px;letter-spacing:.14em;color:var(--cyan);font-weight:500;margin:30px 0 4px;text-transform:uppercase}
 h2 small{color:var(--muted);letter-spacing:0;text-transform:none;margin-left:8px;font-size:12px}
 .day{font-size:12px;color:var(--muted);font-weight:500;margin:14px 0 6px}
@@ -451,7 +461,7 @@ ${
 <div class="tiles">
   <div class="tile"><small>これから</small><strong>${upcoming.length}</strong> <span>試合</span></div>
   <div class="tile"><small>決済待ち</small><strong>${started.length}</strong> <span>試合</span></div>
-  <div class="tile"><small>決着</small><strong>${nHit}/${settledCanon.length}</strong> <span>的中</span></div>
+  <div class="tile"><small>的中率</small><strong>${settledCanon.length ? `${((nHit / settledCanon.length) * 100).toFixed(1)}%` : "—"}</strong> <span>${nHit}/${settledCanon.length}</span>${settledCanon.length ? `<span class="ci">95% 区間 ${(wilson95(nHit, settledCanon.length).lo * 100).toFixed(0)}–${(wilson95(nHit, settledCanon.length).hi * 100).toFixed(0)}%</span>` : ""}</div>
 </div>
 
 <nav class="tabs" role="tablist">
