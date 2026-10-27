@@ -18,6 +18,12 @@ export const JA_TO_EN: Readonly<Record<string, readonly string[]>> = {
   "Rソシエダ": ["Sociedad"],
   "クラブB": ["Club Brugge"],
   "ゲンク": ["Genk"],
+  // 実際の貼り付けで出た短縮形（2026-10-23・10-25 の実物から追加）。同日・同リーグの台帳の
+  // 試合と 1 対 1 で突合して確認した: Ipswich v Nott'm Forest / Nijmegen v Groningen /
+  // Genk v Standard（「リエージュ」はスタンダール・リエージュ。RFC リエージュは 1 部に居ない）
+  "フォレスト": ["Nott'm Forest"],
+  "NEC": ["Nijmegen"],
+  "リエージュ": ["Standard"],
   // 実際の貼り付けで出た短縮形（2026-09-19 の実物から追加）。いずれも同日・同リーグの
   // 台帳の試合と 1 対 1 で突合して確認した（推測ではない）:
   //   Nott'm Forest v Coventry / Sparta Rotterdam v Heerenveen / Willem II v For Sittard

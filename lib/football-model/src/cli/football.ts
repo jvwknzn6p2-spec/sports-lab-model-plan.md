@@ -16,7 +16,7 @@
  * GitHub の写し・Odds API の scores）はどれが欠けても日次は止まらず、前日までの履歴で
  * 予想を出す。鮮度は予想行の historyAsOf / historyMissing に残る。
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fitDixonColes, fitShotLayer, predictMatch, predictWithShots } from "../fit.ts";
 import type { MatchWithOdds } from "../footballData.ts";
@@ -56,6 +56,7 @@ import { FixtureMarketIndex, fixturesAsMatches, parseFixturesCsv } from "../foot
 import { FDORG_COMPETITIONS, foldedIndexOf, historyFromFootballDataOrg, resolveOrgTeam, type FdOrgPayload } from "../footballDataOrg.ts";
 import type { FixtureMarket } from "../footballDataFixtures.ts";
 import { parsePasteText } from "../paste.ts";
+import { evaluateQuote, lastLinesBeforeKickoff, pnl, quoteId, readQuotes, type QuoteRow } from "../quotes.ts";
 
 /** 台帳を開く。公式記録の開始（OFFICIAL_RECORD_START）より前の試合・結果は入れない */
 function openLedger(track?: string): Ledger {
@@ -756,6 +757,7 @@ function quote(): void {
   for (const p of openLedger("mkt").predictions()) if (p.model === MKT_ONLY_MODEL && !latest.has(p.providerId)) latest.set(p.providerId, p);
 
   const out: string[] = [];
+  const toRecord: QuoteRow[] = [];
   let resolved = 0;
   for (const c of cards) {
     if (!c.line) {
@@ -801,6 +803,24 @@ function quote(): void {
       );
     }
     const givingIsHome0 = G.includes(m.home);
+    if (stale === false) {
+      const pastedAt = arg("pasted-at", NOW)!;
+      toRecord.push({
+        id: quoteId(pastedAt, m.providerId, givingIsHome0, handicapRaw),
+        pastedAt,
+        recordedAt: new Date().toISOString(),
+        ...(process.argv.includes("--backfilled") ? { backfilled: true } : {}),
+        source: c.source,
+        league: m.league,
+        providerId: m.providerId,
+        home: m.home,
+        away: m.away,
+        kickoffAt: m.kickoffAt,
+        givingHome: givingIsHome0,
+        handicap: handicapRaw,
+        alternatives: [...c.line.handicapAlternatives],
+      });
+    }
     // 終了済みなら答え合わせ（貼られたハンデが実際いくらになったか）
     const res = findResult(m.home, m.away, m.kickoffAt);
     const settled = res
@@ -848,6 +868,54 @@ function quote(): void {
   console.log(out.join("\n"));
   console.log(`\n--- 貼り付け ${cards.length} 件 / 予想が出せたのは ${resolved} 件`);
   console.log("EV も推奨も出していない（決済規則と予想を並べただけ）。分析専用。");
+  // --record: 貼られたハンデを football/quotes/quotes.ndjson へ追記する（追記専用・同じ id は書かない）。
+  // 台帳（ledger）には書かない。解決できなかったカードは上の出力に理由つきで残る
+  if (process.argv.includes("--record")) {
+    const path = join(ROOT, "quotes", "quotes.ndjson");
+    const seen = new Set(readQuotes(path).map((q) => q.id));
+    const fresh = toRecord.filter((q) => !seen.has(q.id));
+    mkdirSync(join(ROOT, "quotes"), { recursive: true });
+    if (fresh.length) appendFileSync(path, fresh.map((q) => JSON.stringify(q)).join("\n") + "\n");
+    console.log(`記録 ${fresh.length} 件（既にあった ${toRecord.length - fresh.length} 件）→ ${path}`);
+  }
+}
+
+/**
+ * 貼られたハンデの答え合わせ（`src/quotes.ts`）。試合前の最後のアジアンハンデから両側の期待値を出し、
+ * 決着した試合は実際の損益を並べる。表は Markdown で標準出力へ（どこにも書かない）
+ */
+function quotesReport(): void {
+  const quotes = readQuotes(join(ROOT, "quotes", "quotes.ndjson"));
+  const L = openLedger();
+  const results = new Map<string, { homeGoals: number; awayGoals: number }>();
+  for (const e of [...L.evaluations(), ...openLedger("mkt").evaluations()]) results.set(e.providerId, e);
+  const lines = lastLinesBeforeKickoff(join(ROOT, "lines", "football-data"));
+  const rows = quotes.map((q) => evaluateQuote(q, lines, results.get(q.providerId) ?? null));
+  const pc = (x: number | null) => (x === null ? "—" : `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}%`);
+  const out: string[] = ["| 貼付 | 試合 | ハンデ | AH | 出し EV | 貰い EV | 結果 | 出し | 貰い |", "|---|---|---|---|---|---|---|---|---|"];
+  for (const r of rows) {
+    const q = r.quote;
+    const giver = q.givingHome ? q.home : q.away;
+    out.push(
+      `| ${q.pastedAt.slice(5, 10)} | ${q.home} v ${q.away} | ${giver} <${q.handicap}>${q.alternatives.length ? ` (${q.alternatives.join(",")})` : ""} | ${r.asianLine ?? "—"}${r.linesAfterKickoff ? "*" : ""} | ${pc(r.evGiving)} | ${pc(r.evReceiving)} | ${r.score ?? "未決"} | ${r.share === null ? "—" : pnl(r.share).toFixed(2)} | ${r.share === null ? "—" : pnl(-r.share).toFixed(2)} |`,
+    );
+  }
+  out.push("");
+  out.push(`記録 ${rows.length} 件・市場（アジアンハンデ）で評価できたもの ${rows.filter((r) => r.evGiving !== null).length} 件。AH の * は写しをキックオフ後に取ったもの（価格は試合前）`);
+  for (const [label, graded] of [
+    ["全体", rows.filter((r) => r.evGiving !== null && r.share !== null)],
+    ["写しが試合前のものだけ", rows.filter((r) => r.evGiving !== null && r.share !== null && !r.linesAfterKickoff)],
+  ] as const) {
+    if (!graded.length) continue;
+    const sum = (f: (r: (typeof graded)[number]) => number) => graded.reduce((s, r) => s + f(r), 0);
+    out.push(`\n**${label}（決着 ${graded.length} 件）**`);
+    const pick = graded.map((r) => (r.evGiving! >= r.evReceiving! ? { ev: r.evGiving!, p: pnl(r.share!) } : { ev: r.evReceiving!, p: pnl(-r.share!) }));
+    out.push(`- 出し側: 期待値の平均 ${pc(sum((r) => r.evGiving!) / graded.length)}・実際 ${pc(sum((r) => pnl(r.share!)) / graded.length)}`);
+    out.push(`- 貰い側: 期待値の平均 ${pc(sum((r) => r.evReceiving!) / graded.length)}・実際 ${pc(sum((r) => pnl(-r.share!)) / graded.length)}`);
+    const pos = pick.filter((x) => x.ev > 0);
+    out.push(`- 期待値がプラスだった側だけ: ${pos.length} 件・実際の損益 ${pos.reduce((s, x) => s + x.p, 0).toFixed(2)} 口`);
+  }
+  console.log(out.join("\n"));
 }
 
 /**
@@ -1086,7 +1154,8 @@ else if (cmd === "clv") clv();
 else if (cmd === "history-import") historyImport();
 else if (cmd === "fdorg-aliases") fdorgAliases();
 else if (cmd === "quote") quote();
+else if (cmd === "quotes-report") quotesReport();
 else {
-  console.error("usage: football.ts daily|weekly|health|clv|scores-needed|snapshot-needed|snapshot|history-import|fdorg-aliases|quote [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
+  console.error("usage: football.ts daily|weekly|health|clv|scores-needed|snapshot-needed|snapshot|history-import|fdorg-aliases|quote|quotes-report [--root football] [--cache football/cache] [--history football/history] [--leagues JAP,E0] [--paste file] [--now ISO]");
   process.exit(2);
 }

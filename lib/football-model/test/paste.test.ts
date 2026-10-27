@@ -176,3 +176,36 @@ test("[カッコ] の見出しも読む（カップ戦はリーグ不明のま�
   assert.equal(cards[0].line?.leagueCode, null, "対象リーグでないので不明のまま");
   assert.equal(cards[0].line?.startsNextDay, true);
 });
+
+test("実物の書き方（2026-10-15・10-21）: <CL> 見出し・(27:00) の時刻・2 つ並んだハンデ・時刻行の <0>・先頭の通し番号", () => {
+  const cards = parsePasteText(
+    "<CL>\nコモ<0/5>\n(25:45)\nマンU\n\nバイエルン<0/7> <0/9>\n（28:00）\nアーセナル\n\n<リーガ>\nレバンテ\n(27:00)\nビルバオ<0/7>\n\nRCランス\n25:30<0>\nスポルティング\n\n1\nザルツブルク\n25:45\nミラン<0半>",
+  );
+  assert.equal(cards.length, 5);
+  assert.deepEqual(cards.map((c) => c.error), [null, null, null, null, null]);
+  assert.equal(cards[0].line?.leagueCode, "CL");
+  assert.equal(cards[0].line?.startTime, "01:45");
+  assert.equal(cards[0].line?.startsNextDay, true);
+  // 2 つ目のハンデは意味が分からないので捨てずに持つ。主の値は 1 つ目
+  assert.equal(cards[1].line?.handicapRaw, "0/7");
+  assert.deepEqual(cards[1].line?.handicapAlternatives, ["0/9"]);
+  assert.equal(cards[1].line?.leagueCode, "CL", "見出しは後続のカードにも効く");
+  assert.equal(cards[2].line?.leagueCode, "SP1");
+  assert.equal(cards[2].line?.givingTeamRaw, "ビルバオ");
+  // 時刻行の <0> は出し・貰いが同じ決済なので前の行の側に付ける
+  assert.equal(cards[3].line?.givingTeamRaw, "RCランス");
+  assert.equal(cards[3].line?.handicapRaw, "0");
+  assert.equal(cards[4].line?.givingTeamRaw, "ミラン");
+});
+
+test("時刻行に 0 以外のハンデが付いていたら、出し側を推測せず理由つきで返す", () => {
+  const [c] = parsePasteText("ランス\n25:30<0半>\nスポルティング");
+  assert.equal(c.line, null);
+  assert.match(c.error ?? "", /出し側が分からない/);
+});
+
+test("貼り付けで出た略称（2026-10-23・10-25 の実物）: フォレスト・NEC・リエージュ", () => {
+  assert.deepEqual(resolveTeamCandidates("フォレスト"), ["Nott'm Forest"]);
+  assert.deepEqual(resolveTeamCandidates("NEC"), ["Nijmegen"]);
+  assert.deepEqual(resolveTeamCandidates("リエージュ"), ["Standard"]);
+});
