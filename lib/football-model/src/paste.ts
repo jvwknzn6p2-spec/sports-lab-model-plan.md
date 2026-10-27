@@ -43,6 +43,15 @@ export const JA_LEAGUE_TO_CODE: Readonly<Record<string, string>> = {
   ベルギーリーグ: "B1",
   スコティッシュプレミアシップ: "SC0",
   スコットランドリーグ: "SC0",
+  ジュピラーリーグ: "B1",
+  ジュピラー: "B1",
+  リーガ: "SP1",
+  チャンピオンズリーグ: "CL",
+  CL: "CL",
+  UCL: "CL",
+  ヨーロッパリーグ: "EL",
+  EL: "EL",
+  UEL: "EL",
   J1リーグ: "JAP",
   J1: "JAP",
   明治安田J1リーグ: "JAP",
@@ -75,6 +84,12 @@ export interface ParsedPasteLine {
   receivingCandidates: readonly string[];
   /** 貼られたハンデ表記そのまま（正規化しない） */
   handicapRaw: string;
+  /**
+   * 同じ行に 2 つ目以降のハンデがあったとき（`ビルバオ<0/7> <0/9>`）の残り。
+   * 何を意味する値か（別の業者・変更前後など）は貼り付けからは分からないので、
+   * **捨てずにそのまま持つだけ**にする。主の値は 1 つ目
+   */
+  handicapAlternatives: readonly string[];
 }
 
 export interface ParsedPasteCard {
@@ -108,7 +123,8 @@ function stripOrdinal(text: string): { ordinal: number | null; rest: string } {
  * 黙って 28 時のまま扱うと日付の突合が狂う。
  */
 function parseTimeLine(rawLine: string): { time: string; nextDay: boolean } | null {
-  const rest = normalizeBrackets(rawLine).trim();
+  // 「(27:00)」「（27:00）」のように括弧で囲んだ書き方も時刻行（2026-10-21 の実物）
+  const rest = normalizeBrackets(rawLine).trim().replace(/^[(（]\s*(.*?)\s*[)）]$/, "$1");
   const m = /^(?:(\d{1,2})[:：](\d{2})|(\d{1,2})時(?:(半)|(\d{1,2})分?)?)$/.exec(rest);
   if (!m) return null;
   let hh = Number(m[1] ?? m[3]);
@@ -128,11 +144,22 @@ function parseDeadlineLine(rawLine: string): string | null {
   return t ? t.time : m[1].trim();
 }
 
-function parseTeamLine(rawLine: string): { ordinal: number | null; team: string; handicap: string | null } {
+function parseTeamLine(rawLine: string): { ordinal: number | null; team: string; handicap: string | null; alternatives: string[] } {
   const { ordinal, rest } = stripOrdinal(normalizeBrackets(rawLine).trim());
-  const m = /^(.*?)<([^<>]*)>$/.exec(rest);
-  if (m) return { ordinal, team: m[1].trim(), handicap: m[2].trim() };
-  return { ordinal, team: rest, handicap: null };
+  // 末尾の `<…>` を全部拾う（`ビルバオ<0/7> <0/9>` のように 2 つ並ぶ書き方がある）
+  const m = /^(.*?)((?:\s*<[^<>]*>)+)$/.exec(rest);
+  if (m) {
+    const hs = [...m[2].matchAll(/<([^<>]*)>/g)].map((x) => x[1].trim());
+    return { ordinal, team: m[1].trim(), handicap: hs[0], alternatives: hs.slice(1) };
+  }
+  return { ordinal, team: rest, handicap: null, alternatives: [] };
+}
+
+/** `<CL>`・`<リーガ>` のように行全体が山括弧の見出し（ハンデ表記として読めるものは見出しにしない） */
+function angleHeading(line: string): string | null {
+  const m = /^<\s*([^<>]+?)\s*>$/.exec(normalizeBrackets(line).trim());
+  if (!m || isValidHandicapNotation(m[1])) return null;
+  return m[1];
 }
 
 /** 貼り付けテキストの上限（ブラウザや Issue から無制限に流し込ませない） */
@@ -169,8 +196,9 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
     const body: string[] = [];
     for (const l of lines) {
       const h = /^[【\[]\s*(.+?)\s*[】\]]$/.exec(l);
-      if (h) {
-        leagueRaw = h[1];
+      const ah = h ? null : angleHeading(l);
+      if (h || ah) {
+        leagueRaw = h ? h[1] : ah;
         continue;
       }
       const d = parseDeadlineLine(l);
@@ -185,6 +213,8 @@ export function parsePasteText(text: string): ParsedPasteCard[] {
       if (leagueRaw) carriedLeague = leagueRaw;
       return;
     }
+    // カードの中に書いた見出し（`<CL>` + 改行 + カード）も以降のカードへ引き継ぐ（2026-10-21 の実物）
+    if (leagueRaw) carriedLeague = leagueRaw;
     const effectiveLeague = leagueRaw ?? carriedLeague;
     const leagueCode = effectiveLeague ? (JA_LEAGUE_TO_CODE[leagueKey(effectiveLeague)] ?? null) : null;
 
@@ -209,7 +239,19 @@ function parseCard(
     let startTime: string | null = null;
     let startsNextDay = false;
     const teamLines: string[] = [];
-    for (const l of lines) {
+    // 先頭の通し番号だけの行（`1`）はカードの一部ではない（2026-10-15 の実物）
+    if (lines.length > 2 && /^\d{1,2}$/.test(lines[0])) lines = lines.slice(1);
+    for (let l of lines) {
+      // 時刻行にハンデが付いた書き方（`25:30<0>`）。<0> は出し・貰いが同じ決済なので前の行の側に付ける。
+      // それ以外は出し側が決められないので、推測せずに理由つきで返す
+      const th = /^(.*?)\s*<([^<>]*)>$/.exec(normalizeBrackets(l).trim());
+      if (th && parseTimeLine(th[1]) !== null) {
+        if (th[2].trim() !== "0" || teamLines.length !== 1) {
+          return { index, source, line: null, error: `時刻行にハンデ <${th[2].trim()}> が付いていて、出し側が分からない` };
+        }
+        teamLines[0] = `${teamLines[0]}<0>`;
+        l = th[1];
+      }
       const t = parseTimeLine(l);
       if (t !== null && teamLines.length <= 1) {
         startTime = t.time; // 先頭、またはチームとチームの間の時刻行
@@ -229,6 +271,9 @@ function parseCard(
     if (withHc.length === 2) return { index, source, line: null, error: "ハンデ <> が両側にある" };
 
     const giving = a.handicap !== null ? a : b;
+    for (const alt of giving.alternatives) {
+      if (!isValidHandicapNotation(alt)) return { index, source, line: null, error: `未定義のハンデ表記: ${alt}` };
+    }
     const receiving = a.handicap !== null ? b : a;
     const handicapRaw = giving.handicap as string;
     if (!isValidHandicapNotation(handicapRaw)) {
@@ -255,6 +300,7 @@ function parseCard(
         givingCandidates: resolveTeamCandidates(giving.team),
         receivingCandidates: resolveTeamCandidates(receiving.team),
         handicapRaw,
+        handicapAlternatives: giving.alternatives,
       },
     };
   }
