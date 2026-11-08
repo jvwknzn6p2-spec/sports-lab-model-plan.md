@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       diag_only:
-        description: "診断ステップだけ実行する（Odds API のクレジット 13 を使う本体のサンプル取得を飛ばす）"
+        description: "診断ステップだけ実行する（Odds API のクレジット 12 を使う本体のサンプル取得を飛ばす）"
         type: boolean
         default: false
 
@@ -140,11 +140,11 @@ jobs:
             echo "$code $(wc -c < "$DIR/odds-sports.json" 2>/dev/null || echo 0) odds-sports.json https://api.the-odds-api.com/v4/sports/" | tee -a "$MANIFEST"
             grep -i "x-requests-" "$DIR/odds-headers.txt" | tr -d '\r' >> "$MANIFEST" || true
             rm -f "$DIR/odds-headers.txt"
-            # 今後の試合と h2h オッズ（海外 12 競技 + J1・各 1 クレジット）。日程の一次情報にもなる
+            # 今後の試合と h2h オッズ（海外 12 競技・各 1 クレジット）。日程の一次情報にもなる。J1 は 2026-10-13 に対象外
             for sport in soccer_epl soccer_italy_serie_a soccer_spain_la_liga soccer_germany_bundesliga \
                          soccer_netherlands_eredivisie soccer_france_ligue_one soccer_portugal_primeira_liga \
                          soccer_belgium_first_div soccer_spl soccer_uefa_champs_league soccer_uefa_europa_league \
-                         soccer_uefa_europa_conference_league soccer_japan_j_league; do
+                         soccer_uefa_europa_conference_league; do
               code=$(curl -sS --max-time 30 -o "$DIR/odds-$sport.json" -w "%{http_code}" \
                 "https://api.the-odds-api.com/v4/sports/$sport/odds?regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso&apiKey=$ODDS_API_KEY" || echo ERR)
               echo "$code $(wc -c < "$DIR/odds-$sport.json" 2>/dev/null || echo 0) odds-$sport.json https://api.the-odds-api.com/v4/sports/$sport/odds" | tee -a "$MANIFEST"
